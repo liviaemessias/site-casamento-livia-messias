@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Presentes | Painel Admin | Livia & Messias</title>
+
+    <link rel="stylesheet" href="./css/style.css" />
+
+    <link rel="stylesheet" href="./css/admin.css" />
+  </head>
+
+  <body class="admin-auth-pending">
+    <main class="admin-page">
+      <section class="admin-header">
+        <div>
+          <p class="section-subtitle">Painel Administrativo</p>
+
+          <h1>Presentes</h1>
+        </div>
+
+        <button id="logoutButton" class="admin-logout">Sair</button>
+      </section>
+
+      <nav class="admin-nav" aria-label="Navegação administrativa">
+        <a class="admin-nav-link" href="./admin-dashboard.html">Dashboard</a>
+        <a class="admin-nav-link active" href="./admin-gifts.html">Presentes</a>
+        <a class="admin-nav-link" href="./admin-rsvps.html">RSVP</a>
+        <a class="admin-nav-link" href="./admin-guests.html">Convidados</a>
+        <a class="admin-nav-link" href="./admin-settings.html">
+          Configurações
+        </a>
+      </nav>
+
+      <section class="admin-section">
+        <div class="admin-section-header">
+          <div>
+            <p class="section-subtitle">Presentes</p>
+
+            <h2>Controle da Lista de Presentes</h2>
+          </div>
+
+          <div class="admin-section-actions">
+            <button id="exportGiftsButton" class="admin-action-button">
+              Exportar CSV
+            </button>
+
+            <button id="openGiftModalButton" class="admin-action-button success">
+              + Novo Presente
+            </button>
+          </div>
+        </div>
+
+        <div class="admin-filters" aria-label="Filtros de presentes">
+          <div class="admin-filter-field">
+            <label for="giftSearchInput">Buscar</label>
+            <input
+              type="search"
+              id="giftSearchInput"
+              placeholder="Presente, categoria ou convidado"
+            />
+          </div>
+
+          <div class="admin-filter-field">
+            <label for="giftStatusFilter">Status</label>
+            <select id="giftStatusFilter">
+              <option value="">Todos</option>
+              <option value="Disponível">Disponível</option>
+              <option value="Parcial">Parcial</option>
+              <option value="Reservado">Reservado</option>
+              <option value="Comprado">Comprado</option>
+            </select>
+          </div>
+
+          <div class="admin-filter-field">
+            <label for="giftTypeFilter">Tipo</label>
+            <select id="giftTypeFilter">
+              <option value="">Todos</option>
+              <option value="single">Individual</option>
+              <option value="quota">Por cotas</option>
+            </select>
+          </div>
+
+          <div class="admin-filter-field">
+            <label for="giftPaymentFilter">Pagamento</label>
+            <select id="giftPaymentFilter">
+              <option value="">Todos</option>
+              <option value="Pendente">Pendente</option>
+              <option value="Informado">Informado</option>
+              <option value="Parcialmente informado">Parcialmente informado</option>
+              <option value="Parcialmente confirmado">Parcialmente confirmado</option>
+              <option value="Confirmado">Confirmado</option>
+              <option value="sem_status">Sem status</option>
+            </select>
+          </div>
+
+          <div class="admin-filter-field">
+            <label for="giftQuotaFilter">Cotas</label>
+            <select id="giftQuotaFilter">
+              <option value="">Todas</option>
+              <option value="not_quota">Não se aplica</option>
+              <option value="available">Com cotas disponíveis</option>
+              <option value="partially_reserved">Parcialmente reservado</option>
+              <option value="fully_reserved">Totalmente reservado</option>
+              <option value="partially_confirmed">Parcialmente confirmado</option>
+              <option value="fully_confirmed">Totalmente confirmado</option>
+            </select>
+          </div>
+
+          <div class="admin-filter-field">
+            <label for="giftMethodFilter">Forma</label>
+            <select id="giftMethodFilter">
+              <option value="">Todas</option>
+              <option value="pix">PIX</option>
+              <option value="card">Cartão</option>
+              <option value="online">Compra online</option>
+              <option value="physical">Loja física</option>
+              <option value="sem_metodo">Sem forma</option>
+            </select>
+          </div>
+
+          <div class="admin-filter-actions">
+            <span id="giftFilterCount" class="admin-filter-count"></span>
+
+            <button
+              type="button"
+              id="clearGiftFiltersButton"
+              class="admin-clear-filters"
+            >
+              Limpar filtros
+            </button>
+          </div>
+        </div>
+
+        <div class="admin-table-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>
+                  <button class="admin-sort-button" data-gift-sort="name">
+                    Presente
+                  </button>
+                </th>
+                <th>
+                  <button class="admin-sort-button" data-gift-sort="category">
+                    Categoria
+                  </button>
+                </th>
+                <th>
+                  <button class="admin-sort-button" data-gift-sort="type">
+                    Tipo
+                  </button>
+                </th>
+                <th>Cotas</th>
+                <th>
+                  <button class="admin-sort-button" data-gift-sort="guest">
+                    Convidado
+                  </button>
+                </th>
+                <th>
+                  <button class="admin-sort-button" data-gift-sort="status">
+                    Situação
+                  </button>
+                </th>
+                <th>
+                  <button class="admin-sort-button" data-gift-sort="reserved">
+                    Reservado em
+                  </button>
+                </th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+
+            <tbody id="giftsTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <div id="adminToast" class="admin-toast"></div>
+
+    <div class="admin-modal" id="giftDetailsModal">
+      <div class="admin-modal-content admin-details-modal-content">
+        <button
+          type="button"
+          class="admin-modal-close"
+          id="closeGiftDetailsModalButton"
+        >
+          ×
+        </button>
+
+        <h2 id="giftDetailsTitle">Detalhes do Presente</h2>
+
+        <div id="giftDetailsContent" class="admin-details-content"></div>
+      </div>
+    </div>
+
+    <div class="admin-modal" id="giftModal">
+      <div class="admin-modal-content">
+        <button
+          type="button"
+          class="admin-modal-close"
+          id="closeGiftModalButton"
+        >
+          ×
+        </button>
+
+        <h2 id="giftModalTitle">Novo Presente</h2>
+
+        <form id="giftForm">
+          <div class="admin-form-group">
+            <label>Categoria</label>
+            <input type="text" id="giftCategoryInput" required />
+          </div>
+
+          <div class="admin-form-group">
+            <label>Nome</label>
+            <input type="text" id="giftNameInput" required />
+          </div>
+
+          <div class="admin-form-group">
+            <label>Descrição</label>
+            <textarea id="giftDescriptionInput" rows="4"></textarea>
+          </div>
+
+          <div class="admin-form-group">
+            <label>Valor</label>
+            <input type="number" id="giftPriceInput" min="0" step="0.01" />
+          </div>
+
+          <div class="admin-form-group">
+            <label>Tipo de Presente</label>
+            <select id="giftTypeInput">
+              <option value="single">Presente individual</option>
+              <option value="quota">Presente por cotas</option>
+            </select>
+          </div>
+
+          <div id="giftQuotaSection" class="admin-quota-section is-hidden">
+            <div class="admin-form-group">
+              <label>Quantidade de Cotas</label>
+              <input type="number" id="giftQuotaCountInput" min="1" step="1" />
+            </div>
+
+            <div class="admin-form-group">
+              <label>Valor da Cota</label>
+              <input type="number" id="giftQuotaValueInput" min="0" step="0.01" readonly />
+            </div>
+          </div>
+
+          <div class="admin-form-group">
+            <label>URL da Imagem</label>
+            <input type="url" id="giftImageUrlInput" />
+          </div>
+
+          <div class="admin-form-group">
+            <label>Modo de Compra</label>
+            <select id="giftPurchaseModeInput">
+              <option value="money">Dinheiro / PIX / Cartão</option>
+              <option value="external">Compra externa</option>
+              <option value="hybrid">Híbrido</option>
+            </select>
+          </div>
+
+          <div id="giftExternalOptionsSection" class="is-hidden">
+            <div class="admin-form-group">
+              <label> Opções de Compra Online / Loja Física </label>
+
+              <div id="giftExternalOptionsList"></div>
+
+              <button
+                type="button"
+                id="addExternalOptionButton"
+                class="admin-action-button success has-top-space"
+              >
+                + Adicionar Opção
+              </button>
+            </div>
+          </div>
+
+          <div class="admin-form-group">
+            <label>Link de Pagamento com Cartão</label>
+            <input type="url" id="giftCardPaymentUrlInput" />
+          </div>
+
+          <button type="submit" class="admin-save-button">
+            Salvar Presente
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="admin-modal" id="externalOptionModal">
+      <div class="admin-modal-content">
+        <button
+          type="button"
+          class="admin-modal-close"
+          id="closeExternalOptionModalButton"
+        >
+          ×
+        </button>
+
+        <h2 id="externalOptionModalTitle">Nova Opção de Compra</h2>
+
+        <form id="externalOptionForm">
+          <div class="admin-form-group">
+            <label>Tipo</label>
+
+            <select id="externalOptionTypeInput">
+              <option value="online">Compra Online</option>
+              <option value="physical">Loja Física</option>
+            </select>
+          </div>
+
+          <div class="admin-form-group">
+            <label>Nome da Loja</label>
+            <input type="text" id="externalOptionStoreInput" required />
+          </div>
+
+          <div class="admin-form-group" id="externalOptionUrlGroup">
+            <label>URL do Produto</label>
+            <input
+              type="url"
+              id="externalOptionUrlInput"
+              placeholder="https://..."
+            />
+          </div>
+
+          <div class="admin-form-group">
+            <label>Observações</label>
+            <textarea
+              id="externalOptionNotesInput"
+              rows="4"
+              placeholder="Modelo, cor, voltagem, localização da loja..."
+            ></textarea>
+          </div>
+
+          <button type="submit" class="admin-save-button">Salvar Opção</button>
+        </form>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+    <script src="./js/supabase.js"></script>
+
+    <script src="./js/admin-common.js"></script>
+
+    <script src="./js/admin-bootstrap.js"></script>
+  </body>
+</html>

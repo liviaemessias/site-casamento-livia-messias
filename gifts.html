@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lista de Presentes | Livia & Messias</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./css/style.css" />
+    <link rel="stylesheet" href="./css/gifts.css" />
+    <link rel="stylesheet" href="./css/reference-rails.css" />
+  </head>
+  <body class="guest-auth-pending site-reference-rails">
+    <header class="navbar navbar-light">
+      <div class="container nav-content">
+        <div class="logo">Livia & Messias</div>
+        <ul class="nav-links">
+          <li>
+            <a href="./index.html"> Início </a>
+          </li>
+          <li>
+            <a href="./our-story.html"> Nossa História </a>
+          </li>
+          <li>
+            <a href="./rsvp.html"> RSVP </a>
+          </li>
+          <li>
+            <a href="./gifts.html" class="active"> Presentes </a>
+          </li>
+          <li class="guest-info"><span id="guestNameDisplay"></span></li>
+          <li><button id="logoutButton" class="logout-button">Sair</button></li>
+        </ul>
+        <button class="mobile-menu">☰</button>
+      </div>
+    </header>
+    <section class="gifts-hero">
+      <div class="container small-container">
+        <p class="section-subtitle">Lista de Presentes</p>
+        <h1 id="giftsHeroTitle" class="section-title">
+          Compartilhe esse momento conosco 💜
+        </h1>
+        <p id="giftsHeroDescription" class="gifts-description">
+          Sua presença é o nosso maior presente. Mas, caso deseje nos
+          presentear, preparamos algumas opções com muito carinho.
+        </p>
+      </div>
+    </section>
+    <section class="gifts-section">
+      <div class="container">
+        <div id="giftsPendingSection" class="gifts-pending-section"></div>
+        <div id="giftsGrid" class="gifts-grid"></div>
+      </div>
+    </section>
+    <!-- Modal Reserva -->
+    <div class="modal" id="reserveModal">
+      <div class="modal-content">
+        <button class="close-modal" id="closeReserveModal">×</button>
+        <h2>Reservar presente</h2>
+        <p id="reserveModalDescription" class="modal-description">
+          Confirme a reserva deste presente e, se desejar, deixe uma mensagem
+          para os noivos.
+        </p>
+        <form id="reserveForm">
+          <div class="form-group">
+            <label> Nome </label>
+            <input
+              type="text"
+              id="guestName"
+              placeholder="Seu nome"
+              readonly
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label> Mensagem para os noivos </label>
+            <textarea
+              id="guestMessage"
+              placeholder="Mensagem para os noivos (opcional)"
+            ></textarea>
+          </div>
+          <div id="quotaSelectionSection" class="quota-selection is-hidden">
+            <label for="quotaQuantityInput">Quantidade de cotas</label>
+
+            <div class="quota-stepper">
+              <button type="button" id="decreaseQuotaButton">-</button>
+              <input
+                type="number"
+                id="quotaQuantityInput"
+                min="1"
+                step="1"
+                value="1"
+              />
+              <button type="button" id="increaseQuotaButton">+</button>
+            </div>
+
+            <div class="quota-selection-summary">
+              <span id="quotaAvailabilityText"></span>
+              <strong id="quotaTotalText"></strong>
+            </div>
+          </div>
+          <button type="submit" class="primary-button">
+            Reservar presente
+          </button>
+        </form>
+      </div>
+    </div>
+    <!-- Modal Forma de Presentear -->
+
+    <!-- Modal Confirmação de Reserva -->
+    <div class="modal confirmation-modal" id="reservationConfirmationModal">
+      <div class="modal-content confirmation-modal-content">
+        <button
+          type="button"
+          class="close-modal"
+          id="closeReservationConfirmationModal"
+          aria-label="Fechar"
+        >
+          ×
+        </button>
+
+        <div class="confirmation-icon">✓</div>
+
+        <h2>Confirmar reserva?</h2>
+
+        <p
+          id="reservationConfirmationDescription"
+          class="modal-description"
+        ></p>
+
+        <div class="confirmation-actions">
+          <button
+            type="button"
+            id="cancelReservationConfirmation"
+            class="gift-button secondary"
+          >
+            Voltar
+          </button>
+
+          <button
+            type="button"
+            id="confirmReservationConfirmation"
+            class="gift-button payment-confirm-button"
+          >
+            Sim, reservar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="purchaseMethodModal">
+      <div class="modal-content">
+        <button class="close-modal" id="closePurchaseMethodModal">×</button>
+
+        <h2 id="purchaseMethodModalTitle">Como deseja presentear?</h2>
+
+        <p class="modal-description">
+          Escolha uma das formas disponíveis para este presente.
+        </p>
+
+        <div id="purchaseMethodOptions"></div>
+      </div>
+    </div>
+    <!-- Modal PIX -->
+    <div class="modal" id="pixModal">
+      <div class="modal-content">
+        <button class="close-modal" id="closePixModal">×</button>
+        <div class="pix-success">
+          <h2 id="paymentModalTitle">💜 Presente reservado!</h2>
+
+          <p id="paymentModalDescription" class="pix-description"></p>
+
+          <div class="pix-gift-summary">
+            <span> Presente </span>
+
+            <strong id="pixGiftName"> </strong>
+
+            <span> Valor </span>
+
+            <strong id="pixGiftPrice"> </strong>
+          </div>
+
+          <div id="moneyPaymentSection" class="payment-section">
+            <div id="pixPaymentBlock">
+              <img id="pixQrCode" class="pix-qrcode" src="" alt="QR Code PIX" />
+
+              <div class="pix-key-container">
+                <label class="pix-label"> PIX Copia e Cola </label>
+
+                <div class="pix-key-box" id="pixKey"></div>
+              </div>
+
+              <button type="button" id="copyPixButton" class="pix-button">
+                Copiar código PIX
+              </button>
+            </div>
+
+            <div id="cardPaymentBlock">
+              <button
+                type="button"
+                id="cardPaymentButton"
+                class="receipt-button"
+              >
+                Pagar com Cartão
+              </button>
+            </div>
+          </div>
+
+          <div
+            id="externalPurchaseSection"
+            class="payment-section is-hidden"
+          >
+            
+            <div id="externalPurchaseOptions"></div>
+          </div>
+
+          <button
+            type="button"
+            id="confirmPaymentButton"
+            class="pix-button payment-button payment-confirm-button"
+          >
+            Já realizei o pagamento / compra
+          </button>
+
+          <div class="pix-message">
+            <p class="pix-thanks">💜 Obrigado por presentear os noivos!</p>
+
+            <p id="paymentModalFooterText"></p>
+
+            <p class="pix-attention">
+              O presente continuará como reservado até a confirmação manual dos
+              noivos.
+            </p>
+          </div>
+
+          <a id="sendReceiptButton" class="receipt-button" target="_blank">
+            Enviar comprovante
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Confirmação de Pagamento ou Compra -->
+    <div class="modal confirmation-modal" id="paymentConfirmationModal">
+      <div class="modal-content confirmation-modal-content">
+        <button
+          type="button"
+          class="close-modal"
+          id="closePaymentConfirmationModal"
+          aria-label="Fechar"
+        >
+          ×
+        </button>
+
+        <div class="confirmation-icon">✓</div>
+
+        <h2 id="paymentConfirmationTitle">Confirmar pagamento?</h2>
+
+        <p
+          id="paymentConfirmationDescription"
+          class="modal-description"
+        ></p>
+
+        <div class="confirmation-actions">
+          <button
+            type="button"
+            id="cancelPaymentConfirmation"
+            class="gift-button secondary"
+          >
+            Voltar
+          </button>
+
+          <button
+            type="button"
+            id="confirmPaymentConfirmation"
+            class="gift-button payment-confirm-button"
+          >
+            Sim, confirmar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="./js/supabase.js"></script>
+    <script src="./js/guest-auth-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="./js/guest-auth.js"></script>
+    <script src="./js/guest-data.js"></script>
+    <script src="./js/public-common.js"></script>
+    <script src="./js/reference-decorations.js"></script>
+    <script src="./js/guest-bootstrap.js"></script>
+  </body>
+</html>
