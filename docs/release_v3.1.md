@@ -75,9 +75,3 @@ mais claros para convites individuais e de casal.
 - Atualizado o documento de fluxos, limitações e relatórios consolidados.
 - Documentada a nova organização das imagens em `assets/images/`.
 - Adicionado guia de ativação, testes e rollback do Cloudflare Turnstile.
-
-## Próximos Endurecimentos
-
-- Automatizar a limpeza de contas anônimas e tentativas antigas.
-- Revisar Content Security Policy, dependências CDN e usos de `innerHTML`.
-- Rotacionar os códigos de convite antes da publicação definitiva.

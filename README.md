@@ -235,42 +235,7 @@ PixPayment.getQrCodeUrl(payload);
 
 ## Documentação Complementar
 
-- `docs/captcha_turnstile_setup.md`: ativação, testes e rollback do Cloudflare Turnstile nos logins.
 - `docs/release_v3.1.md`: notas da versão 3.1, com métricas do buffet, melhorias nos presentes e referências visuais.
-- `docs/release_v3.0.md`: histórico da versão 3.0, com a migração de segurança e os fluxos validados.
-- `docs/business_flow_and_limitations.md`: fluxos de negócio, limitações e roadmap.
-- `docs/database_modeling.md`: tabelas, campos e regras de banco.
-- `docs/json_payload_modeling.md`: estruturas JSON usadas em RSVP e presentes.
-- `docs/supabase_rebuild_runbook.md`: guia principal para reconstruir banco, Auth, Edge Function, grants e RLS em um projeto Supabase novo.
-- `docs/supabase_rebuild_01_base_schema.sql`: estrutura base fechada das tabelas da aplicação.
-- `docs/buffet_paying_age_migration.sql`: adiciona a regra do buffet em projetos Supabase já existentes.
-- `docs/supabase_rebuild_environment_inventory.md`: inventário das configurações não secretas que devem ser reproduzidas.
-- `docs/supabase_rebuild_verify_final.sql`: verificação final da reconstrução e das permissões.
-- `docs/supabase_data_cleanup_runbook.md`: limpeza segura dos dados de teste, preservando administrador e configurações.
-- `docs/supabase_schema_full_setup.sql`: setup legado anterior à migração de segurança; não usar na reconstrução atual.
-- `docs/security_migration_plan.md`: plano gradual para Supabase Auth, RLS e Edge Functions.
-- `docs/security_admin_setup_runbook.md`: guia reproduzível de toda a configuração administrativa realizada.
-- `docs/security_phase_2_prepare.sql`: estruturas preparatórias da nova autenticação, sem alterar o acesso atual.
-- `docs/security_phase_2_verify.sql`: verificações da estrutura e das permissões preparatórias.
-- `docs/security_phase_2_rollback.sql`: rollback da preparação enquanto a nova autenticação ainda não estiver em uso.
-- `docs/security_admin_authenticated_access.sql`: acesso transitório do painel autenticado às tabelas atuais.
-- `docs/security_admin_authenticated_access_verify.sql`: verificação das permissões transitórias do painel.
-- `docs/security_phase_3_claim_invite_runbook.md`: preparação e deploy seguro da Edge Function de convite.
-- `docs/security_phase_3_claim_invite_prepare.sql`: tabela de tentativas e função atômica de registro de acesso.
-- `docs/security_phase_3_claim_invite_verify.sql`: verificações da estrutura da Edge Function.
-- `docs/security_phase_3_claim_invite_rollback.sql`: rollback da estrutura da Edge Function.
-- `docs/security_phase_3_claim_invite_smoke_test.md`: roteiro de testes após o deploy da função.
-- `docs/security_edge_function_service_role_grants.sql`: privilégios internos necessários para a Edge Function.
-- `docs/security_edge_function_service_role_grants_verify.sql`: verificação dos privilégios da `service_role`.
-- `docs/security_phase_4_rls_runbook.md`: guia de preparação, corte e rollback da RLS definitiva.
-- `docs/security_phase_4_rls_prepare.sql`: políticas, RPCs e triggers criados sem ativar RLS.
-- `docs/security_phase_4_rls_verify_prepare.sql`: verificação segura da preparação da RLS.
-- `docs/security_phase_4_rls_activate.sql`: ativação da RLS para o corte definitivo.
-- `docs/security_phase_4_rls_verify_active.sql`: verificação posterior à ativação.
-- `docs/security_phase_4_rls_activation_rollback.sql`: rollback emergencial para o acesso legado.
-- `docs/security_phase_4_rls_prepare_rollback.sql`: remoção da preparação antes do corte.
-- `docs/security_phase_5_frontend_cutover.md`: migração do frontend público e roteiro do corte definitivo.
-- `docs/security_fix_guest_gift_rpcs.sql`: correção dos RPCs de reserva individual e forma de presentear.
 
 ## Status Atual
 

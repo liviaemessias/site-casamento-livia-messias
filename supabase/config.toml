@@ -1,4 +1,0 @@
-project_id = "site-casamento-livia-messias"
-
-[functions.claim-invite]
-verify_jwt = true

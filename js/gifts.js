@@ -32,6 +32,7 @@ function updateGuestSpecificCopy() {
 let settings = null;
 let selectedGift = null;
 let selectedContribution = null;
+let lastGiftCatalogLoadAt = 0;
 
 const giftsGrid = document.getElementById("giftsGrid");
 const giftsPendingSection = document.getElementById("giftsPendingSection");
@@ -145,7 +146,7 @@ async function loadGifts() {
   if (error) {
     console.error(error);
     showToast("Erro ao carregar presentes.");
-    return;
+    return null;
   }
 
   if (contributionsError) {
@@ -153,12 +154,31 @@ async function loadGifts() {
     showToast("Presentes carregados, mas as cotas não puderam ser lidas.");
   }
 
-  renderGifts(
+  const gifts =
     GuestAuth.isSecureMode()
       ? data || []
-      : withGiftContributionStats(data || [], contributions || []),
-  );
+      : withGiftContributionStats(data || [], contributions || []);
+
+  renderGifts(gifts);
+  lastGiftCatalogLoadAt = Date.now();
+  return gifts;
 }
+
+function refreshGiftCatalogIfStale() {
+  if (Date.now() - lastGiftCatalogLoadAt < 5000) {
+    return;
+  }
+
+  lastGiftCatalogLoadAt = Date.now();
+  loadGifts();
+}
+
+window.addEventListener("focus", refreshGiftCatalogIfStale);
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") {
+    refreshGiftCatalogIfStale();
+  }
+});
 
 function withGiftContributionStats(gifts, contributions) {
   const contributionsByGift = contributions.reduce((groups, contribution) => {
@@ -1462,13 +1482,19 @@ window.selectPurchaseMethod = async function (method) {
 };
 
 /* Reserve Gift */
-async function handleReservationAvailabilityChange(message) {
+async function handleReservationAvailabilityChange(giftId, fallbackMessage) {
   closeReservationConfirmationModal();
   reserveModal.classList.remove("active");
   reserveForm.reset();
   selectedGift = null;
+  const refreshedGifts = await loadGifts();
+  const giftStillExists = refreshedGifts?.some((gift) => gift.id === giftId);
+  const message =
+    Array.isArray(refreshedGifts) && !giftStillExists
+      ? "⚠️ Este presente foi removido e não está mais disponível. A lista foi atualizada."
+      : fallbackMessage;
+
   showToast(message, 5000);
-  await loadGifts();
 }
 
 async function reserveGift(reservationData) {
@@ -1485,6 +1511,7 @@ async function reserveGift(reservationData) {
 
   if (!data) {
     await handleReservationAvailabilityChange(
+      selectedGift.id,
       "⚠️ Este presente acabou de ser reservado por outro convidado. A lista foi atualizada.",
     );
     return null;
@@ -1521,6 +1548,7 @@ async function createQuotaContribution(reservationData) {
 
   if (!data) {
     await handleReservationAvailabilityChange(
+      selectedGift.id,
       "⚠️ A quantidade de cotas disponível mudou. A lista foi atualizada para você tentar novamente.",
     );
     return null;
