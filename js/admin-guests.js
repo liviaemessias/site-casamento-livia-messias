@@ -338,7 +338,7 @@ function renderGuestDetailsActions(guest) {
         <span class="admin-detail-action-icon">${renderAdminIcon("clipboard")}</span>
         <span>
           <strong>Copiar código</strong>
-          <small>Copia o código de acesso deste convite.</small>
+          <small>Copia o código de convite deste convite.</small>
         </span>
       </button>
 
@@ -758,7 +758,7 @@ function buildInvitationMessage(guest) {
         "",
         `*💻 Acessem o Nosso Site:* ${siteUrl} 💜`,
         "",
-        `*🔑 Código de Acesso Exclusivo de Vocês: ${guest.invite_code}*`,
+        `*🔑 Código de Convite Exclusivo de Vocês: ${guest.invite_code}*`,
         "(Este código é único e vinculado ao convite de vocês)",
         "",
         `*✅ Para Confirmarem Presença (Até ${formatInvitationDate(settings.rsvp_deadline)}):*`,
@@ -797,7 +797,7 @@ function buildInvitationMessage(guest) {
         "",
         `*💻 Acesse o Nosso Site:* ${siteUrl} 💜`,
         "",
-        `*🔑 Seu Código de Acesso Exclusivo: ${guest.invite_code}*`,
+        `*🔑 Seu Código de Convite Exclusivo: ${guest.invite_code}*`,
         "(Este código é único e vinculado ao seu convite)",
         "",
         `*✅ Para Confirmar Presença (Até ${formatInvitationDate(settings.rsvp_deadline)}):*`,
