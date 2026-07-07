@@ -14,15 +14,29 @@ const mobileMenu = document.getElementById("mobileMenu");
 const navLinks = document.getElementById("navLinks");
 
 mobileMenu.addEventListener("click", () => {
-  navLinks.classList.toggle("active");
+  const isOpen = navLinks.classList.toggle("active");
+  mobileMenu.setAttribute("aria-expanded", String(isOpen));
+  mobileMenu.setAttribute("aria-label", isOpen ? "Fechar menu" : "Abrir menu");
+  mobileMenu.textContent = isOpen ? "×" : "☰";
 });
 
 // Countdown
-const weddingDate = new Date("2027-04-23T19:00:00");
+const eventDefaults = window.WeddingEventConfig?.getDefaults() || {};
+let weddingDate = new Date(
+  window.publicEventSettings?.wedding_date || eventDefaults.wedding_date,
+);
+
+window.addEventListener("wedding-settings-loaded", (event) => {
+  const configuredDate = new Date(event.detail?.wedding_date);
+  if (!Number.isNaN(configuredDate.getTime())) {
+    weddingDate = configuredDate;
+    updateCountdown();
+  }
+});
 
 function updateCountdown() {
   const now = new Date();
-  const difference = weddingDate - now;
+  const difference = Math.max(0, weddingDate - now);
 
   const days = Math.floor(difference / (1000 * 60 * 60 * 24));
   const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);

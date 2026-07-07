@@ -12,7 +12,13 @@
 
     if (mobileMenu && navLinks) {
       mobileMenu.addEventListener("click", () => {
-        navLinks.classList.toggle("active");
+        const isOpen = navLinks.classList.toggle("active");
+        mobileMenu.setAttribute("aria-expanded", String(isOpen));
+        mobileMenu.setAttribute(
+          "aria-label",
+          isOpen ? "Fechar menu" : "Abrir menu",
+        );
+        mobileMenu.textContent = isOpen ? "×" : "☰";
       });
     }
   }
@@ -42,9 +48,28 @@
     }
   }
 
+  function setupModalScrollLock() {
+    function updateModalState() {
+      document.body.classList.toggle(
+        "public-modal-open",
+        Boolean(document.querySelector(".modal.active")),
+      );
+    }
+
+    const observer = new MutationObserver(updateModalState);
+    observer.observe(document.body, {
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    updateModalState();
+  }
+
   window.PublicCommon = {
     setupLogout,
     setupNavbar,
     showGuestName,
   };
+
+  setupModalScrollLock();
 })();

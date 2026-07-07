@@ -1,6 +1,13 @@
 AdminCommon.setupLogout();
 
+function setElementVisibility(element, visible) {
+  if (!element) return;
+  element.hidden = !visible;
+  element.classList.toggle("is-hidden", !visible);
+}
+
 let editingGuest = null;
+let invitationMessageGuest = null;
 let selectedRSVPGuest = null;
 let selectedExistingRSVP = null;
 let cachedAdminRSVPCompanions = [];
@@ -15,7 +22,6 @@ const guestSearchInput = document.getElementById("guestSearchInput");
 const guestStatusFilter = document.getElementById("guestStatusFilter");
 const guestConfirmedFilter = document.getElementById("guestConfirmedFilter");
 const guestTypeFilter = document.getElementById("guestTypeFilter");
-const guestAdminFilter = document.getElementById("guestAdminFilter");
 const guestFilterCount = document.getElementById("guestFilterCount");
 const exportGuestsButton = document.getElementById("exportGuestsButton");
 const clearGuestFiltersButton = document.getElementById(
@@ -29,6 +35,21 @@ const guestForm = document.getElementById("guestForm");
 const guestModalTitle = document.getElementById("guestModalTitle");
 const guestInviteTypeInput = document.getElementById("guestInviteTypeInput");
 const coupleFields = document.getElementById("coupleFields");
+const invitationMessageModal = document.getElementById(
+  "invitationMessageModal",
+);
+const closeInvitationMessageModalButton = document.getElementById(
+  "closeInvitationMessageModalButton",
+);
+const invitationMessageInput = document.getElementById(
+  "invitationMessageInput",
+);
+const invitationMessageCount = document.getElementById(
+  "invitationMessageCount",
+);
+const copyInvitationMessageButton = document.getElementById(
+  "copyInvitationMessageButton",
+);
 const adminRSVPModal = document.getElementById("adminRSVPModal");
 const closeAdminRSVPModalButton = document.getElementById(
   "closeAdminRSVPModalButton",
@@ -61,6 +82,7 @@ const guestDetailsTitle = document.getElementById("guestDetailsTitle");
 const guestDetailsContent = document.getElementById("guestDetailsContent");
 const { formatDate } = AdminCommon;
 const showAdminToast = AdminCommon.showToast;
+const { escapeAttribute, replaceSafeContent, safeText } = SecurityUtils;
 
 function getAdminPageParams() {
   return new URLSearchParams(window.location.search);
@@ -81,7 +103,6 @@ function applyGuestFiltersFromUrl() {
   setFilterValueFromParam(guestStatusFilter, params, "status");
   setFilterValueFromParam(guestConfirmedFilter, params, "confirmed");
   setFilterValueFromParam(guestTypeFilter, params, "type");
-  setFilterValueFromParam(guestAdminFilter, params, "admin");
 }
 
 function normalizeText(value) {
@@ -140,6 +161,8 @@ function renderAdminIcon(name) {
       '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
     eye:
       '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+    message:
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg>',
     power:
       '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.8 0"/></svg>',
     rsvp:
@@ -154,7 +177,8 @@ function renderGuestActions(guest) {
     <div class="admin-actions compact-actions">
       <button
         class="admin-action-button icon-action"
-        onclick='openGuestDetailsModal(${JSON.stringify(guest)})'
+        data-guest-action="details"
+        data-guest-id="${escapeAttribute(guest.id)}"
         title="Ver detalhes"
       >
         ${renderAdminIcon("eye")}
@@ -163,7 +187,8 @@ function renderGuestActions(guest) {
 
       <button
         class="admin-action-button icon-action"
-        onclick='openEditGuestModal(${JSON.stringify(guest)})'
+        data-guest-action="edit"
+        data-guest-id="${escapeAttribute(guest.id)}"
         title="Editar convidado"
       >
         ${renderAdminIcon("edit")}
@@ -189,7 +214,7 @@ function renderGuestCoupleMembers(guest) {
             (member) => `
               <div class="admin-details-item">
                 <div>
-                  <strong>${member.name || "Sem nome"}</strong>
+                  <strong>${safeText(member.name, "Sem nome")}</strong>
                 </div>
               </div>
             `,
@@ -202,20 +227,20 @@ function renderGuestCoupleMembers(guest) {
 
 function renderGuestInviteMeta(guest) {
   const items = [
-    ["Código", `<code>${guest.invite_code}</code>`],
-    ["Acompanhantes", guest.max_guests || 0],
-    ["Último acesso", formatDate(guest.last_access)],
-    ["Acessos", guest.access_count || 0],
+    { label: "Código", value: guest.invite_code, isCode: true },
+    { label: "Acompanhantes", value: guest.max_guests || 0 },
+    { label: "Último acesso", value: formatDate(guest.last_access) },
+    { label: "Acessos", value: guest.access_count || 0 },
   ];
 
   return `
     <div class="admin-details-meta-grid">
       ${items
         .map(
-          ([label, value]) => `
+          ({ label, value, isCode = false }) => `
             <div class="admin-details-meta-item">
-              <span>${label}</span>
-              <strong>${value}</strong>
+              <span>${safeText(label)}</span>
+              <strong>${isCode ? `<code>${safeText(value)}</code>` : safeText(value)}</strong>
             </div>
           `,
         )
@@ -282,7 +307,8 @@ function renderGuestDetailsActions(guest) {
     <div class="admin-detail-action-grid">
       <button
         class="admin-detail-action-card"
-        onclick='closeGuestDetailsModal(); openEditGuestModal(${JSON.stringify(guest)})'
+        data-guest-detail-action="edit"
+        data-guest-id="${escapeAttribute(guest.id)}"
       >
         <span class="admin-detail-action-icon">${renderAdminIcon("edit")}</span>
         <span>
@@ -293,7 +319,9 @@ function renderGuestDetailsActions(guest) {
 
       <button
         class="admin-detail-action-card ${guest.active ? "danger" : "success"}"
-        onclick='closeGuestDetailsModal(); toggleGuestActive("${guest.id}", ${!guest.active})'
+        data-guest-detail-action="toggle-active"
+        data-guest-id="${escapeAttribute(guest.id)}"
+        data-next-active="${guest.active ? "false" : "true"}"
       >
         <span class="admin-detail-action-icon">${renderAdminIcon("power")}</span>
         <span>
@@ -304,7 +332,8 @@ function renderGuestDetailsActions(guest) {
 
       <button
         class="admin-detail-action-card"
-        onclick='copyInviteCode("${guest.invite_code}")'
+        data-guest-detail-action="copy-code"
+        data-invite-code="${escapeAttribute(guest.invite_code)}"
       >
         <span class="admin-detail-action-icon">${renderAdminIcon("clipboard")}</span>
         <span>
@@ -315,7 +344,20 @@ function renderGuestDetailsActions(guest) {
 
       <button
         class="admin-detail-action-card"
-        onclick='closeGuestDetailsModal(); openAdminRSVPModal(${JSON.stringify(guest)})'
+        data-guest-detail-action="invitation-message"
+        data-guest-id="${escapeAttribute(guest.id)}"
+      >
+        <span class="admin-detail-action-icon">${renderAdminIcon("message")}</span>
+        <span>
+          <strong>Criar mensagem</strong>
+          <small>Prepara o texto personalizado para copiar e enviar.</small>
+        </span>
+      </button>
+
+      <button
+        class="admin-detail-action-card"
+        data-guest-detail-action="rsvp"
+        data-guest-id="${escapeAttribute(guest.id)}"
       >
         <span class="admin-detail-action-icon">${renderAdminIcon("rsvp")}</span>
         <span>
@@ -330,7 +372,7 @@ function renderGuestDetailsActions(guest) {
 window.openGuestDetailsModal = function (guest) {
   guestDetailsTitle.textContent = guest.name || "Detalhes do Convidado";
 
-  guestDetailsContent.innerHTML = `
+  replaceSafeContent(guestDetailsContent, `
     <section class="admin-details-section">
       <span class="admin-details-label">Resumo</span>
       <div class="gift-situation-stack">
@@ -344,11 +386,6 @@ window.openGuestDetailsModal = function (guest) {
           guest.active
             ? '<span class="admin-badge badge-available">Ativo</span>'
             : '<span class="admin-badge badge-danger">Inativo</span>'
-        }
-        ${
-          guest.is_admin
-            ? '<span class="admin-badge badge-bought">Admin</span>'
-            : '<span class="admin-badge badge-muted">Convidado</span>'
         }
       </div>
     </section>
@@ -364,7 +401,7 @@ window.openGuestDetailsModal = function (guest) {
     </section>
 
     ${renderGuestCoupleMembers(guest)}
-  `;
+  `);
 
   guestDetailsModal.classList.add("active");
 };
@@ -391,21 +428,21 @@ async function loadGuestsAdmin() {
 
 function renderGuestsTable(guests) {
   if (!guests.length) {
-    guestsTableBody.innerHTML = `
+    replaceSafeContent(guestsTableBody, `
       <tr>
-        <td colspan="10" class="admin-empty-state">
+        <td colspan="9" class="admin-empty-state">
           Nenhum convidado encontrado para os filtros selecionados.
         </td>
       </tr>
-    `;
+    `);
     return;
   }
 
-  guestsTableBody.innerHTML = guests
+  replaceSafeContent(guestsTableBody, guests
     .map(
       (guest) => `
         <tr>
-          <td>${guest.name}</td>
+          <td>${safeText(guest.name)}</td>
           <td>${renderInviteTypeBadge(guest.invite_type)}</td>
           <td>${guest.max_guests || 0}</td>
           <td>
@@ -423,21 +460,15 @@ function renderGuestsTable(guests) {
             }
           </td>
           <td>
-            ${
-              guest.is_admin
-                ? '<span class="admin-badge badge-bought">Admin</span>'
-                : '<span class="admin-badge badge-muted">-</span>'
-            }
-          </td>
-          <td>
             <button
               type="button"
               class="admin-code-button"
-              onclick='copyInviteCode("${guest.invite_code}")'
+              data-guest-action="copy-code"
+              data-invite-code="${escapeAttribute(guest.invite_code)}"
               title="Copiar código"
-              aria-label="Copiar código ${guest.invite_code}"
+              aria-label="Copiar código ${escapeAttribute(guest.invite_code)}"
             >
-              <code>${guest.invite_code}</code>
+              <code>${safeText(guest.invite_code)}</code>
             </button>
           </td>
           <td>${formatDate(guest.last_access)}</td>
@@ -446,7 +477,7 @@ function renderGuestsTable(guests) {
         </tr>
       `,
     )
-    .join("");
+    .join(""));
 }
 
 function applyGuestFilters() {
@@ -454,7 +485,6 @@ function applyGuestFilters() {
   const status = guestStatusFilter?.value || "";
   const confirmed = guestConfirmedFilter?.value || "";
   const type = guestTypeFilter?.value || "";
-  const admin = guestAdminFilter?.value || "";
 
   const filteredGuests = cachedGuests.filter((guest) => {
     const searchable = normalizeText(
@@ -473,16 +503,8 @@ function applyGuestFilters() {
       !confirmed ||
       (confirmed === "confirmed" ? guest.confirmed : !guest.confirmed);
     const matchesType = !type || guest.invite_type === type;
-    const matchesAdmin =
-      !admin || (admin === "admin" ? guest.is_admin : !guest.is_admin);
 
-    return (
-      matchesSearch &&
-      matchesStatus &&
-      matchesConfirmed &&
-      matchesType &&
-      matchesAdmin
-    );
+    return matchesSearch && matchesStatus && matchesConfirmed && matchesType;
   });
 
   const sortedGuests = sortGuests(filteredGuests);
@@ -519,7 +541,6 @@ function exportGuestsCSV() {
     },
     { label: "RSVP confirmado", value: (guest) => formatBoolean(guest.confirmed) },
     { label: "Ativo", value: (guest) => formatBoolean(guest.active) },
-    { label: "Administrador", value: (guest) => formatBoolean(guest.is_admin) },
     { label: "Codigo", value: "invite_code" },
     { label: "Ultimo acesso", value: (guest) => formatDate(guest.last_access) },
     { label: "Acessos", value: (guest) => Number(guest.access_count || 0) },
@@ -543,7 +564,6 @@ function exportGuestsCSV() {
 function getGuestSortValue(guest) {
   const sortValues = {
     accesses: Number(guest.access_count || 0),
-    admin: guest.is_admin ? 1 : 0,
     code: guest.invite_code,
     companions: Number(guest.max_guests || 0),
     confirmed: guest.confirmed ? 1 : 0,
@@ -600,6 +620,10 @@ function updateGuestFilterCount(count) {
       : `${count} de ${total} convidado${total === 1 ? "" : "s"}`;
 }
 
+function findCachedGuestById(guestId) {
+  return cachedGuests.find((guest) => guest.id === guestId);
+}
+
 function clearGuestFilters() {
   if (guestSearchInput) {
     guestSearchInput.value = "";
@@ -609,7 +633,6 @@ function clearGuestFilters() {
     guestStatusFilter,
     guestConfirmedFilter,
     guestTypeFilter,
-    guestAdminFilter,
   ].forEach((filter) => {
     if (filter) {
       filter.value = "";
@@ -619,15 +642,11 @@ function clearGuestFilters() {
   applyGuestFilters();
 }
 
-function generateInviteCode() {
-  return Math.random().toString(36).substring(2, 8).toUpperCase();
-}
-
 function openGuestModal() {
   editingGuest = null;
   guestModalTitle.textContent = "Novo Convidado";
   guestForm.reset();
-  coupleFields.style.display = "none";
+  setElementVisibility(coupleFields, false);
   document.getElementById("guestMaxGuestsInput").value = 0;
   guestModal.classList.add("active");
 }
@@ -642,24 +661,217 @@ window.openEditGuestModal = function (guest) {
   document.getElementById("guestNameInput").value = guest.name || "";
   guestInviteTypeInput.value = guest.invite_type || "individual";
   document.getElementById("guestMaxGuestsInput").value = guest.max_guests || 0;
-  document.getElementById("guestIsAdminInput").checked = Boolean(
-    guest.is_admin,
-  );
-
   if (guest.invite_type === "couple") {
-    coupleFields.style.display = "block";
+    setElementVisibility(coupleFields, true);
     document.getElementById("coupleMemberOneInput").value =
       guest.couple_members?.[0]?.name || "";
     document.getElementById("coupleMemberTwoInput").value =
       guest.couple_members?.[1]?.name || "";
   } else {
-    coupleFields.style.display = "none";
+    setElementVisibility(coupleFields, false);
     document.getElementById("coupleMemberOneInput").value = "";
     document.getElementById("coupleMemberTwoInput").value = "";
   }
 
   guestModal.classList.add("active");
 };
+
+function formatInvitationDate(value) {
+  const rawValue = String(value || "");
+  const date = new Date(
+    /^\d{4}-\d{2}-\d{2}$/.test(rawValue)
+      ? `${rawValue}T12:00:00-03:00`
+      : rawValue,
+  );
+
+  if (Number.isNaN(date.getTime())) {
+    return rawValue;
+  }
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    timeZone: "America/Sao_Paulo",
+  }).format(date);
+}
+
+function formatInvitationTime(value) {
+  const [hours = "0", minutes = "00"] = String(value || "").split(":");
+  return minutes === "00" ? `${Number(hours)}h` : `${Number(hours)}h${minutes}`;
+}
+
+function getWeddingSiteUrl(settings) {
+  const configuredUrl = String(settings.site_url || "").trim();
+
+  if (configuredUrl) {
+    try {
+      const url = new URL(configuredUrl);
+      if (url.protocol === "https:" || url.protocol === "http:") {
+        return url.href.replace(/\/$/, "");
+      }
+    } catch (error) {
+      console.warn("URL do site configurada é inválida.", error);
+    }
+  }
+
+  return new URL("./", window.location.href).href.replace(/\/$/, "");
+}
+
+function getInvitationRecipientName(guest, isCouple) {
+  if (!isCouple) {
+    return String(guest.name || "").trim();
+  }
+
+  const memberNames = (guest.couple_members || [])
+    .map((member) => String(member.name || "").trim())
+    .filter(Boolean);
+
+  return memberNames.length === 2
+    ? `${memberNames[0]} e ${memberNames[1]}`
+    : String(guest.name || "").trim();
+}
+
+function buildInvitationMessage(guest) {
+  const settings = {
+    ...(window.WeddingEventConfig?.getDefaults() || {}),
+    ...(window.publicEventSettings || {}),
+  };
+  const isCouple = guest.invite_type === "couple";
+  const recipientName =
+    getInvitationRecipientName(guest, isCouple) || "Convidado";
+  const coupleNames = `${settings.bride_name} e ${settings.groom_name}`;
+  const siteUrl = getWeddingSiteUrl(settings);
+  const lines = isCouple
+    ? [
+        `Ooi, *${recipientName}*! Tudo bem?! 💜`,
+        "",
+        'Depois de muitos momentos especiais vividos, estamos prontos para dizer "Sim" e gostaríamos muito que fizessem parte deste momento tão especial: o nosso casamento!',
+        "",
+        "*⛪ A Cerimônia (Missa):*",
+        `* Data: ${formatInvitationDate(settings.wedding_date)} às ${formatInvitationTime(settings.ceremony_time)}`,
+        `* Local: ${settings.ceremony_name}`,
+        "",
+        "*🥂 A Recepção (Festa):*",
+        `* Horário: A partir das ${formatInvitationTime(settings.reception_time)}`,
+        `* Local: ${settings.reception_name}`,
+        "",
+        `*💻 Acessem o Nosso Site:* ${siteUrl} 💜`,
+        "",
+        `*🔑 Código de Acesso Exclusivo de Vocês: ${guest.invite_code}*`,
+        "(Este código é único e vinculado ao convite de vocês)",
+        "",
+        `*✅ Para Confirmarem Presença (Até ${formatInvitationDate(settings.rsvp_deadline)}):*`,
+        "Criamos um site com todos os detalhes do grande dia! Para nos ajudarem na organização, por favor, confirmem a presença de vocês seguindo os passos:",
+        "",
+        '1. Acessem o link do site.',
+        '2. Cliquem em *"RSVP"* ou *"Confirmar Presença"*.',
+        "3. Façam o login com o código exclusivo de vocês.",
+        "4. Preencham as informações solicitadas.",
+        "",
+        "*🎁 Para Verem a Lista de Presentes:*",
+        "Se quiserem nos presentear, nossa lista de presentes também está disponível no mesmo site! O passo a passo é o mesmo:",
+        "",
+        "1. Acessem o link do site.",
+        '2. Cliquem em *"Presentes"* ou *"Ver Lista de Presentes"*.',
+        "3. Façam o login com o código exclusivo de vocês.",
+        "",
+        "Se tiverem alguma dúvida ou problema, por exemplo, não conseguirem confirmar presença pelo site, podem falar por aqui que nós confirmamos manualmente para vocês ou qualquer outra coisa 💜",
+        "",
+        "Será uma grande alegria celebrar esse passo tão importante ao lado de vocês. Nos vemos lá! 💜❤️",
+        "",
+        `Com carinho, *${coupleNames}*!`,
+      ]
+    : [
+        `Ooi, *${recipientName}*! Tudo bem?! 💜`,
+        "",
+        'Depois de muitos momentos especiais vividos, estamos prontos para dizer "Sim" e gostaríamos muito que fizesse parte deste momento tão especial: o nosso casamento!',
+        "",
+        "*⛪ A Cerimônia (Missa):*",
+        `* Data: ${formatInvitationDate(settings.wedding_date)} às ${formatInvitationTime(settings.ceremony_time)}`,
+        `* Local: ${settings.ceremony_name}`,
+        "",
+        "*🥂 A Recepção (Festa):*",
+        `* Horário: A partir das ${formatInvitationTime(settings.reception_time)}`,
+        `* Local: ${settings.reception_name}`,
+        "",
+        `*💻 Acesse o Nosso Site:* ${siteUrl} 💜`,
+        "",
+        `*🔑 Seu Código de Acesso Exclusivo: ${guest.invite_code}*`,
+        "(Este código é único e vinculado ao seu convite)",
+        "",
+        `*✅ Para Confirmar Presença (Até ${formatInvitationDate(settings.rsvp_deadline)}):*`,
+        "Criamos um site com todos os detalhes do grande dia! Para nos ajudar na organização, por favor, confirme sua presença seguindo os passos:",
+        "",
+        "1. Acesse o link do site.",
+        '2. Clique em *"RSVP"* ou *"Confirmar Presença"*.',
+        "3. Faça o login com o seu código exclusivo.",
+        "4. Preencha as informações solicitadas.",
+        "",
+        "*🎁 Para Ver a Lista de Presentes:*",
+        "Se quiser nos presentear, nossa lista de presentes também está disponível no mesmo site! O passo a passo é o mesmo:",
+        "",
+        "1. Acesse o link do site.",
+        '2. Clique em *"Presentes"* ou *"Ver Lista de Presentes"*.',
+        "3. Faça o login com o seu código exclusivo.",
+        "",
+        "Se tiver alguma dúvida ou problema, por exemplo, não conseguir confirmar presença pelo site, pode falar por aqui que nós confirmamos manualmente para você ou qualquer outra coisa 💜",
+        "",
+        "Será uma grande alegria celebrar esse passo tão importante ao seu lado. Nos vemos lá! 💜❤️",
+        "",
+        `Com carinho, *${coupleNames}*!`,
+      ];
+
+  return lines.join("\n");
+}
+
+function updateInvitationMessageCount() {
+  const count = invitationMessageInput.value.length;
+  invitationMessageCount.textContent = `${count} caractere${count === 1 ? "" : "s"}`;
+}
+
+function openInvitationMessageModal(guest) {
+  if (!guest?.invite_code) {
+    showAdminToast("⚠️ Este convidado não possui um código de convite.");
+    return;
+  }
+
+  invitationMessageGuest = guest;
+  invitationMessageInput.value = buildInvitationMessage(guest);
+  updateInvitationMessageCount();
+  closeGuestDetailsModal();
+  invitationMessageModal.classList.add("active");
+  invitationMessageInput.focus();
+}
+
+function closeInvitationMessageModal() {
+  invitationMessageModal.classList.remove("active");
+
+  if (invitationMessageGuest) {
+    const guest = invitationMessageGuest;
+    invitationMessageGuest = null;
+    openGuestDetailsModal(guest);
+  }
+}
+
+async function copyInvitationMessage() {
+  const message = invitationMessageInput.value;
+
+  try {
+    await navigator.clipboard.writeText(message);
+  } catch (error) {
+    invitationMessageInput.focus();
+    invitationMessageInput.select();
+
+    if (!document.execCommand("copy")) {
+      console.error(error);
+      showAdminToast("⚠️ Não foi possível copiar a mensagem.");
+      return;
+    }
+  }
+
+  showAdminToast("💜 Mensagem copiada com sucesso!");
+}
 
 window.toggleGuestActive = async function (guestId, nextActive) {
   const confirmed = confirm(
@@ -672,19 +884,17 @@ window.toggleGuestActive = async function (guestId, nextActive) {
     return;
   }
 
-  const { error } = await supabaseClient
-    .from("guests")
-    .update({
-      active: nextActive,
-    })
-    .eq("id", guestId);
+  const { data, error } = await supabaseClient.rpc("admin_set_guest_active", {
+    target_guest_id: guestId,
+    next_active: nextActive,
+  });
 
-  if (error) {
+  if (error || data !== true) {
     console.error(error);
     showAdminToast(
       nextActive
-        ? "⚠️ Erro ao reativar convidado."
-        : "⚠️ Erro ao desativar convidado.",
+        ? "⚠️ Não foi possível reativar o convidado."
+        : "⚠️ Não foi possível desativar o convidado. Contas administrativas ativas são protegidas.",
     );
     return;
   }
@@ -708,6 +918,53 @@ window.copyInviteCode = async function (code) {
   }
 };
 
+function handleGuestAction(action, guestId, button) {
+  const guest = guestId ? findCachedGuestById(guestId) : null;
+
+  if (
+    (action === "details" ||
+      action === "edit" ||
+      action === "rsvp" ||
+      action === "invitation-message") &&
+    !guest
+  ) {
+    showAdminToast("⚠️ Convidado não encontrado. Atualize a lista e tente novamente.");
+    return;
+  }
+
+  if (action === "details") {
+    openGuestDetailsModal(guest);
+    return;
+  }
+
+  if (action === "edit") {
+    closeGuestDetailsModal();
+    openEditGuestModal(guest);
+    return;
+  }
+
+  if (action === "toggle-active") {
+    closeGuestDetailsModal();
+    toggleGuestActive(guestId, button.dataset.nextActive === "true");
+    return;
+  }
+
+  if (action === "copy-code") {
+    copyInviteCode(button.dataset.inviteCode || "");
+    return;
+  }
+
+  if (action === "invitation-message") {
+    openInvitationMessageModal(guest);
+    return;
+  }
+
+  if (action === "rsvp") {
+    closeGuestDetailsModal();
+    openAdminRSVPModal(guest);
+  }
+}
+
 function closeAdminRSVPModal() {
   adminRSVPModal.classList.remove("active");
   selectedRSVPGuest = null;
@@ -715,7 +972,7 @@ function closeAdminRSVPModal() {
 }
 
 function renderAdminRSVPGuestOptions(maxGuests) {
-  adminRSVPGuestCountInput.innerHTML = "";
+  adminRSVPGuestCountInput.replaceChildren();
 
   for (let i = 0; i <= maxGuests; i++) {
     const option = document.createElement("option");
@@ -746,61 +1003,81 @@ function getAdminRSVPCompanions() {
   return companions;
 }
 
+function createAdminFormGroup(labelText, field) {
+  const group = document.createElement("div");
+  const label = document.createElement("label");
+
+  group.className = "admin-form-group";
+  label.textContent = labelText;
+  group.append(label, field);
+
+  return group;
+}
+
+function createAdminRSVPCompanionField(index, companion = {}) {
+  const wrapper = document.createElement("div");
+  const title = document.createElement("h4");
+  const nameInput = document.createElement("input");
+  const childSelect = document.createElement("select");
+  const noOption = document.createElement("option");
+  const yesOption = document.createElement("option");
+  const ageGroup = document.createElement("div");
+  const ageLabel = document.createElement("label");
+  const ageSelect = document.createElement("select");
+  const help = document.createElement("small");
+  const isChild = companion.is_child === "Sim";
+
+  wrapper.className = "admin-rsvp-companion-card";
+  title.textContent = `Acompanhante ${index}`;
+
+  nameInput.type = "text";
+  nameInput.className = "admin-rsvp-companion-name";
+  nameInput.dataset.index = index;
+  nameInput.value = companion.name || "";
+  nameInput.required = true;
+
+  childSelect.className = "admin-rsvp-companion-child";
+  childSelect.dataset.index = index;
+  noOption.value = "Não";
+  noOption.textContent = "Não";
+  noOption.selected = !isChild;
+  yesOption.value = "Sim";
+  yesOption.textContent = "Sim";
+  yesOption.selected = isChild;
+  childSelect.append(noOption, yesOption);
+
+  ageGroup.className = `admin-form-group admin-rsvp-companion-age-group${
+    isChild ? "" : " is-hidden"
+  }`;
+  ageGroup.dataset.index = index;
+  ageLabel.textContent = "Idade da criança no casamento";
+  ageSelect.className = "admin-rsvp-companion-age";
+  ageSelect.dataset.index = index;
+  ageSelect.required = isChild;
+  ChildAgeOptions.populateSelect(ageSelect, companion.age);
+  help.className = "admin-field-help";
+  help.textContent =
+    "Considere a idade que a criança terá na data do casamento.";
+  ageGroup.append(ageLabel, ageSelect, help);
+
+  wrapper.append(
+    title,
+    createAdminFormGroup("Nome", nameInput),
+    createAdminFormGroup("É criança?", childSelect),
+    ageGroup,
+  );
+
+  return wrapper;
+}
+
 function renderAdminRSVPCompanionFields(companions = []) {
-  adminRSVPGuestFields.innerHTML = "";
+  adminRSVPGuestFields.replaceChildren();
 
   const count = Number(adminRSVPGuestCountInput.value || 0);
 
   for (let i = 1; i <= count; i++) {
     const companion = companions[i - 1] || {};
-    const wrapper = document.createElement("div");
-
-    wrapper.classList.add("admin-rsvp-companion-card");
-    wrapper.innerHTML = `
-      <h4>Acompanhante ${i}</h4>
-
-      <div class="admin-form-group">
-        <label>Nome</label>
-        <input
-          type="text"
-          class="admin-rsvp-companion-name"
-          data-index="${i}"
-          value="${companion.name || ""}"
-          required
-        >
-      </div>
-
-      <div class="admin-form-group">
-        <label>É criança?</label>
-        <select class="admin-rsvp-companion-child" data-index="${i}">
-          <option value="Não" ${companion.is_child === "Não" ? "selected" : ""}>
-            Não
-          </option>
-          <option value="Sim" ${companion.is_child === "Sim" ? "selected" : ""}>
-            Sim
-          </option>
-        </select>
-      </div>
-
-      <div
-        class="admin-form-group admin-rsvp-companion-age-group ${
-          companion.is_child === "Sim" ? "" : "is-hidden"
-        }"
-        data-index="${i}"
-      >
-        <label>Idade da criança no casamento</label>
-        <select
-          class="admin-rsvp-companion-age"
-          data-index="${i}"
-          ${companion.is_child === "Sim" ? "required" : ""}
-        >
-          ${ChildAgeOptions.renderOptions(companion.age)}
-        </select>
-        <small class="admin-field-help">
-          Considere a idade que a criança terá na data do casamento.
-        </small>
-      </div>
-    `;
+    const wrapper = createAdminRSVPCompanionField(i, companion);
 
     adminRSVPGuestFields.appendChild(wrapper);
 
@@ -810,7 +1087,7 @@ function renderAdminRSVPCompanionFields(companions = []) {
 
     childSelect.addEventListener("change", () => {
       const isChild = childSelect.value === "Sim";
-      ageGroup.style.display = isChild ? "block" : "none";
+      setElementVisibility(ageGroup, isChild);
       ageInput.required = isChild;
 
       if (!isChild && ageInput) {
@@ -832,11 +1109,11 @@ function hideAdminRSVPCompanions(keepCache = true) {
   const guestCountGroup = adminRSVPGuestCountInput.closest(".admin-form-group");
 
   if (guestCountGroup) {
-    guestCountGroup.style.display = "none";
+    setElementVisibility(guestCountGroup, false);
   }
 
   adminRSVPGuestCountInput.value = 0;
-  adminRSVPGuestFields.innerHTML = "";
+  adminRSVPGuestFields.replaceChildren();
 }
 
 function showAdminRSVPCompanionsIfAllowed() {
@@ -850,7 +1127,7 @@ function showAdminRSVPCompanionsIfAllowed() {
   const guestCountGroup = adminRSVPGuestCountInput.closest(".admin-form-group");
 
   if (guestCountGroup) {
-    guestCountGroup.style.display = "block";
+    setElementVisibility(guestCountGroup, true);
   }
 
   if (cachedAdminRSVPCompanions.length > 0) {
@@ -882,8 +1159,8 @@ function updateAdminRSVPCoupleCompanionVisibility() {
 window.openAdminRSVPModal = async function (selectedGuest) {
   selectedRSVPGuest = selectedGuest;
   adminRSVPForm.reset();
-  adminRSVPGuestFields.innerHTML = "";
-  adminRSVPModalTitle.textContent = `RSVP de ${selectedGuest.name}`;
+  adminRSVPGuestFields.replaceChildren();
+  adminRSVPModalTitle.textContent = `RSVP de ${selectedGuest.name || "Convidado"}`;
   renderAdminRSVPGuestOptions(selectedGuest.max_guests || 0);
 
   const { data, error } = await supabaseClient
@@ -899,37 +1176,39 @@ window.openAdminRSVPModal = async function (selectedGuest) {
   }
 
   selectedExistingRSVP = data;
-  deleteAdminRSVPButton.style.display = selectedExistingRSVP ? "block" : "none";
+  setElementVisibility(deleteAdminRSVPButton, Boolean(selectedExistingRSVP));
   cachedAdminRSVPCompanions = data?.guest_data?.companions || [];
   adminRSVPEmailInput.value = data?.email || "";
   adminRSVPPhoneInput.value = data?.phone || "";
 
   if (selectedGuest.invite_type === "couple") {
-    adminRSVPPresenceGroup.style.display = "none";
-    adminRSVPCoupleMembers.style.display = "block";
+    setElementVisibility(adminRSVPPresenceGroup, false);
+    setElementVisibility(adminRSVPCoupleMembers, true);
 
     const members = selectedGuest.couple_members || [];
     const existingMembers = data?.guest_data?.members || [];
 
-    adminRSVPCoupleMembers.innerHTML = members
-      .map((member, index) => {
-        const existingPresence = existingMembers[index]?.presence || "Sim";
+    adminRSVPCoupleMembers.replaceChildren();
 
-        return `
-          <div class="admin-form-group">
-            <label>${member.name}</label>
-            <select class="admin-rsvp-member-presence" data-index="${index}">
-              <option value="Sim" ${existingPresence === "Sim" ? "selected" : ""}>
-                Sim
-              </option>
-              <option value="Não" ${existingPresence === "Não" ? "selected" : ""}>
-                Não
-              </option>
-            </select>
-          </div>
-        `;
-      })
-      .join("");
+    members.forEach((member, index) => {
+      const existingPresence = existingMembers[index]?.presence || "Sim";
+      const select = document.createElement("select");
+      const yesOption = document.createElement("option");
+      const noOption = document.createElement("option");
+
+      select.className = "admin-rsvp-member-presence";
+      select.dataset.index = index;
+      yesOption.value = "Sim";
+      yesOption.textContent = "Sim";
+      yesOption.selected = existingPresence === "Sim";
+      noOption.value = "Não";
+      noOption.textContent = "Não";
+      noOption.selected = existingPresence === "Não";
+      select.append(yesOption, noOption);
+      adminRSVPCoupleMembers.appendChild(
+        createAdminFormGroup(member.name || "Sem nome", select),
+      );
+    });
 
     document
       .querySelectorAll(".admin-rsvp-member-presence")
@@ -940,8 +1219,8 @@ window.openAdminRSVPModal = async function (selectedGuest) {
         );
       });
   } else {
-    adminRSVPPresenceGroup.style.display = "block";
-    adminRSVPCoupleMembers.style.display = "none";
+    setElementVisibility(adminRSVPPresenceGroup, true);
+    setElementVisibility(adminRSVPCoupleMembers, false);
     adminRSVPPresenceInput.value = data?.presence || "Sim";
   }
 
@@ -975,8 +1254,6 @@ guestForm.addEventListener("submit", async (event) => {
   const maxGuests = Number(
     document.getElementById("guestMaxGuestsInput").value || 0,
   );
-  const isAdmin = document.getElementById("guestIsAdminInput").checked;
-
   let coupleMembers = null;
 
   if (inviteType === "couple") {
@@ -995,24 +1272,24 @@ guestForm.addEventListener("submit", async (event) => {
     invite_type: inviteType,
     couple_members: coupleMembers,
     max_guests: maxGuests,
-    is_admin: isAdmin,
   };
 
-  if (!editingGuest) {
-    payload.invite_code = generateInviteCode();
-    payload.confirmed = false;
-    payload.active = true;
-    payload.access_count = 0;
-  }
-
   const result = editingGuest
-    ? await supabaseClient
-        .from("guests")
-        .update(payload)
-        .eq("id", editingGuest.id)
-    : await supabaseClient.from("guests").insert([payload]);
+    ? await supabaseClient.rpc("admin_update_guest", {
+        target_guest_id: editingGuest.id,
+        p_name: payload.name,
+        p_invite_type: payload.invite_type,
+        p_couple_members: payload.couple_members,
+        p_max_guests: payload.max_guests,
+      })
+    : await supabaseClient.rpc("create_guest_with_invite_code", {
+        p_name: payload.name,
+        p_invite_type: payload.invite_type,
+        p_couple_members: payload.couple_members,
+        p_max_guests: payload.max_guests,
+      });
 
-  if (result.error) {
+  if (result.error || result.data === false) {
     console.error(result.error);
     showAdminToast(
       editingGuest
@@ -1071,13 +1348,11 @@ adminRSVPForm.addEventListener("submit", async (event) => {
   }
 
   const payload = {
-    guest_id: selectedRSVPGuest.id,
     presence: finalPresence,
     email: adminRSVPEmailInput.value || "",
     phone: adminRSVPPhoneInput.value || "",
     food: adminRSVPFoodInput.value || "",
     message: adminRSVPMessageInput.value || "",
-    updated_at: new Date().toISOString(),
     guest_data: {
       name: selectedRSVPGuest.name,
       email: adminRSVPEmailInput.value || "",
@@ -1088,28 +1363,22 @@ adminRSVPForm.addEventListener("submit", async (event) => {
     },
   };
 
-  const result = selectedExistingRSVP
-    ? await supabaseClient
-        .from("rsvps")
-        .update(payload)
-        .eq("id", selectedExistingRSVP.id)
-    : await supabaseClient.from("rsvps").insert([payload]);
+  const result = await supabaseClient.rpc("admin_save_guest_rsvp", {
+    target_guest_id: selectedRSVPGuest.id,
+    submitted_presence: payload.presence,
+    submitted_email: payload.email,
+    submitted_phone: payload.phone,
+    submitted_food: payload.food,
+    submitted_message: payload.message,
+    submitted_guest_data: payload.guest_data,
+  });
 
-  if (result.error) {
+  if (result.error || result.data !== true) {
     console.error(result.error);
-    showAdminToast("⚠️ Erro ao salvar RSVP.");
+    showAdminToast(
+      "⚠️ Não foi possível salvar o RSVP. Revise os dados e tente novamente.",
+    );
     return;
-  }
-
-  const { error: guestError } = await supabaseClient
-    .from("guests")
-    .update({
-      confirmed: true,
-    })
-    .eq("id", selectedRSVPGuest.id);
-
-  if (guestError) {
-    console.error(guestError);
   }
 
   closeAdminRSVPModal();
@@ -1132,23 +1401,17 @@ deleteAdminRSVPButton.addEventListener("click", async () => {
     return;
   }
 
-  const { error } = await supabaseClient
-    .from("rsvps")
-    .delete()
-    .eq("id", selectedExistingRSVP.id);
+  const { data, error } = await supabaseClient.rpc("admin_delete_guest_rsvp", {
+    target_rsvp_id: selectedExistingRSVP.id,
+  });
 
-  if (error) {
+  if (error || data !== true) {
     console.error(error);
-    showAdminToast("⚠️ Erro ao remover RSVP.");
+    showAdminToast(
+      "⚠️ Não foi possível remover o RSVP. Atualize a lista e tente novamente.",
+    );
     return;
   }
-
-  await supabaseClient
-    .from("guests")
-    .update({
-      confirmed: false,
-    })
-    .eq("id", selectedRSVPGuest.id);
 
   closeAdminRSVPModal();
   showAdminToast("💜 RSVP removido com sucesso!");
@@ -1157,6 +1420,12 @@ deleteAdminRSVPButton.addEventListener("click", async () => {
 
 openGuestModalButton.addEventListener("click", openGuestModal);
 closeGuestModalButton.addEventListener("click", closeGuestModal);
+closeInvitationMessageModalButton.addEventListener(
+  "click",
+  closeInvitationMessageModal,
+);
+copyInvitationMessageButton.addEventListener("click", copyInvitationMessage);
+invitationMessageInput.addEventListener("input", updateInvitationMessageCount);
 closeGuestDetailsModalButton.addEventListener("click", () => {
   closeGuestDetailsModal();
 });
@@ -1167,7 +1436,6 @@ closeAdminRSVPModalButton.addEventListener("click", closeAdminRSVPModal);
   guestStatusFilter,
   guestConfirmedFilter,
   guestTypeFilter,
-  guestAdminFilter,
 ].forEach((filter) => {
   filter?.addEventListener("input", applyGuestFilters);
   filter?.addEventListener("change", applyGuestFilters);
@@ -1176,6 +1444,30 @@ closeAdminRSVPModalButton.addEventListener("click", closeAdminRSVPModal);
 clearGuestFiltersButton?.addEventListener("click", clearGuestFilters);
 exportGuestsButton?.addEventListener("click", exportGuestsCSV);
 
+guestsTableBody?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-guest-action]");
+
+  if (!button) {
+    return;
+  }
+
+  handleGuestAction(button.dataset.guestAction, button.dataset.guestId, button);
+});
+
+guestDetailsContent?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-guest-detail-action]");
+
+  if (!button) {
+    return;
+  }
+
+  handleGuestAction(
+    button.dataset.guestDetailAction,
+    button.dataset.guestId,
+    button,
+  );
+});
+
 document.querySelectorAll("[data-guest-sort]").forEach((button) => {
   button.addEventListener("click", () => {
     setGuestSort(button.dataset.guestSort);
@@ -1183,13 +1475,18 @@ document.querySelectorAll("[data-guest-sort]").forEach((button) => {
 });
 
 guestInviteTypeInput.addEventListener("change", () => {
-  coupleFields.style.display =
-    guestInviteTypeInput.value === "couple" ? "block" : "none";
+  setElementVisibility(coupleFields, guestInviteTypeInput.value === "couple");
 });
 
 guestModal.addEventListener("click", (event) => {
   if (event.target === guestModal) {
     closeGuestModal();
+  }
+});
+
+invitationMessageModal.addEventListener("click", (event) => {
+  if (event.target === invitationMessageModal) {
+    closeInvitationMessageModal();
   }
 });
 

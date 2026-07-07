@@ -13,7 +13,10 @@ const mobileMenu = document.getElementById("mobileMenu");
 const navLinks = document.getElementById("navLinks");
 
 mobileMenu.addEventListener("click", () => {
-  navLinks.classList.toggle("active");
+  const isOpen = navLinks.classList.toggle("active");
+  mobileMenu.setAttribute("aria-expanded", String(isOpen));
+  mobileMenu.setAttribute("aria-label", isOpen ? "Fechar menu" : "Abrir menu");
+  mobileMenu.textContent = isOpen ? "×" : "☰";
 });
 
 // Reveal Animation

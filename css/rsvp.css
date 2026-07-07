@@ -187,8 +187,29 @@ textarea {
 }
 
 @media (max-width: 768px) {
+  .rsvp-hero {
+    height: 55vh;
+    min-height: 420px;
+  }
+
+  .hero-content {
+    width: 100%;
+    max-width: 340px;
+    padding: 0 1.25rem;
+    transform: translateY(1.5rem);
+  }
+
+  .hero-subtitle {
+    margin-bottom: 1.25rem;
+  }
+
   .hero-content h1 {
     font-size: 3rem;
+  }
+
+  .hero-text {
+    font-size: 1rem;
+    line-height: 1.65rem;
   }
 
   .rsvp-card {
@@ -251,9 +272,13 @@ textarea {
 
 .mobile-menu {
   display: none;
-  background: none;
-  border: none;
-  font-size: 2rem;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--color-primary-muted);
+  border-radius: 8px;
+  background: var(--color-surface-strong);
+  font-size: 1.65rem;
+  line-height: 1;
   color: var(--color-primary);
   cursor: pointer;
 }
@@ -427,5 +452,9 @@ textarea {
 }
 
 .navbar-light .mobile-menu {
-  color: var(--color-text);
+  color: var(--color-primary);
+}
+
+#guestFields:not(:empty) {
+  margin-bottom: 2rem;
 }

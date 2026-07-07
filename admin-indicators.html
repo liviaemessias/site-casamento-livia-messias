@@ -1,0 +1,951 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://unpkg.com https://challenges.cloudflare.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Indicadores | Painel Admin | Livia & Messias</title>
+
+    <link rel="stylesheet" href="./css/style.css" />
+
+    <link rel="stylesheet" href="./css/admin.css" />
+  </head>
+
+  <body class="admin-auth-pending">
+    <main class="admin-page admin-dashboard-page admin-indicators-page">
+      <section class="admin-header">
+        <div>
+          <p class="section-subtitle">Painel Administrativo</p>
+
+          <h1>Indicadores</h1>
+        </div>
+
+        <button id="logoutButton" class="admin-logout">Sair</button>
+      </section>
+
+      <nav class="admin-nav" aria-label="Navegação administrativa">
+        <a class="admin-nav-link" href="./admin-dashboard.html">
+          Dashboard
+        </a>
+        <a class="admin-nav-link" href="./admin-gifts.html">Presentes</a>
+        <a class="admin-nav-link" href="./admin-rsvps.html">RSVP</a>
+        <a class="admin-nav-link" href="./admin-guests.html">Convidados</a>
+        <a class="admin-nav-link" href="./admin-settings.html">
+          Configurações
+        </a>
+      </nav>
+
+      <section class="metrics-section dashboard-summary">
+        <div class="metrics-header">
+          <h2>Resumo do Casamento</h2>
+        </div>
+
+        <div class="admin-grid dashboard-grid">
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Convites Ativos</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre Convites Ativos"
+                data-tooltip="Cadastros de convite ativos. Cada convite pode ser individual ou de casal."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalGuests">0</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Convites com RSVP</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre Convites com RSVP"
+                data-tooltip="Convites ativos que já possuem RSVP registrado."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalConfirmed">0</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Acompanhantes Confirmados</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre Acompanhantes Confirmados"
+                data-tooltip="Acompanhantes informados em RSVPs com presença confirmada."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalCompanions">0</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Convites com Presença</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre Convites com Presença"
+                data-tooltip="Convites ativos em que pelo menos uma pessoa confirmou presença."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalYesRSVP">0</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Convites Ausentes</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre Convites Ausentes"
+                data-tooltip="RSVPs ativos marcados com presença Não."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalNoRSVP">0</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Pessoas Esperadas</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre Pessoas Esperadas"
+                data-tooltip="Soma de convidados, membros de casal e acompanhantes com presença confirmada."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalExpectedGuests">0</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Convidados Planejados</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre Convidados Planejados"
+                data-tooltip="Pessoas principais dos convites ativos: uma por convite individual e duas por convite de casal."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalPlannedGuests">0</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Acompanhantes Planejados</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre Acompanhantes Planejados"
+                data-tooltip="Soma da quantidade máxima de acompanhantes permitida nos convites ativos."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalPlannedCompanions">0</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Total Planejado</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre Total Planejado"
+                data-tooltip="Capacidade máxima planejada: convidados principais mais todos os acompanhantes permitidos."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalPlannedPeople">0</strong>
+          </div>
+        </div>
+
+        <div class="dashboard-chart-card" aria-labelledby="attendanceChartTitle">
+          <div class="dashboard-chart-header">
+            <div>
+              <h3 id="attendanceChartTitle">Distribuição dos RSVPs</h3>
+              <p>Visualização dos convites ativos entre presença confirmada, ausência confirmada e pendentes de resposta.</p>
+            </div>
+
+            <span id="attendanceChartTotal">0 convites</span>
+          </div>
+
+          <div
+            class="dashboard-stacked-bar"
+            id="attendanceStackedBar"
+            role="img"
+            aria-label="Distribuição dos RSVPs dos convites ativos"
+          >
+            <span class="chart-segment confirmed" id="attendanceYesSegment"></span>
+            <span class="chart-segment declined" id="attendanceNoSegment"></span>
+            <span class="chart-segment pending" id="attendancePendingSegment"></span>
+          </div>
+
+          <div class="dashboard-chart-legend">
+            <div class="chart-legend-item">
+              <span class="chart-dot confirmed"></span>
+              <div>
+                <strong>Confirmaram</strong>
+                <small id="attendanceYesLegend">0 · 0%</small>
+              </div>
+            </div>
+
+            <div class="chart-legend-item">
+              <span class="chart-dot declined"></span>
+              <div>
+                <strong>Não comparecerão</strong>
+                <small id="attendanceNoLegend">0 · 0%</small>
+              </div>
+            </div>
+
+            <div class="chart-legend-item">
+              <span class="chart-dot pending"></span>
+              <div>
+                <strong>Sem RSVP</strong>
+                <small id="attendancePendingLegend">0 · 0%</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <section class="metrics-section dashboard-summary">
+        <div class="metrics-header dashboard-metrics-header">
+          <h2>Resumo do Buffet</h2>
+          <p id="buffetPayingRule">Pagantes a partir de 7 anos.</p>
+        </div>
+
+        <div class="admin-grid dashboard-grid">
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Convidados Pagantes</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre Convidados Pagantes"
+                data-tooltip="Adultos e crianças confirmadas que atingem a idade mínima pagante configurada."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalPayingGuests">0</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Total de Crianças</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre Total de Crianças"
+                data-tooltip="Todas as crianças informadas como acompanhantes em presenças confirmadas."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalChildren">0</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Crianças Pagantes</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre Crianças Pagantes"
+                data-tooltip="Crianças confirmadas com idade igual ou superior à idade mínima pagante."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalPayingChildren">0</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Crianças Não Pagantes</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre Crianças Não Pagantes"
+                data-tooltip="Crianças confirmadas abaixo da idade mínima pagante."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalNonPayingChildren">0</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Crianças Sem Idade</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre Crianças Sem Idade"
+                data-tooltip="Crianças confirmadas cuja idade não pôde ser classificada. Corrija o RSVP antes de enviar os números ao buffet."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalUnknownAgeChildren">0</strong>
+          </div>
+        </div>
+
+        <div class="dashboard-chart-card" aria-labelledby="buffetChartTitle">
+          <div class="dashboard-chart-header">
+            <div>
+              <h3 id="buffetChartTitle">Distribuição para o Buffet</h3>
+              <p>
+                Pessoas confirmadas classificadas conforme a idade mínima
+                pagante configurada.
+              </p>
+            </div>
+
+            <span id="buffetChartTotal">0 pessoas</span>
+          </div>
+
+          <div
+            class="dashboard-stacked-bar"
+            id="buffetStackedBar"
+            role="img"
+            aria-label="Distribuição das pessoas confirmadas para o buffet"
+          >
+            <span
+              class="chart-segment buffet-adult"
+              id="buffetAdultSegment"
+            ></span>
+            <span
+              class="chart-segment buffet-child-paying"
+              id="buffetPayingChildSegment"
+            ></span>
+            <span
+              class="chart-segment buffet-child-non-paying"
+              id="buffetNonPayingChildSegment"
+            ></span>
+            <span
+              class="chart-segment buffet-child-unknown"
+              id="buffetUnknownChildSegment"
+            ></span>
+          </div>
+
+          <div class="dashboard-chart-legend">
+            <div class="chart-legend-item">
+              <span class="chart-dot buffet-adult"></span>
+              <div>
+                <strong>Adultos Pagantes</strong>
+                <small id="buffetAdultLegend">0 · 0%</small>
+              </div>
+            </div>
+
+            <div class="chart-legend-item">
+              <span class="chart-dot buffet-child-paying"></span>
+              <div>
+                <strong>Crianças Pagantes</strong>
+                <small id="buffetPayingChildLegend">0 · 0%</small>
+              </div>
+            </div>
+
+            <div class="chart-legend-item">
+              <span class="chart-dot buffet-child-non-paying"></span>
+              <div>
+                <strong>Crianças Não Pagantes</strong>
+                <small id="buffetNonPayingChildLegend">0 · 0%</small>
+              </div>
+            </div>
+
+            <div class="chart-legend-item">
+              <span class="chart-dot buffet-child-unknown"></span>
+              <div>
+                <strong>Crianças Sem Idade</strong>
+                <small id="buffetUnknownChildLegend">0 · 0%</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="metrics-section dashboard-summary">
+        <div class="metrics-header">
+          <h2>Resumo dos Presentes</h2>
+        </div>
+
+        <div class="admin-grid dashboard-grid">
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Total de Presentes</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre Total de Presentes"
+                data-tooltip="Todos os presentes cadastrados, individuais e por cotas."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalGifts">0</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Disponíveis</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre Disponíveis"
+                data-tooltip="Presentes individuais disponíveis e presentes por cotas com cotas livres."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalAvailableGifts">0</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Parciais</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre Parciais"
+                data-tooltip="Presentes por cotas com algumas cotas reservadas e outras ainda livres."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalPartialGifts">0</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Reservados</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre Reservados"
+                data-tooltip="Presentes individuais reservados e presentes por cotas com reservas parciais ou completas, ainda não totalmente confirmados."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalReservedGifts">0</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Comprados</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre Comprados"
+                data-tooltip="Individuais comprados e presentes por cotas com todas as cotas confirmadas."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalBoughtGifts">0</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Pagamentos Informados</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre Pagamentos Informados"
+                data-tooltip="Presentes individuais e contribuições por cotas informados, aguardando confirmação."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalPaymentsReported">0</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Cotas Disponíveis</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre Cotas Disponíveis"
+                data-tooltip="Soma das cotas ainda livres em presentes por cotas."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalAvailableQuotas">0</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Cotas Confirmadas</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre Cotas Confirmadas"
+                data-tooltip="Soma das cotas já confirmadas pelos noivos."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalConfirmedQuotas">0</strong>
+          </div>
+        </div>
+
+        <div class="dashboard-chart-card" aria-labelledby="giftChartTitle">
+          <div class="dashboard-chart-header">
+            <div>
+              <h3 id="giftChartTitle">Distribuição dos Presentes</h3>
+              <p>Visualização dos presentes por situação atual na lista.</p>
+            </div>
+
+            <span id="giftChartTotal">0 presentes</span>
+          </div>
+
+          <div
+            class="dashboard-stacked-bar"
+            id="giftStackedBar"
+            role="img"
+            aria-label="Distribuição dos presentes por situação"
+          >
+            <span class="chart-segment available" id="giftAvailableSegment"></span>
+            <span class="chart-segment partial" id="giftPartialSegment"></span>
+            <span class="chart-segment pending" id="giftReservedSegment"></span>
+            <span class="chart-segment confirmed" id="giftBoughtSegment"></span>
+          </div>
+
+          <div class="dashboard-chart-legend">
+            <div class="chart-legend-item">
+              <span class="chart-dot available"></span>
+              <div>
+                <strong>Disponíveis</strong>
+                <small id="giftAvailableLegend">0 · 0%</small>
+              </div>
+            </div>
+
+            <div class="chart-legend-item">
+              <span class="chart-dot partial"></span>
+              <div>
+                <strong>Parciais</strong>
+                <small id="giftPartialLegend">0 · 0%</small>
+              </div>
+            </div>
+
+            <div class="chart-legend-item">
+              <span class="chart-dot pending"></span>
+              <div>
+                <strong>Reservados</strong>
+                <small id="giftReservedLegend">0 · 0%</small>
+              </div>
+            </div>
+
+            <div class="chart-legend-item">
+              <span class="chart-dot confirmed"></span>
+              <div>
+                <strong>Comprados</strong>
+                <small id="giftBoughtLegend">0 · 0%</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="metrics-section dashboard-summary">
+        <div class="metrics-header">
+          <h2>Resumo Financeiro</h2>
+        </div>
+
+        <div class="admin-grid dashboard-grid">
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Valor da Lista</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre Valor da Lista"
+                data-tooltip="Soma dos presentes com valor cadastrado, incluindo o valor total dos presentes por cotas."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalGiftValue" class="dashboard-money">R$ 0,00</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Valor Reservado</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre Valor Reservado"
+                data-tooltip="Soma dos presentes individuais reservados/comprados e das cotas já escolhidas pelos convidados."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalReservedValue" class="dashboard-money">R$ 0,00</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Valor Disponível</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre Valor Disponível"
+                data-tooltip="Valor estimado ainda livre na lista, considerando apenas presentes com valor cadastrado."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalAvailableValue" class="dashboard-money">R$ 0,00</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Pagamento Informado</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre Pagamento Informado"
+                data-tooltip="Valores que os convidados marcaram como pagos/comprados e ainda aguardam confirmação dos noivos."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalReportedValue" class="dashboard-money">R$ 0,00</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Valor Confirmado</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre Valor Confirmado"
+                data-tooltip="Valores já confirmados pelos noivos em presentes individuais e contribuições por cotas."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalConfirmedValue" class="dashboard-money">R$ 0,00</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Valor Pendente</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre Valor Pendente"
+                data-tooltip="Valor reservado que ainda não foi informado nem confirmado."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalPendingValue" class="dashboard-money">R$ 0,00</strong>
+          </div>
+        </div>
+
+        <div class="dashboard-chart-card" aria-labelledby="financialChartTitle">
+          <div class="dashboard-chart-header">
+            <div>
+              <h3 id="financialChartTitle">Distribuição dos Valores</h3>
+              <p>Comparativo visual entre valores disponíveis, pendentes, informados e confirmados.</p>
+            </div>
+
+            <span id="financialChartTotal">R$ 0,00</span>
+          </div>
+
+          <div
+            class="dashboard-stacked-bar"
+            id="financialStackedBar"
+            role="img"
+            aria-label="Distribuição dos valores da lista de presentes"
+          >
+            <span class="chart-segment available" id="financialAvailableSegment"></span>
+            <span class="chart-segment pending" id="financialPendingSegment"></span>
+            <span class="chart-segment reported" id="financialReportedSegment"></span>
+            <span class="chart-segment confirmed" id="financialConfirmedSegment"></span>
+          </div>
+
+          <div class="dashboard-chart-legend">
+            <div class="chart-legend-item">
+              <span class="chart-dot available"></span>
+              <div>
+                <strong>Disponível</strong>
+                <small id="financialAvailableLegend">R$ 0,00 · 0%</small>
+              </div>
+            </div>
+
+            <div class="chart-legend-item">
+              <span class="chart-dot pending"></span>
+              <div>
+                <strong>Pendente</strong>
+                <small id="financialPendingLegend">R$ 0,00 · 0%</small>
+              </div>
+            </div>
+
+            <div class="chart-legend-item">
+              <span class="chart-dot reported"></span>
+              <div>
+                <strong>Informado</strong>
+                <small id="financialReportedLegend">R$ 0,00 · 0%</small>
+              </div>
+            </div>
+
+            <div class="chart-legend-item">
+              <span class="chart-dot confirmed"></span>
+              <div>
+                <strong>Confirmado</strong>
+                <small id="financialConfirmedLegend">R$ 0,00 · 0%</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-section admin-shortcuts dashboard-actions">
+        <a class="admin-shortcut-card" href="./admin-gifts.html">
+          <span>Presentes</span>
+          <strong>Gerenciar Lista de Presentes</strong>
+          <small>Cadastro, reservas, pagamentos e compras externas</small>
+        </a>
+
+        <a class="admin-shortcut-card" href="./admin-guests.html">
+          <span>Convidados</span>
+          <strong>Gerenciar Convidados</strong>
+          <small>Convites, acompanhantes, códigos de acesso e RSVP manual</small>
+        </a>
+
+        <a class="admin-shortcut-card" href="./admin-rsvps.html">
+          <span>RSVP</span>
+          <strong>Ver Confirmações de Presença</strong>
+          <small>Presenças, acompanhantes, restrições e mensagens</small>
+        </a>
+
+        <a class="admin-shortcut-card" href="./admin-settings.html">
+          <span>Configurações</span>
+          <strong>Editar Dados Globais</strong>
+          <small>Chave PIX, recebedor e WhatsApp para comprovantes</small>
+        </a>
+      </section>
+    </main>
+
+    <div id="adminToast" class="admin-toast"></div>
+
+    <div class="admin-modal" id="attendanceReportModal">
+      <div class="admin-modal-content admin-report-modal-content">
+        <button
+          type="button"
+          class="admin-modal-close"
+          id="closeAttendanceReportModalButton"
+        >
+          &times;
+        </button>
+
+        <h2>Exportar Lista de Confirmados</h2>
+
+        <details class="admin-report-column-picker">
+          <summary>Colunas do Relatório</summary>
+
+          <div class="admin-report-column-grid">
+            <label><input type="checkbox" data-attendance-column="invite" checked /> Convite</label>
+            <label><input type="checkbox" data-attendance-column="code" checked /> Código</label>
+            <label><input type="checkbox" data-attendance-column="people" checked /> Pessoas</label>
+            <label><input type="checkbox" data-attendance-column="companions" checked /> Acompanhantes</label>
+            <label><input type="checkbox" data-attendance-column="type" checked /> Tipo</label>
+            <label><input type="checkbox" data-attendance-column="child" checked /> Criança</label>
+            <label><input type="checkbox" data-attendance-column="age" checked /> Idade</label>
+            <label><input type="checkbox" data-attendance-column="buffetCategory" checked /> Categoria do Buffet</label>
+            <label><input type="checkbox" data-attendance-column="paying" checked /> Pagante</label>
+            <label><input type="checkbox" data-attendance-column="expectedCount" checked /> Total Esperado</label>
+            <label><input type="checkbox" data-attendance-column="childCount" checked /> Total de Crianças</label>
+            <label><input type="checkbox" data-attendance-column="payingCount" checked /> Total de Pagantes</label>
+            <label><input type="checkbox" data-attendance-column="payingChildCount" checked /> Crianças Pagantes</label>
+            <label><input type="checkbox" data-attendance-column="nonPayingChildCount" checked /> Crianças Não Pagantes</label>
+            <label><input type="checkbox" data-attendance-column="unknownChildCount" checked /> Crianças Sem Idade</label>
+            <label><input type="checkbox" data-attendance-column="buffetRule" checked /> Regra do Buffet</label>
+            <label><input type="checkbox" data-attendance-column="food" checked /> Restrição alimentar</label>
+            <label><input type="checkbox" data-attendance-column="message" checked /> Mensagem</label>
+            <label><input type="checkbox" data-attendance-column="updatedAt" checked /> Atualizado em</label>
+          </div>
+        </details>
+
+        <div class="admin-report-option-grid">
+          <button
+            type="button"
+            class="admin-report-option"
+            data-attendance-export-mode="summary"
+            data-attendance-export-format="csv"
+          >
+            <span>CSV</span>
+            <strong>Resumo por Convite</strong>
+            <small>Uma linha por convite confirmado.</small>
+          </button>
+
+          <button
+            type="button"
+            class="admin-report-option"
+            data-attendance-export-mode="detailed"
+            data-attendance-export-format="csv"
+          >
+            <span>CSV</span>
+            <strong>Detalhado por Pessoa</strong>
+            <small>Uma linha para cada membro ou acompanhante.</small>
+          </button>
+
+          <button
+            type="button"
+            class="admin-report-option"
+            data-attendance-export-mode="summary"
+            data-attendance-export-format="xlsx"
+          >
+            <span>XLSX</span>
+            <strong>Resumo por Convite</strong>
+            <small>Planilha simples com totais por convite.</small>
+          </button>
+
+          <button
+            type="button"
+            class="admin-report-option"
+            data-attendance-export-mode="detailed"
+            data-attendance-export-format="xlsx"
+          >
+            <span>XLSX</span>
+            <strong>Detalhado com Agrupamento</strong>
+            <small>Linhas por pessoa e células mescladas por convite.</small>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-modal" id="financialReportModal">
+      <div class="admin-modal-content admin-report-modal-content">
+        <button
+          type="button"
+          class="admin-modal-close"
+          id="closeFinancialReportModalButton"
+        >
+          &times;
+        </button>
+
+        <h2>Exportar Valores Reservados</h2>
+
+        <details class="admin-report-column-picker">
+          <summary>Colunas do Relatório</summary>
+
+          <div class="admin-report-column-grid">
+            <label><input type="checkbox" data-financial-column="type" checked /> Tipo</label>
+            <label><input type="checkbox" data-financial-column="item" checked /> Item</label>
+            <label><input type="checkbox" data-financial-column="guest" checked /> Convidado</label>
+            <label><input type="checkbox" data-financial-column="status" checked /> Status</label>
+            <label><input type="checkbox" data-financial-column="value" checked /> Valor</label>
+            <label><input type="checkbox" data-financial-column="date" checked /> Data</label>
+          </div>
+        </details>
+
+        <div class="admin-report-option-grid">
+          <button
+            type="button"
+            class="admin-report-option"
+            data-financial-export-format="csv"
+          >
+            <span>CSV</span>
+            <strong>Valores Reservados</strong>
+            <small>Arquivo tabular simples para planilhas.</small>
+          </button>
+
+          <button
+            type="button"
+            class="admin-report-option"
+            data-financial-export-format="xlsx"
+          >
+            <span>XLSX</span>
+            <strong>Valores Reservados</strong>
+            <small>Planilha pronta para Excel ou Google Sheets.</small>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-modal" id="pendingReportModal">
+      <div class="admin-modal-content admin-report-modal-content">
+        <button
+          type="button"
+          class="admin-modal-close"
+          id="closePendingReportModalButton"
+        >
+          &times;
+        </button>
+
+        <h2>Exportar Ações Pendentes</h2>
+
+        <details class="admin-report-column-picker">
+          <summary>Colunas do Relatório</summary>
+
+          <div class="admin-report-column-grid">
+            <label><input type="checkbox" data-pending-column="type" checked /> Tipo</label>
+            <label><input type="checkbox" data-pending-column="item" checked /> Item</label>
+            <label><input type="checkbox" data-pending-column="owner" checked /> Responsável</label>
+            <label><input type="checkbox" data-pending-column="status" checked /> Status</label>
+            <label><input type="checkbox" data-pending-column="action" checked /> Ação sugerida</label>
+          </div>
+        </details>
+
+        <div class="admin-report-option-grid">
+          <button
+            type="button"
+            class="admin-report-option"
+            data-pending-export-format="csv"
+          >
+            <span>CSV</span>
+            <strong>Ações Pendentes</strong>
+            <small>Lista simples de itens que exigem atenção.</small>
+          </button>
+
+          <button
+            type="button"
+            class="admin-report-option"
+            data-pending-export-format="xlsx"
+          >
+            <span>XLSX</span>
+            <strong>Ações Pendentes</strong>
+            <small>Planilha pronta para acompanhamento.</small>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+    <script src="./js/supabase.js"></script>
+    <script src="./js/event-config.js"></script>
+
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+
+    <script src="./js/admin-common.js"></script>
+
+    <script src="./js/admin-bootstrap.js"></script>
+  </body>
+</html>

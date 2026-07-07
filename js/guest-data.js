@@ -22,9 +22,15 @@
         submitted_presence: payload.presence,
       });
 
+      const validationError =
+        error ||
+        (!data?.length
+          ? new Error("Os dados do RSVP não foram aceitos.")
+          : null);
+
       return {
         data: data?.[0] || null,
-        error,
+        error: validationError,
       };
     }
 
@@ -58,7 +64,7 @@
   }
 
   async function loadSettings() {
-    return supabaseClient.from("settings").select("*").limit(1).maybeSingle();
+    return supabaseClient.rpc("get_public_settings").maybeSingle();
   }
 
   async function loadGiftCatalog() {

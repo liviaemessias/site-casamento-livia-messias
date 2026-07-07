@@ -2,6 +2,7 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://unpkg.com https://challenges.cloudflare.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests" />
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
@@ -103,7 +104,7 @@
               id="clearRSVPFiltersButton"
               class="admin-clear-filters"
             >
-              Limpar filtros
+              Limpar Filtros
             </button>
           </div>
         </div>
@@ -150,6 +151,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
     <script src="./js/supabase.js"></script>
+    <script src="./js/event-config.js"></script>
+
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 
     <script src="./js/admin-common.js"></script>
 

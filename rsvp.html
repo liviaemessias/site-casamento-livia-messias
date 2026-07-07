@@ -2,6 +2,7 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://unpkg.com https://challenges.cloudflare.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>RSVP • Livia & Messias</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -17,7 +18,7 @@
     <!-- Navbar -->
     <header class="navbar navbar-light">
       <div class="container nav-content">
-        <div class="logo">Livia & Messias</div>
+        <div class="logo" data-wedding-names>Livia & Messias</div>
 
         <ul class="nav-links">
           <li>
@@ -45,7 +46,7 @@
           </li>
         </ul>
 
-        <button class="mobile-menu">☰</button>
+        <button type="button" class="mobile-menu" aria-label="Abrir menu" aria-expanded="false">☰</button>
       </div>
     </header>
     <section class="rsvp-hero">
@@ -121,11 +122,18 @@
             <div id="guestFields"></div>
             <div class="form-group">
               <label> Restrição alimentar </label>
-              <input type="text" name="food" />
+              <input
+                type="text"
+                name="food"
+                placeholder="Ex.: intolerância à lactose ou alergia a frutos do mar"
+              />
             </div>
             <div class="form-group">
               <label> Mensagem aos noivos </label>
-              <textarea name="message"></textarea>
+              <textarea
+                name="message"
+                placeholder="Se quiser, deixe uma mensagem carinhosa para nós 💜"
+              ></textarea>
             </div>
             <button type="submit" class="submit-button">
               Confirmar presença
@@ -139,6 +147,8 @@
     </section>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
     <script src="./js/supabase.js"></script>
+    <script src="./js/event-config.js"></script>
+    <script src="./js/event-settings.js"></script>
     <script src="./js/guest-auth-config.js"></script>
     <script src="./js/auth.js"></script>
     <script src="./js/guest-auth.js"></script>

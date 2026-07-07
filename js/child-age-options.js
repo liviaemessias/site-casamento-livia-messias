@@ -1,13 +1,4 @@
 (function () {
-  function escapeHTML(value) {
-    return String(value || "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
-  }
-
   function getStandardAges() {
     const ages = ["Menos de 1 mês"];
 
@@ -22,30 +13,33 @@
     return ages;
   }
 
-  function renderOptions(selectedValue = "") {
+  function populateSelect(select, selectedValue = "") {
     const normalizedValue = String(selectedValue || "").trim();
     const standardAges = getStandardAges();
-    const options = [
-      '<option value="">Selecione a idade no casamento</option>',
-    ];
+    const placeholder = document.createElement("option");
+
+    placeholder.value = "";
+    placeholder.textContent = "Selecione a idade no casamento";
+    select.replaceChildren(placeholder);
 
     if (normalizedValue && !standardAges.includes(normalizedValue)) {
-      const safeValue = escapeHTML(normalizedValue);
-      options.push(
-        `<option value="${safeValue}" selected>Valor atual: ${safeValue}</option>`,
-      );
+      const currentOption = document.createElement("option");
+      currentOption.value = normalizedValue;
+      currentOption.textContent = `Valor atual: ${normalizedValue}`;
+      currentOption.selected = true;
+      select.appendChild(currentOption);
     }
 
     standardAges.forEach((age) => {
-      const selected = age === normalizedValue ? " selected" : "";
-      const safeAge = escapeHTML(age);
-      options.push(`<option value="${safeAge}"${selected}>${safeAge}</option>`);
+      const option = document.createElement("option");
+      option.value = age;
+      option.textContent = age;
+      option.selected = age === normalizedValue;
+      select.appendChild(option);
     });
-
-    return options.join("");
   }
 
   window.ChildAgeOptions = {
-    renderOptions,
+    populateSelect,
   };
 })();

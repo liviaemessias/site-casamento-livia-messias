@@ -26,10 +26,20 @@ GitHub: [messiasfl10](https://github.com/messiasfl10/)
 - Dashboard com distinção entre convites e pessoas, capacidade planejada, métricas de convidados pagantes e crianças do buffet, presentes e financeiro, incluindo gráficos de distribuição e atalhos com filtros aplicados.
 - Filtros, ordenação, contadores de resultado e limpeza de filtros no admin.
 - Exportação CSV de convidados, RSVPs e presentes respeitando filtros e ordenação atuais, incluindo totais planejados de convidados e acompanhantes.
-- Relatórios consolidados no dashboard com CSV/XLSX, seleção de colunas e opções resumidas ou detalhadas para a lista de confirmados.
+- Página de Relatórios com exportações CSV/XLSX, seleção de colunas e opções resumidas ou detalhadas para a lista de confirmados.
 - Referências visuais personalizadas nos logins e nas páginas públicas, adaptadas para desktop e mobile.
 - Textos de saudação, reserva e pagamento adaptados para convites individuais e de casal.
 - Login administrativo com e-mail e senha pelo Supabase Auth.
+- Geração segura dos códigos de convite no Supabase, restrita a administradores.
+- Confirmação e liberação administrativa de presentes e cotas por RPCs transacionais.
+- Criação, atualização e remoção administrativa de RSVPs por RPCs transacionais.
+- RSVP público validado no banco com membros, acompanhantes e idades padronizadas.
+- Formas de presentear e confirmações de pagamento validadas no banco.
+- Edição, ativação e desativação de convidados por RPCs com controle de sessões.
+- Cadastro, edição e exclusão de presentes por RPCs com validação financeira.
+- Configurações globais validadas e salvas como registro único por RPC.
+- Configurações públicas expostas por RPC com colunas fixas, sem leitura direta da tabela pelo frontend.
+- Nomes, datas, prazo do RSVP, cerimônia e recepção configuráveis pelo painel e reutilizados nas páginas públicas.
 - Login seguro dos convidados com sessão anônima e Edge Function.
 - Cloudflare Turnstile nos logins administrativo e de convidados.
 - Row Level Security e RPCs restritas para isolamento dos dados por convite.
@@ -59,6 +69,8 @@ O antigo painel único foi dividido em páginas dedicadas:
 
 - `admin-login.html`: acesso administrativo com e-mail e senha pelo Supabase Auth.
 - `admin-dashboard.html`: resumo geral do casamento.
+- `admin-indicators.html`: métricas e gráficos detalhados do casamento.
+- `admin-reports.html`: relatórios consolidados e exportações CSV/XLSX.
 - `admin-gifts.html`: gestão de presentes.
 - `admin-guests.html`: gestão de convidados e RSVP manual.
 - `admin-rsvps.html`: consulta e remoção de confirmações.
@@ -84,19 +96,22 @@ datas e atualização de textos simples.
 - `js/turnstile-captcha.js`: carregamento, token, expiração e reset do CAPTCHA compartilhado pelos logins.
 - `js/reference-decorations.js`: referências visuais aleatórias dos logins, laterais desktop e divisores mobile.
 - `js/child-age-options.js`: opções padronizadas para informar a idade das crianças na data do casamento.
+- `js/event-settings.js`: carrega e aplica nomes, datas e locais do casamento nas páginas públicas.
 - `js/admin-common.js`: comportamento comum das páginas administrativas.
 - `js/pix.js`: geração pura do payload PIX, CRC16 e URL do QR Code.
 - `js/gifts.js`: fluxo da lista de presentes, reserva, cotas, escolha da forma de presentear e confirmação de pagamento/compra.
 - `js/rsvp.js`: fluxo de confirmação de presença.
-- `js/admin-dashboard.js`: métricas do dashboard.
-- `js/admin-dashboard-charts.js`: renderização dos gráficos do dashboard.
-- `js/admin-dashboard-reports.js`: relatórios consolidados exportáveis do dashboard.
+- `js/admin-dashboard.js`: métricas detalhadas da página de Indicadores.
+- `js/admin-dashboard-charts.js`: renderização dos gráficos de Indicadores.
+- `js/admin-overview.js`: visão resumida e acionável do Dashboard inicial.
+- `js/admin-dashboard-reports.js`: geração dos relatórios consolidados exportáveis.
+- `js/admin-reports.js`: carregamento dos dados da página de relatórios.
 - `js/buffet-metrics.js`: classificação compartilhada de adultos, crianças pagantes, não pagantes e sem idade válida.
 - `js/admin-export.js`: geração e download de CSV/XLSX nas páginas administrativas.
 - `js/admin-gifts.js`: CRUD, filtros, ordenação, cotas e administração de presentes.
 - `js/admin-guests.js`: CRUD, filtros, ordenação de convidados e RSVP manual.
 - `js/admin-rsvps.js`: listagem, filtros, ordenação e remoção de RSVPs.
-- `js/admin-settings.js`: edição das configurações globais de PIX, WhatsApp e regra do buffet.
+- `js/admin-settings.js`: edição dos dados do casamento, PIX, WhatsApp e regra do buffet.
 
 ## Organização Dos CSSs
 
@@ -193,6 +208,7 @@ Regras de valor:
 
 - Presentes com `purchase_mode = money`, `purchase_mode = hybrid` ou `gift_type = quota` exigem valor maior que zero.
 - Presentes com `purchase_mode = external` podem ficar sem valor, pois o preço pode depender da loja ou da compra online.
+- Presentes externos e híbridos podem ser cadastrados sem lojas. As lojas são sugestões opcionais, e o convidado pode informar uma compra online ou física realizada em outro local.
 - Quando um presente externo não possui valor cadastrado, a página pública não exibe `R$ 0,00`.
 - Pagamentos por cartão dependem de `card_payment_url` cadastrado no presente e abrem um checkout externo.
 - Presentes por cotas podem aparecer como `Parcial` quando parte das cotas foi reservada, mas o total ainda não foi preenchido.
@@ -212,7 +228,9 @@ Cada tela filtrável exibe contador de resultados e botão para limpar filtros.
 
 As colunas de dados das tabelas administrativas podem ser ordenadas pelo cabeçalho. A ordenação acontece depois dos filtros, usando os dados já carregados em memória.
 
-A página `admin-settings.html` permite editar a chave PIX, nome/cidade do recebedor, WhatsApp e idade mínima em que uma criança passa a ser pagante para o buffet.
+A página `admin-settings.html` permite editar os dados do casamento, cerimônia,
+recepção, chave PIX, nome/cidade do recebedor, WhatsApp e idade mínima em que
+uma criança passa a ser pagante para o buffet.
 
 ## PIX E QR Code
 
@@ -235,7 +253,70 @@ PixPayment.getQrCodeUrl(payload);
 
 ## Documentação Complementar
 
+- `docs/captcha_turnstile_setup.md`: ativação, testes e rollback do Cloudflare Turnstile nos logins.
 - `docs/release_v3.1.md`: notas da versão 3.1, com métricas do buffet, melhorias nos presentes e referências visuais.
+- `docs/release_v3.0.md`: histórico da versão 3.0, com a migração de segurança e os fluxos validados.
+- `docs/business_flow_and_limitations.md`: fluxos de negócio, limitações e roadmap.
+- `docs/database_modeling.md`: tabelas, campos e regras de banco.
+- `docs/json_payload_modeling.md`: estruturas JSON usadas em RSVP e presentes.
+- `docs/supabase_rebuild_runbook.md`: guia principal para reconstruir banco, Auth, Edge Function, grants e RLS em um projeto Supabase novo.
+- `docs/supabase_rebuild_01_base_schema.sql`: estrutura base fechada das tabelas da aplicação.
+- `docs/buffet_paying_age_migration.sql`: adiciona a regra do buffet em projetos Supabase já existentes.
+- `docs/security_invite_code_generation.sql`: instala a criação administrativa de convidados com código seguro gerado no Supabase.
+- `docs/security_invite_code_generation_verify.sql`: verifica a RPC e suas permissões de execução.
+- `docs/security_invite_code_generation_rollback.sql`: remove a RPC de criação segura, após reversão compatível do frontend.
+- `docs/security_admin_gift_operations.sql`: instala as ações administrativas transacionais de presentes e cotas.
+- `docs/security_admin_gift_operations_verify.sql`: verifica as RPCs administrativas e o bloqueio de gravações diretas nas contribuições.
+- `docs/security_admin_gift_operations_rollback.sql`: restaura temporariamente as gravações administrativas diretas.
+- `docs/security_admin_rsvp_operations.sql`: instala as operações administrativas validadas e atômicas de RSVP.
+- `docs/security_admin_rsvp_operations_verify.sql`: verifica as RPCs administrativas e o bloqueio de gravações diretas em RSVPs.
+- `docs/security_admin_rsvp_operations_rollback.sql`: restaura temporariamente as gravações administrativas diretas em RSVPs.
+- `docs/security_admin_guest_operations.sql`: instala edição e controle de acesso dos convidados por RPCs.
+- `docs/security_admin_guest_operations_verify.sql`: verifica as RPCs e o bloqueio de gravações diretas em convidados.
+- `docs/security_admin_guest_operations_rollback.sql`: restaura temporariamente as gravações administrativas diretas em convidados.
+- `docs/security_remove_legacy_guest_admin_flag.sql`: remove `guests.is_admin` de projetos existentes após a atualização das RPCs; a autorização permanece em `admin_users`.
+- `docs/security_admin_gift_catalog_operations.sql`: instala o CRUD validado do catálogo de presentes.
+- `docs/security_admin_gift_catalog_operations_verify.sql`: verifica as RPCs e o bloqueio de gravações diretas em presentes.
+- `docs/security_admin_gift_catalog_operations_rollback.sql`: restaura temporariamente as gravações administrativas diretas em presentes.
+- `docs/security_admin_settings_operations.sql`: instala o salvamento validado e único das configurações globais.
+- `docs/security_admin_settings_operations_verify.sql`: verifica a RPC, o registro único e o bloqueio de gravações diretas.
+- `docs/security_admin_settings_operations_rollback.sql`: restaura temporariamente as gravações administrativas diretas em configurações.
+- `docs/security_public_settings_access.sql`: restringe a leitura das configurações a uma RPC com campos públicos explícitos.
+- `docs/security_public_settings_access_verify.sql`: verifica a RPC pública e o bloqueio de leitura direta da tabela.
+- `docs/security_public_settings_access_rollback.sql`: restaura temporariamente a leitura direta de configurações.
+- `docs/wedding_event_settings_migration.sql`: adiciona os dados estruturados do casamento em projetos existentes.
+- `docs/wedding_event_settings_verify.sql`: verifica as colunas e o preenchimento dos dados do evento.
+- `docs/security_guest_rsvp_validation.sql`: reforça a validação do RSVP enviado pelos convidados.
+- `docs/security_guest_rsvp_validation_verify.sql`: verifica permissões e bloqueio de gravações diretas do RSVP.
+- `docs/security_guest_gift_payment_validation.sql`: valida a compatibilidade das formas de presentear e exige seleção antes da confirmação.
+- `docs/security_guest_gift_payment_validation_verify.sql`: verifica as RPCs públicas de pagamento e suas permissões.
+- `docs/supabase_rebuild_environment_inventory.md`: inventário das configurações não secretas que devem ser reproduzidas.
+- `docs/supabase_rebuild_verify_final.sql`: verificação final da reconstrução e das permissões.
+- `docs/supabase_data_cleanup_runbook.md`: limpeza segura dos dados de teste, preservando administrador e configurações.
+- `docs/supabase_schema_full_setup.sql`: setup legado anterior à migração de segurança; não usar na reconstrução atual.
+- `docs/security_migration_plan.md`: plano gradual para Supabase Auth, RLS e Edge Functions.
+- `docs/security_admin_setup_runbook.md`: guia reproduzível de toda a configuração administrativa realizada.
+- `docs/security_phase_2_prepare.sql`: estruturas preparatórias da nova autenticação, sem alterar o acesso atual.
+- `docs/security_phase_2_verify.sql`: verificações da estrutura e das permissões preparatórias.
+- `docs/security_phase_2_rollback.sql`: rollback da preparação enquanto a nova autenticação ainda não estiver em uso.
+- `docs/security_admin_authenticated_access.sql`: acesso transitório do painel autenticado às tabelas atuais.
+- `docs/security_admin_authenticated_access_verify.sql`: verificação das permissões transitórias do painel.
+- `docs/security_phase_3_claim_invite_runbook.md`: preparação e deploy seguro da Edge Function de convite.
+- `docs/security_phase_3_claim_invite_prepare.sql`: tabela de tentativas e função atômica de registro de acesso.
+- `docs/security_phase_3_claim_invite_verify.sql`: verificações da estrutura da Edge Function.
+- `docs/security_phase_3_claim_invite_rollback.sql`: rollback da estrutura da Edge Function.
+- `docs/security_phase_3_claim_invite_smoke_test.md`: roteiro de testes após o deploy da função.
+- `docs/security_edge_function_service_role_grants.sql`: privilégios internos necessários para a Edge Function.
+- `docs/security_edge_function_service_role_grants_verify.sql`: verificação dos privilégios da `service_role`.
+- `docs/security_phase_4_rls_runbook.md`: guia de preparação, corte e rollback da RLS definitiva.
+- `docs/security_phase_4_rls_prepare.sql`: políticas, RPCs e triggers criados sem ativar RLS.
+- `docs/security_phase_4_rls_verify_prepare.sql`: verificação segura da preparação da RLS.
+- `docs/security_phase_4_rls_activate.sql`: ativação da RLS para o corte definitivo.
+- `docs/security_phase_4_rls_verify_active.sql`: verificação posterior à ativação.
+- `docs/security_phase_4_rls_activation_rollback.sql`: rollback emergencial para o acesso legado.
+- `docs/security_phase_4_rls_prepare_rollback.sql`: remoção da preparação antes do corte.
+- `docs/security_phase_5_frontend_cutover.md`: migração do frontend público e roteiro do corte definitivo.
+- `docs/security_fix_guest_gift_rpcs.sql`: correção dos RPCs de reserva individual e forma de presentear.
 
 ## Status Atual
 
@@ -257,8 +338,16 @@ Concluído:
 - Dashboard financeiro com valores da lista, reservados, disponíveis, informados, confirmados e pendentes, incluindo gráficos de distribuição.
 - Filtros administrativos com ordenação, contadores e limpeza.
 - Exportação CSV de convidados, RSVPs e presentes respeitando filtros e ordenação atuais.
-- Relatórios consolidados de presença/buffet, financeiro e pendências no dashboard, com CSV/XLSX, seleção de colunas, categorias de pagamento e regra aplicada.
+- Página de Relatórios Consolidados de presença/buffet, financeiro e pendências, com CSV/XLSX, seleção de colunas, categorias de pagamento e regra aplicada.
 - Login e proteção das páginas administrativas com Supabase Auth.
+- Criação administrativa de convidados com código de convite gerado no banco.
+- Confirmação e liberação de presentes e cotas processadas atomicamente no banco.
+- RSVPs administrativos salvos e removidos atomicamente no banco.
+- RSVP dos convidados validado contra os dados oficiais do convite.
+- Pagamentos e compras informados somente após uma forma compatível ser selecionada.
+- Edição e ativação de convidados protegidas no banco, com revogação de sessões ao desativar.
+- Catálogo de presentes validado no banco, incluindo valores, cotas e opções externas.
+- Configurações de PIX, WhatsApp e buffet validadas e mantidas em registro único.
 - Login seguro dos convidados por código, com sessão anônima e Edge Function.
 - Cloudflare Turnstile validado pelo Supabase Auth nos dois fluxos de login.
 - Row Level Security para isolamento dos dados de convidados e administradores.

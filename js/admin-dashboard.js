@@ -101,6 +101,7 @@ function getGiftMetrics(gifts, contributions) {
 
         if (gift.status === "Reservado") {
           metrics.reserved += 1;
+          metrics.reservedIncludingPartial += 1;
         }
 
         if (gift.status === "Comprado") {
@@ -128,10 +129,12 @@ function getGiftMetrics(gifts, contributions) {
 
       if (quotaStats.reserved > 0 && quotaStats.reserved < totalQuotas) {
         metrics.partial += 1;
+        metrics.reservedIncludingPartial += 1;
       }
 
       if (fullyReserved && !fullyConfirmed) {
         metrics.reserved += 1;
+        metrics.reservedIncludingPartial += 1;
       }
 
       if (fullyConfirmed) {
@@ -149,6 +152,7 @@ function getGiftMetrics(gifts, contributions) {
       available: 0,
       partial: 0,
       reserved: 0,
+      reservedIncludingPartial: 0,
       bought: 0,
       paymentsReported: 0,
       availableQuotas: 0,
@@ -289,9 +293,7 @@ async function loadDashboard() {
       );
 
   const { data: settings, error: settingsError } = await supabaseClient
-    .from("settings")
-    .select("buffet_paying_age")
-    .limit(1)
+    .rpc("get_public_settings")
     .maybeSingle();
 
   if (
@@ -418,7 +420,7 @@ async function loadDashboard() {
   setText("totalGifts", giftMetrics.total);
   setText("totalAvailableGifts", giftMetrics.available);
   setText("totalPartialGifts", giftMetrics.partial);
-  setText("totalReservedGifts", giftMetrics.reserved);
+  setText("totalReservedGifts", giftMetrics.reservedIncludingPartial);
   setText("totalBoughtGifts", giftMetrics.bought);
   setText("totalPaymentsReported", giftMetrics.paymentsReported);
   setText("totalAvailableQuotas", giftMetrics.availableQuotas);
@@ -439,14 +441,6 @@ async function loadDashboard() {
   setText("totalPendingValue", formatCurrency(financialMetrics.pendingValue));
   AdminDashboardCharts.updateFinancialChart(financialMetrics, formatCurrency);
 
-  AdminDashboardReports.setData({
-    activeGuests,
-    activeRSVPs,
-    contributions: contributions || [],
-    buffetPayingAge,
-    financialMetrics,
-    gifts: gifts || [],
-  });
 }
 
 setupDashboardMetricNavigation();

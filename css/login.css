@@ -36,10 +36,26 @@ body {
   display: block;
   opacity: 0;
   filter: blur(0.1px);
-  transform: translate(-50%, -50%) rotate(var(--rotation));
+  transform: translate(-50%, -50%) rotate(-12deg);
   animation: watermarkFadeIn 0.9s ease forwards;
-  animation-delay: var(--delay);
 }
+
+.login-watermark:nth-child(1) { left: 8%; top: 12%; width: 108px; animation-delay: 0s; }
+.login-watermark:nth-child(2) { left: 28%; top: 9%; width: 142px; animation-delay: 0.08s; transform: translate(-50%, -50%) rotate(16deg); }
+.login-watermark:nth-child(3) { left: 51%; top: 13%; width: 116px; animation-delay: 0.16s; transform: translate(-50%, -50%) rotate(-20deg); }
+.login-watermark:nth-child(4) { left: 73%; top: 8%; width: 150px; animation-delay: 0.24s; transform: translate(-50%, -50%) rotate(10deg); }
+.login-watermark:nth-child(5) { left: 92%; top: 16%; width: 104px; animation-delay: 0.32s; transform: translate(-50%, -50%) rotate(-8deg); }
+.login-watermark:nth-child(6) { left: 12%; top: 39%; width: 158px; animation-delay: 0.4s; transform: translate(-50%, -50%) rotate(22deg); }
+.login-watermark:nth-child(7) { left: 34%; top: 34%; width: 102px; animation-delay: 0.48s; }
+.login-watermark:nth-child(8) { left: 68%; top: 37%; width: 136px; animation-delay: 0.56s; transform: translate(-50%, -50%) rotate(14deg); }
+.login-watermark:nth-child(9) { left: 89%; top: 43%; width: 118px; animation-delay: 0.64s; transform: translate(-50%, -50%) rotate(-18deg); }
+.login-watermark:nth-child(10) { left: 7%; top: 69%; width: 130px; animation-delay: 0.72s; transform: translate(-50%, -50%) rotate(9deg); }
+.login-watermark:nth-child(11) { left: 29%; top: 72%; width: 110px; animation-delay: 0.8s; transform: translate(-50%, -50%) rotate(-24deg); }
+.login-watermark:nth-child(12) { left: 53%; top: 66%; width: 164px; animation-delay: 0.88s; transform: translate(-50%, -50%) rotate(18deg); }
+.login-watermark:nth-child(13) { left: 75%; top: 72%; width: 106px; animation-delay: 0.96s; }
+.login-watermark:nth-child(14) { left: 94%; top: 69%; width: 144px; animation-delay: 1.04s; transform: translate(-50%, -50%) rotate(-15deg); }
+.login-watermark:nth-child(15) { left: 22%; top: 93%; width: 122px; animation-delay: 1.12s; transform: translate(-50%, -50%) rotate(12deg); }
+.login-watermark:nth-child(16) { left: 81%; top: 92%; width: 156px; animation-delay: 1.2s; transform: translate(-50%, -50%) rotate(-21deg); }
 
 .admin-login-page .login-watermark {
   opacity: 0;

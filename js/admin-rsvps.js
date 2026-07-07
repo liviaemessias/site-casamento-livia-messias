@@ -12,6 +12,7 @@ const clearRSVPFiltersButton = document.getElementById(
 );
 const { formatDate } = AdminCommon;
 const showAdminToast = AdminCommon.showToast;
+const { escapeAttribute, replaceSafeContent, safeText } = SecurityUtils;
 let cachedRSVPs = [];
 let cachedRSVPGuests = [];
 let visibleRSVPs = [];
@@ -85,8 +86,8 @@ function renderCoupleDetails(rsvp) {
         .map(
           (member) => `
             <div>
-              ${member.name}:
-              <strong>${member.presence}</strong>
+              ${safeText(member.name, "Sem nome")}:
+              <strong>${safeText(member.presence)}</strong>
             </div>
           `,
         )
@@ -109,7 +110,7 @@ function renderCompanionDetails(rsvp) {
           const childInfo =
             companion.is_child === "Sim"
               ? ` <span class="child-info">Criança${
-                  companion.age ? ` · ${companion.age}` : ""
+                  companion.age ? ` · ${safeText(companion.age, "")}` : ""
                 } · ${BuffetMetrics.getCategoryLabel(
                   BuffetMetrics.classifyChild(
                     companion.age,
@@ -120,7 +121,7 @@ function renderCompanionDetails(rsvp) {
 
           return `
             <div>
-              ${companion.name || "Sem nome"}
+              ${safeText(companion.name, "Sem nome")}
               ${childInfo}
             </div>
           `;
@@ -183,9 +184,7 @@ async function loadRSVPsAdmin() {
     .select("*");
 
   const { data: settings, error: settingsError } = await supabaseClient
-    .from("settings")
-    .select("buffet_paying_age")
-    .limit(1)
+    .rpc("get_public_settings")
     .maybeSingle();
 
   if (guestsError || rsvpsError || settingsError) {
@@ -216,17 +215,17 @@ function renderRSVPTable(rsvps, guests) {
   });
 
   if (!rsvps.length) {
-    rsvpsTableBody.innerHTML = `
+    replaceSafeContent(rsvpsTableBody, `
       <tr>
         <td colspan="8" class="admin-empty-state">
           Nenhum RSVP encontrado para os filtros selecionados.
         </td>
       </tr>
-    `;
+    `);
     return;
   }
 
-  rsvpsTableBody.innerHTML = rsvps
+  replaceSafeContent(rsvpsTableBody, rsvps
     .map((rsvp) => {
       const guestName =
         guestMap[rsvp.guest_id] ||
@@ -237,20 +236,21 @@ function renderRSVPTable(rsvps, guests) {
 
       return `
         <tr>
-          <td>${guestName}</td>
+          <td>${safeText(guestName)}</td>
           <td>
             ${renderPresenceBadge(rsvp.presence)}
             ${renderCoupleDetails(rsvp)}
           </td>
           <td>${companionCount}</td>
           <td>${renderCompanionDetails(rsvp)}</td>
-          <td>${rsvp.food || "-"}</td>
-          <td>${rsvp.message || "-"}</td>
+          <td>${safeText(rsvp.food)}</td>
+          <td>${safeText(rsvp.message)}</td>
           <td>${formatDate(rsvp.updated_at || rsvp.created_at)}</td>
           <td>
             <button
               class="admin-action-button danger icon-action icon-only"
-              onclick='deleteRSVPFromTable("${rsvp.id}", "${rsvp.guest_id}")'
+              data-rsvp-action="delete"
+              data-rsvp-id="${escapeAttribute(rsvp.id)}"
               title="Remover RSVP"
               aria-label="Remover RSVP"
             >
@@ -260,7 +260,7 @@ function renderRSVPTable(rsvps, guests) {
         </tr>
       `;
     })
-    .join("");
+    .join(""));
 }
 
 function applyRSVPFilters() {
@@ -478,27 +478,24 @@ function clearRSVPFilters() {
   applyRSVPFilters();
 }
 
-window.deleteRSVPFromTable = async function (rsvpId, guestId) {
+window.deleteRSVPFromTable = async function (rsvpId) {
   const confirmed = confirm("Deseja remover esta confirmação de presença?");
 
   if (!confirmed) {
     return;
   }
 
-  const { error } = await supabaseClient.from("rsvps").delete().eq("id", rsvpId);
+  const { data, error } = await supabaseClient.rpc("admin_delete_guest_rsvp", {
+    target_rsvp_id: rsvpId,
+  });
 
-  if (error) {
+  if (error || data !== true) {
     console.error(error);
-    showAdminToast("⚠️ Erro ao remover RSVP.");
+    showAdminToast(
+      "⚠️ Não foi possível remover o RSVP. Atualize a lista e tente novamente.",
+    );
     return;
   }
-
-  await supabaseClient
-    .from("guests")
-    .update({
-      confirmed: false,
-    })
-    .eq("id", guestId);
 
   showAdminToast("💜 RSVP removido com sucesso!");
   await loadRSVPsAdmin();
@@ -516,6 +513,18 @@ window.deleteRSVPFromTable = async function (rsvpId, guestId) {
 
 clearRSVPFiltersButton?.addEventListener("click", clearRSVPFilters);
 exportRSVPsButton?.addEventListener("click", exportRSVPsCSV);
+
+rsvpsTableBody?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-rsvp-action]");
+
+  if (!button) {
+    return;
+  }
+
+  if (button.dataset.rsvpAction === "delete") {
+    deleteRSVPFromTable(button.dataset.rsvpId);
+  }
+});
 
 document.querySelectorAll("[data-rsvp-sort]").forEach((button) => {
   button.addEventListener("click", () => {

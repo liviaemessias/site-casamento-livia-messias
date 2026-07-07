@@ -32,10 +32,16 @@
   display: block;
   opacity: 0;
   filter: blur(0.1px);
-  transform: translate(-50%, -50%) rotate(var(--rotation));
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-12deg);
   animation: referenceRailFadeIn 0.9s ease forwards;
-  animation-delay: var(--delay);
 }
+
+.reference-rail:nth-child(1) { top: 10%; width: 88px; animation-delay: 0s; }
+.reference-rail:nth-child(2) { top: 30%; width: 118px; animation-delay: 0.08s; transform: translate(-50%, -50%) rotate(17deg); }
+.reference-rail:nth-child(3) { top: 50%; width: 76px; animation-delay: 0.16s; transform: translate(-50%, -50%) rotate(-21deg); }
+.reference-rail:nth-child(4) { top: 70%; width: 126px; animation-delay: 0.24s; transform: translate(-50%, -50%) rotate(11deg); }
+.reference-rail:nth-child(5) { top: 90%; width: 98px; animation-delay: 0.32s; transform: translate(-50%, -50%) rotate(-7deg); }
 
 .mobile-reference-accent {
   display: none;
@@ -71,10 +77,16 @@
     width: clamp(46px, 13vw, 72px);
     opacity: 0;
     filter: blur(0.1px);
-    transform: rotate(var(--rotation));
+    transform: rotate(-8deg);
     animation: mobileReferenceAccentFadeIn 0.9s ease forwards;
-    animation-delay: var(--delay);
   }
+
+  .mobile-reference-accent img:nth-child(2) { transform: rotate(10deg); animation-delay: 0.1s; }
+  .mobile-reference-accent img:nth-child(3) { transform: rotate(-15deg); animation-delay: 0.2s; }
+  .mobile-reference-accent .reference-accent-1,
+  .mobile-reference-accent .reference-accent-4 { transform: rotate(14deg); }
+  .mobile-reference-accent .reference-accent-2,
+  .mobile-reference-accent .reference-accent-5 { transform: rotate(-13deg); }
 }
 
 @media (prefers-reduced-motion: reduce) {

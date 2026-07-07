@@ -2,8 +2,49 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://unpkg.com https://challenges.cloudflare.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Livia & Messias</title>
+    <title>Livia &amp; Messias — 23.04.2027</title>
+    <meta
+      name="description"
+      content="Celebre conosco o nosso casamento — 23 de abril de 2027. Confira os detalhes do grande dia!"
+    />
+    <link
+      rel="canonical"
+      href="https://liviaemessias.github.io/"
+    />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:site_name" content="Livia &amp; Messias" />
+    <meta property="og:title" content="Livia &amp; Messias — 23.04.2027" />
+    <meta
+      property="og:description"
+      content="Celebre conosco o nosso casamento — 23 de abril de 2027. Confira os detalhes do grande dia!"
+    />
+    <meta
+      property="og:url"
+      content="https://liviaemessias.github.io/"
+    />
+    <meta
+      property="og:image"
+      content="https://liviaemessias.github.io/assets/images/home/cover-main-page.jpg"
+    />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="3984" />
+    <meta property="og:image:height" content="2656" />
+    <meta property="og:image:alt" content="Livia e Messias" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Livia &amp; Messias — 23.04.2027" />
+    <meta
+      name="twitter:description"
+      content="Celebre conosco o nosso casamento — 23 de abril de 2027. Confira os detalhes do grande dia!"
+    />
+    <meta
+      name="twitter:image"
+      content="https://liviaemessias.github.io/assets/images/home/cover-main-page.jpg"
+    />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -15,11 +56,11 @@
     <link rel="stylesheet" href="css/style.css" />
     <link rel="stylesheet" href="css/reference-rails.css" />
   </head>
-  <body class="site-reference-rails">
+  <body class="site-reference-rails" data-page="home">
     <!-- Navbar -->
     <header class="navbar" id="navbar">
       <div class="container nav-content">
-        <div class="logo">Livia & Messias</div>
+        <div class="logo" data-wedding-names>Livia & Messias</div>
 
         <nav>
           <ul class="nav-links" id="navLinks">
@@ -33,7 +74,7 @@
           </ul>
         </nav>
 
-        <button class="mobile-menu" id="mobileMenu">☰</button>
+        <button type="button" class="mobile-menu" id="mobileMenu" aria-label="Abrir menu" aria-expanded="false">☰</button>
       </div>
     </header>
 
@@ -44,19 +85,24 @@
       <div class="hero-content fade-up">
         <p class="hero-subtitle">Estamos nos casando</p>
 
-        <h1>Livia & Messias</h1>
+        <h1 data-wedding-names>Livia & Messias</h1>
 
         <p class="hero-text">
           Um novo capítulo da nossa história começa diante de Deus, cercado
           pelas pessoas que mais amamos.
         </p>
 
-        <div class="hero-date">23 de Abril de 2027</div>
+        <div class="hero-date" data-wedding-date>23 de Abril de 2027</div>
 
         <a href="login.html?redirect=rsvp" class="hero-button">
           Confirmar Presença
         </a>
       </div>
+
+      <a class="hero-scroll-indicator" href="#welcome" aria-label="Ver mais conteúdo">
+        <span>Deslize para descobrir</span>
+        <span class="hero-scroll-arrow" aria-hidden="true">↓</span>
+      </a>
     </section>
 
     <!-- Countdown -->
@@ -112,7 +158,14 @@
     <section class="event-section reveal">
       <div class="container event-grid">
         <!-- Ceremony -->
-        <div class="event-card" id="ceremony">
+        <a
+          class="event-card"
+          id="ceremony"
+          href="https://www.google.com/maps/search/?api=1&amp;query=Santu%C3%A1rio%20de%20Nossa%20Senhora%20de%20F%C3%A1tima%2C%20Av.%20Treze%20de%20Maio%2C%20200%2C%20Fortaleza%2C%20CE"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Abrir a localização da cerimônia no Google Maps"
+        >
           <div class="event-slider">
             <div class="slides ceremony-slides">
               <img
@@ -132,15 +185,23 @@
 
           <p class="section-subtitle">Cerimônia</p>
 
-          <h3>Santuário de Nossa Senhora de Fátima</h3>
+          <h3 data-ceremony-name>Santuário de Nossa Senhora de Fátima</h3>
 
-          <p>Av. Treze de Maio, 200 - Fátima, Fortaleza - CE, 60040-530</p>
+          <p data-ceremony-address>Av. Treze de Maio, 200 - Fátima, Fortaleza - CE, 60040-530</p>
 
-          <div class="event-time">18h30</div>
-        </div>
+          <div class="event-time" data-ceremony-time>18h30</div>
+          <span class="event-map-hint">Ver no Google Maps ↗</span>
+        </a>
 
         <!-- Reception -->
-        <div class="event-card" id="reception">
+        <a
+          class="event-card"
+          id="reception"
+          href="https://www.google.com/maps/search/?api=1&amp;query=Martha%27s%20Buffet%20Conceito%2C%20Av.%20Bezerra%20de%20Menezes%2C%20531%2C%20Fortaleza%2C%20CE"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Abrir a localização da recepção no Google Maps"
+        >
           <div class="event-slider">
             <div class="slides reception-slides">
               <img
@@ -160,15 +221,16 @@
 
           <p class="section-subtitle">Recepção</p>
 
-          <h3>Martha’s Buffet Conceito</h3>
+          <h3 data-reception-name>Martha’s Buffet Conceito</h3>
 
-          <p>
+          <p data-reception-address>
             Av. Bezerra de Menezes, 531 - Parquelândia, Fortaleza - CE,
             60325-004
           </p>
 
-          <div class="event-time">21h</div>
-        </div>
+          <div class="event-time" data-reception-time>21h</div>
+          <span class="event-map-hint">Ver no Google Maps ↗</span>
+        </a>
       </div>
     </section>
 
@@ -179,19 +241,37 @@
         <h2 class="section-title">Esperamos você nesse momento especial</h2>
 
         <p class="welcome-text">
-          Sua presença tornará nosso dia ainda mais inesquecível. Confirme sua
-          presença até 01 de Março de 2027.
+          Sua presença tornará nosso dia ainda mais inesquecível.<br />
+          Confirme sua presença até <span data-rsvp-deadline>01 de Março de 2027</span>.
         </p>
 
         <a href="./rsvp.html" class="hero-button"> Confirmar Presença </a>
       </div>
     </section>
 
+    <section class="gifts-cta reveal">
+      <div class="container small-container">
+        <p class="section-subtitle">Lista de Presentes</p>
+
+        <h2 class="section-title">Sua presença é o nosso maior presente</h2>
+
+        <p class="welcome-text">
+          Celebrar esse dia ao seu lado já é o que mais desejamos. Mas, se
+          quiser nos presentear nessa nova etapa, preparamos uma lista com
+          opções escolhidas com carinho.
+        </p>
+
+        <a href="login.html?redirect=gifts" class="hero-button">
+          Ver Lista de Presentes
+        </a>
+      </div>
+    </section>
+
     <!-- Footer -->
     <footer class="footer">
-      <h3>Livia & Messias</h3>
+      <h3 data-wedding-names>Livia & Messias</h3>
 
-      <p>23 de Abril de 2027 • Fortaleza, Ceará</p>
+      <p data-wedding-date-location>23 de Abril de 2027 • Fortaleza, Ceará</p>
 
       <span> Feito com amor para celebrar nosso grande dia. </span>
 
@@ -207,6 +287,10 @@
       </p>
     </footer>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/event-config.js"></script>
+    <script src="js/event-settings.js"></script>
     <script src="js/reference-decorations.js"></script>
     <script src="js/script.js"></script>
   </body>

@@ -33,6 +33,16 @@ let settings = null;
 let selectedGift = null;
 let selectedContribution = null;
 let lastGiftCatalogLoadAt = 0;
+let cachedGiftCatalog = [];
+let currentExternalPurchaseOptions = [];
+const { escapeAttribute, getSafeUrl, replaceSafeContent, safeText } =
+  SecurityUtils;
+
+function setElementVisibility(element, visible) {
+  if (!element) return;
+  element.hidden = !visible;
+  element.classList.toggle("is-hidden", !visible);
+}
 
 const giftsGrid = document.getElementById("giftsGrid");
 const giftsPendingSection = document.getElementById("giftsPendingSection");
@@ -159,9 +169,20 @@ async function loadGifts() {
       ? data || []
       : withGiftContributionStats(data || [], contributions || []);
 
+  cachedGiftCatalog = gifts;
   renderGifts(gifts);
   lastGiftCatalogLoadAt = Date.now();
   return gifts;
+}
+
+function findGiftById(giftId) {
+  return cachedGiftCatalog.find((gift) => gift.id === giftId);
+}
+
+function findContributionById(gift, contributionId) {
+  return (gift?.own_contributions || []).find(
+    (contribution) => contribution.id === contributionId,
+  );
 }
 
 function refreshGiftCatalogIfStale() {
@@ -359,6 +380,7 @@ function renderQuotaInfo(gift) {
   const confirmed = Number(gift.quota_confirmed_count || 0);
   const available = getAvailableQuotaCount(gift);
   const percentage = total ? Math.min(100, (reserved / total) * 100) : 0;
+  const progressStep = Math.round(percentage / 5);
 
   return `
     <div class="quota-card-info">
@@ -367,7 +389,7 @@ function renderQuotaInfo(gift) {
         <strong>${confirmed} ${confirmed === 1 ? "confirmada" : "confirmadas"}</strong>
       </div>
       <div class="quota-progress-bar">
-        <span style="width: ${percentage}%"></span>
+        <span class="quota-progress-${progressStep}"></span>
       </div>
       <small>
         ${
@@ -417,14 +439,18 @@ function renderOwnQuotaContributions(gift) {
             : `
               <button
                 class="gift-button payment-button payment-confirm-button"
-                onclick='requestPaymentConfirmation(${JSON.stringify(gift)}, ${JSON.stringify(contribution)})'
+                data-gift-action="confirm-contribution-payment"
+                data-gift-id="${escapeAttribute(gift.id)}"
+                data-contribution-id="${escapeAttribute(contribution.id)}"
               >
                 ${getCompletedActionLabel("o pagamento")}
               </button>
 
               <button
                 class="gift-button secondary payment-button"
-                onclick='openPixModalForContribution(${JSON.stringify(gift)}, ${JSON.stringify(contribution)})'
+                data-gift-action="open-contribution-pix"
+                data-gift-id="${escapeAttribute(gift.id)}"
+                data-contribution-id="${escapeAttribute(contribution.id)}"
               >
                 Ver PIX
               </button>
@@ -498,7 +524,9 @@ function renderPendingGiftActions(item) {
         <button
           type="button"
           class="gift-button payment-confirm-button"
-          onclick='requestPaymentConfirmation(${JSON.stringify(item.gift)}, ${JSON.stringify(item.contribution)})'
+          data-gift-action="confirm-contribution-payment"
+          data-gift-id="${escapeAttribute(item.gift.id)}"
+          data-contribution-id="${escapeAttribute(item.contribution.id)}"
         >
           ${getCompletedActionLabel("o pagamento")}
         </button>
@@ -506,7 +534,9 @@ function renderPendingGiftActions(item) {
         <button
           type="button"
           class="gift-button secondary"
-          onclick='openPixModalForContribution(${JSON.stringify(item.gift)}, ${JSON.stringify(item.contribution)})'
+          data-gift-action="open-contribution-pix"
+          data-gift-id="${escapeAttribute(item.gift.id)}"
+          data-contribution-id="${escapeAttribute(item.contribution.id)}"
         >
           Ver PIX
         </button>
@@ -520,7 +550,8 @@ function renderPendingGiftActions(item) {
         <button
           type="button"
           class="gift-button"
-          onclick='openPurchaseMethodModal(${JSON.stringify(item.gift)})'
+          data-gift-action="open-purchase-method"
+          data-gift-id="${escapeAttribute(item.gift.id)}"
         >
           Escolher forma de presentear
         </button>
@@ -533,7 +564,8 @@ function renderPendingGiftActions(item) {
       <button
         type="button"
         class="gift-button payment-confirm-button"
-        onclick='requestPaymentConfirmation(${JSON.stringify(item.gift)})'
+        data-gift-action="confirm-gift-payment"
+        data-gift-id="${escapeAttribute(item.gift.id)}"
       >
         ${getGiftCompletedActionLabel(item.gift)}
       </button>
@@ -541,7 +573,8 @@ function renderPendingGiftActions(item) {
       <button
         type="button"
         class="gift-button secondary"
-        onclick='openPixModalForGift(${JSON.stringify(item.gift)})'
+        data-gift-action="open-gift-details"
+        data-gift-id="${escapeAttribute(item.gift.id)}"
       >
         Ver detalhes
       </button>
@@ -557,13 +590,13 @@ function renderPendingGifts(gifts) {
   const pendingItems = getPendingGiftItems(gifts);
 
   if (!pendingItems.length) {
-    giftsPendingSection.innerHTML = "";
+    giftsPendingSection.replaceChildren();
     giftsPendingSection.classList.remove("active");
     return;
   }
 
   giftsPendingSection.classList.add("active");
-  giftsPendingSection.innerHTML = `
+  replaceSafeContent(giftsPendingSection, `
     <div class="gifts-pending-header">
       <div>
         <span class="gifts-pending-kicker">Pendências</span>
@@ -586,11 +619,11 @@ function renderPendingGifts(gifts) {
                 </span>
 
                 <h3>
-                  ${item.gift.name}
+                  ${safeText(item.gift.name)}
                 </h3>
 
                 <p>
-                  ${getPendingGiftStatusText(item)}
+                  ${safeText(getPendingGiftStatusText(item))}
                 </p>
               </div>
 
@@ -600,7 +633,7 @@ function renderPendingGifts(gifts) {
         )
         .join("")}
     </div>
-  `;
+  `);
 }
 
 function canCurrentGuestContributeToQuotaGift(gift) {
@@ -626,13 +659,13 @@ function renderGifts(gifts) {
     grouped[category].push(gift);
   });
 
-  giftsGrid.innerHTML = Object.keys(grouped)
+  replaceSafeContent(giftsGrid, Object.keys(grouped)
     .map(
       (category) => `
       <div class="gift-category-section">
         <div class="gift-category-header">
           <h2 class="section-title">
-            ${category}
+            ${safeText(category)}
           </h2>
         </div>
 
@@ -649,20 +682,20 @@ function renderGifts(gifts) {
                     gift.image_url && gift.image_url.trim() !== ""
                       ? `
                         <img
-                          src="${gift.image_url}"
+                          src="${escapeAttribute(getSafeUrl(gift.image_url))}"
                           class="gift-image"
-                          alt="${gift.name}"
+                          alt="${escapeAttribute(gift.name || "Presente")}"
                         />
                       `
                       : ""
                   }
 
                   <h3>
-                    ${gift.name}
+                    ${safeText(gift.name)}
                   </h3>
 
                   <p>
-                    ${gift.description || ""}
+                    ${safeText(gift.description, "")}
                   </p>
 
                   ${
@@ -686,7 +719,8 @@ function renderGifts(gifts) {
                             ? `
                               <button
                                 class="gift-button"
-                                onclick='openReserveModal(${JSON.stringify(gift)})'
+                                data-gift-action="reserve"
+                                data-gift-id="${escapeAttribute(gift.id)}"
                               >
                                 Contribuir com cotas
                               </button>
@@ -714,7 +748,8 @@ function renderGifts(gifts) {
                       ? `
                         <button
                           class="gift-button"
-                          onclick='openReserveModal(${JSON.stringify(gift)})'
+                          data-gift-action="reserve"
+                          data-gift-id="${escapeAttribute(gift.id)}"
                         >
                           Presentear
                         </button>
@@ -752,7 +787,8 @@ function renderGifts(gifts) {
           ? `
             <button
               class="gift-button payment-button payment-confirm-button"
-              onclick='requestPaymentConfirmation(${JSON.stringify(gift)})'
+              data-gift-action="confirm-gift-payment"
+              data-gift-id="${escapeAttribute(gift.id)}"
             >
               ${getGiftCompletedActionLabel(gift)}
             </button>
@@ -762,7 +798,8 @@ function renderGifts(gifts) {
 
       <button
         class="gift-button secondary payment-button"
-        onclick='openPurchaseMethodModal(${JSON.stringify(gift)})'
+        data-gift-action="open-purchase-method"
+        data-gift-id="${escapeAttribute(gift.id)}"
       >
         Ver / alterar forma de presentear
       </button>
@@ -799,7 +836,7 @@ function renderGifts(gifts) {
       </div>
     `,
     )
-    .join("");
+    .join(""));
 }
 
 /* Reserve Modal */
@@ -886,7 +923,7 @@ function configureReceiptLink(message) {
 
   if (!whatsappNumber) {
     sendReceiptButton.removeAttribute("href");
-    sendReceiptButton.style.display = "none";
+    setElementVisibility(sendReceiptButton, false);
     return;
   }
 
@@ -990,9 +1027,10 @@ async function openCardPayment(gift) {
   }
 
   const paymentUrl = await createCardPaymentLink(gift);
+  const safePaymentUrl = getSafeUrl(paymentUrl);
 
-  if (paymentUrl) {
-    window.open(paymentUrl, "_blank", "noopener,noreferrer");
+  if (safePaymentUrl) {
+    window.open(safePaymentUrl, "_blank", "noopener,noreferrer");
 
     return;
   }
@@ -1014,70 +1052,58 @@ function renderExternalPurchaseOptions(gift) {
 
     return true;
   });
+  currentExternalPurchaseOptions = options;
 
   if (!externalPurchaseOptions) {
     return;
   }
 
+  externalPurchaseOptions.replaceChildren();
+
   if (!options.length) {
-    externalPurchaseOptions.innerHTML = `
-      <p class="external-option-empty">
-        Nenhuma opção cadastrada para esta forma de compra.
-      </p>
-    `;
+    const empty = document.createElement("p");
+
+    empty.className = "external-option-empty";
+    empty.textContent =
+      "Nenhuma loja sugerida para esta forma de compra. A compra também pode ser feita em outro local.";
+    externalPurchaseOptions.appendChild(empty);
 
     return;
   }
 
-  externalPurchaseOptions.innerHTML = options
-    .map((option) => {
-      const isOnline = option.type === "online";
+  options.forEach((option, index) => {
+    const isOnline = option.type === "online";
+    const icon = document.createElement("span");
+    const content = document.createElement("span");
+    const store = document.createElement("strong");
+    const action = document.createElement("em");
+    const button = document.createElement("button");
+    const actionText = isOnline ? "Comprar online" : "Selecionar loja física";
+    const isSelected =
+      gift.selected_purchase_details?.store === option.store &&
+      gift.selected_purchase_method === option.type;
 
-      const icon = isOnline ? "🛒" : "🏬";
+    button.type = "button";
+    button.className = `external-store-card${isSelected ? " selected" : ""}`;
+    button.dataset.externalPurchaseIndex = index;
+    icon.className = "external-store-icon";
+    icon.textContent = isOnline ? "🛒" : "🏬";
+    content.className = "external-store-content";
+    store.textContent = option.store || "Opção de compra";
+    action.textContent = isSelected ? "✓ Opção selecionada" : actionText;
+    content.appendChild(store);
 
-      const actionText = isOnline ? "Comprar online" : "Selecionar loja física";
+    if (option.notes) {
+      const notes = document.createElement("small");
 
-      const isSelected =
-        gift.selected_purchase_details?.store === option.store &&
-        gift.selected_purchase_method === option.type;
+      notes.textContent = option.notes;
+      content.appendChild(notes);
+    }
 
-      return `
-          <button
-            type="button"
-            class="external-store-card ${isSelected ? "selected" : ""}"
-            onclick='selectExternalPurchaseOption(${JSON.stringify(option)})'
-          >
-
-            <span class="external-store-icon">
-              ${icon}
-            </span>
-
-            <span class="external-store-content">
-
-              <strong>
-                ${option.store || "Opção de compra"}
-              </strong>
-
-              ${
-                option.notes
-                  ? `
-                    <small>
-                      ${option.notes}
-                    </small>
-                  `
-                  : ""
-              }
-
-              <em>
-                ${isSelected ? "✓ Opção selecionada" : actionText}
-              </em>
-
-            </span>
-
-          </button>
-        `;
-    })
-    .join("");
+    content.appendChild(action);
+    button.append(icon, content);
+    externalPurchaseOptions.appendChild(button);
+  });
 }
 
 window.selectExternalPurchaseOption = async function (option) {
@@ -1098,7 +1124,11 @@ window.selectExternalPurchaseOption = async function (option) {
   }
 
   if (option.type === "online" && option.url) {
-    window.open(option.url, "_blank");
+    const safeUrl = SecurityUtils.getSafeUrl(option.url);
+
+    if (safeUrl) {
+      window.open(safeUrl, "_blank", "noopener,noreferrer");
+    }
   }
 
   renderExternalPurchaseOptions(selectedGift);
@@ -1111,77 +1141,67 @@ function openPurchaseMethodModal(gift) {
 
   const options = [];
 
-  if (canUseMoneyPayment(gift)) {
-    options.push(`
-      <button
-        class="purchase-method-card"
-        onclick="selectPurchaseMethod('pix')"
-      >
-        <span class="purchase-method-icon">
-          💠
-        </span>
+  function addPurchaseMethod(method, icon, title, description) {
+    const button = document.createElement("button");
+    const iconElement = document.createElement("span");
+    const content = document.createElement("span");
+    const strong = document.createElement("strong");
+    const small = document.createElement("small");
 
-        <span>
-          <strong>PIX</strong>
-          <small>QR Code e código copia e cola</small>
-        </span>
-      </button>
-    `);
+    button.className = "purchase-method-card";
+    button.dataset.purchaseMethod = method;
+    iconElement.className = "purchase-method-icon";
+    iconElement.textContent = icon;
+    strong.textContent = title;
+    small.textContent = description;
+    content.append(strong, small);
+    button.append(iconElement, content);
+    options.push(button);
+  }
+
+  if (canUseMoneyPayment(gift)) {
+    addPurchaseMethod("pix", "💠", "PIX", "QR Code e código copia e cola");
   }
 
   if (canUseCardPayment(gift)) {
-    options.push(`
-      <button
-        class="purchase-method-card"
-        onclick="selectPurchaseMethod('card')"
-      >
-        <span class="purchase-method-icon">
-          💳
-        </span>
-
-        <span>
-          <strong>Cartão de Crédito</strong>
-          <small>Pagamento via checkout externo</small>
-        </span>
-      </button>
-    `);
+    addPurchaseMethod(
+      "card",
+      "💳",
+      "Cartão de Crédito",
+      "Pagamento via checkout externo",
+    );
   }
 
   if (canUseExternalPurchase(gift)) {
-    options.push(`
-      <button
-        class="purchase-method-card"
-        onclick="selectPurchaseMethod('online')"
-      >
-        <span class="purchase-method-icon">
-          🛒
-        </span>
-
-        <span>
-          <strong>Comprar Online</strong>
-          <small>Veja lojas e links disponíveis</small>
-        </span>
-      </button>
-    `);
-
-    options.push(`
-      <button
-        class="purchase-method-card"
-        onclick="selectPurchaseMethod('physical')"
-      >
-        <span class="purchase-method-icon">
-          🏬
-        </span>
-
-        <span>
-          <strong>Loja Física</strong>
-          <small>Veja informações de compra presencial</small>
-        </span>
-      </button>
-    `);
+    addPurchaseMethod(
+      "online",
+      "🛒",
+      "Comprar Online",
+      "Veja lojas e links disponíveis",
+    );
   }
 
-  purchaseMethodOptions.innerHTML = options.join("");
+  if (canUseExternalPurchase(gift)) {
+    addPurchaseMethod(
+      "physical",
+      "🏬",
+      "Loja Física",
+      "Veja informações de compra presencial",
+    );
+  }
+
+  purchaseMethodOptions.replaceChildren();
+
+  if (options.length) {
+    purchaseMethodOptions.append(...options);
+  } else {
+    const empty = document.createElement("p");
+
+    empty.className = "external-option-empty";
+    empty.textContent =
+      "As formas de presentear ainda serão cadastradas pelos noivos.";
+    purchaseMethodOptions.appendChild(empty);
+  }
 
   purchaseMethodModal.classList.add("active");
 }
@@ -1201,7 +1221,7 @@ function configurePaymentModalTexts(gift) {
     confirmPaymentButton.textContent =
       getCompletedActionLabel("o pagamento");
 
-    sendReceiptButton.style.display = "flex";
+    setElementVisibility(sendReceiptButton, true);
 
     return;
   }
@@ -1218,7 +1238,7 @@ function configurePaymentModalTexts(gift) {
     confirmPaymentButton.textContent =
       getCompletedActionLabel("o pagamento");
 
-    sendReceiptButton.style.display = "none";
+    setElementVisibility(sendReceiptButton, false);
 
     return;
   }
@@ -1234,7 +1254,7 @@ function configurePaymentModalTexts(gift) {
 
     confirmPaymentButton.textContent = getCompletedActionLabel("a compra");
 
-    sendReceiptButton.style.display = "none";
+    setElementVisibility(sendReceiptButton, false);
 
     return;
   }
@@ -1250,7 +1270,7 @@ function configurePaymentModalTexts(gift) {
 
     confirmPaymentButton.textContent = getCompletedActionLabel("a compra");
 
-    sendReceiptButton.style.display = "none";
+    setElementVisibility(sendReceiptButton, false);
 
     return;
   }
@@ -1263,7 +1283,7 @@ function configurePaymentModalTexts(gift) {
   confirmPaymentButton.textContent =
     getCompletedActionLabel("o pagamento / compra");
 
-  sendReceiptButton.style.display = "none";
+  setElementVisibility(sendReceiptButton, false);
 }
 
 function updatePaymentGiftSummary(gift) {
@@ -1281,10 +1301,10 @@ function updatePaymentGiftSummary(gift) {
   }
 
   giftPriceElement.textContent = giftPrice;
-  giftPriceElement.style.display = giftPrice ? "" : "none";
+  setElementVisibility(giftPriceElement, Boolean(giftPrice));
 
   if (giftPriceLabelElement) {
-    giftPriceLabelElement.style.display = giftPrice ? "" : "none";
+    setElementVisibility(giftPriceLabelElement, Boolean(giftPrice));
   }
 }
 
@@ -1303,23 +1323,23 @@ window.openPixModalForContribution = function (gift, contribution) {
   updatePaymentGiftSummary(pixGift);
 
   if (moneyPaymentSection) {
-    moneyPaymentSection.style.display = "block";
+    setElementVisibility(moneyPaymentSection, true);
   }
 
   if (pixPaymentBlock) {
-    pixPaymentBlock.style.display = "block";
+    setElementVisibility(pixPaymentBlock, true);
   }
 
   if (cardPaymentButton) {
-    cardPaymentButton.style.display = "inline-flex";
+    setElementVisibility(cardPaymentButton, true);
   }
 
   if (cardPaymentBlock) {
-    cardPaymentBlock.style.display = "none";
+    setElementVisibility(cardPaymentBlock, false);
   }
 
   if (externalPurchaseSection) {
-    externalPurchaseSection.style.display = "none";
+    setElementVisibility(externalPurchaseSection, false);
   }
 
   const pixPayload = generatePixPayload(pixGift);
@@ -1331,8 +1351,10 @@ window.openPixModalForContribution = function (gift, contribution) {
   document.getElementById("pixKey").textContent = pixPayload;
   document.getElementById("pixQrCode").src = PixPayment.getQrCodeUrl(pixPayload);
 
+  const eventDefaults = window.WeddingEventConfig?.defaults || {};
+  const coupleNames = `${settings?.bride_name || eventDefaults.bride_name} e ${settings?.groom_name || eventDefaults.groom_name}`;
   const message =
-    `Olá, Livia e Messias! Acabei de contribuir com ${contribution.quota_quantity} ` +
+    `Olá, ${coupleNames}! Acabei de contribuir com ${contribution.quota_quantity} ` +
     `cota${Number(contribution.quota_quantity) === 1 ? "" : "s"} do presente "${gift.name}" e estou enviando o comprovante.`;
 
   configureReceiptLink(message);
@@ -1364,23 +1386,23 @@ window.openPixModalForGift = function (gift) {
   updatePaymentGiftSummary(gift);
 
   if (moneyPaymentSection) {
-    moneyPaymentSection.style.display = showMoney ? "block" : "none";
+    setElementVisibility(moneyPaymentSection, showMoney);
   }
 
   if (pixPaymentBlock) {
-    pixPaymentBlock.style.display = showPix ? "block" : "none";
+    setElementVisibility(pixPaymentBlock, showPix);
   }
 
   if (cardPaymentBlock) {
-    cardPaymentBlock.style.display = showCard ? "block" : "none";
+    setElementVisibility(cardPaymentBlock, showCard);
   }
 
   if (cardPaymentButton) {
-    cardPaymentButton.style.display = showCard ? "inline-flex" : "none";
+    setElementVisibility(cardPaymentButton, showCard);
   }
 
   if (externalPurchaseSection) {
-    externalPurchaseSection.style.display = showExternal ? "block" : "none";
+    setElementVisibility(externalPurchaseSection, showExternal);
   }
 
   if (showPix) {
@@ -1400,7 +1422,9 @@ window.openPixModalForGift = function (gift) {
     renderExternalPurchaseOptions(gift);
   }
 
-  const message = `Olá, Livia e Messias! Acabei de reservar o presente "${gift.name}" e estou enviando o comprovante.`;
+  const eventDefaults = window.WeddingEventConfig?.defaults || {};
+  const coupleNames = `${settings?.bride_name || eventDefaults.bride_name} e ${settings?.groom_name || eventDefaults.groom_name}`;
+  const message = `Olá, ${coupleNames}! Acabei de reservar o presente "${gift.name}" e estou enviando o comprovante.`;
 
   configureReceiptLink(message);
 
@@ -1692,6 +1716,11 @@ async function reportContributionPayment(gift, contribution) {
 }
 
 window.markPaymentAsDone = async function (gift) {
+  if (!gift?.selected_purchase_method) {
+    showToast("⚠️ Escolha primeiro como deseja presentear.");
+    return false;
+  }
+
   const { data, error } = await GuestData.reportGiftPayment(gift);
 
   if (error || (GuestAuth.isSecureMode() && data !== true)) {
@@ -1732,6 +1761,55 @@ window.requestPaymentConfirmation = function (gift, contribution = null) {
   paymentConfirmationModal.classList.add("active");
 };
 
+function handlePublicGiftAction(action, giftId, contributionId = "") {
+  const gift = findGiftById(giftId);
+
+  if (!gift) {
+    showToast("⚠️ Este presente foi atualizado. Recarregue a lista e tente novamente.");
+    loadGifts();
+    return;
+  }
+
+  const contribution = contributionId
+    ? findContributionById(gift, contributionId)
+    : null;
+
+  if (contributionId && !contribution) {
+    showToast("⚠️ Esta reserva foi atualizada. Recarregue a lista e tente novamente.");
+    loadGifts();
+    return;
+  }
+
+  if (action === "reserve") {
+    openReserveModal(gift);
+    return;
+  }
+
+  if (action === "open-purchase-method") {
+    openPurchaseMethodModal(gift);
+    return;
+  }
+
+  if (action === "confirm-gift-payment") {
+    requestPaymentConfirmation(gift);
+    return;
+  }
+
+  if (action === "open-gift-details") {
+    openPixModalForGift(gift);
+    return;
+  }
+
+  if (action === "confirm-contribution-payment") {
+    requestPaymentConfirmation(gift, contribution);
+    return;
+  }
+
+  if (action === "open-contribution-pix") {
+    openPixModalForContribution(gift, contribution);
+  }
+}
+
 document
   .getElementById("confirmPaymentButton")
   .addEventListener("click", () => {
@@ -1771,6 +1849,58 @@ document
 document
   .getElementById("cancelPaymentConfirmation")
   .addEventListener("click", closePaymentConfirmationModal);
+
+giftsGrid?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-gift-action]");
+
+  if (!button) {
+    return;
+  }
+
+  handlePublicGiftAction(
+    button.dataset.giftAction,
+    button.dataset.giftId,
+    button.dataset.contributionId,
+  );
+});
+
+giftsPendingSection?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-gift-action]");
+
+  if (!button) {
+    return;
+  }
+
+  handlePublicGiftAction(
+    button.dataset.giftAction,
+    button.dataset.giftId,
+    button.dataset.contributionId,
+  );
+});
+
+purchaseMethodOptions?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-purchase-method]");
+
+  if (button) {
+    selectPurchaseMethod(button.dataset.purchaseMethod);
+  }
+});
+
+externalPurchaseOptions?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-external-purchase-index]");
+
+  if (!button) {
+    return;
+  }
+
+  const option = currentExternalPurchaseOptions[
+    Number(button.dataset.externalPurchaseIndex)
+  ];
+
+  if (option) {
+    selectExternalPurchaseOption(option);
+  }
+});
 
 /* Copy PIX */
 document.getElementById("copyPixButton").addEventListener("click", async () => {

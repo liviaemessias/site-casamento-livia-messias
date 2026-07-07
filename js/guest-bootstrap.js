@@ -1,7 +1,11 @@
 (function () {
   const PAGE_SCRIPTS = {
-    "gifts.html": ["js/pix.js", "js/gifts.js"],
-    "rsvp.html": ["js/child-age-options.js", "js/rsvp.js"],
+    "gifts.html": ["js/security-utils.js", "js/pix.js", "js/gifts.js"],
+    "rsvp.html": [
+      "js/security-utils.js",
+      "js/child-age-options.js",
+      "js/rsvp.js",
+    ],
   };
 
   function getCurrentPage() {

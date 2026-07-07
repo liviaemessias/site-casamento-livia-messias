@@ -204,6 +204,28 @@
   background: var(--color-primary);
 }
 
+.quota-progress-0 { width: 0; }
+.quota-progress-1 { width: 5%; }
+.quota-progress-2 { width: 10%; }
+.quota-progress-3 { width: 15%; }
+.quota-progress-4 { width: 20%; }
+.quota-progress-5 { width: 25%; }
+.quota-progress-6 { width: 30%; }
+.quota-progress-7 { width: 35%; }
+.quota-progress-8 { width: 40%; }
+.quota-progress-9 { width: 45%; }
+.quota-progress-10 { width: 50%; }
+.quota-progress-11 { width: 55%; }
+.quota-progress-12 { width: 60%; }
+.quota-progress-13 { width: 65%; }
+.quota-progress-14 { width: 70%; }
+.quota-progress-15 { width: 75%; }
+.quota-progress-16 { width: 80%; }
+.quota-progress-17 { width: 85%; }
+.quota-progress-18 { width: 90%; }
+.quota-progress-19 { width: 95%; }
+.quota-progress-20 { width: 100%; }
+
 .quota-card-info small {
   color: var(--color-text-muted);
   font-weight: 600;
@@ -253,17 +275,23 @@
 .modal {
   position: fixed;
   inset: 0;
-  background: var(--color-overlay);
   display: none;
   align-items: center;
   justify-content: center;
   z-index: 2000;
   padding: 2rem;
   overflow-y: auto;
+  background: rgba(35, 24, 42, 0.5);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
 }
 
 .modal.active {
   display: flex;
+}
+
+.public-modal-open {
+  overflow: hidden;
 }
 
 .modal-content {
@@ -272,33 +300,38 @@
   max-width: 520px;
   max-height: 90vh;
   overflow-y: auto;
-  background: var(--color-inverse);
-  border-radius: var(--radius-3xl);
-  padding: 3rem;
-  box-shadow: var(--shadow-modal);
+  border: 1px solid rgba(111, 63, 167, 0.12);
+  border-radius: 10px;
+  padding: 2rem;
+  background: #ffffff;
+  box-shadow: 0 24px 70px rgba(28, 18, 34, 0.24);
+  scrollbar-gutter: stable;
 }
 
 .close-modal {
-  position: sticky;
-  top: 0;
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 42px;
-  height: 42px;
-  border: none;
-  border-radius: 50%;
-  background: var(--color-inverse);
-  font-size: 2rem;
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid rgba(111, 63, 167, 0.12);
+  border-radius: 6px;
+  background: #faf8fc;
+  color: var(--color-text);
+  font-size: 1.45rem;
+  line-height: 1;
   cursor: pointer;
   z-index: 10;
 }
 
 .modal-content h2 {
   font-family: var(--font-heading);
-  font-size: 2.5rem;
+  max-width: calc(100% - 48px);
+  font-size: 2rem;
   margin-bottom: 1rem;
+  color: var(--color-primary);
 }
 
 .modal-description {
@@ -316,7 +349,7 @@
 .modal-content textarea {
   width: 100%;
   border: 1px solid var(--color-primary-muted);
-  border-radius: var(--radius-xl);
+  border-radius: 8px;
   padding: 1rem;
   font-family: inherit;
   outline: none;
@@ -329,7 +362,7 @@
 
 .primary-button {
   border: none;
-  border-radius: var(--radius-xl);
+  border-radius: 8px;
   padding: 1rem;
   background: var(--color-primary);
   color: var(--color-inverse);
@@ -562,7 +595,9 @@
 }
 
 .navbar-light .mobile-menu {
-  color: var(--color-text);
+  border-color: var(--color-primary-muted);
+  background: var(--color-surface-strong);
+  color: var(--color-primary);
 }
 
 .nav-links li {
@@ -886,4 +921,251 @@
 
   font-size: 1rem;
   font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .gifts-hero {
+    padding: 9rem 0 3.5rem;
+  }
+
+  .gifts-description {
+    font-size: 0.95rem;
+    line-height: 1.6rem;
+  }
+
+  .gifts-section {
+    padding-bottom: 4rem;
+  }
+
+  .gifts-pending-section {
+    margin-bottom: 3rem;
+  }
+
+  .gifts-pending-header {
+    margin-bottom: 1rem;
+  }
+
+  .gifts-pending-header h2 {
+    font-size: 1.8rem;
+  }
+
+  .pending-gift-card {
+    gap: 0.75rem;
+    padding: 0.9rem;
+    border-radius: var(--radius-lg);
+  }
+
+  .pending-gift-content h3 {
+    font-size: 1.3rem;
+  }
+
+  .pending-gift-content p {
+    font-size: 0.88rem;
+  }
+
+  #giftsGrid {
+    gap: 3rem;
+  }
+
+  .gift-category-section {
+    margin-bottom: 3rem;
+  }
+
+  .gift-category-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .gift-category-header::after {
+    width: 64px;
+    margin-top: 0.65rem;
+  }
+
+  .gifts-grid {
+    gap: 1rem;
+  }
+
+  .gift-card {
+    padding: 1rem;
+    border-radius: var(--radius-lg);
+  }
+
+  .gift-image {
+    height: 155px;
+    margin-bottom: 1rem;
+    border-radius: var(--radius-md);
+  }
+
+  .gift-card h3 {
+    margin-bottom: 0.65rem;
+    font-size: 1.5rem;
+  }
+
+  .gift-card p {
+    margin-bottom: 0.75rem;
+    font-size: 0.9rem;
+    line-height: 1.45rem;
+  }
+
+  .gift-price {
+    margin-bottom: 1rem;
+    font-size: 1.05rem;
+  }
+
+  .quota-card-info {
+    gap: 0.5rem;
+    margin-bottom: 0.9rem;
+    padding: 0.75rem;
+    border-radius: var(--radius-md);
+  }
+
+  .quota-progress-label {
+    gap: 0.35rem;
+    font-size: 0.72rem;
+  }
+
+  .quota-progress-label strong {
+    font-size: 0.72rem;
+  }
+
+  .quota-card-info small {
+    font-size: 0.78rem;
+  }
+
+  .gift-button {
+    min-height: 44px;
+    padding: 0.8rem;
+    font-size: 0.9rem;
+  }
+
+  .gift-status,
+  .payment-informed {
+    margin-bottom: 0.75rem;
+    padding: 0.75rem;
+    font-size: 0.88rem;
+  }
+
+  .gift-method {
+    margin: 0.65rem 0 0.75rem;
+    padding: 0.65rem 0.75rem;
+  }
+
+  .modal {
+    align-items: flex-end;
+    padding: 0.75rem 0 0;
+    background: rgba(35, 24, 42, 0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  .modal-content,
+  .confirmation-modal-content {
+    width: 100%;
+    max-width: none;
+    max-height: 92dvh;
+    margin: 0;
+    padding: 1.25rem 1rem max(1.25rem, env(safe-area-inset-bottom));
+    overscroll-behavior: contain;
+    border-right: none;
+    border-bottom: none;
+    border-left: none;
+    border-radius: 14px 14px 0 0;
+    background: #ffffff;
+    box-shadow: 0 -18px 50px rgba(28, 18, 34, 0.2);
+    scrollbar-gutter: auto;
+  }
+
+  .close-modal {
+    top: 0.9rem;
+    right: 0.9rem;
+    width: 34px;
+    height: 34px;
+    background: #f7f3f9;
+  }
+
+  .modal-content h2 {
+    margin-bottom: 0.75rem;
+    font-size: 1.65rem;
+    line-height: 1.1;
+  }
+
+  .modal-description {
+    margin-bottom: 1.25rem;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .modal-content input,
+  .modal-content textarea {
+    min-height: 44px;
+    padding: 0.75rem 0.8rem;
+    font-size: 16px;
+  }
+
+  .modal-content textarea {
+    min-height: 104px;
+  }
+
+  .primary-button {
+    min-height: 44px;
+    padding: 0.8rem;
+  }
+
+  .quota-selection,
+  .pix-gift-summary {
+    padding: 0.8rem;
+    border-radius: 8px;
+  }
+
+  #purchaseMethodOptions {
+    gap: 0.65rem;
+    margin-top: 1rem;
+  }
+
+  .purchase-method-card {
+    min-height: 64px;
+    padding: 0.75rem;
+    border-radius: 8px;
+  }
+
+  .purchase-method-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+  }
+
+  .pix-qrcode {
+    width: min(190px, 70vw);
+    height: auto;
+  }
+
+  .pix-key-box {
+    max-height: 96px;
+    overflow-y: auto;
+    overflow-wrap: anywhere;
+  }
+
+  .external-store-card {
+    padding: 0.8rem;
+    border-radius: 8px;
+  }
+
+  .confirmation-modal-content {
+    text-align: center;
+  }
+
+  .confirmation-icon {
+    width: 3rem;
+    height: 3rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .confirmation-actions {
+    gap: 0.6rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .confirmation-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

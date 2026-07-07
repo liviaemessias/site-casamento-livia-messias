@@ -8,6 +8,13 @@ const guestCount = document.getElementById("guestCount");
 const guestFields = document.getElementById("guestFields");
 const toast = document.getElementById("toast");
 const toastMessage = document.getElementById("toastMessage");
+const { safeText } = SecurityUtils;
+
+function setElementVisibility(element, visible) {
+  if (!element) return;
+  element.hidden = !visible;
+  element.classList.toggle("is-hidden", !visible);
+}
 
 let existingRSVP = null;
 let cachedCompanions = [];
@@ -28,6 +35,14 @@ document.querySelector('input[name="email"]').value = "";
 
 const isCoupleInvite = guest.invite_type === "couple";
 
+const messageField = document.querySelector('textarea[name="message"]');
+
+if (messageField) {
+  messageField.placeholder = isCoupleInvite
+    ? "Se quiserem, deixem uma mensagem carinhosa para nós 💜"
+    : "Se quiser, deixe uma mensagem carinhosa para nós 💜";
+}
+
 const coupleMembersSection = document.getElementById("coupleMembersSection");
 
 const coupleMembersFields = document.getElementById("coupleMembersFields");
@@ -44,7 +59,7 @@ const guestCountGroup = document
    Guest Limit
 ========================= */
 
-guestCount.innerHTML = "";
+guestCount.replaceChildren();
 
 for (let i = 0; i <= (guest.max_guests || 0); i++) {
   const option = document.createElement("option");
@@ -56,7 +71,7 @@ for (let i = 0; i <= (guest.max_guests || 0); i++) {
 }
 
 if (guestCountGroup) {
-  guestCountGroup.style.display = "none";
+  setElementVisibility(guestCountGroup, false);
 }
 
 /* =========================
@@ -77,75 +92,74 @@ function showToast(message) {
    Companion Fields
 ========================= */
 
+function createOption(value, label = value) {
+  const option = document.createElement("option");
+  option.value = value;
+  option.textContent = label;
+  return option;
+}
+
+function createFormGroup(labelText, field) {
+  const group = document.createElement("div");
+  const label = document.createElement("label");
+
+  group.className = "form-group";
+  label.textContent = labelText;
+  group.append(label, field);
+
+  return group;
+}
+
+function createCompanionField(index) {
+  const wrapper = document.createElement("div");
+  const title = document.createElement("h4");
+  const nameInput = document.createElement("input");
+  const childSelect = document.createElement("select");
+  const ageGroup = document.createElement("div");
+  const ageLabel = document.createElement("label");
+  const ageSelect = document.createElement("select");
+  const help = document.createElement("small");
+
+  wrapper.className = "guest-card";
+  title.textContent = `Acompanhante ${index}`;
+
+  nameInput.type = "text";
+  nameInput.name = `guest_name_${index}`;
+  nameInput.required = true;
+
+  childSelect.className = "child-select";
+  childSelect.dataset.index = index;
+  childSelect.name = `guest_child_${index}`;
+  childSelect.append(createOption("Não"), createOption("Sim"));
+
+  ageGroup.className = "form-group child-age is-hidden";
+  ageGroup.id = `childAge_${index}`;
+  ageLabel.textContent = "Idade da criança no casamento";
+  ageSelect.className = "child-age-select";
+  ageSelect.name = `guest_age_${index}`;
+  ChildAgeOptions.populateSelect(ageSelect);
+  help.className = "field-help";
+  help.textContent =
+    "Considere a idade que a criança terá na data do casamento.";
+  ageGroup.append(ageLabel, ageSelect, help);
+
+  wrapper.append(
+    title,
+    createFormGroup("Nome", nameInput),
+    createFormGroup("É criança?", childSelect),
+    ageGroup,
+  );
+
+  return wrapper;
+}
+
 guestCount.addEventListener("change", () => {
-  guestFields.innerHTML = "";
+  guestFields.replaceChildren();
 
   const count = parseInt(guestCount.value || 0);
 
   for (let i = 1; i <= count; i++) {
-    const wrapper = document.createElement("div");
-
-    wrapper.classList.add("guest-card");
-
-    wrapper.innerHTML = `
-      <h4>
-        Acompanhante ${i}
-      </h4>
-
-      <div class="form-group">
-        <label>
-          Nome
-        </label>
-
-        <input
-          type="text"
-          name="guest_name_${i}"
-          required
-        >
-      </div>
-
-      <div class="form-group">
-        <label>
-          É criança?
-        </label>
-
-        <select
-          class="child-select"
-          data-index="${i}"
-          name="guest_child_${i}"
-        >
-          <option value="Não">
-            Não
-          </option>
-
-          <option value="Sim">
-            Sim
-          </option>
-        </select>
-      </div>
-
-      <div
-        class="form-group child-age is-hidden"
-        id="childAge_${i}"
-      >
-        <label>
-          Idade da criança no casamento
-        </label>
-
-        <select
-          class="child-age-select"
-          name="guest_age_${i}"
-        >
-          ${ChildAgeOptions.renderOptions()}
-        </select>
-
-        <small class="field-help">
-          Considere a idade que a criança terá na data do casamento.
-        </small>
-      </div>
-    `;
-
-    guestFields.appendChild(wrapper);
+    guestFields.appendChild(createCompanionField(i));
   }
 
   activateChildLogic();
@@ -160,7 +174,7 @@ function activateChildLogic() {
       const ageSelect = ageField.querySelector(".child-age-select");
       const isChild = select.value === "Sim";
 
-      ageField.style.display = isChild ? "block" : "none";
+      setElementVisibility(ageField, isChild);
       ageSelect.required = isChild;
 
       if (!isChild) {
@@ -214,12 +228,12 @@ function restoreCompanions(companions) {
       companion.is_child || "Não";
 
     if (companion.is_child === "Sim") {
-      document.getElementById(`childAge_${i}`).style.display = "block";
+      setElementVisibility(document.getElementById(`childAge_${i}`), true);
 
       const ageSelect = document.querySelector(
         `select[name="guest_age_${i}"]`,
       );
-      ageSelect.innerHTML = ChildAgeOptions.renderOptions(companion.age);
+      ChildAgeOptions.populateSelect(ageSelect, companion.age);
       ageSelect.required = true;
     }
   });
@@ -235,11 +249,11 @@ function hideCompanions(keepCache = true) {
   }
 
   if (guestCountGroup) {
-    guestCountGroup.style.display = "none";
+    setElementVisibility(guestCountGroup, false);
   }
 
   guestCount.value = 0;
-  guestFields.innerHTML = "";
+  guestFields.replaceChildren();
 }
 
 function showCompanionsIfAllowed({ restoreCached = true } = {}) {
@@ -251,7 +265,7 @@ function showCompanionsIfAllowed({ restoreCached = true } = {}) {
     return;
   }
 
-  guestCountGroup.style.display = "block";
+  setElementVisibility(guestCountGroup, true);
 
   if (
     restoreCached &&
@@ -312,11 +326,11 @@ function setupCoupleInvite() {
   }
 
   if (coupleMembersSection) {
-    coupleMembersSection.style.display = "block";
+    setElementVisibility(coupleMembersSection, true);
   }
 
   if (presenceGroup) {
-    presenceGroup.style.display = "none";
+    setElementVisibility(presenceGroup, false);
   }
 
   document.querySelectorAll('input[name="presence"]').forEach((input) => {
@@ -325,43 +339,32 @@ function setupCoupleInvite() {
 
   const members = guest.couple_members || [];
 
-  coupleMembersFields.innerHTML = members
-    .map(
-      (member, index) => `
-        <div class="couple-member-card">
+  coupleMembersFields.replaceChildren();
 
-          <strong>
-            ${member.name}
-          </strong>
+  members.forEach((member, index) => {
+    const card = document.createElement("div");
+    const name = document.createElement("strong");
+    const group = document.createElement("div");
 
-          <div class="radio-group">
+    card.className = "couple-member-card";
+    name.textContent = member.name || "Sem nome";
+    group.className = "radio-group";
 
-            <label>
-              <input
-                type="radio"
-                name="couple_member_${index}"
-                value="Sim"
-                required
-              >
-              Sim
-            </label>
+    ["Sim", "Não"].forEach((value) => {
+      const label = document.createElement("label");
+      const input = document.createElement("input");
 
-            <label>
-              <input
-                type="radio"
-                name="couple_member_${index}"
-                value="Não"
-                required
-              >
-              Não
-            </label>
+      input.type = "radio";
+      input.name = `couple_member_${index}`;
+      input.value = value;
+      input.required = true;
+      label.append(input, ` ${value}`);
+      group.appendChild(label);
+    });
 
-          </div>
-
-        </div>
-      `,
-    )
-    .join("");
+    card.append(name, group);
+    coupleMembersFields.appendChild(card);
+  });
 
   document
     .querySelectorAll('input[name^="couple_member_"]')
@@ -576,7 +579,7 @@ form.addEventListener("submit", async (e) => {
       console.error(guestError);
     }
 
-    document.getElementById("successMessage").style.display = "block";
+    setElementVisibility(document.getElementById("successMessage"), true);
 
     button.innerText = "Atualizar confirmação";
 

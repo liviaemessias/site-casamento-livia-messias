@@ -106,10 +106,22 @@ body {
 
 .mobile-menu {
   display: none;
-  background: none;
-  border: none;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
   color: var(--color-inverse);
-  font-size: 2rem;
+  font-size: 1.65rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+.navbar.scrolled .mobile-menu {
+  border-color: var(--color-primary-muted);
+  background: var(--color-surface-strong);
+  color: var(--color-primary);
 }
 
 /* Hero */
@@ -444,8 +456,62 @@ body {
     font-size: 2.4rem;
   }
 
+  .timeline-section {
+    padding: 5rem 0;
+  }
+
+  .section-header {
+    margin-bottom: 3rem;
+  }
+
+  .timeline::before {
+    left: 8px;
+    width: 3px;
+  }
+
+  .timeline-item {
+    margin-bottom: 3rem;
+    padding-left: 2.4rem !important;
+  }
+
+  .timeline-item:last-child {
+    margin-bottom: 0;
+  }
+
+  .timeline-content {
+    padding: 1rem;
+    border-radius: var(--radius-xl);
+  }
+
+  .timeline-item.left .timeline-content::before,
+  .timeline-item.right .timeline-content::before {
+    left: -37px;
+  }
+
+  .timeline-content::before {
+    top: 28px;
+    width: 14px;
+    height: 14px;
+  }
+
+  .timeline-date {
+    font-size: 0.68rem;
+    letter-spacing: 0.1rem;
+  }
+
   .timeline-content h3 {
-    font-size: 1.8rem;
+    margin: 0.65rem 0;
+    font-size: 1.55rem;
+  }
+
+  .timeline-content p {
+    font-size: 0.92rem;
+    line-height: 1.6rem;
+  }
+
+  .polaroid {
+    margin-bottom: 1rem;
+    padding: 0.6rem 0.6rem 1.5rem;
   }
 
 }
@@ -663,4 +729,10 @@ body {
     transform: translateX(0%);
   }
 
+}
+
+@media (max-width: 768px) {
+  .timeline-carousel {
+    height: 210px;
+  }
 }

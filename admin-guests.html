@@ -2,6 +2,7 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://unpkg.com https://challenges.cloudflare.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests" />
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
@@ -92,15 +93,6 @@
             </select>
           </div>
 
-          <div class="admin-filter-field">
-            <label for="guestAdminFilter">Admin</label>
-            <select id="guestAdminFilter">
-              <option value="">Todos</option>
-              <option value="admin">Administradores</option>
-              <option value="guest">Convidados</option>
-            </select>
-          </div>
-
           <div class="admin-filter-actions">
             <span id="guestFilterCount" class="admin-filter-count"></span>
 
@@ -109,7 +101,7 @@
               id="clearGuestFiltersButton"
               class="admin-clear-filters"
             >
-              Limpar filtros
+              Limpar Filtros
             </button>
           </div>
         </div>
@@ -141,11 +133,6 @@
                 <th>
                   <button class="admin-sort-button" data-guest-sort="status">
                     Status
-                  </button>
-                </th>
-                <th>
-                  <button class="admin-sort-button" data-guest-sort="admin">
-                    Admin
                   </button>
                 </th>
                 <th>
@@ -217,15 +204,45 @@
             <input type="number" id="guestMaxGuestsInput" min="0" value="0" />
           </div>
 
-          <label class="admin-checkbox">
-            <input type="checkbox" id="guestIsAdminInput" />
-            É administrador
-          </label>
-
           <button type="submit" class="admin-save-button">
             Salvar Convidado
           </button>
         </form>
+      </div>
+    </div>
+
+    <div class="admin-modal" id="invitationMessageModal">
+      <div class="admin-modal-content invitation-message-modal-content">
+        <button
+          type="button"
+          class="admin-modal-close"
+          id="closeInvitationMessageModalButton"
+          aria-label="Fechar mensagem do convite"
+        >
+          &times;
+        </button>
+
+        <p class="invitation-message-eyebrow">Mensagem personalizada</p>
+        <h2>Mensagem do Convite</h2>
+        <p class="invitation-message-description">
+          A mensagem já está personalizada, mas você pode editá-la antes de
+          copiar.
+        </p>
+
+        <div class="admin-form-group invitation-message-field">
+          <label for="invitationMessageInput">Mensagem</label>
+          <textarea
+            id="invitationMessageInput"
+            rows="18"
+            spellcheck="true"
+          ></textarea>
+          <small id="invitationMessageCount" class="admin-field-help"></small>
+        </div>
+
+        <button type="button" id="copyInvitationMessageButton" class="admin-save-button">
+          <i data-lucide="copy" aria-hidden="true"></i>
+          <span>Copiar mensagem</span>
+        </button>
       </div>
     </div>
 
@@ -320,6 +337,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
     <script src="./js/supabase.js"></script>
+    <script src="./js/event-config.js"></script>
+
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 
     <script src="./js/admin-common.js"></script>
 

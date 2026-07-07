@@ -5,11 +5,15 @@
     return `${Math.round(Number(value || 0))}%`;
   }
 
-  function setStyleWidth(id, value) {
+  function setChartSize(id, value) {
     const element = document.getElementById(id);
 
     if (element) {
-      element.style.width = `${Math.max(0, Number(value || 0))}%`;
+      const step = Math.max(0, Math.min(20, Math.round(Number(value || 0) / 5)));
+      [...element.classList]
+        .filter((className) => className.startsWith("chart-size-"))
+        .forEach((className) => element.classList.remove(className));
+      element.classList.add(`chart-size-${step}`);
     }
   }
 
@@ -22,7 +26,7 @@
     }));
 
     normalizedSegments.forEach((segment) => {
-      setStyleWidth(
+      setChartSize(
         segment.segmentId,
         segment.value > 0 ? Math.max(segment.percentage, 1.5) : 0,
       );

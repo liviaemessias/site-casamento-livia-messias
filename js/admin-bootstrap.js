@@ -2,19 +2,33 @@
   const ADMIN_LOGIN_PAGE = "admin-login.html";
   const PAGE_SCRIPTS = {
     "admin-dashboard.html": [
-      "js/admin-export.js",
+      "js/buffet-metrics.js",
+      "js/admin-overview.js",
+    ],
+    "admin-indicators.html": [
       "js/buffet-metrics.js",
       "js/admin-dashboard-charts.js",
-      "js/admin-dashboard-reports.js",
       "js/admin-dashboard.js",
     ],
-    "admin-gifts.html": ["js/admin-export.js", "js/admin-gifts.js"],
+    "admin-reports.html": [
+      "js/admin-export.js",
+      "js/buffet-metrics.js",
+      "js/admin-dashboard-reports.js",
+      "js/admin-reports.js",
+    ],
+    "admin-gifts.html": [
+      "js/security-utils.js",
+      "js/admin-export.js",
+      "js/admin-gifts.js",
+    ],
     "admin-guests.html": [
+      "js/security-utils.js",
       "js/admin-export.js",
       "js/child-age-options.js",
       "js/admin-guests.js",
     ],
     "admin-rsvps.html": [
+      "js/security-utils.js",
       "js/admin-export.js",
       "js/buffet-metrics.js",
       "js/admin-rsvps.js",

@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://unpkg.com https://challenges.cloudflare.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Relatórios | Painel Admin | Livia & Messias</title>
+    <link rel="stylesheet" href="./css/style.css" />
+    <link rel="stylesheet" href="./css/admin.css" />
+  </head>
+  <body class="admin-auth-pending">
+    <main class="admin-page admin-reports-page">
+      <section class="admin-header">
+        <div>
+          <p class="section-subtitle">Painel Administrativo</p>
+          <h1>Relatórios</h1>
+        </div>
+        <button id="logoutButton" class="admin-logout">Sair</button>
+      </section>
+
+      <nav class="admin-nav" aria-label="Navegação administrativa">
+        <a class="admin-nav-link" href="./admin-dashboard.html">Dashboard</a>
+        <a class="admin-nav-link" href="./admin-gifts.html">Presentes</a>
+        <a class="admin-nav-link" href="./admin-rsvps.html">RSVP</a>
+        <a class="admin-nav-link" href="./admin-guests.html">Convidados</a>
+        <a class="admin-nav-link" href="./admin-settings.html">Configurações</a>
+      </nav>
+
+      <section class="admin-section dashboard-reports">
+        <div class="admin-section-header">
+          <div>
+            <p class="section-subtitle">Exportações</p>
+            <h2>Relatórios Consolidados</h2>
+          </div>
+        </div>
+
+        <p id="reportsStatus" class="admin-reports-status" aria-live="polite">
+          Carregando dados dos relatórios...
+        </p>
+
+        <div class="dashboard-report-grid">
+          <button type="button" id="exportAttendanceReportButton" class="dashboard-report-card">
+            <span>Presença e Buffet</span>
+            <strong>Lista de Confirmados</strong>
+            <small>Convites confirmados, acompanhantes, crianças e restrições alimentares.</small>
+          </button>
+          <button type="button" id="exportFinancialReportButton" class="dashboard-report-card">
+            <span>Financeiro</span>
+            <strong>Valores Reservados</strong>
+            <small>Presentes individuais, cotas, convidados, status e valores.</small>
+          </button>
+          <button type="button" id="exportPendingReportButton" class="dashboard-report-card">
+            <span>Pendências</span>
+            <strong>Ações Pendentes</strong>
+            <small>RSVPs sem resposta, reservas e pagamentos que ainda exigem ação.</small>
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <div id="adminToast" class="admin-toast"></div>
+
+    <div class="admin-modal" id="attendanceReportModal">
+      <div class="admin-modal-content admin-report-modal-content">
+        <button type="button" class="admin-modal-close" id="closeAttendanceReportModalButton" aria-label="Fechar">&times;</button>
+        <h2>Exportar Lista de Confirmados</h2>
+        <details class="admin-report-column-picker">
+          <summary>Colunas do Relatório</summary>
+          <div class="admin-report-column-grid">
+            <label><input type="checkbox" data-attendance-column="invite" checked /> Convite</label>
+            <label><input type="checkbox" data-attendance-column="code" checked /> Código</label>
+            <label><input type="checkbox" data-attendance-column="people" checked /> Pessoas</label>
+            <label><input type="checkbox" data-attendance-column="companions" checked /> Acompanhantes</label>
+            <label><input type="checkbox" data-attendance-column="type" checked /> Tipo</label>
+            <label><input type="checkbox" data-attendance-column="child" checked /> Criança</label>
+            <label><input type="checkbox" data-attendance-column="age" checked /> Idade</label>
+            <label><input type="checkbox" data-attendance-column="buffetCategory" checked /> Categoria do Buffet</label>
+            <label><input type="checkbox" data-attendance-column="paying" checked /> Pagante</label>
+            <label><input type="checkbox" data-attendance-column="expectedCount" checked /> Total Esperado</label>
+            <label><input type="checkbox" data-attendance-column="childCount" checked /> Total de Crianças</label>
+            <label><input type="checkbox" data-attendance-column="payingCount" checked /> Total de Pagantes</label>
+            <label><input type="checkbox" data-attendance-column="payingChildCount" checked /> Crianças Pagantes</label>
+            <label><input type="checkbox" data-attendance-column="nonPayingChildCount" checked /> Crianças Não Pagantes</label>
+            <label><input type="checkbox" data-attendance-column="unknownChildCount" checked /> Crianças Sem Idade</label>
+            <label><input type="checkbox" data-attendance-column="buffetRule" checked /> Regra do Buffet</label>
+            <label><input type="checkbox" data-attendance-column="food" checked /> Restrição Alimentar</label>
+            <label><input type="checkbox" data-attendance-column="message" checked /> Mensagem</label>
+            <label><input type="checkbox" data-attendance-column="updatedAt" checked /> Atualizado em</label>
+          </div>
+        </details>
+        <div class="admin-report-option-grid">
+          <button type="button" class="admin-report-option" data-attendance-export-mode="summary" data-attendance-export-format="csv"><span>CSV</span><strong>Resumo por Convite</strong><small>Uma linha por convite confirmado.</small></button>
+          <button type="button" class="admin-report-option" data-attendance-export-mode="detailed" data-attendance-export-format="csv"><span>CSV</span><strong>Detalhado por Pessoa</strong><small>Uma linha para cada membro ou acompanhante.</small></button>
+          <button type="button" class="admin-report-option" data-attendance-export-mode="summary" data-attendance-export-format="xlsx"><span>XLSX</span><strong>Resumo por Convite</strong><small>Planilha simples com totais por convite.</small></button>
+          <button type="button" class="admin-report-option" data-attendance-export-mode="detailed" data-attendance-export-format="xlsx"><span>XLSX</span><strong>Detalhado com Agrupamento</strong><small>Linhas por pessoa e células mescladas por convite.</small></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-modal" id="financialReportModal">
+      <div class="admin-modal-content admin-report-modal-content">
+        <button type="button" class="admin-modal-close" id="closeFinancialReportModalButton" aria-label="Fechar">&times;</button>
+        <h2>Exportar Valores Reservados</h2>
+        <details class="admin-report-column-picker">
+          <summary>Colunas do Relatório</summary>
+          <div class="admin-report-column-grid">
+            <label><input type="checkbox" data-financial-column="type" checked /> Tipo</label>
+            <label><input type="checkbox" data-financial-column="item" checked /> Item</label>
+            <label><input type="checkbox" data-financial-column="guest" checked /> Convidado</label>
+            <label><input type="checkbox" data-financial-column="status" checked /> Status</label>
+            <label><input type="checkbox" data-financial-column="value" checked /> Valor</label>
+            <label><input type="checkbox" data-financial-column="date" checked /> Data</label>
+          </div>
+        </details>
+        <div class="admin-report-option-grid">
+          <button type="button" class="admin-report-option" data-financial-export-format="csv"><span>CSV</span><strong>Valores Reservados</strong><small>Arquivo tabular simples para planilhas.</small></button>
+          <button type="button" class="admin-report-option" data-financial-export-format="xlsx"><span>XLSX</span><strong>Valores Reservados</strong><small>Planilha pronta para Excel ou Google Sheets.</small></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-modal" id="pendingReportModal">
+      <div class="admin-modal-content admin-report-modal-content">
+        <button type="button" class="admin-modal-close" id="closePendingReportModalButton" aria-label="Fechar">&times;</button>
+        <h2>Exportar Ações Pendentes</h2>
+        <details class="admin-report-column-picker">
+          <summary>Colunas do Relatório</summary>
+          <div class="admin-report-column-grid">
+            <label><input type="checkbox" data-pending-column="type" checked /> Tipo</label>
+            <label><input type="checkbox" data-pending-column="item" checked /> Item</label>
+            <label><input type="checkbox" data-pending-column="owner" checked /> Responsável</label>
+            <label><input type="checkbox" data-pending-column="status" checked /> Status</label>
+            <label><input type="checkbox" data-pending-column="action" checked /> Ação Sugerida</label>
+          </div>
+        </details>
+        <div class="admin-report-option-grid">
+          <button type="button" class="admin-report-option" data-pending-export-format="csv"><span>CSV</span><strong>Ações Pendentes</strong><small>Lista simples de itens que exigem atenção.</small></button>
+          <button type="button" class="admin-report-option" data-pending-export-format="xlsx"><span>XLSX</span><strong>Ações Pendentes</strong><small>Planilha pronta para acompanhamento.</small></button>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <script src="./js/supabase.js"></script>
+    <script src="./js/event-config.js"></script>
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+    <script src="./js/admin-common.js"></script>
+    <script src="./js/admin-bootstrap.js"></script>
+  </body>
+</html>

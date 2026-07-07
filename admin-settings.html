@@ -2,6 +2,7 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://unpkg.com https://challenges.cloudflare.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests" />
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
@@ -44,6 +45,74 @@
         </div>
 
         <form id="settingsForm" class="admin-settings-form">
+          <div class="admin-settings-card">
+            <div class="admin-settings-card-header">
+              <span>Dados do Casamento</span>
+              <p>Informações exibidas na página inicial e nas demais páginas públicas.</p>
+            </div>
+
+            <div class="admin-form-grid">
+              <div class="admin-form-group">
+                <label for="brideNameInput">Nome da Noiva</label>
+                <input type="text" id="brideNameInput" maxlength="100" required />
+              </div>
+              <div class="admin-form-group">
+                <label for="groomNameInput">Nome do Noivo</label>
+                <input type="text" id="groomNameInput" maxlength="100" required />
+              </div>
+              <div class="admin-form-group">
+                <label for="weddingDateInput">Data e Hora do Casamento</label>
+                <input type="datetime-local" id="weddingDateInput" required />
+              </div>
+              <div class="admin-form-group">
+                <label for="rsvpDeadlineInput">Data Limite do RSVP</label>
+                <input type="date" id="rsvpDeadlineInput" required />
+              </div>
+            </div>
+          </div>
+
+          <div class="admin-settings-card">
+            <div class="admin-settings-card-header">
+              <span>Cerimônia</span>
+              <p>Local e horário da celebração religiosa.</p>
+            </div>
+            <div class="admin-form-grid">
+              <div class="admin-form-group">
+                <label for="ceremonyNameInput">Nome da Igreja</label>
+                <input type="text" id="ceremonyNameInput" maxlength="200" required />
+              </div>
+              <div class="admin-form-group">
+                <label for="ceremonyTimeInput">Horário</label>
+                <input type="time" id="ceremonyTimeInput" required />
+              </div>
+              <div class="admin-form-group admin-form-group-wide">
+                <label for="ceremonyAddressInput">Endereço</label>
+                <input type="text" id="ceremonyAddressInput" maxlength="500" required />
+              </div>
+            </div>
+          </div>
+
+          <div class="admin-settings-card">
+            <div class="admin-settings-card-header">
+              <span>Recepção</span>
+              <p>Local e horário da comemoração.</p>
+            </div>
+            <div class="admin-form-grid">
+              <div class="admin-form-group">
+                <label for="receptionNameInput">Nome do Buffet</label>
+                <input type="text" id="receptionNameInput" maxlength="200" required />
+              </div>
+              <div class="admin-form-group">
+                <label for="receptionTimeInput">Horário</label>
+                <input type="time" id="receptionTimeInput" required />
+              </div>
+              <div class="admin-form-group admin-form-group-wide">
+                <label for="receptionAddressInput">Endereço</label>
+                <input type="text" id="receptionAddressInput" maxlength="500" required />
+              </div>
+            </div>
+          </div>
+
           <div class="admin-settings-card">
             <div class="admin-settings-card-header">
               <span>Pagamentos PIX</span>
@@ -150,6 +219,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
     <script src="./js/supabase.js"></script>
+    <script src="./js/event-config.js"></script>
+
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
 
     <script src="./js/admin-common.js"></script>
 

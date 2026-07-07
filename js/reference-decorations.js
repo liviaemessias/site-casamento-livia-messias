@@ -11,6 +11,7 @@
     "impala-supernatural.png",
     "musica.png",
     "nossa-senhora-de-fatima.png",
+    "panda.png",
     "sagrada-familia.png",
     "tbbt.png",
     "the-office.png",
@@ -32,7 +33,7 @@
     return;
   }
 
-  const count = isAdminLogin ? 12 : 15;
+  const count = isAdminLogin ? 14 : 16;
   const layer = document.createElement("div");
 
   layer.className = "login-watermark-layer";
@@ -42,60 +43,22 @@
   const pickedReferences = Array.from({ length: count }, (_, index) => {
     return shuffledReferences[index % shuffledReferences.length];
   });
-  const positions = getDistributedPositions(count, isAdminLogin);
-
   pickedReferences.forEach((name, index) => {
     const image = document.createElement("img");
-    const size = randomBetween(
-      isAdminLogin ? 86 : 96,
-      isAdminLogin ? 158 : 190,
-    );
-    const position = positions[index];
 
     image.src = getReferencePath(name);
     image.alt = "";
     image.className = "login-watermark";
-    image.style.width = `${size}px`;
-    image.style.left = `${position.left}%`;
-    image.style.top = `${position.top}%`;
-    image.style.setProperty("--rotation", `${randomBetween(-28, 28)}deg`);
-    image.style.setProperty("--delay", `${index * 0.08}s`);
 
     layer.appendChild(image);
   });
 
   document.body.prepend(layer);
 
-  function randomBetween(min, max) {
-    return Math.round(min + Math.random() * (max - min));
-  }
-
   function getReferencePath(name) {
     const fileName = /\.(?:png|svg)$/i.test(name) ? name : `${name}.svg`;
 
     return `assets/images/login-references/${fileName}`;
-  }
-
-  function getDistributedPositions(total, compact) {
-    const columns = compact ? 4 : 5;
-    const rows = compact ? 3 : 4;
-    const slots = [];
-
-    for (let row = 0; row < rows; row++) {
-      for (let column = 0; column < columns; column++) {
-        slots.push({ column, row });
-      }
-    }
-
-    return slots
-      .sort(() => Math.random() - 0.5)
-      .slice(0, total)
-      .map(({ column, row }) => ({
-        left: Math.round(
-          ((column + randomBetween(24, 76) / 100) / columns) * 100,
-        ),
-        top: Math.round(((row + randomBetween(22, 78) / 100) / rows) * 100),
-      }));
   }
 
   function renderReferenceRails() {
@@ -111,22 +74,14 @@
     rightRail.className = "reference-rail-side right";
 
     [leftRail, rightRail].forEach((rail, railIndex) => {
-      const positions = getRailPositions(perSide);
-
-      positions.forEach((position, index) => {
+      Array.from({ length: perSide }).forEach((_, index) => {
         const image = document.createElement("img");
         const referenceIndex = railIndex * perSide + index;
         const name = railReferences[referenceIndex % railReferences.length];
-        const size = randomBetween(70, 128);
 
         image.src = getReferencePath(name);
         image.alt = "";
         image.className = "reference-rail";
-        image.style.width = `${size}px`;
-        image.style.left = `${position.left}%`;
-        image.style.top = `${position.top}%`;
-        image.style.setProperty("--rotation", `${randomBetween(-24, 24)}deg`);
-        image.style.setProperty("--delay", `${referenceIndex * 0.08}s`);
 
         rail.appendChild(image);
       });
@@ -134,13 +89,6 @@
 
     layer.append(leftRail, rightRail);
     document.body.prepend(layer);
-  }
-
-  function getRailPositions(total) {
-    return Array.from({ length: total }, (_, index) => ({
-      left: randomBetween(36, 64),
-      top: Math.round(((index + randomBetween(24, 76) / 100) / total) * 100),
-    })).sort(() => Math.random() - 0.5);
   }
 
   function renderMobileReferenceAccent() {
@@ -189,8 +137,7 @@
 
       image.src = getReferencePath(name);
       image.alt = "";
-      image.style.setProperty("--rotation", `${randomBetween(-18, 18)}deg`);
-      image.style.setProperty("--delay", `${(groupIndex + index) * 0.1}s`);
+      image.className = `reference-accent-${(groupIndex + index) % 6}`;
 
       accent.appendChild(image);
     });

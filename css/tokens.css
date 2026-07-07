@@ -104,3 +104,7 @@
   --border: rgba(255, 255, 255, 0.3);
   --shadow: var(--shadow-md);
 }
+
+[hidden] {
+  display: none !important;
+}

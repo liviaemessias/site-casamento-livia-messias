@@ -1,5 +1,11 @@
 AdminCommon.setupLogout();
 
+function setElementVisibility(element, visible) {
+  if (!element) return;
+  element.hidden = !visible;
+  element.classList.toggle("is-hidden", !visible);
+}
+
 let editingGift = null;
 let currentExternalOptions = [];
 let previousPurchaseMode = "money";
@@ -72,6 +78,7 @@ const externalOptionNotesInput = document.getElementById(
 );
 const { formatDate } = AdminCommon;
 const showAdminToast = AdminCommon.showToast;
+const { escapeAttribute, replaceSafeContent, safeText } = SecurityUtils;
 
 function getAdminPageParams() {
   return new URLSearchParams(window.location.search);
@@ -131,7 +138,7 @@ function renderStatusBadge(status) {
     return `<span class="admin-badge badge-bought">Comprado</span>`;
   }
 
-  return `<span class="admin-badge badge-muted">${status || "-"}</span>`;
+  return `<span class="admin-badge badge-muted">${safeText(status)}</span>`;
 }
 
 function renderPaymentBadge(status) {
@@ -460,9 +467,9 @@ function renderQuotaContributors(gift, guestMap) {
 
           return `
             <div class="quota-contributor-item">
-              <strong>${guestName}</strong>
+              <strong>${safeText(guestName)}</strong>
               <span>
-                ${quantity} cota${quantity === 1 ? "" : "s"} · ${contribution.payment_status || "Pendente"}
+                ${quantity} cota${quantity === 1 ? "" : "s"} · ${safeText(contribution.payment_status, "Pendente")}
               </span>
             </div>
           `;
@@ -504,7 +511,7 @@ function renderPurchaseMethodBadge(gift) {
 
   return `
     <span class="admin-badge ${method ? "badge-payment" : "badge-muted"}">
-      ${label}
+      ${safeText(label)}
     </span>
   `;
 }
@@ -537,8 +544,8 @@ function renderGiftDetailsMessage(gift) {
             (contribution) => `
               <div class="admin-details-item">
                 <div>
-                  <strong>${contribution.contributor_name || "Convidado"}</strong>
-                  <p>${contribution.message}</p>
+                  <strong>${safeText(contribution.contributor_name, "Convidado")}</strong>
+                  <p>${safeText(contribution.message, "")}</p>
                 </div>
               </div>
             `,
@@ -552,7 +559,7 @@ function renderGiftDetailsMessage(gift) {
     return `<p class="admin-muted">Nenhuma mensagem registrada.</p>`;
   }
 
-  return `<p>${gift.reservation_message}</p>`;
+  return `<p>${safeText(gift.reservation_message, "")}</p>`;
 }
 
 function renderGiftDetailsContributionSummary(gift) {
@@ -573,11 +580,11 @@ function renderGiftDetailsContributionSummary(gift) {
           (contribution) => `
             <div class="admin-details-item">
               <div>
-                <strong>${contribution.contributor_name || "Convidado"}</strong>
+                <strong>${safeText(contribution.contributor_name, "Convidado")}</strong>
                 <span>
                   ${contribution.quota_quantity || 0} cota${Number(contribution.quota_quantity || 0) === 1 ? "" : "s"}
                   · R$ ${Number(contribution.total_value || 0).toFixed(2)}
-                  · ${contribution.payment_status || "Pendente"}
+                  · ${safeText(contribution.payment_status, "Pendente")}
                 </span>
               </div>
 
@@ -587,14 +594,16 @@ function renderGiftDetailsContributionSummary(gift) {
                     <div class="admin-details-inline-actions">
                       <button
                         class="admin-action-button success"
-                        onclick='markQuotaContributionAsBought("${contribution.id}", "${gift.id}")'
+                        data-gift-detail-action="confirm-contribution"
+                        data-contribution-id="${escapeAttribute(contribution.id)}"
                       >
                         ✓ Confirmar
                       </button>
 
                       <button
                         class="admin-action-button warning"
-                        onclick='releaseQuotaContribution("${contribution.id}", "${gift.id}")'
+                        data-gift-detail-action="release-contribution"
+                        data-contribution-id="${escapeAttribute(contribution.id)}"
                       >
                         ↺ Liberar
                       </button>
@@ -621,7 +630,8 @@ function renderGiftDetailsActions(gift) {
     actions.push(`
       <button
         class="admin-detail-action-card success"
-        onclick='markGiftAsBought("${gift.id}")'
+        data-gift-detail-action="confirm"
+        data-gift-id="${escapeAttribute(gift.id)}"
       >
         <span class="admin-detail-action-icon">✓</span>
         <span>
@@ -635,7 +645,8 @@ function renderGiftDetailsActions(gift) {
   actions.push(`
     <button
       class="admin-detail-action-card"
-      onclick='closeGiftDetailsModal(); openEditGiftModal(${JSON.stringify(gift)})'
+      data-gift-detail-action="edit"
+      data-gift-id="${escapeAttribute(gift.id)}"
     >
       <span class="admin-detail-action-icon">✎</span>
       <span>
@@ -649,7 +660,8 @@ function renderGiftDetailsActions(gift) {
     actions.push(`
       <button
         class="admin-detail-action-card warning"
-        onclick='releaseGiftReservation("${gift.id}")'
+        data-gift-detail-action="release"
+        data-gift-id="${escapeAttribute(gift.id)}"
       >
         <span class="admin-detail-action-icon">↺</span>
         <span>
@@ -663,7 +675,8 @@ function renderGiftDetailsActions(gift) {
   actions.push(`
     <button
       class="admin-detail-action-card danger"
-      onclick='deleteGift(${JSON.stringify(gift)})'
+      data-gift-detail-action="delete"
+      data-gift-id="${escapeAttribute(gift.id)}"
     >
       <span class="admin-detail-action-icon">×</span>
       <span>
@@ -683,7 +696,7 @@ function renderGiftDetailsActions(gift) {
 window.openGiftDetailsModal = function (gift) {
   giftDetailsTitle.textContent = gift.name || "Detalhes do Presente";
 
-  giftDetailsContent.innerHTML = `
+  replaceSafeContent(giftDetailsContent, `
     <section class="admin-details-section">
       <span class="admin-details-label">Situação</span>
       ${renderSituationCell(gift)}
@@ -709,7 +722,7 @@ window.openGiftDetailsModal = function (gift) {
       <span class="admin-details-label">Mensagem</span>
       ${renderGiftDetailsMessage(gift)}
     </section>
-  `;
+  `);
 
   giftDetailsModal.classList.add("active");
 };
@@ -748,7 +761,6 @@ async function loadGiftsAdmin() {
   cachedGifts = withGiftContributionStats(gifts || [], contributions || []);
   cachedGiftGuests = guests || [];
   applyGiftFilters();
-  syncAllQuotaGiftStatuses();
 }
 
 function withGiftContributionStats(gifts, contributions) {
@@ -795,17 +807,17 @@ function renderGiftsTable(gifts, guests) {
   });
 
   if (!gifts.length) {
-    giftsTableBody.innerHTML = `
+    replaceSafeContent(giftsTableBody, `
       <tr>
         <td colspan="8" class="admin-empty-state">
           Nenhum presente encontrado para os filtros selecionados.
         </td>
       </tr>
-    `;
+    `);
     return;
   }
 
-  giftsTableBody.innerHTML = gifts
+  replaceSafeContent(giftsTableBody, gifts
     .map((gift) => {
       const guestName = gift.reserved_guest_id
         ? guestMap[gift.reserved_guest_id] ||
@@ -818,18 +830,18 @@ function renderGiftsTable(gifts, guests) {
 
       return `
         <tr>
-          <td>${gift.name}</td>
-          <td>${gift.category || "-"}</td>
+          <td>${safeText(gift.name)}</td>
+          <td>${safeText(gift.category)}</td>
           <td>${getGiftTypeLabel(gift)}</td>
           <td>${isQuotaGift(gift) ? renderQuotaProgress(gift) : `<span class="admin-muted">-</span>`}</td>
-          <td>${guestCell}</td>
+          <td>${isQuotaGift(gift) ? guestCell : safeText(guestCell)}</td>
           <td>${renderSituationCell(gift)}</td>
           <td>${formatDate(gift.reserved_at)}</td>
           <td>${renderGiftActions(gift)}</td>
         </tr>
       `;
     })
-    .join("");
+    .join(""));
 }
 
 function applyGiftFilters() {
@@ -892,10 +904,12 @@ function applyGiftFilters() {
       isQuotaGift(gift) &&
       Number(gift.quota_count || 0) >
         Number(gift.quota_reserved_count || 0);
+    const displayStatus = getGiftDisplayStatus(gift);
     const matchesStatus =
       !status ||
-      getGiftDisplayStatus(gift) === status ||
-      (status === "Disponível" && hasAvailableQuota);
+      displayStatus === status ||
+      (status === "Disponível" && hasAvailableQuota) ||
+      (status === "Reservado" && displayStatus === "Parcial");
     const matchesPayment = matchesPaymentFilter(gift, payment);
     const giftMethod = isQuotaGift(gift)
       ? "pix"
@@ -1003,6 +1017,44 @@ function updateGiftFilterCount(count) {
       : `${count} de ${total} presente${total === 1 ? "" : "s"}`;
 }
 
+function findCachedGiftById(giftId) {
+  return cachedGifts.find((gift) => gift.id === giftId);
+}
+
+function handleGiftAction(action, giftId) {
+  const gift = giftId ? findCachedGiftById(giftId) : null;
+
+  if ((action === "details" || action === "edit" || action === "delete") && !gift) {
+    showAdminToast("⚠️ Presente não encontrado. Atualize a lista e tente novamente.");
+    return;
+  }
+
+  if (action === "details") {
+    openGiftDetailsModal(gift);
+    return;
+  }
+
+  if (action === "edit") {
+    closeGiftDetailsModal();
+    openEditGiftModal(gift);
+    return;
+  }
+
+  if (action === "confirm") {
+    markGiftAsBought(giftId);
+    return;
+  }
+
+  if (action === "release") {
+    releaseGiftReservation(giftId);
+    return;
+  }
+
+  if (action === "delete") {
+    deleteGift(gift);
+  }
+}
+
 function exportGiftsCSV() {
   if (!visibleGifts.length) {
     showAdminToast("Nenhum presente para exportar.");
@@ -1058,7 +1110,8 @@ function renderGiftActions(gift) {
       <div class="admin-actions compact-actions">
         <button
           class="admin-action-button icon-action"
-          onclick='openGiftDetailsModal(${JSON.stringify(gift)})'
+          data-gift-action="details"
+          data-gift-id="${escapeAttribute(gift.id)}"
           title="Ver detalhes"
         >
           👁 Detalhes
@@ -1066,7 +1119,8 @@ function renderGiftActions(gift) {
 
         <button
           class="admin-action-button icon-action"
-          onclick='openEditGiftModal(${JSON.stringify(gift)})'
+          data-gift-action="edit"
+          data-gift-id="${escapeAttribute(gift.id)}"
           title="Editar presente"
         >
           ✎ Editar
@@ -1080,7 +1134,8 @@ function renderGiftActions(gift) {
       <div class="admin-actions compact-actions">
         <button
           class="admin-action-button success icon-action"
-          onclick='markGiftAsBought("${gift.id}")'
+          data-gift-action="confirm"
+          data-gift-id="${escapeAttribute(gift.id)}"
           title="Confirmar compra"
         >
           ✓ Confirmar
@@ -1088,7 +1143,8 @@ function renderGiftActions(gift) {
 
         <button
           class="admin-action-button icon-action"
-          onclick='openGiftDetailsModal(${JSON.stringify(gift)})'
+          data-gift-action="details"
+          data-gift-id="${escapeAttribute(gift.id)}"
           title="Ver detalhes"
         >
           👁 Detalhes
@@ -1096,7 +1152,8 @@ function renderGiftActions(gift) {
 
         <button
           class="admin-action-button icon-action"
-          onclick='openEditGiftModal(${JSON.stringify(gift)})'
+          data-gift-action="edit"
+          data-gift-id="${escapeAttribute(gift.id)}"
           title="Editar presente"
         >
           ✎ Editar
@@ -1109,7 +1166,8 @@ function renderGiftActions(gift) {
     <div class="admin-actions compact-actions">
       <button
         class="admin-action-button icon-action"
-        onclick='openGiftDetailsModal(${JSON.stringify(gift)})'
+        data-gift-action="details"
+        data-gift-id="${escapeAttribute(gift.id)}"
         title="Ver detalhes"
       >
         👁 Detalhes
@@ -1117,7 +1175,8 @@ function renderGiftActions(gift) {
 
       <button
         class="admin-action-button icon-action"
-        onclick='openEditGiftModal(${JSON.stringify(gift)})'
+        data-gift-action="edit"
+        data-gift-id="${escapeAttribute(gift.id)}"
         title="Editar presente"
       >
         ✎ Editar
@@ -1133,17 +1192,18 @@ window.markGiftAsBought = async function (giftId) {
     return;
   }
 
-  const { error } = await supabaseClient
-    .from("gifts")
-    .update({
-      status: "Comprado",
-      payment_status: "Confirmado",
-    })
-    .eq("id", giftId);
+  const { data, error } = await supabaseClient.rpc(
+    "admin_confirm_gift_purchase",
+    {
+      target_gift_id: giftId,
+    },
+  );
 
-  if (error) {
+  if (error || data !== true) {
     console.error(error);
-    showAdminToast("⚠️ Erro ao marcar presente como comprado.");
+    showAdminToast(
+      "⚠️ Não foi possível confirmar a compra. Atualize a lista e tente novamente.",
+    );
     return;
   }
 
@@ -1161,25 +1221,18 @@ window.releaseGiftReservation = async function (giftId) {
     return;
   }
 
-  const { error } = await supabaseClient
-    .from("gifts")
-    .update({
-      status: "Disponível",
-      reserved_guest_id: null,
-      reserved_name: null,
-      reservation_message: null,
-      reserved_at: null,
-      payment_status: null,
-      payment_reported_at: null,
-      selected_purchase_method: null,
-      selected_purchase_details: null,
-      card_payment_reference: null,
-    })
-    .eq("id", giftId);
+  const { data, error } = await supabaseClient.rpc(
+    "admin_release_gift_reservation",
+    {
+      target_gift_id: giftId,
+    },
+  );
 
-  if (error) {
+  if (error || data !== true) {
     console.error(error);
-    showAdminToast("⚠️ Erro ao liberar reserva.");
+    showAdminToast(
+      "⚠️ Não foi possível liberar a reserva. Atualize a lista e tente novamente.",
+    );
     return;
   }
 
@@ -1188,121 +1241,34 @@ window.releaseGiftReservation = async function (giftId) {
   await loadGiftsAdmin();
 };
 
-async function syncQuotaGiftStatus(giftId) {
-  const { data: gift, error: giftError } = await supabaseClient
-    .from("gifts")
-    .select("id, quota_count")
-    .eq("id", giftId)
-    .single();
-
-  const { data: contributions, error: contributionsError } = await supabaseClient
-    .from("gift_contributions")
-    .select("quota_quantity, payment_status")
-    .eq("gift_id", giftId);
-
-  if (giftError || contributionsError) {
-    console.error(giftError || contributionsError);
-    return;
-  }
-
-  const total = Number(gift.quota_count || 0);
-  const reserved = (contributions || []).reduce(
-    (sum, contribution) => sum + Number(contribution.quota_quantity || 0),
-    0,
-  );
-  const confirmed = (contributions || [])
-    .filter((contribution) => contribution.payment_status === "Confirmado")
-    .reduce(
-      (sum, contribution) => sum + Number(contribution.quota_quantity || 0),
-      0,
-    );
-  const informed = (contributions || [])
-    .filter((contribution) => contribution.payment_status === "Informado")
-    .reduce(
-      (sum, contribution) => sum + Number(contribution.quota_quantity || 0),
-      0,
-    );
-
-  let status = "Disponível";
-  let paymentStatus = null;
-
-  if (total > 0 && confirmed >= total) {
-    status = "Comprado";
-    paymentStatus = "Confirmado";
-  } else if (total > 0 && reserved >= total) {
-    status = "Reservado";
-    paymentStatus =
-      confirmed > 0
-        ? "Parcialmente confirmado"
-        : informed > 0
-          ? "Parcialmente informado"
-          : "Pendente";
-  } else if (reserved > 0) {
-    status = "Parcial";
-    paymentStatus =
-      confirmed > 0
-        ? "Parcialmente confirmado"
-        : informed > 0
-          ? "Parcialmente informado"
-          : "Pendente";
-  }
-
-  await supabaseClient
-    .from("gifts")
-    .update({
-      status,
-      payment_status: paymentStatus,
-    })
-    .eq("id", giftId);
-}
-
-async function syncAllQuotaGiftStatuses() {
-  const quotaGifts = cachedGifts.filter((gift) => {
-    if (!isQuotaGift(gift)) {
-      return false;
-    }
-
-    const displayStatus = getGiftDisplayStatus(gift);
-    const displayPaymentStatus = getGiftDisplayPaymentStatus(gift);
-
-    return (
-      gift.status !== displayStatus ||
-      (gift.payment_status || null) !== (displayPaymentStatus || null)
-    );
-  });
-
-  for (const gift of quotaGifts) {
-    await syncQuotaGiftStatus(gift.id);
-  }
-}
-
-window.markQuotaContributionAsBought = async function (contributionId, giftId) {
+window.markQuotaContributionAsBought = async function (contributionId) {
   const confirmed = confirm("Confirmar esta contribuição como comprada?");
 
   if (!confirmed) {
     return;
   }
 
-  const { error } = await supabaseClient
-    .from("gift_contributions")
-    .update({
-      payment_status: "Confirmado",
-    })
-    .eq("id", contributionId);
+  const { data, error } = await supabaseClient.rpc(
+    "admin_confirm_gift_contribution",
+    {
+      target_contribution_id: contributionId,
+    },
+  );
 
-  if (error) {
+  if (error || data !== true) {
     console.error(error);
-    showAdminToast("⚠️ Erro ao confirmar contribuição.");
+    showAdminToast(
+      "⚠️ Não foi possível confirmar a contribuição. Atualize a lista e tente novamente.",
+    );
     return;
   }
 
-  await syncQuotaGiftStatus(giftId);
   closeGiftDetailsModal();
   showAdminToast("💜 Contribuição confirmada!");
   await loadGiftsAdmin();
 };
 
-window.releaseQuotaContribution = async function (contributionId, giftId) {
+window.releaseQuotaContribution = async function (contributionId) {
   const confirmed = confirm(
     "Deseja liberar esta reserva de cota? Apenas esta contribuição será removida.",
   );
@@ -1311,18 +1277,21 @@ window.releaseQuotaContribution = async function (contributionId, giftId) {
     return;
   }
 
-  const { error } = await supabaseClient
-    .from("gift_contributions")
-    .delete()
-    .eq("id", contributionId);
+  const { data, error } = await supabaseClient.rpc(
+    "admin_release_gift_contribution",
+    {
+      target_contribution_id: contributionId,
+    },
+  );
 
-  if (error) {
+  if (error || data !== true) {
     console.error(error);
-    showAdminToast("⚠️ Erro ao liberar cota.");
+    showAdminToast(
+      "⚠️ Não foi possível liberar a cota. Atualize a lista e tente novamente.",
+    );
     return;
   }
 
-  await syncQuotaGiftStatus(giftId);
   closeGiftDetailsModal();
   showAdminToast("💜 Cota liberada com sucesso!");
   await loadGiftsAdmin();
@@ -1404,7 +1373,7 @@ function updateGiftTypeVisibility() {
 
 function updateGiftExternalOptionsVisibility() {
   if (giftTypeInput.value === "quota") {
-    giftExternalOptionsSection.style.display = "none";
+    setElementVisibility(giftExternalOptionsSection, false);
     previousPurchaseMode = "money";
     return;
   }
@@ -1431,71 +1400,75 @@ function updateGiftExternalOptionsVisibility() {
 
   const shouldShow = mode === "external" || mode === "hybrid";
 
-  giftExternalOptionsSection.style.display = shouldShow ? "block" : "none";
+  setElementVisibility(giftExternalOptionsSection, shouldShow);
   previousPurchaseMode = mode;
 }
 
 function renderGiftExternalOptions() {
+  giftExternalOptionsList.replaceChildren();
+
   if (!currentExternalOptions.length) {
-    giftExternalOptionsList.innerHTML = `
-      <div class="admin-muted">
-        Nenhuma opção cadastrada.
-      </div>
-    `;
+    const empty = document.createElement("div");
+
+    empty.className = "admin-muted";
+    empty.textContent = "Nenhuma opção cadastrada.";
+    giftExternalOptionsList.appendChild(empty);
 
     return;
   }
 
-  giftExternalOptionsList.innerHTML = currentExternalOptions
-    .map((option, index) => {
-      const typeLabel =
-        option.type === "physical" ? "Loja Física" : "Compra Online";
+  currentExternalOptions.forEach((option, index) => {
+    const card = document.createElement("div");
+    const content = document.createElement("div");
+    const store = document.createElement("strong");
+    const type = document.createElement("span");
+    const actions = document.createElement("div");
+    const editButton = document.createElement("button");
+    const removeButton = document.createElement("button");
+    const typeLabel =
+      option.type === "physical" ? "Loja Física" : "Compra Online";
 
-      return `
-        <div class="external-option-admin-card">
-          <div>
-            <strong>${option.store || "Sem nome"}</strong>
-            <span>${typeLabel}</span>
+    card.className = "external-option-admin-card";
+    store.textContent = option.store || "Sem nome";
+    type.textContent = typeLabel;
+    content.append(store, type);
 
-            ${
-              option.url
-                ? `<small>${option.url}</small>`
-                : ""
-            }
+    if (option.url) {
+      const url = document.createElement("small");
 
-            ${
-              option.notes
-                ? `<p>${option.notes}</p>`
-                : ""
-            }
-          </div>
+      url.textContent = option.url;
+      content.appendChild(url);
+    }
 
-          <div class="admin-actions">
-            <button
-              type="button"
-              class="admin-action-button"
-              onclick="editExternalOption(${index})"
-            >
-              Editar
-            </button>
+    if (option.notes) {
+      const notes = document.createElement("p");
 
-            <button
-              type="button"
-              class="admin-action-button danger"
-              onclick="removeExternalOption(${index})"
-            >
-              Remover
-            </button>
-          </div>
-        </div>
-      `;
-    })
-    .join("");
+      notes.textContent = option.notes;
+      content.appendChild(notes);
+    }
+
+    actions.className = "admin-actions";
+    editButton.type = "button";
+    editButton.className = "admin-action-button";
+    editButton.dataset.externalOptionAction = "edit";
+    editButton.dataset.externalOptionIndex = index;
+    editButton.textContent = "Editar";
+    removeButton.type = "button";
+    removeButton.className = "admin-action-button danger";
+    removeButton.dataset.externalOptionAction = "remove";
+    removeButton.dataset.externalOptionIndex = index;
+    removeButton.textContent = "Remover";
+    actions.append(editButton, removeButton);
+    card.append(content, actions);
+    giftExternalOptionsList.appendChild(card);
+  });
 }
 
 function updateExternalOptionUrlVisibility() {
-  externalOptionUrlGroup.style.display =
-    externalOptionTypeInput.value === "online" ? "block" : "none";
+  setElementVisibility(
+    externalOptionUrlGroup,
+    externalOptionTypeInput.value === "online",
+  );
 }
 
 function openExternalOptionModal(option = null, index = null) {
@@ -1568,11 +1541,15 @@ window.deleteGift = async function (gift) {
     return;
   }
 
-  const { error } = await supabaseClient.from("gifts").delete().eq("id", gift.id);
+  const { data, error } = await supabaseClient.rpc("admin_delete_gift", {
+    target_gift_id: gift.id,
+  });
 
-  if (error) {
+  if (error || data !== true) {
     console.error(error);
-    showAdminToast("⚠️ Erro ao excluir presente.");
+    showAdminToast(
+      "⚠️ Não foi possível excluir o presente. Atualize a lista e tente novamente.",
+    );
     return;
   }
 
@@ -1601,6 +1578,45 @@ closeGiftDetailsModalButton.addEventListener("click", () => {
 
 clearGiftFiltersButton?.addEventListener("click", clearGiftFilters);
 exportGiftsButton?.addEventListener("click", exportGiftsCSV);
+
+giftsTableBody?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-gift-action]");
+
+  if (!button) {
+    return;
+  }
+
+  handleGiftAction(button.dataset.giftAction, button.dataset.giftId);
+});
+
+giftDetailsContent?.addEventListener("click", (event) => {
+  const contributionButton = event.target.closest(
+    "[data-contribution-id][data-gift-detail-action]",
+  );
+
+  if (contributionButton) {
+    const action = contributionButton.dataset.giftDetailAction;
+    const contributionId = contributionButton.dataset.contributionId;
+
+    if (action === "confirm-contribution") {
+      markQuotaContributionAsBought(contributionId);
+      return;
+    }
+
+    if (action === "release-contribution") {
+      releaseQuotaContribution(contributionId);
+      return;
+    }
+  }
+
+  const button = event.target.closest("[data-gift-detail-action]");
+
+  if (!button) {
+    return;
+  }
+
+  handleGiftAction(button.dataset.giftDetailAction, button.dataset.giftId);
+});
 
 document.querySelectorAll("[data-gift-sort]").forEach((button) => {
   button.addEventListener("click", () => {
@@ -1638,6 +1654,25 @@ giftQuotaCountInput.addEventListener("input", updateQuotaValuePreview);
 
 addExternalOptionButton.addEventListener("click", () => {
   openExternalOptionModal();
+});
+
+giftExternalOptionsList?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-external-option-action]");
+
+  if (!button) {
+    return;
+  }
+
+  const index = Number(button.dataset.externalOptionIndex);
+
+  if (button.dataset.externalOptionAction === "edit") {
+    editExternalOption(index);
+    return;
+  }
+
+  if (button.dataset.externalOptionAction === "remove") {
+    removeExternalOption(index);
+  }
 });
 
 externalOptionTypeInput.addEventListener(
@@ -1712,16 +1747,26 @@ giftForm.addEventListener("submit", async (e) => {
     payload.payment_status = null;
   }
 
-  const result = editingGift
-    ? await supabaseClient.from("gifts").update(payload).eq("id", editingGift.id)
-    : await supabaseClient.from("gifts").insert([payload]);
+  const result = await supabaseClient.rpc("admin_save_gift", {
+    target_gift_id: editingGift?.id || null,
+    submitted_category: payload.category,
+    submitted_name: payload.name,
+    submitted_description: payload.description,
+    submitted_price: payload.price,
+    submitted_image_url: payload.image_url,
+    submitted_gift_type: payload.gift_type,
+    submitted_quota_count: payload.quota_count,
+    submitted_purchase_mode: payload.purchase_mode,
+    submitted_card_payment_url: payload.card_payment_url,
+    submitted_external_options: payload.external_purchase_options,
+  });
 
-  if (result.error) {
+  if (result.error || !result.data) {
     console.error(result.error);
     showAdminToast(
       editingGift
-        ? "⚠️ Erro ao atualizar presente."
-        : "⚠️ Erro ao criar presente.",
+        ? "⚠️ Não foi possível atualizar. Presentes com reservas não permitem alterar tipo, valor ou forma de compra."
+        : "⚠️ Não foi possível criar o presente. Revise os dados informados.",
     );
     return;
   }

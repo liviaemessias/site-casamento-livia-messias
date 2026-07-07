@@ -4,6 +4,8 @@
     "admin-dashboard.html",
     "admin-gifts.html",
     "admin-guests.html",
+    "admin-indicators.html",
+    "admin-reports.html",
     "admin-rsvps.html",
     "admin-settings.html",
   ]);
