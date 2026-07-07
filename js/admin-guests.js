@@ -746,7 +746,7 @@ function buildInvitationMessage(guest) {
     ? [
         `Ooi, *${recipientName}*! Tudo bem?! 💜`,
         "",
-        'Depois de muitos momentos especiais vividos, estamos prontos para dizer "Sim" e gostaríamos muito que fizessem parte deste momento tão especial: o nosso casamento!',
+        'Depois de muitos momentos especiais vividos, estamos prontos para dizer "Sim" e gostaríamos muito que fizessem parte deste momento tão especial: *o nosso casamento*!',
         "",
         "*⛪ A Cerimônia (Missa):*",
         `* Data: ${formatInvitationDate(settings.wedding_date)} às ${formatInvitationTime(settings.ceremony_time)}`,
@@ -785,7 +785,7 @@ function buildInvitationMessage(guest) {
     : [
         `Ooi, *${recipientName}*! Tudo bem?! 💜`,
         "",
-        'Depois de muitos momentos especiais vividos, estamos prontos para dizer "Sim" e gostaríamos muito que fizesse parte deste momento tão especial: o nosso casamento!',
+        'Depois de muitos momentos especiais vividos, estamos prontos para dizer "Sim" e gostaríamos muito que fizesse parte deste momento tão especial: *o nosso casamento*!',
         "",
         "*⛪ A Cerimônia (Missa):*",
         `* Data: ${formatInvitationDate(settings.wedding_date)} às ${formatInvitationTime(settings.ceremony_time)}`,
