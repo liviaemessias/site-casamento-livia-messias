@@ -12,9 +12,10 @@
     reception_address:
       "Av. Bezerra de Menezes, 531 - Parquelândia, Fortaleza - CE, 60325-004",
     reception_time: "21:00",
-    site_url: "https://liviaemessias.github.io/",
+    site_url:
+      "https://liviaemessias.github.io/site-casamento-livia-messias/",
     social_image:
-      "https://liviaemessias.github.io/assets/images/home/cover-main-page.jpg",
+      "https://liviaemessias.github.io/site-casamento-livia-messias/assets/images/home/cover-main-page.jpg",
     site_description_template:
       "Celebre conosco o nosso casamento — {date}. Confira os detalhes do grande dia!",
   };
