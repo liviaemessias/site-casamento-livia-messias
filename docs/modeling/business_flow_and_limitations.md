@@ -79,8 +79,8 @@ administrativos.
 5. Se houver acompanhantes disponíveis, o sistema exibe a quantidade permitida.
 6. Para cada acompanhante, são informados nome, se é criança e, quando
    aplicável, a idade que terá na data do casamento.
-7. A idade da criança é selecionada em uma lista padronizada de meses ou anos,
-   evitando respostas livres inconsistentes.
+7. A idade da criança é selecionada em uma lista padronizada de
+   `Menos de 1 ano` até `12 anos`, evitando respostas livres inconsistentes.
 8. O RSVP é criado ou atualizado na tabela `rsvps`.
 9. O campo `guests.confirmed` é atualizado.
 10. Se já existir RSVP para o convite, o fluxo atualiza o registro existente em vez de criar outro.

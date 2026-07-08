@@ -76,13 +76,13 @@ window.GuestAuthConfig = Object.freeze({
 6. Execute:
 
 ```text
-docs/security_phase_4_rls_activate.sql
+docs/migrations/security_phase_4_rls_activate.sql
 ```
 
 7. Execute:
 
 ```text
-docs/security_phase_4_rls_verify_active.sql
+docs/migrations/security_phase_4_rls_verify_active.sql
 ```
 
 8. Confirme que o login administrativo ainda funciona.
@@ -164,3 +164,4 @@ Se o corte falhar:
 5. preserve logs e dados para diagnóstico.
 
 Não remova as tabelas ou RPCs preparadas durante um rollback emergencial.
+

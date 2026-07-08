@@ -42,7 +42,7 @@ site atual.
 ## Aplicação
 
 1. Abra o SQL Editor do projeto no Supabase.
-2. Execute `docs/security_phase_2_prepare.sql`.
+2. Execute `docs/migrations/security_phase_2_prepare.sql`.
 3. Confirme a criação das tabelas `admin_users` e
    `guest_access_sessions`.
 4. Confirme que ambas estão com RLS habilitada.
@@ -66,7 +66,7 @@ repositório.
 
 ## Verificação
 
-Execute `docs/security_phase_2_verify.sql`. Todas as linhas retornadas devem
+Execute `docs/migrations/security_phase_2_verify.sql`. Todas as linhas retornadas devem
 apresentar `check_passed = true`.
 
 As tabelas novas não devem possuir políticas de acesso direto para `anon` ou
@@ -78,7 +78,7 @@ operações administrativas confiáveis.
 Antes de a nova autenticação entrar em uso, a preparação pode ser removida com:
 
 ```text
-docs/security_phase_2_rollback.sql
+docs/migrations/security_phase_2_rollback.sql
 ```
 
 Depois que sessões ou administradores forem vinculados, faça um backup das
@@ -96,11 +96,11 @@ Concluído:
 ## Acesso Transitório Do Administrador
 
 Depois do login, o cliente Supabase usa o papel `authenticated`. Execute
-`docs/security_admin_authenticated_access.sql` para manter as telas
+`docs/migrations/security_admin_authenticated_access.sql` para manter as telas
 administrativas funcionando antes da ativação das políticas RLS.
 
 Valide o resultado com
-`docs/security_admin_authenticated_access_verify.sql`. Todas as linhas devem
+`docs/migrations/security_admin_authenticated_access_verify.sql`. Todas as linhas devem
 retornar `check_passed = true`.
 
 Essas permissões são transitórias. Elas devem ser revogadas ou substituídas
@@ -137,3 +137,4 @@ Próximos endurecimentos:
 - revisão de Content Security Policy e dependências CDN;
 - auditoria de usos de `innerHTML`;
 - rotação dos códigos de convite antes da publicação definitiva.
+

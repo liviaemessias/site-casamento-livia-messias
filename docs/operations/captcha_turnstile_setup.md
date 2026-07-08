@@ -29,6 +29,7 @@ localhost
 127.0.0.1
 192.168.18.18
 messiasfl10.github.io
+liviaemessias.github.io
 ```
 
 Ao usar um domínio próprio, cadastre também esse hostname. Não é necessário que

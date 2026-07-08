@@ -5,7 +5,7 @@
 --
 -- LEGADO: este arquivo representa o acesso público usado antes da migração
 -- de segurança. Não o execute em uma reconstrução da versão 3.0.
--- Use docs/supabase_rebuild_runbook.md.
+-- Use docs/rebuild/supabase_rebuild_runbook.md.
 --
 -- Use este arquivo em um projeto Supabase novo para recriar o
 -- schema atual usado pelo site, pelo RSVP e pelo painel admin.
@@ -216,3 +216,4 @@ grant usage, select on all sequences in schema public to anon, authenticated;
 -- );
 
 commit;
+

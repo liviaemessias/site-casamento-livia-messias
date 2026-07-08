@@ -1,14 +1,10 @@
 -- ============================================================
--- Secure administrative RSVP operations
+-- Harden validation of RSVPs submitted by invited guests
 -- ============================================================
---
--- Run this script once in an existing secured Supabase project. Clean
--- rebuilds also execute this file as part of the documented sequence.
 
 begin;
 
-create or replace function public.admin_save_guest_rsvp(
-  target_guest_id uuid,
+create or replace function public.save_current_rsvp(
   submitted_presence text,
   submitted_email text,
   submitted_phone text,
@@ -16,12 +12,13 @@ create or replace function public.admin_save_guest_rsvp(
   submitted_message text,
   submitted_guest_data jsonb
 )
-returns boolean
+returns setof public.rsvps
 language plpgsql
 security definer
 set search_path = ''
 as $$
 declare
+  current_guest uuid;
   guest_record public.guests%rowtype;
   safe_guest_data jsonb;
   safe_members jsonb := '[]'::jsonb;
@@ -32,31 +29,25 @@ declare
   expected_member_count integer;
   member_is_coming boolean;
 begin
-  if not exists (
-    select 1
-    from public.admin_users as administrator
-    where administrator.user_id = (select auth.uid())
-      and administrator.active is true
-  ) then
-    raise exception 'Administrator access required.'
-      using errcode = '42501';
-  end if;
+  current_guest := public.current_guest_id();
 
-  if submitted_presence is null
+  if current_guest is null
+    or submitted_presence is null
     or submitted_presence not in ('Sim', 'Não')
     or jsonb_typeof(coalesce(submitted_guest_data, '{}'::jsonb)) <> 'object'
   then
-    return false;
+    return;
   end if;
 
   select *
   into guest_record
   from public.guests
-  where id = target_guest_id
+  where id = current_guest
+    and active is true
   for update;
 
   if not found then
-    return false;
+    return;
   end if;
 
   begin
@@ -66,7 +57,7 @@ begin
     );
   exception
     when invalid_text_representation then
-      return false;
+      return;
   end;
 
   companion_count := case
@@ -80,7 +71,7 @@ begin
     or companion_count <> requested_guest_count
     or (submitted_presence = 'Não' and requested_guest_count <> 0)
   then
-    return false;
+    return;
   end if;
 
   if exists (
@@ -98,10 +89,14 @@ begin
       or companion ->> 'is_child' not in ('Sim', 'Não')
       or (
         companion ->> 'is_child' = 'Sim'
-        and nullif(btrim(companion ->> 'age'), '') is null
+        and not (
+          companion ->> 'age' = 'Menos de 1 ano'
+          or companion ->> 'age' = '1 ano'
+          or companion ->> 'age' ~ '^([2-9]|1[0-2]) anos$'
+        )
       )
   ) then
-    return false;
+    return;
   end if;
 
   select coalesce(
@@ -111,7 +106,7 @@ begin
         'is_child', companion ->> 'is_child',
         'age', case
           when companion ->> 'is_child' = 'Sim'
-            then left(btrim(companion ->> 'age'), 40)
+            then companion ->> 'age'
           else ''
         end
       )
@@ -149,7 +144,7 @@ begin
           or member ->> 'presence' not in ('Sim', 'Não')
       )
     then
-      return false;
+      return;
     end if;
 
     select
@@ -177,7 +172,7 @@ begin
         else 'Não'
       end
     ) then
-      return false;
+      return;
     end if;
   elsif jsonb_array_length(
     case
@@ -186,7 +181,7 @@ begin
       else '[]'::jsonb
     end
   ) <> 0 then
-    return false;
+    return;
   end if;
 
   safe_guest_data := jsonb_build_object(
@@ -198,6 +193,7 @@ begin
     'companions', safe_companions
   );
 
+  return query
   insert into public.rsvps (
     guest_id,
     presence,
@@ -209,7 +205,7 @@ begin
     updated_at
   )
   values (
-    target_guest_id,
+    current_guest,
     submitted_presence,
     left(coalesce(submitted_email, ''), 320),
     left(coalesce(submitted_phone, ''), 40),
@@ -226,45 +222,12 @@ begin
     food = excluded.food,
     message = excluded.message,
     guest_data = excluded.guest_data,
-    updated_at = excluded.updated_at;
-
-  -- The RSVP trigger updates guests.confirmed in this transaction.
-  return true;
+    updated_at = excluded.updated_at
+  returning *;
 end;
 $$;
 
-create or replace function public.admin_delete_guest_rsvp(
-  target_rsvp_id uuid
-)
-returns boolean
-language plpgsql
-security definer
-set search_path = ''
-as $$
-declare
-  deleted_rsvp_id uuid;
-begin
-  if not exists (
-    select 1
-    from public.admin_users as administrator
-    where administrator.user_id = (select auth.uid())
-      and administrator.active is true
-  ) then
-    raise exception 'Administrator access required.'
-      using errcode = '42501';
-  end if;
-
-  delete from public.rsvps
-  where id = target_rsvp_id
-  returning id into deleted_rsvp_id;
-
-  -- The RSVP trigger updates guests.confirmed in this transaction.
-  return deleted_rsvp_id is not null;
-end;
-$$;
-
-comment on function public.admin_save_guest_rsvp(
-  uuid,
+comment on function public.save_current_rsvp(
   text,
   text,
   text,
@@ -272,13 +235,9 @@ comment on function public.admin_save_guest_rsvp(
   text,
   jsonb
 ) is
-  'Validates and saves an RSVP for a selected guest as an administrator.';
+  'Validates and saves the current guest RSVP using canonical invitation data.';
 
-comment on function public.admin_delete_guest_rsvp(uuid) is
-  'Deletes an RSVP and synchronizes its guest as an administrator.';
-
-revoke all on function public.admin_save_guest_rsvp(
-  uuid,
+revoke all on function public.save_current_rsvp(
   text,
   text,
   text,
@@ -286,11 +245,7 @@ revoke all on function public.admin_save_guest_rsvp(
   text,
   jsonb
 ) from public, anon;
-revoke all on function public.admin_delete_guest_rsvp(uuid)
-  from public, anon;
-
-grant execute on function public.admin_save_guest_rsvp(
-  uuid,
+grant execute on function public.save_current_rsvp(
   text,
   text,
   text,
@@ -298,10 +253,5 @@ grant execute on function public.admin_save_guest_rsvp(
   text,
   jsonb
 ) to authenticated;
-grant execute on function public.admin_delete_guest_rsvp(uuid)
-  to authenticated;
-
--- Guests and administrators mutate RSVPs only through RPCs.
-revoke insert, update, delete on table public.rsvps from authenticated;
 
 commit;

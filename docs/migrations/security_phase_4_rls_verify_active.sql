@@ -38,23 +38,23 @@ from (
 ) as application_tables(table_name);
 
 select
-  format('authenticated has grants for %s', table_name) as check_name,
+  format('authenticated can select %s through RLS', table_name) as check_name,
   has_table_privilege(
     'authenticated',
     format('public.%I', table_name),
     'select'
   )
-  and has_table_privilege(
+  and not has_table_privilege(
     'authenticated',
     format('public.%I', table_name),
     'insert'
   )
-  and has_table_privilege(
+  and not has_table_privilege(
     'authenticated',
     format('public.%I', table_name),
     'update'
   )
-  and has_table_privilege(
+  and not has_table_privilege(
     'authenticated',
     format('public.%I', table_name),
     'delete'
@@ -64,6 +64,13 @@ from (
     ('guests'),
     ('rsvps'),
     ('gifts'),
-    ('gift_contributions'),
-    ('settings')
+    ('gift_contributions')
 ) as application_tables(table_name);
+
+select
+  'authenticated cannot read settings directly' as check_name,
+  not has_table_privilege(
+    'authenticated',
+    'public.settings',
+    'select'
+  ) as check_passed;

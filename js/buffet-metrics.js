@@ -19,21 +19,17 @@
       return null;
     }
 
-    if (normalized === "menos de 1 mes") {
+    if (normalized === "menos de 1 ano") {
       return 0;
     }
 
     const yearsMatch = normalized.match(/(\d+)\s*ano/);
-    const monthsMatch = normalized.match(/(\d+)\s*mes/);
 
-    if (!yearsMatch && !monthsMatch) {
+    if (!yearsMatch) {
       return null;
     }
 
-    return (
-      Number(yearsMatch?.[1] || 0) * 12 +
-      Number(monthsMatch?.[1] || 0)
-    );
+    return Number(yearsMatch[1]) * 12;
   }
 
   function classifyChild(age, payingAge) {

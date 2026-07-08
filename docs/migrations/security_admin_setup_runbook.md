@@ -42,7 +42,7 @@ Na execução original, a versão de restauração utilizada foi a `v2.4`.
 Abra o SQL Editor do Supabase e execute:
 
 ```text
-docs/security_phase_2_prepare.sql
+docs/migrations/security_phase_2_prepare.sql
 ```
 
 O script cria:
@@ -64,7 +64,7 @@ antigas do projeto.
 Execute:
 
 ```text
-docs/security_phase_2_verify.sql
+docs/migrations/security_phase_2_verify.sql
 ```
 
 Todas as linhas devem apresentar:
@@ -175,7 +175,7 @@ a operar como `authenticated`.
 Antes das políticas RLS definitivas, execute:
 
 ```text
-docs/security_admin_authenticated_access.sql
+docs/migrations/security_admin_authenticated_access.sql
 ```
 
 Esse script concede temporariamente ao papel `authenticated` acesso às tabelas:
@@ -194,7 +194,7 @@ definitiva ainda não foi implementada.
 Execute:
 
 ```text
-docs/security_admin_authenticated_access_verify.sql
+docs/migrations/security_admin_authenticated_access_verify.sql
 ```
 
 Todas as linhas devem apresentar:
@@ -237,8 +237,8 @@ atuais.
 
 Solução:
 
-1. execute `docs/security_admin_authenticated_access.sql`;
-2. execute `docs/security_admin_authenticated_access_verify.sql`;
+1. execute `docs/migrations/security_admin_authenticated_access.sql`;
+2. execute `docs/migrations/security_admin_authenticated_access_verify.sql`;
 3. confirme que todas as verificações retornam `true`;
 4. recarregue o dashboard.
 
@@ -283,7 +283,7 @@ O seletor de sucesso precisa ter especificidade suficiente:
 > Registro histórico: esta seção descreve o estado intermediário da fase 2.
 > O projeto atual já concluiu a Edge Function, o login anônimo e a RLS
 > definitiva. Não reproduza estas permissões transitórias em uma instalação
-> nova; use `docs/supabase_rebuild_runbook.md`.
+> nova; use `docs/rebuild/supabase_rebuild_runbook.md`.
 
 Naquele momento:
 
@@ -307,7 +307,7 @@ que usem `is_admin()` e `current_guest_id()`.
 O arquivo:
 
 ```text
-docs/security_phase_2_rollback.sql
+docs/migrations/security_phase_2_rollback.sql
 ```
 
 remove:
@@ -332,7 +332,7 @@ operação simples.
 O estágio que sucedeu esta fase está documentado em:
 
 ```text
-docs/security_phase_3_claim_invite_runbook.md
+docs/migrations/security_phase_3_claim_invite_runbook.md
 ```
 
 A Edge Function será responsável por:
@@ -346,3 +346,4 @@ A Edge Function será responsável por:
 
 Antes de liberar esse fluxo no frontend, será necessário preparar e testar a
 RLS definitiva.
+

@@ -32,11 +32,10 @@ Snapshot completo do RSVP.
 }
 ```
 
-O campo `companions[].age` armazena um valor padronizado, como `6 meses` ou
-`4 anos`, e representa a idade que a criança terá na data do casamento. Novas
-respostas usam uma lista controlada de `Menos de 1 mês`, `1` a `11 meses` e
-`1` a `17 anos`. Valores antigos fora desse padrão continuam disponíveis ao
-editar um RSVP existente.
+O campo `companions[].age` armazena um valor padronizado, como
+`Menos de 1 ano` ou `4 anos`, e representa a idade que a criança terá na data
+do casamento. As respostas usam uma lista controlada de `Menos de 1 ano` e
+`1` a `12 anos`.
 
 ### RSVP Individual
 

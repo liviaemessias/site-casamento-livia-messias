@@ -63,6 +63,8 @@ comment on function public.get_public_settings() is
 revoke all on function public.get_public_settings() from public, anon;
 grant execute on function public.get_public_settings() to authenticated;
 
+drop function if exists public.get_public_event_settings();
+
 create or replace function public.get_public_event_settings()
 returns table (
   bride_name text,

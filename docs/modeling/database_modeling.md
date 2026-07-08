@@ -213,6 +213,16 @@ create table public.settings (
   merchant_name text null,
   merchant_city text null,
   buffet_paying_age integer not null default 7,
+  bride_name text not null default 'Livia',
+  groom_name text not null default 'Messias',
+  wedding_date timestamptz not null default '2027-04-23 18:30:00-03',
+  rsvp_deadline date not null default '2027-03-01',
+  ceremony_name text not null default 'Santuário de Nossa Senhora de Fátima',
+  ceremony_address text not null default 'Av. Treze de Maio, 200 - Fátima, Fortaleza - CE, 60040-530',
+  ceremony_time time not null default '18:30',
+  reception_name text not null default 'Martha''s Buffet Conceito',
+  reception_address text not null default 'Av. Bezerra de Menezes, 531 - Parquelândia, Fortaleza - CE, 60325-004',
+  reception_time time not null default '21:00',
 
   constraint settings_pkey primary key (id),
   constraint settings_buffet_paying_age_check
@@ -227,6 +237,13 @@ Campos principais:
 - `merchant_name`: nome usado no payload PIX.
 - `merchant_city`: cidade usada no payload PIX.
 - `buffet_paying_age`: idade mínima em que uma criança entra na contagem de pagantes. O padrão `7` significa que crianças de até 6 anos não pagam.
+- `bride_name` e `groom_name`: nomes exibidos no site e no painel.
+- `wedding_date` e `rsvp_deadline`: data do casamento e prazo de confirmação.
+- `ceremony_*` e `reception_*`: dados de local e horário exibidos nas páginas públicas e na mensagem de convite.
+
+Metadados públicos como URL canônica, imagem social e descrição ficam nos
+defaults do frontend, em `js/event-config.js` e no `<head>` de `index.html`.
+Eles não fazem parte da tabela `settings`.
 
 As métricas do buffet interpretam a idade armazenada em
 `rsvps.guest_data.companions[].age`. Crianças sem idade reconhecível ficam em
@@ -287,8 +304,8 @@ mais de um dispositivo, e cada uma pode ser revogada individualmente.
 - `admin_save_gift()` e `admin_delete_gift()`: validam e alteram o catálogo,
   calculam o valor das cotas e preservam a estrutura de presentes com
   reservas ou contribuições.
-- `admin_save_settings()`: valida PIX, WhatsApp e idade pagante, mantendo um
-  único registro em `settings`.
+- `admin_save_settings()`: valida PIX, WhatsApp, idade pagante e dados do
+  casamento, mantendo um único registro em `settings`.
 - `save_current_rsvp()`: usa o convite da sessão como fonte oficial, valida
   membros, acompanhantes e idades e descarta campos adicionais enviados pelo
   cliente.

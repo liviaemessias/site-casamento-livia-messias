@@ -32,7 +32,7 @@ grant select on table public.gifts
   to authenticated;
 grant select on table public.gift_contributions
   to authenticated;
-grant select on table public.settings
-  to authenticated;
+revoke select on table public.settings
+  from authenticated;
 
 commit;

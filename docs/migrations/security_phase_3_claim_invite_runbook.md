@@ -40,7 +40,7 @@ Antes de habilitar o login anônimo:
 No SQL Editor do Supabase, execute:
 
 ```text
-docs/security_phase_3_claim_invite_prepare.sql
+docs/migrations/security_phase_3_claim_invite_prepare.sql
 ```
 
 O script cria:
@@ -57,7 +57,7 @@ A tabela de tentativas possui RLS habilitada e não concede acesso direto a
 Execute:
 
 ```text
-docs/security_phase_3_claim_invite_verify.sql
+docs/migrations/security_phase_3_claim_invite_verify.sql
 ```
 
 Todas as linhas devem retornar:
@@ -202,7 +202,7 @@ função aceita somente sessões anônimas.
 O roteiro de testes está em:
 
 ```text
-docs/security_phase_3_claim_invite_smoke_test.md
+docs/migrations/security_phase_3_claim_invite_smoke_test.md
 ```
 
 ## Contrato Da Função
@@ -262,7 +262,7 @@ monitoramento e limites externos de infraestrutura.
 Para remover apenas a estrutura desta fase:
 
 ```text
-docs/security_phase_3_claim_invite_rollback.sql
+docs/migrations/security_phase_3_claim_invite_rollback.sql
 ```
 
 Para remover a função publicada:
@@ -296,3 +296,4 @@ papel `authenticated`. Só depois o login por código poderá usar
 O Supabase recomenda revisar a RLS antes de habilitar usuários anônimos, pois
 eles usam o papel `authenticated`. A documentação também recomenda CAPTCHA ou
 Cloudflare Turnstile para reduzir abuso na criação dessas contas.
+

@@ -23,8 +23,10 @@ Snapshot documental criado em 18 de junho de 2026.
 
 Valores que devem ser conferidos e anotados antes de uma reconstrução:
 
-- Site URL:
+- Site URL: `https://liviaemessias.github.io/site-casamento-livia-messias/`
 - Redirect URLs:
+  - `https://liviaemessias.github.io/site-casamento-livia-messias/`
+  - `http://127.0.0.1:5500`
 - Confirmação de e-mail obrigatória:
 - Anonymous Sign-In rate limit:
 - CAPTCHA/Turnstile: habilitado com Cloudflare Turnstile; a Secret Key fica no Supabase e a Site Key pública em `js/captcha-config.js`.
@@ -49,6 +51,12 @@ Origem local usada durante o desenvolvimento:
 http://127.0.0.1:5500
 ```
 
+Origem pública esperada:
+
+```text
+https://liviaemessias.github.io
+```
+
 ## Frontend
 
 Ao criar outro projeto Supabase, atualizar em `js/supabase.js`:
@@ -57,6 +65,13 @@ Ao criar outro projeto Supabase, atualizar em `js/supabase.js`:
 - `SUPABASE_ANON_KEY` ou publishable key.
 
 A `service_role` nunca deve ser colocada no frontend.
+
+Metadados públicos padrão do site, mantidos no frontend e no `<head>` de
+`index.html`:
+
+- URL canônica: `https://liviaemessias.github.io/site-casamento-livia-messias/`
+- Imagem social: `https://liviaemessias.github.io/site-casamento-livia-messias/assets/images/home/cover-main-page.jpg`
+- Descrição: `Celebre conosco o nosso casamento — 23 de abril de 2027. Confira os detalhes do grande dia!`
 
 ## Dados Persistentes
 

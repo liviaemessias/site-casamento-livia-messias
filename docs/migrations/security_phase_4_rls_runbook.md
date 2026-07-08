@@ -33,7 +33,7 @@ Depois da ativação:
 Execute no SQL Editor:
 
 ```text
-docs/security_phase_4_rls_prepare.sql
+docs/migrations/security_phase_4_rls_prepare.sql
 ```
 
 O script:
@@ -51,7 +51,7 @@ O script:
 Execute:
 
 ```text
-docs/security_phase_4_rls_verify_prepare.sql
+docs/migrations/security_phase_4_rls_verify_prepare.sql
 ```
 
 Todas as linhas devem retornar:
@@ -103,7 +103,7 @@ Essas funções derivam o convidado de `current_guest_id()` e não aceitam um
 Não execute ainda:
 
 ```text
-docs/security_phase_4_rls_activate.sql
+docs/migrations/security_phase_4_rls_activate.sql
 ```
 
 Primeiro, o frontend público precisa ser alterado para:
@@ -137,7 +137,7 @@ Por isso, os passos finais devem ser executados em sequência.
 Se o novo frontend falhar durante o corte, execute:
 
 ```text
-docs/security_phase_4_rls_activation_rollback.sql
+docs/migrations/security_phase_4_rls_activation_rollback.sql
 ```
 
 Esse script:
@@ -170,3 +170,4 @@ definitivo.
 - [Row Level Security](https://supabase.com/docs/guides/database/postgres/row-level-security)
 - [Database Functions](https://supabase.com/docs/guides/database/functions)
 - [Securing Your API](https://supabase.com/docs/guides/database/secure-data)
+

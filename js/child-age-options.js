@@ -1,12 +1,10 @@
 (function () {
+  const UNDER_ONE_YEAR_LABEL = "Menos de 1 ano";
+
   function getStandardAges() {
-    const ages = ["Menos de 1 mês"];
+    const ages = [UNDER_ONE_YEAR_LABEL];
 
-    for (let month = 1; month <= 11; month += 1) {
-      ages.push(`${month} ${month === 1 ? "mês" : "meses"}`);
-    }
-
-    for (let year = 1; year <= 17; year += 1) {
+    for (let year = 1; year <= 12; year += 1) {
       ages.push(`${year} ${year === 1 ? "ano" : "anos"}`);
     }
 

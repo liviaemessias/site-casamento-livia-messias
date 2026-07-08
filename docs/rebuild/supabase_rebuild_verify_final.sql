@@ -2,8 +2,9 @@
 -- Supabase rebuild: final verification
 -- ============================================================
 --
--- Every row returned by this script should have check_passed = true.
+-- Every row returned by this query should have check_passed = true.
 
+select * from (
 select
   'legacy guests.is_admin column is absent' as check_name,
   not exists (
@@ -12,8 +13,8 @@ select
     where table_schema = 'public'
       and table_name = 'guests'
       and column_name = 'is_admin'
-  ) as check_passed;
-
+  ) as check_passed
+union all
 select
   format('%s exists', expected.object_name) as check_name,
   to_regclass(expected.object_name) is not null as check_passed
@@ -27,8 +28,8 @@ from (
     ('public.admin_users'),
     ('public.guest_access_sessions'),
     ('public.invite_login_attempts')
-) as expected(object_name);
-
+) as expected(object_name)
+union all
 select
   format('%s has RLS enabled', c.relname) as check_name,
   c.relrowsecurity as check_passed
@@ -46,8 +47,7 @@ where n.nspname = 'public'
     'guest_access_sessions',
     'invite_login_attempts'
   )
-order by c.relname;
-
+union all
 select
   format('%s exists', expected.function_name) as check_name,
   to_regprocedure(expected.function_name) is not null as check_passed
@@ -79,8 +79,8 @@ from (
     ('public.reserve_gift_quotas(uuid,text,integer)'),
     ('public.report_gift_contribution_payment(uuid)'),
     ('public.recalculate_quota_gift_status(uuid)')
-) as expected(function_name);
-
+) as expected(function_name)
+union all
 select
   'secure invitation code RPC has restricted execution' as check_name,
   not has_function_privilege(
@@ -92,16 +92,16 @@ select
     'authenticated',
     'public.create_guest_with_invite_code(text,text,jsonb,integer)',
     'execute'
-  ) as check_passed;
-
+  ) as check_passed
+union all
 select
   'authenticated cannot insert guests directly' as check_name,
   not has_table_privilege(
     'authenticated',
     'public.guests',
     'insert'
-  ) as check_passed;
-
+  ) as check_passed
+union all
 select
   'administrative gift RPCs have restricted execution' as check_name,
   not exists (
@@ -123,8 +123,8 @@ select
         expected.function_name,
         'execute'
       )
-  ) as check_passed;
-
+  ) as check_passed
+union all
 select
   'authenticated cannot mutate gift contributions directly' as check_name,
   not has_table_privilege(
@@ -141,8 +141,8 @@ select
     'authenticated',
     'public.gift_contributions',
     'delete'
-  ) as check_passed;
-
+  ) as check_passed
+union all
 select
   'administrative RSVP RPCs have restricted execution' as check_name,
   not has_function_privilege(
@@ -164,15 +164,15 @@ select
     'authenticated',
     'public.admin_delete_guest_rsvp(uuid)',
     'execute'
-  ) as check_passed;
-
+  ) as check_passed
+union all
 select
   'authenticated cannot mutate RSVPs directly' as check_name,
   not has_table_privilege('authenticated', 'public.rsvps', 'insert')
   and not has_table_privilege('authenticated', 'public.rsvps', 'update')
   and not has_table_privilege('authenticated', 'public.rsvps', 'delete')
-    as check_passed;
-
+    as check_passed
+union all
 select
   'administrative guest RPCs have restricted execution' as check_name,
   not has_function_privilege(
@@ -194,15 +194,15 @@ select
     'authenticated',
     'public.admin_set_guest_active(uuid,boolean)',
     'execute'
-  ) as check_passed;
-
+  ) as check_passed
+union all
 select
   'authenticated cannot mutate guests directly' as check_name,
   not has_table_privilege('authenticated', 'public.guests', 'insert')
   and not has_table_privilege('authenticated', 'public.guests', 'update')
   and not has_table_privilege('authenticated', 'public.guests', 'delete')
-    as check_passed;
-
+    as check_passed
+union all
 select
   'administrative gift catalog RPCs have restricted execution' as check_name,
   not has_function_privilege(
@@ -224,23 +224,23 @@ select
     'authenticated',
     'public.admin_delete_gift(uuid)',
     'execute'
-  ) as check_passed;
-
+  ) as check_passed
+union all
 select
   'authenticated cannot mutate gifts directly' as check_name,
   not has_table_privilege('authenticated', 'public.gifts', 'insert')
   and not has_table_privilege('authenticated', 'public.gifts', 'update')
   and not has_table_privilege('authenticated', 'public.gifts', 'delete')
-    as check_passed;
-
+    as check_passed
+union all
 select
   'settings singleton index exists' as check_name,
-  to_regclass('public.settings_singleton_idx') is not null as check_passed;
-
+  to_regclass('public.settings_singleton_idx') is not null as check_passed
+union all
 select
   'settings has at most one row' as check_name,
-  (select count(*) from public.settings) <= 1 as check_passed;
-
+  (select count(*) from public.settings) <= 1 as check_passed
+union all
 select
   'secure settings RPC has restricted execution' as check_name,
   not has_function_privilege(
@@ -252,15 +252,15 @@ select
     'authenticated',
     'public.admin_save_settings(text,text,text,text,integer,jsonb)',
     'execute'
-  ) as check_passed;
-
+  ) as check_passed
+union all
 select
   'authenticated cannot mutate settings directly' as check_name,
   not has_table_privilege('authenticated', 'public.settings', 'insert')
   and not has_table_privilege('authenticated', 'public.settings', 'update')
   and not has_table_privilege('authenticated', 'public.settings', 'delete')
-    as check_passed;
-
+    as check_passed
+union all
 select
   'public settings RPC has restricted execution' as check_name,
   not has_function_privilege(
@@ -272,13 +272,13 @@ select
     'authenticated',
     'public.get_public_settings()',
     'execute'
-  ) as check_passed;
-
+  ) as check_passed
+union all
 select
   'authenticated cannot read settings directly' as check_name,
   not has_table_privilege('authenticated', 'public.settings', 'select')
-    as check_passed;
-
+    as check_passed
+union all
 select
   'public event settings RPC is available without table access' as check_name,
   has_function_privilege(
@@ -290,8 +290,8 @@ select
     'authenticated',
     'public.get_public_event_settings()',
     'execute'
-  ) as check_passed;
-
+  ) as check_passed
+union all
 select
   'broad authenticated settings policy is absent' as check_name,
   not exists (
@@ -300,8 +300,8 @@ select
     where schemaname = 'public'
       and tablename = 'settings'
       and policyname = 'settings_select_authenticated'
-  ) as check_passed;
-
+  ) as check_passed
+union all
 select
   format(
     '%s policy exists on %s',
@@ -326,8 +326,8 @@ from (
     ('gift_contributions', 'gift_contributions_admin_all'),
     ('gift_contributions', 'gift_contributions_select_own'),
     ('settings', 'settings_admin_all')
-) as expected(table_name, policy_name);
-
+) as expected(table_name, policy_name)
+union all
 select
   format(
     '%s trigger exists on %s',
@@ -351,8 +351,8 @@ from (
     ('rsvps', 'sync_guest_confirmation_after_rsvp'),
     ('gift_contributions', 'sync_quota_gift_after_contribution'),
     ('gifts', 'sync_quota_gift_after_definition_change')
-) as expected(table_name, trigger_name);
-
+) as expected(table_name, trigger_name)
+union all
 select
   'anon has no direct access to application tables' as check_name,
   not exists (
@@ -370,8 +370,8 @@ select
       format('public.%I', table_name),
       'select, insert, update, delete'
     )
-  ) as check_passed;
-
+  ) as check_passed
+union all
 select
   'service_role can operate claim-invite dependencies' as check_name,
   has_table_privilege(
@@ -438,16 +438,16 @@ select
     'service_role',
     'public.register_guest_access(uuid)',
     'execute'
-  ) as check_passed;
-
+  ) as check_passed
+union all
 select
   'admin_users contains an active administrator' as check_name,
   exists (
     select 1
     from public.admin_users
     where active is true
-  ) as check_passed;
-
+  ) as check_passed
+union all
 select
   'settings contains complete payment information' as check_name,
   exists (
@@ -458,8 +458,8 @@ select
       and nullif(btrim(merchant_city), '') is not null
       and nullif(btrim(whatsapp_number), '') is not null
       and buffet_paying_age between 1 and 18
-  ) as check_passed;
-
+  ) as check_passed
+union all
 select
   'settings contains complete wedding information' as check_name,
   exists (
@@ -475,4 +475,6 @@ select
       and nullif(btrim(reception_name), '') is not null
       and nullif(btrim(reception_address), '') is not null
       and reception_time is not null
-  ) as check_passed;
+  ) as check_passed
+) as rebuild_checks
+order by check_passed asc, check_name asc;
