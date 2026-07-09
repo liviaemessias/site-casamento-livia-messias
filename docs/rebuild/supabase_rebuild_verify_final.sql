@@ -6,6 +6,17 @@
 
 select * from (
 select
+  'guests.invite_sent column exists' as check_name,
+  exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'guests'
+      and column_name = 'invite_sent'
+      and data_type = 'boolean'
+  ) as check_passed
+union all
+select
   'legacy guests.is_admin column is absent' as check_name,
   not exists (
     select 1
@@ -25,6 +36,8 @@ from (
     ('public.gifts'),
     ('public.gift_contributions'),
     ('public.settings'),
+    ('public.notification_events'),
+    ('public.notification_deliveries'),
     ('public.admin_users'),
     ('public.guest_access_sessions'),
     ('public.invite_login_attempts')
@@ -43,6 +56,8 @@ where n.nspname = 'public'
     'gifts',
     'gift_contributions',
     'settings',
+    'notification_events',
+    'notification_deliveries',
     'admin_users',
     'guest_access_sessions',
     'invite_login_attempts'
@@ -55,15 +70,16 @@ from (
   values
     ('public.current_guest_id()'),
     ('public.is_admin()'),
-    ('public.create_guest_with_invite_code(text,text,jsonb,integer)'),
+    ('public.create_guest_with_invite_code(text,text,jsonb,integer,boolean)'),
     ('public.admin_confirm_gift_purchase(uuid)'),
     ('public.admin_release_gift_reservation(uuid)'),
     ('public.admin_confirm_gift_contribution(uuid)'),
     ('public.admin_release_gift_contribution(uuid)'),
     ('public.admin_save_guest_rsvp(uuid,text,text,text,text,text,jsonb)'),
     ('public.admin_delete_guest_rsvp(uuid)'),
-    ('public.admin_update_guest(uuid,text,text,jsonb,integer)'),
+    ('public.admin_update_guest(uuid,text,text,jsonb,integer,boolean)'),
     ('public.admin_set_guest_active(uuid,boolean)'),
+    ('public.admin_set_guest_invite_sent(uuid,boolean)'),
     ('public.admin_save_gift(uuid,text,text,text,numeric,text,text,integer,text,text,jsonb)'),
     ('public.admin_delete_gift(uuid)'),
     ('public.admin_save_settings(text,text,text,text,integer,jsonb)'),
@@ -82,15 +98,21 @@ from (
 ) as expected(function_name)
 union all
 select
+  'notification dedupe constraints exist' as check_name,
+  to_regclass('public.notification_events_dedupe_key_key') is not null
+  and to_regclass('public.notification_deliveries_dedupe_key_key') is not null
+    as check_passed
+union all
+select
   'secure invitation code RPC has restricted execution' as check_name,
   not has_function_privilege(
     'anon',
-    'public.create_guest_with_invite_code(text,text,jsonb,integer)',
+    'public.create_guest_with_invite_code(text,text,jsonb,integer,boolean)',
     'execute'
   )
   and has_function_privilege(
     'authenticated',
-    'public.create_guest_with_invite_code(text,text,jsonb,integer)',
+    'public.create_guest_with_invite_code(text,text,jsonb,integer,boolean)',
     'execute'
   ) as check_passed
 union all
@@ -177,7 +199,7 @@ select
   'administrative guest RPCs have restricted execution' as check_name,
   not has_function_privilege(
     'anon',
-    'public.admin_update_guest(uuid,text,text,jsonb,integer)',
+    'public.admin_update_guest(uuid,text,text,jsonb,integer,boolean)',
     'execute'
   )
   and not has_function_privilege(
@@ -185,14 +207,24 @@ select
     'public.admin_set_guest_active(uuid,boolean)',
     'execute'
   )
+  and not has_function_privilege(
+    'anon',
+    'public.admin_set_guest_invite_sent(uuid,boolean)',
+    'execute'
+  )
   and has_function_privilege(
     'authenticated',
-    'public.admin_update_guest(uuid,text,text,jsonb,integer)',
+    'public.admin_update_guest(uuid,text,text,jsonb,integer,boolean)',
     'execute'
   )
   and has_function_privilege(
     'authenticated',
     'public.admin_set_guest_active(uuid,boolean)',
+    'execute'
+  )
+  and has_function_privilege(
+    'authenticated',
+    'public.admin_set_guest_invite_sent(uuid,boolean)',
     'execute'
   ) as check_passed
 union all
@@ -232,6 +264,32 @@ select
   and not has_table_privilege('authenticated', 'public.gifts', 'update')
   and not has_table_privilege('authenticated', 'public.gifts', 'delete')
     as check_passed
+union all
+select
+  'authenticated cannot access notification tables directly' as check_name,
+  not has_table_privilege(
+    'authenticated',
+    'public.notification_events',
+    'select, insert, update, delete'
+  )
+  and not has_table_privilege(
+    'authenticated',
+    'public.notification_deliveries',
+    'select, insert, update, delete'
+  ) as check_passed
+union all
+select
+  'anon cannot access notification tables directly' as check_name,
+  not has_table_privilege(
+    'anon',
+    'public.notification_events',
+    'select, insert, update, delete'
+  )
+  and not has_table_privilege(
+    'anon',
+    'public.notification_deliveries',
+    'select, insert, update, delete'
+  ) as check_passed
 union all
 select
   'settings singleton index exists' as check_name,
@@ -363,7 +421,9 @@ select
         ('rsvps'),
         ('gifts'),
         ('gift_contributions'),
-        ('settings')
+        ('settings'),
+        ('notification_events'),
+        ('notification_deliveries')
     ) as application_tables(table_name)
     where has_table_privilege(
       'anon',
@@ -438,6 +498,16 @@ select
     'service_role',
     'public.register_guest_access(uuid)',
     'execute'
+  )
+  and has_table_privilege(
+    'service_role',
+    'public.notification_events',
+    'select, insert, update, delete'
+  )
+  and has_table_privilege(
+    'service_role',
+    'public.notification_deliveries',
+    'select, insert, update, delete'
   ) as check_passed
 union all
 select

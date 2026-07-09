@@ -14,8 +14,9 @@ Para uma reconstrução limpa, use poucos arquivos:
 
 1. `docs/rebuild/supabase_rebuild_full_setup.sql`
 2. `supabase/functions/claim-invite/index.ts`
-3. `docs/rebuild/supabase_rebuild_environment_inventory.md`
-4. `docs/rebuild/supabase_rebuild_verify_final.sql`
+3. `supabase/functions/send-notifications/index.ts`
+4. `docs/rebuild/supabase_rebuild_environment_inventory.md`
+5. `docs/rebuild/supabase_rebuild_verify_final.sql`
 
 O arquivo `docs/rebuild/supabase_rebuild_full_setup.sql` é a fonte principal para um
 projeto novo. Ele consolida schema, tabelas auxiliares, funções, RPCs, grants,
@@ -116,6 +117,7 @@ Esse script cria e protege:
 - geração segura de código de convite;
 - configurações globais e metadados públicos do site;
 - grants da `service_role` usados pela Edge Function;
+- outbox de notificações por e-mail;
 - RLS final.
 
 Se for restaurar dados exportados, faça isso depois do setup usando o SQL
@@ -157,6 +159,7 @@ insert into public.guests (
   invite_code,
   max_guests,
   confirmed,
+  invite_sent,
   active,
   invite_type
 )
@@ -165,6 +168,7 @@ values (
   upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 8)),
   0,
   false,
+  true,
   true,
   'individual'
 )
@@ -242,6 +246,29 @@ Publique a função:
 npx supabase functions deploy claim-invite
 ```
 
+Configure também os secrets SMTP para notificações por e-mail:
+
+```powershell
+npx supabase secrets set `
+  ADMIN_EMAIL="liviaemessias23@gmail.com" `
+  SMTP_HOST="smtp.gmail.com" `
+  SMTP_PORT="587" `
+  SMTP_SECURE="false" `
+  SMTP_USER="SEU_EMAIL_SMTP" `
+  SMTP_PASS="SENHA_DE_APP_OU_SMTP" `
+  SMTP_FROM_EMAIL="SEU_EMAIL_SMTP" `
+  SMTP_FROM_NAME="Livia & Messias"
+```
+
+Para Outlook/Hotmail, use `SMTP_HOST="smtp.office365.com"` com porta `587` e
+`SMTP_SECURE="false"`. Veja `docs/operations/smtp_email_notifications_setup.md`.
+
+Publique a função de notificações:
+
+```powershell
+npx supabase functions deploy send-notifications
+```
+
 A verificação de JWT deve permanecer habilitada. Não use `--no-verify-jwt`.
 
 Confira o deploy:
@@ -294,22 +321,27 @@ Valide, nesta ordem:
 2. carregamento do dashboard e das tabelas administrativas;
 3. criação e edição de convidados, confirmando que o código possui oito
    caracteres e foi retornado pelo Supabase;
-4. geração da mensagem personalizada do convite;
-5. login de convidado com código válido;
-6. rejeição de código inválido;
-7. RSVP individual;
-8. RSVP de casal;
-9. idade de criança com opções de `Menos de 1 ano` até `12 anos`;
-10. carregamento da lista de presentes;
-11. reserva de presente individual;
-12. seleção da forma de presentear;
-13. informação de pagamento;
-14. reserva e pagamento de cotas;
-15. liberação administrativa de presentes e cotas;
-16. logout e novo login;
-17. isolamento entre dois convidados diferentes;
-18. bloqueio das páginas administrativas para convidados;
-19. preview do link público com título, descrição e imagem.
+4. filtro, coluna, checkbox e ação rápida de convite enviado/não enviado;
+5. exportação de convidados e relatórios com a coluna de convite enviado;
+6. geração da mensagem personalizada do convite;
+7. login de convidado com código válido;
+8. rejeição de código inválido;
+9. RSVP individual;
+10. RSVP de casal;
+11. idade de criança com opções de `Menos de 1 ano` até `12 anos`;
+12. carregamento da lista de presentes;
+13. reserva de presente individual;
+14. seleção da forma de presentear;
+15. informação de pagamento;
+16. reserva e pagamento de cotas;
+17. liberação administrativa de presentes e cotas;
+18. logout e novo login;
+19. isolamento entre dois convidados diferentes;
+20. bloqueio das páginas administrativas para convidados;
+21. preview do link público com título, descrição e imagem.
+22. e-mail de RSVP Recebido para admin e convidado.
+23. e-mail de RSVP Atualizado para admin e convidado.
+24. RSVP sem e-mail válido, confirmando entrega para admin e delivery `guest` como `skipped`.
 
 Nos logs da `claim-invite`, confirme que não existem erros de grants, RLS ou
 acesso às tabelas internas.

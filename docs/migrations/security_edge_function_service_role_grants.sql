@@ -24,6 +24,14 @@ grant select, update
   on table public.guests
   to service_role;
 
+grant select, insert, update, delete
+  on table public.notification_events
+  to service_role;
+
+grant select, insert, update, delete
+  on table public.notification_deliveries
+  to service_role;
+
 grant execute
   on function public.register_guest_access(uuid)
   to service_role;

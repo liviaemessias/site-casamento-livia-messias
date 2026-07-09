@@ -14,14 +14,14 @@ begin;
 do $$
 begin
   if to_regprocedure(
-    'public.create_guest_with_invite_code(text,text,jsonb,integer)'
+    'public.create_guest_with_invite_code(text,text,jsonb,integer,boolean)'
   ) is null then
     raise exception
       'Run the updated security_invite_code_generation.sql first.';
   end if;
 
   if to_regprocedure(
-    'public.admin_update_guest(uuid,text,text,jsonb,integer)'
+    'public.admin_update_guest(uuid,text,text,jsonb,integer,boolean)'
   ) is null then
     raise exception
       'Run the updated security_admin_guest_operations.sql first.';
@@ -50,4 +50,3 @@ alter table public.guests
   drop column if exists is_admin;
 
 commit;
-

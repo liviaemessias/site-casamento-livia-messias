@@ -37,6 +37,22 @@ select
   ) as check_passed;
 
 select
+  'service_role can manage notification events' as check_name,
+  has_table_privilege(
+    'service_role',
+    'public.notification_events',
+    'select, insert, update, delete'
+  ) as check_passed;
+
+select
+  'service_role can manage notification deliveries' as check_name,
+  has_table_privilege(
+    'service_role',
+    'public.notification_deliveries',
+    'select, insert, update, delete'
+  ) as check_passed;
+
+select
   'service_role can register guest access' as check_name,
   has_function_privilege(
     'service_role',

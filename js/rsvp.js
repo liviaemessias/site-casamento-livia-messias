@@ -588,6 +588,10 @@ form.addEventListener("submit", async (e) => {
         ? "❤️ Confirmação atualizada com sucesso!"
         : "❤️ Presença confirmada com sucesso!",
     );
+
+    GuestData.notifyRSVP().catch((notificationError) => {
+      console.warn("Não foi possível disparar a notificação do RSVP.", notificationError);
+    });
   } catch (error) {
     console.error(error);
 

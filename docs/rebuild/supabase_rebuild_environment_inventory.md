@@ -9,7 +9,7 @@ Snapshot documental criado em 18 de junho de 2026.
 ## Projeto Atual
 
 - Project ref: `pzgrshdabbvlhdzxtteq`
-- Edge Function: `claim-invite`
+- Edge Functions: `claim-invite`, `send-notifications`
 - Verify JWT: habilitado
 - Frontend de convidados: `mode: "supabase"`
 - Fonte da Edge Function conferida com o arquivo exportado do projeto atual
@@ -38,12 +38,29 @@ Secrets obrigatórios:
 
 - `INVITE_RATE_LIMIT_PEPPER`
 - `ALLOWED_ORIGINS`
+- `ADMIN_EMAIL`
+- `SMTP_HOST`
+- `SMTP_PORT`
+- `SMTP_SECURE`
+- `SMTP_USER`
+- `SMTP_PASS`
+- `SMTP_FROM_EMAIL`
+- `SMTP_FROM_NAME`
 
 Valores que devem ficar no gerenciador de senhas:
 
 - pepper atual;
 - lista de origens de produção;
 - origens locais necessárias.
+- credenciais SMTP;
+- e-mail remetente;
+- e-mail administrativo de destino.
+
+Valor administrativo padrão planejado:
+
+```text
+liviaemessias23@gmail.com
+```
 
 Origem local usada durante o desenvolvimento:
 
@@ -81,13 +98,18 @@ Dados que podem ser exportados e restaurados:
 - `rsvps`;
 - `gifts`;
 - `gift_contributions`;
-- `settings`.
+- `settings`;
+- `notification_events`;
+- `notification_deliveries`.
 
 Dados que normalmente não devem ser migrados:
 
 - usuários anônimos de `auth.users`;
 - `guest_access_sessions`;
 - `invite_login_attempts`.
+
+As tabelas de notificação podem ser migradas se você quiser preservar histórico
+de entregas; para uma reconstrução limpa, normalmente podem começar vazias.
 
 O usuário administrativo deve ser recriado no Auth e ligado novamente ao
 registro correto de `guests`.

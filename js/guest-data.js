@@ -63,6 +63,18 @@
     return result;
   }
 
+  async function notifyRSVP() {
+    if (!isSecureMode()) {
+      return { data: null, error: null };
+    }
+
+    return supabaseClient.functions.invoke("send-notifications", {
+      body: {
+        event_type: "rsvp_saved",
+      },
+    });
+  }
+
   async function loadSettings() {
     return supabaseClient.rpc("get_public_settings").maybeSingle();
   }
@@ -214,6 +226,7 @@
     loadRSVP,
     loadSettings,
     markGuestConfirmed,
+    notifyRSVP,
     reportContributionPayment,
     reportGiftPayment,
     reserveGift,

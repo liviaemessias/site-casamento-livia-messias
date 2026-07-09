@@ -342,11 +342,12 @@ Permite:
 - Criar convidados.
 - Editar convidados.
 - Ativar/desativar convidados.
+- Marcar convites como enviados ou não enviados.
 - Copiar código de convite.
 - Preencher RSVP manual.
-- Exportar CSV dos convidados filtrados e ordenados.
-- Filtrar por busca textual, status, RSVP e tipo de convite.
-- Ordenar por nome, tipo, acompanhantes, confirmado, status, admin, código, último acesso e acessos.
+- Exportar CSV dos convidados filtrados e ordenados, incluindo o status de envio do convite.
+- Filtrar por busca textual, status, RSVP, envio do convite e tipo de convite.
+- Ordenar por nome, tipo, acompanhantes, confirmado, convite enviado, status, código, último acesso e acessos.
 - Ver contador de resultados e limpar filtros.
 
 ### Gestão De RSVP

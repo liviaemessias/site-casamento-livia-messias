@@ -3,14 +3,14 @@
 select
   'secure invitation code RPC exists' as check_name,
   to_regprocedure(
-    'public.create_guest_with_invite_code(text,text,jsonb,integer)'
+    'public.create_guest_with_invite_code(text,text,jsonb,integer,boolean)'
   ) is not null as check_passed;
 
 select
   'anon cannot execute secure invitation code RPC' as check_name,
   not has_function_privilege(
     'anon',
-    'public.create_guest_with_invite_code(text,text,jsonb,integer)',
+    'public.create_guest_with_invite_code(text,text,jsonb,integer,boolean)',
     'execute'
   ) as check_passed;
 
@@ -18,7 +18,7 @@ select
   'authenticated can execute secure invitation code RPC' as check_name,
   has_function_privilege(
     'authenticated',
-    'public.create_guest_with_invite_code(text,text,jsonb,integer)',
+    'public.create_guest_with_invite_code(text,text,jsonb,integer,boolean)',
     'execute'
   ) as check_passed;
 

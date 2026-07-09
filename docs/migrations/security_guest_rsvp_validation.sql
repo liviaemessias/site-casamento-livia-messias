@@ -25,9 +25,12 @@ declare
   safe_companions jsonb := '[]'::jsonb;
   requested_guest_count integer;
   companion_count integer;
+  event_operation text;
   submitted_member_count integer;
   expected_member_count integer;
   member_is_coming boolean;
+  saved_rsvp public.rsvps%rowtype;
+  was_existing boolean;
 begin
   current_guest := public.current_guest_id();
 
@@ -49,6 +52,13 @@ begin
   if not found then
     return;
   end if;
+
+  select exists (
+    select 1
+    from public.rsvps as existing_rsvp
+    where existing_rsvp.guest_id = current_guest
+  )
+  into was_existing;
 
   begin
     requested_guest_count := coalesce(
@@ -193,7 +203,6 @@ begin
     'companions', safe_companions
   );
 
-  return query
   insert into public.rsvps (
     guest_id,
     presence,
@@ -223,7 +232,56 @@ begin
     message = excluded.message,
     guest_data = excluded.guest_data,
     updated_at = excluded.updated_at
-  returning *;
+  returning * into saved_rsvp;
+
+  event_operation := case
+    when was_existing then 'updated'
+    else 'created'
+  end;
+
+  insert into public.notification_events (
+    event_type,
+    aggregate_type,
+    aggregate_id,
+    aggregate_version,
+    guest_id,
+    dedupe_key,
+    payload
+  )
+  values (
+    'rsvp_saved',
+    'rsvp',
+    saved_rsvp.id,
+    saved_rsvp.updated_at,
+    current_guest,
+    concat(
+      'rsvp_saved:',
+      saved_rsvp.id::text,
+      ':',
+      extract(epoch from saved_rsvp.updated_at)::text
+    ),
+    jsonb_build_object(
+      'operation', event_operation,
+      'operation_label', case
+        when event_operation = 'updated' then 'RSVP Atualizado'
+        else 'RSVP Recebido'
+      end,
+      'guest_name', guest_record.name,
+      'invite_type', guest_record.invite_type,
+      'couple_members', coalesce(guest_record.couple_members, '[]'::jsonb),
+      'rsvp_id', saved_rsvp.id,
+      'rsvp_updated_at', saved_rsvp.updated_at,
+      'presence', saved_rsvp.presence,
+      'email', saved_rsvp.email,
+      'phone', saved_rsvp.phone,
+      'food', saved_rsvp.food,
+      'message', saved_rsvp.message,
+      'guest_data', saved_rsvp.guest_data
+    )
+  )
+  on conflict (dedupe_key) do nothing;
+
+  return next saved_rsvp;
 end;
 $$;
 

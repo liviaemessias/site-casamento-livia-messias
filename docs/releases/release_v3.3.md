@@ -1,9 +1,6 @@
 # Site de Casamento - L & M - v3.3
 
-Esta release torna o conteúdo público do casamento configurável pelo banco,
-reforça a segurança do frontend e melhora a descoberta da lista de presentes.
-A página inicial também passa a contar com metadados completos para mecanismos
-de busca e compartilhamento em redes sociais.
+Esta release torna o conteúdo público do casamento configurável pelo banco, reforça a segurança do frontend e melhora a descoberta da lista de presentes. A página inicial também passa a contar com metadados completos para mecanismos de busca e compartilhamento em redes sociais.
 
 ## Funcionalidades
 
@@ -16,6 +13,7 @@ de busca e compartilhamento em redes sociais.
 - Formas de presentear por PIX, cartão via checkout externo, compra online e loja física.
 - Seção da lista de presentes na página inicial, com acesso pelo login do convite.
 - Painel administrativo com Dashboard, Indicadores, Relatórios, Presentes, Convidados, RSVPs e Configurações.
+- Controle de convites enviados na gestão de convidados.
 - Nomes dos noivos, datas, prazo do RSVP, cerimônia e recepção configuráveis no painel.
 - Metadados de SEO e compartilhamento social na página inicial.
 - Login administrativo pelo Supabase Auth e login seguro dos convidados com sessão anônima, Edge Function e Cloudflare Turnstile.
@@ -30,6 +28,10 @@ de busca e compartilhamento em redes sociais.
 - Adicionada atualização dos metadados da página inicial conforme as configurações públicas do evento.
 - Ampliadas as opções de idade das crianças até 12 anos.
 - Adicionada mensagem personalizada do convite aos fluxos dos convidados.
+- Adicionado campo `invite_sent` para controlar convites enviados ou pendentes.
+- Adicionados filtro, coluna, checkbox e ação rápida de envio no painel de convidados.
+- Adicionada a coluna "Convite enviado" ao CSV de convidados e aos relatórios de presença CSV/XLSX, com seleção de coluna.
+- Adicionadas pendências de convite não enviado ao relatório de ações pendentes.
 - Separados o resumo operacional, os indicadores detalhados e os relatórios em páginas administrativas dedicadas.
 
 ## Repaginada do Painel Administrativo
@@ -44,6 +46,7 @@ de busca e compartilhamento em redes sociais.
 - Aprimoradas as métricas de presentes para contemplar disponibilidade, reservas parciais, reservas completas, pagamentos informados e confirmações.
 - Criada a página de Relatórios com exportações consolidadas de presença e buffet, financeiro e ações pendentes.
 - Mantidas opções CSV e XLSX, seleção de colunas e relatórios de presença resumidos por convite ou detalhados por pessoa.
+- Incluído o status de envio do convite nos relatórios exportáveis e no controle de pendências.
 - Adicionados estados de carregamento, mensagens de status, tooltips explicativos e melhorias de acessibilidade nos componentes administrativos.
 
 ## Segurança
@@ -73,9 +76,11 @@ de busca e compartilhamento em redes sociais.
 - Adicionado setup consolidado para reconstrução completa do projeto Supabase.
 - Adicionados runbook, inventário de ambiente e verificações finais de reconstrução.
 - Atualizados a modelagem do banco, os fluxos de negócio e o README para o estado da versão 3.3.
+- Adicionados scripts SQL e verificações para o campo `guests.invite_sent`.
 
 ## Próximos Endurecimentos
 
 - Automatizar a limpeza de contas anônimas e tentativas antigas.
 - Rotacionar os códigos de convite antes da publicação definitiva.
 - Avaliar a redução futura das dependências carregadas por CDN.
+- Notificações e comunicação, incluindo envio por e-mail quando RSVP for respondido/atualizado e eventos de presentes/pagamentos.

@@ -25,3 +25,22 @@ select
   and not has_table_privilege('authenticated', 'public.rsvps', 'update')
   and not has_table_privilege('authenticated', 'public.rsvps', 'delete')
     as check_passed;
+
+select
+  'notification outbox exists for RSVP events' as check_name,
+  to_regclass('public.notification_events') is not null
+  and to_regclass('public.notification_deliveries') is not null
+    as check_passed;
+
+select
+  'authenticated cannot access notification outbox directly' as check_name,
+  not has_table_privilege(
+    'authenticated',
+    'public.notification_events',
+    'select, insert, update, delete'
+  )
+  and not has_table_privilege(
+    'authenticated',
+    'public.notification_deliveries',
+    'select, insert, update, delete'
+  ) as check_passed;

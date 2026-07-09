@@ -82,6 +82,10 @@
     });
   }
 
+  function formatBoolean(value) {
+    return value ? "Sim" : "Não";
+  }
+
   function isQuotaGift(gift) {
     return gift?.gift_type === "quota";
   }
@@ -265,6 +269,7 @@
     return [
       { key: "invite", label: "Convite", value: "invite" },
       { key: "code", label: "Código", value: "code" },
+      { key: "inviteSent", label: "Convite enviado", value: "inviteSent" },
       { key: "people", label: "Pessoas do convite", value: "people" },
       { key: "companions", label: "Acompanhantes", value: "companions" },
       { key: "expectedCount", label: "Total esperado", value: "expectedCount" },
@@ -301,6 +306,7 @@
     const dataRows = rows.map((row) => ({
       invite: row.guest.name,
       code: row.guest.invite_code,
+      inviteSent: formatBoolean(row.guest.invite_sent),
       people: getAttendingNames(row.guest, row.rsvp),
       companions: getCompanionNames(row.rsvp),
       expectedCount: row.expectedCount,
@@ -342,6 +348,7 @@
     return [
       { key: "invite", label: "Convite", value: "invite" },
       { key: "code", label: "Código", value: "code" },
+      { key: "inviteSent", label: "Convite enviado", value: "inviteSent" },
       { key: "people", label: "Pessoa", value: "person" },
       { key: "type", label: "Tipo", value: "type" },
       { key: "child", label: "Criança", value: "child" },
@@ -390,6 +397,7 @@
       return people.map((person) => ({
         invite: row.guest.name,
         code: row.guest.invite_code,
+        inviteSent: formatBoolean(row.guest.invite_sent),
         person: person.name,
         type: person.type,
         child: person.child,
@@ -429,6 +437,7 @@
     const mergeColumnKeys = [
       "invite",
       "code",
+      "inviteSent",
       "expectedCount",
       "childCount",
       "payingCount",
@@ -456,6 +465,7 @@
           buffetCategory: BuffetMetrics.getCategoryLabel(person.category),
           child: person.child,
           code: index === 0 ? row.guest.invite_code : "",
+          inviteSent: index === 0 ? formatBoolean(row.guest.invite_sent) : "",
           expectedCount: index === 0 ? row.expectedCount : "",
           childCount: index === 0 ? childCount : "",
           payingCount:
@@ -691,6 +701,18 @@
       }));
   }
 
+  function getPendingInviteRows() {
+    return reportData.activeGuests
+      .filter((guest) => !guest.invite_sent)
+      .map((guest) => ({
+        type: "Convite pendente",
+        item: guest.name,
+        owner: guest.invite_code,
+        status: "Não enviado",
+        action: "Enviar convite e marcar como enviado",
+      }));
+  }
+
   function getPendingGiftRows(giftMap, guestMap) {
     const singleGiftRows = reportData.gifts
       .filter(
@@ -750,6 +772,7 @@
     const guestMap = getGuestMap();
 
     return [
+      ...getPendingInviteRows(),
       ...getPendingRSVPRows(rsvpMap),
       ...getPendingGiftRows(giftMap, guestMap),
     ];

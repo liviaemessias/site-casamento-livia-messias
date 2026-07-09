@@ -13,6 +13,13 @@ drop function if exists public.create_guest_with_invite_code(
   text,
   text,
   jsonb,
+  integer
+);
+
+drop function if exists public.create_guest_with_invite_code(
+  text,
+  text,
+  jsonb,
   integer,
   boolean
 );
@@ -21,7 +28,8 @@ create or replace function public.create_guest_with_invite_code(
   p_name text,
   p_invite_type text default 'individual',
   p_couple_members jsonb default null,
-  p_max_guests integer default 0
+  p_max_guests integer default 0,
+  p_invite_sent boolean default false
 )
 returns public.guests
 language plpgsql
@@ -48,6 +56,7 @@ begin
   p_name := nullif(btrim(p_name), '');
   p_invite_type := lower(nullif(btrim(p_invite_type), ''));
   p_max_guests := coalesce(p_max_guests, 0);
+  p_invite_sent := coalesce(p_invite_sent, false);
 
   if p_name is null then
     raise exception 'Guest name is required.'
@@ -103,6 +112,7 @@ begin
         invite_code,
         max_guests,
         confirmed,
+        invite_sent,
         active,
         access_count,
         invite_type,
@@ -113,6 +123,7 @@ begin
         generated_code,
         p_max_guests,
         false,
+        p_invite_sent,
         true,
         0,
         p_invite_type,
@@ -137,7 +148,8 @@ comment on function public.create_guest_with_invite_code(
   text,
   text,
   jsonb,
-  integer
+  integer,
+  boolean
 ) is
   'Creates a guest as an authenticated administrator and generates a secure invitation code.';
 
@@ -145,21 +157,24 @@ revoke all on function public.create_guest_with_invite_code(
   text,
   text,
   jsonb,
-  integer
+  integer,
+  boolean
 ) from public;
 
 revoke all on function public.create_guest_with_invite_code(
   text,
   text,
   jsonb,
-  integer
+  integer,
+  boolean
 ) from anon;
 
 grant execute on function public.create_guest_with_invite_code(
   text,
   text,
   jsonb,
-  integer
+  integer,
+  boolean
 ) to authenticated;
 
 -- New guests must be created through the RPC. Existing guests can still be

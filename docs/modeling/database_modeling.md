@@ -13,6 +13,8 @@ auth.users 1:0..1 admin_users
 guests 1:0..1 admin_users
 auth.users 1:0..1 guest_access_sessions
 guests 1:N guest_access_sessions
+guests 1:N notification_events
+notification_events 1:N notification_deliveries
 ```
 
 ## Tabela `guests`
@@ -27,6 +29,7 @@ create table public.guests (
   invite_code text not null,
   max_guests integer null default 0,
   confirmed boolean null default false,
+  invite_sent boolean not null default false,
   active boolean null default true,
   access_count integer null default 0,
   last_access timestamp with time zone null,
@@ -45,6 +48,7 @@ Campos principais:
   administrativa `create_guest_with_invite_code()`.
 - `max_guests`: limite de acompanhantes.
 - `confirmed`: indica se já existe RSVP confirmado/registrado.
+- `invite_sent`: indica se o convite já foi enviado ao convidado.
 - `active`: convidados inativos não acessam e não entram nas métricas.
 - `access_count`: quantidade de acessos.
 - `last_access`: último acesso.
@@ -284,6 +288,43 @@ create table public.guest_access_sessions (
 Cada sessão pertence a um único convite. Um convite pode possuir sessões em
 mais de um dispositivo, e cada uma pode ser revogada individualmente.
 
+## Tabelas De Notificação
+
+As notificações transacionais usam uma outbox genérica.
+
+### `notification_events`
+
+Registra o evento que aconteceu no sistema.
+
+Campos principais:
+
+- `event_type`: tipo do evento, como `rsvp_saved`.
+- `aggregate_type`: entidade de origem, como `rsvp`.
+- `aggregate_id`: identificador da entidade de origem.
+- `aggregate_version`: versão temporal usada para idempotência.
+- `guest_id`: convidado relacionado, quando houver.
+- `dedupe_key`: chave única que evita duplicar o mesmo evento.
+- `payload`: dados sanitizados e necessários para montar os e-mails.
+- `status`: `pending`, `processing`, `processed` ou `failed`.
+
+### `notification_deliveries`
+
+Registra uma tentativa por destinatário.
+
+Campos principais:
+
+- `event_id`: evento de origem.
+- `recipient_type`: `admin` ou `guest`.
+- `recipient_email`: e-mail de destino, quando disponível.
+- `channel`: atualmente `email`.
+- `dedupe_key`: chave única por evento e destinatário.
+- `status`: `pending`, `processing`, `sent`, `failed` ou `skipped`.
+- `last_error`: erro resumido e sem secrets.
+
+As tabelas têm RLS habilitado e não são acessadas diretamente pelo frontend.
+Somente a Edge Function `send-notifications` gerencia eventos e entregas com
+`service_role`.
+
 ## Funções De Autorização
 
 - `current_guest_id()`: retorna o convidado ativo relacionado à sessão atual.
@@ -308,7 +349,8 @@ mais de um dispositivo, e cada uma pode ser revogada individualmente.
   casamento, mantendo um único registro em `settings`.
 - `save_current_rsvp()`: usa o convite da sessão como fonte oficial, valida
   membros, acompanhantes e idades e descarta campos adicionais enviados pelo
-  cliente.
+  cliente. Também cria um evento `rsvp_saved` para notificação por e-mail no
+  RSVP público.
 - `set_gift_purchase_method()` e `report_gift_payment()`: cruzam a forma
   escolhida com `purchase_mode` e exigem uma escolha válida antes de registrar
   pagamento ou compra.

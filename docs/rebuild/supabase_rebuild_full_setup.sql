@@ -37,6 +37,7 @@ create table if not exists public.guests (
   invite_code text not null,
   max_guests integer null default 0,
   confirmed boolean null default false,
+  invite_sent boolean not null default false,
   active boolean null default true,
   access_count integer null default 0,
   last_access timestamp with time zone null,
@@ -151,18 +152,91 @@ create table if not exists public.settings (
     check (buffet_paying_age between 1 and 18)
 );
 
+create table if not exists public.notification_events (
+  id uuid not null default gen_random_uuid(),
+  created_at timestamp with time zone not null default timezone('utc'::text, now()),
+  event_type text not null,
+  aggregate_type text not null,
+  aggregate_id uuid not null,
+  aggregate_version timestamp with time zone null,
+  guest_id uuid null,
+  dedupe_key text not null,
+  payload jsonb not null default '{}'::jsonb,
+  status text not null default 'pending',
+  attempts integer not null default 0,
+  next_attempt_at timestamp with time zone not null default timezone('utc'::text, now()),
+  claimed_at timestamp with time zone null,
+  processed_at timestamp with time zone null,
+  failed_at timestamp with time zone null,
+  last_error text null,
+
+  constraint notification_events_pkey primary key (id),
+  constraint notification_events_guest_id_fkey
+    foreign key (guest_id)
+    references public.guests(id)
+    on delete set null,
+  constraint notification_events_dedupe_key_key unique (dedupe_key),
+  constraint notification_events_status_check
+    check (status in ('pending', 'processing', 'processed', 'failed'))
+);
+
+create table if not exists public.notification_deliveries (
+  id uuid not null default gen_random_uuid(),
+  created_at timestamp with time zone not null default timezone('utc'::text, now()),
+  event_id uuid not null,
+  recipient_type text not null,
+  recipient_email text null,
+  channel text not null default 'email',
+  dedupe_key text not null,
+  status text not null default 'pending',
+  attempts integer not null default 0,
+  claimed_at timestamp with time zone null,
+  sent_at timestamp with time zone null,
+  failed_at timestamp with time zone null,
+  skipped_at timestamp with time zone null,
+  last_error text null,
+
+  constraint notification_deliveries_pkey primary key (id),
+  constraint notification_deliveries_event_id_fkey
+    foreign key (event_id)
+    references public.notification_events(id)
+    on delete cascade,
+  constraint notification_deliveries_dedupe_key_key unique (dedupe_key),
+  constraint notification_deliveries_recipient_type_check
+    check (recipient_type in ('admin', 'guest')),
+  constraint notification_deliveries_channel_check
+    check (channel in ('email')),
+  constraint notification_deliveries_status_check
+    check (status in ('pending', 'processing', 'sent', 'failed', 'skipped'))
+);
+
+create index if not exists notification_events_pending_idx
+  on public.notification_events (status, next_attempt_at, created_at)
+  where status = 'pending';
+
+create index if not exists notification_events_guest_pending_idx
+  on public.notification_events (guest_id, status, next_attempt_at, created_at)
+  where status = 'pending';
+
+create index if not exists notification_deliveries_event_id_idx
+  on public.notification_deliveries (event_id);
+
 -- Do not expose the tables before the final RLS policies are installed.
 alter table public.guests enable row level security;
 alter table public.rsvps enable row level security;
 alter table public.gifts enable row level security;
 alter table public.gift_contributions enable row level security;
 alter table public.settings enable row level security;
+alter table public.notification_events enable row level security;
+alter table public.notification_deliveries enable row level security;
 
 revoke all on table public.guests from anon, authenticated;
 revoke all on table public.rsvps from anon, authenticated;
 revoke all on table public.gifts from anon, authenticated;
 revoke all on table public.gift_contributions from anon, authenticated;
 revoke all on table public.settings from anon, authenticated;
+revoke all on table public.notification_events from anon, authenticated;
+revoke all on table public.notification_deliveries from anon, authenticated;
 
 commit;
 
@@ -1358,9 +1432,12 @@ declare
   safe_companions jsonb := '[]'::jsonb;
   requested_guest_count integer;
   companion_count integer;
+  event_operation text;
   submitted_member_count integer;
   expected_member_count integer;
   member_is_coming boolean;
+  saved_rsvp public.rsvps%rowtype;
+  was_existing boolean;
 begin
   current_guest := public.current_guest_id();
 
@@ -1382,6 +1459,13 @@ begin
   if not found then
     return;
   end if;
+
+  select exists (
+    select 1
+    from public.rsvps as existing_rsvp
+    where existing_rsvp.guest_id = current_guest
+  )
+  into was_existing;
 
   begin
     requested_guest_count := coalesce(
@@ -1526,7 +1610,6 @@ begin
     'companions', safe_companions
   );
 
-  return query
   insert into public.rsvps (
     guest_id,
     presence,
@@ -1556,7 +1639,56 @@ begin
     message = excluded.message,
     guest_data = excluded.guest_data,
     updated_at = excluded.updated_at
-  returning *;
+  returning * into saved_rsvp;
+
+  event_operation := case
+    when was_existing then 'updated'
+    else 'created'
+  end;
+
+  insert into public.notification_events (
+    event_type,
+    aggregate_type,
+    aggregate_id,
+    aggregate_version,
+    guest_id,
+    dedupe_key,
+    payload
+  )
+  values (
+    'rsvp_saved',
+    'rsvp',
+    saved_rsvp.id,
+    saved_rsvp.updated_at,
+    current_guest,
+    concat(
+      'rsvp_saved:',
+      saved_rsvp.id::text,
+      ':',
+      extract(epoch from saved_rsvp.updated_at)::text
+    ),
+    jsonb_build_object(
+      'operation', event_operation,
+      'operation_label', case
+        when event_operation = 'updated' then 'RSVP Atualizado'
+        else 'RSVP Recebido'
+      end,
+      'guest_name', guest_record.name,
+      'invite_type', guest_record.invite_type,
+      'couple_members', coalesce(guest_record.couple_members, '[]'::jsonb),
+      'rsvp_id', saved_rsvp.id,
+      'rsvp_updated_at', saved_rsvp.updated_at,
+      'presence', saved_rsvp.presence,
+      'email', saved_rsvp.email,
+      'phone', saved_rsvp.phone,
+      'food', saved_rsvp.food,
+      'message', saved_rsvp.message,
+      'guest_data', saved_rsvp.guest_data
+    )
+  )
+  on conflict (dedupe_key) do nothing;
+
+  return next saved_rsvp;
 end;
 $$;
 
@@ -1790,6 +1922,13 @@ drop function if exists public.create_guest_with_invite_code(
   text,
   text,
   jsonb,
+  integer
+);
+
+drop function if exists public.create_guest_with_invite_code(
+  text,
+  text,
+  jsonb,
   integer,
   boolean
 );
@@ -1798,7 +1937,8 @@ create or replace function public.create_guest_with_invite_code(
   p_name text,
   p_invite_type text default 'individual',
   p_couple_members jsonb default null,
-  p_max_guests integer default 0
+  p_max_guests integer default 0,
+  p_invite_sent boolean default false
 )
 returns public.guests
 language plpgsql
@@ -1825,6 +1965,7 @@ begin
   p_name := nullif(btrim(p_name), '');
   p_invite_type := lower(nullif(btrim(p_invite_type), ''));
   p_max_guests := coalesce(p_max_guests, 0);
+  p_invite_sent := coalesce(p_invite_sent, false);
 
   if p_name is null then
     raise exception 'Guest name is required.'
@@ -1880,6 +2021,7 @@ begin
         invite_code,
         max_guests,
         confirmed,
+        invite_sent,
         active,
         access_count,
         invite_type,
@@ -1890,6 +2032,7 @@ begin
         generated_code,
         p_max_guests,
         false,
+        p_invite_sent,
         true,
         0,
         p_invite_type,
@@ -1914,7 +2057,8 @@ comment on function public.create_guest_with_invite_code(
   text,
   text,
   jsonb,
-  integer
+  integer,
+  boolean
 ) is
   'Creates a guest as an authenticated administrator and generates a secure invitation code.';
 
@@ -1922,21 +2066,24 @@ revoke all on function public.create_guest_with_invite_code(
   text,
   text,
   jsonb,
-  integer
+  integer,
+  boolean
 ) from public;
 
 revoke all on function public.create_guest_with_invite_code(
   text,
   text,
   jsonb,
-  integer
+  integer,
+  boolean
 ) from anon;
 
 grant execute on function public.create_guest_with_invite_code(
   text,
   text,
   jsonb,
-  integer
+  integer,
+  boolean
 ) to authenticated;
 
 -- New guests must be created through the RPC. Existing guests can still be
@@ -2484,16 +2631,26 @@ drop function if exists public.admin_update_guest(
   text,
   text,
   jsonb,
+  integer
+);
+
+drop function if exists public.admin_update_guest(
+  uuid,
+  text,
+  text,
+  jsonb,
   integer,
   boolean
 );
+drop function if exists public.admin_set_guest_invite_sent(uuid, boolean);
 
 create or replace function public.admin_update_guest(
   target_guest_id uuid,
   p_name text,
   p_invite_type text,
   p_couple_members jsonb,
-  p_max_guests integer
+  p_max_guests integer,
+  p_invite_sent boolean
 )
 returns boolean
 language plpgsql
@@ -2516,6 +2673,7 @@ begin
   p_name := nullif(btrim(p_name), '');
   p_invite_type := lower(nullif(btrim(p_invite_type), ''));
   p_max_guests := coalesce(p_max_guests, 0);
+  p_invite_sent := coalesce(p_invite_sent, false);
 
   if p_name is null
     or p_invite_type is null
@@ -2546,7 +2704,8 @@ begin
     name = p_name,
     invite_type = p_invite_type,
     couple_members = p_couple_members,
-    max_guests = p_max_guests
+    max_guests = p_max_guests,
+    invite_sent = p_invite_sent
   where id = target_guest_id;
 
   get diagnostics updated_count = row_count;
@@ -2613,26 +2772,67 @@ begin
 end;
 $$;
 
+create or replace function public.admin_set_guest_invite_sent(
+  target_guest_id uuid,
+  next_invite_sent boolean
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  updated_count integer;
+begin
+  if not exists (
+    select 1
+    from public.admin_users as administrator
+    where administrator.user_id = (select auth.uid())
+      and administrator.active is true
+  ) then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  if next_invite_sent is null then
+    return false;
+  end if;
+
+  update public.guests
+  set invite_sent = next_invite_sent
+  where id = target_guest_id;
+
+  get diagnostics updated_count = row_count;
+  return updated_count = 1;
+end;
+$$;
+
 comment on function public.admin_update_guest(
   uuid,
   text,
   text,
   jsonb,
-  integer
+  integer,
+  boolean
 ) is
   'Validates and updates a guest without exposing direct table writes.';
 
 comment on function public.admin_set_guest_active(uuid, boolean) is
   'Changes guest access and synchronizes invitation sessions atomically.';
+comment on function public.admin_set_guest_invite_sent(uuid, boolean) is
+  'Marks whether a guest invitation has been sent.';
 
 revoke all on function public.admin_update_guest(
   uuid,
   text,
   text,
   jsonb,
-  integer
+  integer,
+  boolean
 ) from public, anon;
 revoke all on function public.admin_set_guest_active(uuid, boolean)
+  from public, anon;
+revoke all on function public.admin_set_guest_invite_sent(uuid, boolean)
   from public, anon;
 
 grant execute on function public.admin_update_guest(
@@ -2640,9 +2840,12 @@ grant execute on function public.admin_update_guest(
   text,
   text,
   jsonb,
-  integer
+  integer,
+  boolean
 ) to authenticated;
 grant execute on function public.admin_set_guest_active(uuid, boolean)
+  to authenticated;
+grant execute on function public.admin_set_guest_invite_sent(uuid, boolean)
   to authenticated;
 
 -- All guest mutations now use trusted RPCs or the claim-invite service role.
@@ -3326,6 +3529,14 @@ grant usage, select
 
 grant select, update
   on table public.guests
+  to service_role;
+
+grant select, insert, update, delete
+  on table public.notification_events
+  to service_role;
+
+grant select, insert, update, delete
+  on table public.notification_deliveries
   to service_role;
 
 grant execute

@@ -17,6 +17,7 @@ create table if not exists public.guests (
   invite_code text not null,
   max_guests integer null default 0,
   confirmed boolean null default false,
+  invite_sent boolean not null default false,
   active boolean null default true,
   access_count integer null default 0,
   last_access timestamp with time zone null,
@@ -131,17 +132,90 @@ create table if not exists public.settings (
     check (buffet_paying_age between 1 and 18)
 );
 
+create table if not exists public.notification_events (
+  id uuid not null default gen_random_uuid(),
+  created_at timestamp with time zone not null default timezone('utc'::text, now()),
+  event_type text not null,
+  aggregate_type text not null,
+  aggregate_id uuid not null,
+  aggregate_version timestamp with time zone null,
+  guest_id uuid null,
+  dedupe_key text not null,
+  payload jsonb not null default '{}'::jsonb,
+  status text not null default 'pending',
+  attempts integer not null default 0,
+  next_attempt_at timestamp with time zone not null default timezone('utc'::text, now()),
+  claimed_at timestamp with time zone null,
+  processed_at timestamp with time zone null,
+  failed_at timestamp with time zone null,
+  last_error text null,
+
+  constraint notification_events_pkey primary key (id),
+  constraint notification_events_guest_id_fkey
+    foreign key (guest_id)
+    references public.guests(id)
+    on delete set null,
+  constraint notification_events_dedupe_key_key unique (dedupe_key),
+  constraint notification_events_status_check
+    check (status in ('pending', 'processing', 'processed', 'failed'))
+);
+
+create table if not exists public.notification_deliveries (
+  id uuid not null default gen_random_uuid(),
+  created_at timestamp with time zone not null default timezone('utc'::text, now()),
+  event_id uuid not null,
+  recipient_type text not null,
+  recipient_email text null,
+  channel text not null default 'email',
+  dedupe_key text not null,
+  status text not null default 'pending',
+  attempts integer not null default 0,
+  claimed_at timestamp with time zone null,
+  sent_at timestamp with time zone null,
+  failed_at timestamp with time zone null,
+  skipped_at timestamp with time zone null,
+  last_error text null,
+
+  constraint notification_deliveries_pkey primary key (id),
+  constraint notification_deliveries_event_id_fkey
+    foreign key (event_id)
+    references public.notification_events(id)
+    on delete cascade,
+  constraint notification_deliveries_dedupe_key_key unique (dedupe_key),
+  constraint notification_deliveries_recipient_type_check
+    check (recipient_type in ('admin', 'guest')),
+  constraint notification_deliveries_channel_check
+    check (channel in ('email')),
+  constraint notification_deliveries_status_check
+    check (status in ('pending', 'processing', 'sent', 'failed', 'skipped'))
+);
+
+create index if not exists notification_events_pending_idx
+  on public.notification_events (status, next_attempt_at, created_at)
+  where status = 'pending';
+
+create index if not exists notification_events_guest_pending_idx
+  on public.notification_events (guest_id, status, next_attempt_at, created_at)
+  where status = 'pending';
+
+create index if not exists notification_deliveries_event_id_idx
+  on public.notification_deliveries (event_id);
+
 -- Do not expose the tables before the final RLS policies are installed.
 alter table public.guests enable row level security;
 alter table public.rsvps enable row level security;
 alter table public.gifts enable row level security;
 alter table public.gift_contributions enable row level security;
 alter table public.settings enable row level security;
+alter table public.notification_events enable row level security;
+alter table public.notification_deliveries enable row level security;
 
 revoke all on table public.guests from anon, authenticated;
 revoke all on table public.rsvps from anon, authenticated;
 revoke all on table public.gifts from anon, authenticated;
 revoke all on table public.gift_contributions from anon, authenticated;
 revoke all on table public.settings from anon, authenticated;
+revoke all on table public.notification_events from anon, authenticated;
+revoke all on table public.notification_deliveries from anon, authenticated;
 
 commit;

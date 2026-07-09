@@ -10,7 +10,16 @@ drop function if exists public.admin_update_guest(
   jsonb,
   integer
 );
+drop function if exists public.admin_update_guest(
+  uuid,
+  text,
+  text,
+  jsonb,
+  integer,
+  boolean
+);
 drop function if exists public.admin_set_guest_active(uuid, boolean);
+drop function if exists public.admin_set_guest_invite_sent(uuid, boolean);
 
 grant update, delete on table public.guests to authenticated;
 

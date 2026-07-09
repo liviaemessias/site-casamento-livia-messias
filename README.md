@@ -2,7 +2,7 @@
 
 Site de casamento personalizado para centralizar informações do evento, RSVP, lista de presentes e administração dos noivos.
 
-Versão atual: **3.3**.
+Versão atual: **3.4**.
 
 ## Desenvolvimento
 
@@ -13,6 +13,8 @@ GitHub: [messiasfl10](https://github.com/messiasfl10/)
 ## Funcionalidades
 
 - Acesso por código de convite.
+- Controle administrativo de convites enviados ou ainda pendentes de envio.
+- Notificações transacionais por e-mail para RSVP público criado ou atualizado.
 - RSVP individual e para convites de casal.
 - Cadastro de acompanhantes, crianças e restrições alimentares.
 - Idade das crianças padronizada até 12 anos, conforme a data do casamento.
@@ -29,8 +31,8 @@ GitHub: [messiasfl10](https://github.com/messiasfl10/)
 - Dashboard operacional com indicadores clicáveis, resumos visuais de RSVP e presentes e atalhos para as principais pendências.
 - Página de Indicadores com métricas e gráficos detalhados de presença, buffet, presentes e valores financeiros.
 - Filtros, ordenação, contadores de resultado e limpeza de filtros no admin.
-- Exportação CSV de convidados, RSVPs e presentes respeitando filtros e ordenação atuais, incluindo totais planejados de convidados e acompanhantes.
-- Página de Relatórios com exportações CSV/XLSX, seleção de colunas e opções resumidas ou detalhadas para a lista de confirmados.
+- Exportação CSV de convidados, RSVPs e presentes respeitando filtros e ordenação atuais, incluindo convite enviado e totais planejados de convidados e acompanhantes.
+- Página de Relatórios com exportações CSV/XLSX, seleção de colunas, convite enviado e opções resumidas ou detalhadas para a lista de confirmados.
 - Referências visuais personalizadas nos logins e nas páginas públicas, adaptadas para desktop e mobile.
 - Textos de saudação, reserva e pagamento adaptados para convites individuais e de casal.
 - Login administrativo com e-mail e senha pelo Supabase Auth.
@@ -39,7 +41,7 @@ GitHub: [messiasfl10](https://github.com/messiasfl10/)
 - Criação, atualização e remoção administrativa de RSVPs por RPCs transacionais.
 - RSVP público validado no banco com membros, acompanhantes e idades padronizadas.
 - Formas de presentear e confirmações de pagamento validadas no banco.
-- Edição, ativação e desativação de convidados por RPCs com controle de sessões.
+- Edição, ativação/desativação e marcação de envio de convite por RPCs administrativas.
 - Cadastro, edição e exclusão de presentes por RPCs com validação financeira.
 - Configurações globais validadas e salvas como registro único por RPC.
 - Configurações públicas expostas por RPC com colunas fixas, sem leitura direta da tabela pelo frontend.
@@ -47,6 +49,7 @@ GitHub: [messiasfl10](https://github.com/messiasfl10/)
 - Metadados de SEO, Open Graph e Twitter Cards na página inicial, atualizados conforme os dados do evento.
 - Content Security Policy em todas as páginas e renderização de conteúdo dinâmico com utilitários seguros.
 - Login seguro dos convidados com sessão anônima e Edge Function.
+- Outbox segura de notificações com registros por evento e por destinatário.
 - Cloudflare Turnstile nos logins administrativo e de convidados.
 - Row Level Security e RPCs restritas para isolamento dos dados por convite.
 - Limitação de tentativas inválidas no login por código.
@@ -194,6 +197,13 @@ O RSVP permite:
 
 Os dados completos ficam em `rsvps.guest_data`, permitindo preservar membros do casal e acompanhantes em JSON.
 
+Quando o RSVP público é salvo ou atualizado, a RPC cria um evento
+`rsvp_saved` em `notification_events`. O frontend chama a Edge Function
+`send-notifications` em segundo plano, sem bloquear a confirmação do convidado.
+O admin recebe e-mail sempre; o convidado recebe somente quando informou um
+e-mail válido no RSVP. RSVPs manuais feitos no painel administrativo não
+disparam e-mail automaticamente.
+
 ## Fluxo De Presentes
 
 1. O convidado escolhe um presente disponível.
@@ -240,12 +250,15 @@ ações pendentes. Os arquivos podem ser gerados em CSV ou XLSX, com seleção d
 colunas e modos resumido por convite ou detalhado por pessoa, quando aplicável.
 
 As páginas de gestão possuem filtros e ordenação local nas tabelas principais.
+Em convidados, o admin também controla se cada convite já foi enviado, com
+filtro dedicado, coluna na tabela, checkbox no cadastro/edição e ação rápida
+nos detalhes.
 
 Filtros disponíveis:
 
 - Presentes: busca por presente, categoria ou convidado; status; pagamento; forma de presentear.
 - Presentes por cotas: filtros específicos para cotas disponíveis, parcialmente reservadas, totalmente reservadas, parcialmente confirmadas e totalmente confirmadas.
-- Convidados: busca por nome ou código; status; RSVP; tipo de convite; administrador.
+- Convidados: busca por nome ou código; status; RSVP; envio do convite; tipo de convite.
 - RSVP: busca por convidado, acompanhante ou mensagem; presença; acompanhantes; categorias do buffet.
 
 Cada tela filtrável exibe contador de resultados e botão para limpar filtros.
@@ -271,6 +284,11 @@ URLs e substituir conteúdo dinâmico com fragmentos sanitizados ou APIs do DOM.
 A tabela `settings` não é lida diretamente pelo frontend. Dados de pagamento e
 do evento são expostos por RPCs distintas, com colunas públicas explícitas.
 
+As tabelas `notification_events` e `notification_deliveries` têm RLS habilitado
+e não são acessíveis diretamente por `anon` ou `authenticated`. O envio de
+e-mail é feito somente pela Edge Function `send-notifications`, com secrets SMTP
+mantidos no Supabase e validação da sessão do convidado.
+
 ## PIX e QR-Code
 
 A lógica PIX está isolada em `js/pix.js`.
@@ -293,6 +311,8 @@ PixPayment.getQrCodeUrl(payload);
 ## Documentação Complementar
 
 - `docs/operations/captcha_turnstile_setup.md`: ativação, testes e rollback do Cloudflare Turnstile nos logins.
+- `docs/operations/smtp_email_notifications_setup.md`: configuração SMTP, Gmail, Outlook/Hotmail, deploy e testes das notificações por e-mail.
+- `docs/releases/release_v3.4.md`: notas da versão 3.4, com notificações por e-mail para RSVP público.
 - `docs/releases/release_v3.3.md`: notas da versão 3.3, com configurações do evento, segurança do frontend, metadados e melhorias da home.
 - `docs/releases/release_v3.2.md`: histórico da versão 3.2, com reforços nas operações protegidas, responsividade e formas de presentear.
 - `docs/releases/release_v3.1.md`: notas da versão 3.1, com métricas do buffet, melhorias nos presentes e referências visuais.
@@ -304,6 +324,10 @@ PixPayment.getQrCodeUrl(payload);
 - `docs/rebuild/supabase_rebuild_full_setup.sql`: setup consolidado para recriar a solução atual em um projeto Supabase vazio.
 - `docs/rebuild/supabase_rebuild_verify_final.sql`: verificação final da reconstrução, das permissões, da RLS e das configurações públicas.
 - `docs/rebuild/supabase_rebuild_environment_inventory.md`: inventário das configurações não secretas que devem ser reproduzidas.
+- `docs/migrations/guest_invite_sent_migration.sql`: migração incremental para adicionar o controle de convite enviado aos convidados.
+- `docs/migrations/guest_invite_sent_verify.sql`: verificação incremental do campo de convite enviado.
+- `docs/migrations/email_notifications_schema.sql`: migração incremental das tabelas de outbox de notificações.
+- `docs/migrations/email_notifications_schema_verify.sql`: verificação incremental das tabelas e grants de notificações.
 - `docs/operations/supabase_data_cleanup_runbook.md`: limpeza segura dos dados de teste, preservando administrador e configurações.
 
 Os demais SQLs em `docs/migrations/` são mantidos como histórico de migrações,
@@ -332,10 +356,11 @@ Concluído:
 - Atalhos nas métricas do Dashboard com filtros administrativos aplicados.
 - Dashboard financeiro com valores da lista, reservados, disponíveis, informados, confirmados e pendentes, incluindo gráficos de distribuição.
 - Filtros administrativos com ordenação, contadores e limpeza.
-- Exportação CSV de convidados, RSVPs e presentes respeitando filtros e ordenação atuais.
-- Página de Relatórios Consolidados de presença/buffet, financeiro e pendências, com CSV/XLSX, seleção de colunas, categorias de pagamento e regra aplicada.
+- Exportação CSV de convidados, RSVPs e presentes respeitando filtros e ordenação atuais, incluindo convite enviado.
+- Página de Relatórios Consolidados de presença/buffet, financeiro e pendências, com CSV/XLSX, seleção de colunas, convite enviado, categorias de pagamento e regra aplicada.
 - Login e proteção das páginas administrativas com Supabase Auth.
 - Criação administrativa de convidados com código de convite gerado no banco.
+- Controle de convites enviados no cadastro de convidados, detalhes, filtros e exportações.
 - Confirmação e liberação de presentes e cotas processadas atomicamente no banco.
 - RSVPs administrativos salvos e removidos atomicamente no banco.
 - RSVP dos convidados validado contra os dados oficiais do convite.
@@ -346,6 +371,8 @@ Concluído:
 - Metadados de SEO e compartilhamento social na página inicial.
 - Content Security Policy e tratamento seguro do conteúdo HTML dinâmico.
 - Login seguro dos convidados por código, com sessão anônima e Edge Function.
+- Notificações por e-mail para RSVP público criado ou atualizado, com e-mail para admin e convidado quando disponível.
+- Outbox de notificações com idempotência por evento/destinatário e tabelas protegidas por RLS.
 - Cloudflare Turnstile validado pelo Supabase Auth nos dois fluxos de login.
 - Row Level Security para isolamento dos dados de convidados e administradores.
 - Helpers comuns para admin e páginas públicas.
@@ -355,8 +382,14 @@ Concluído:
 Em aberto:
 
 - Limpeza periódica de contas anônimas e registros de tentativas.
-- Redução das dependências carregadas por CDN.
+- Avaliar empacotamento local de dependências carregadas por CDN, exceto serviços externos obrigatórios como Cloudflare Turnstile.
 - Rotação dos códigos de convite antes da publicação definitiva.
 - Upload interno de comprovantes.
 - Relatórios avançados por período ou fornecedor.
 - Indicadores financeiros avançados por período ou forma de pagamento.
+- Notificações e comunicação para eventos de presentes, reservas e pagamentos.
+- Mural de Recados.
+- Código de Vestimenta.
+- Programação e Atrações do Evento.
+- Gerenciamento de Previsão/Controle de Gastos.
+- Gerar Relatórios em PDF, complementando XLS.
