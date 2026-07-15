@@ -30,12 +30,15 @@
         <a class="admin-nav-link" href="./admin-gifts.html">Presentes</a>
         <a class="admin-nav-link" href="./admin-rsvps.html">RSVP</a>
         <a class="admin-nav-link" href="./admin-guests.html">Convidados</a>
+        <a class="admin-nav-link" href="./admin-notifications.html">
+          Notificações
+        </a>
         <a class="admin-nav-link active" href="./admin-settings.html">
           Configurações
         </a>
       </nav>
 
-      <section class="admin-section">
+      <section class="admin-section admin-settings-section">
         <div class="admin-section-header">
           <div>
             <p class="section-subtitle">Dados Globais</p>
@@ -211,6 +214,51 @@
             Salvar Configurações
           </button>
         </form>
+      </section>
+
+      <section class="admin-section admin-settings-section">
+        <div class="admin-section-header">
+          <div>
+            <p class="section-subtitle">Notificações</p>
+            <h2>E-mails do Site</h2>
+          </div>
+
+          <div class="admin-section-actions notification-preferences-actions">
+            <button
+              type="button"
+              id="refreshNotificationPreferencesButton"
+              class="admin-action-button"
+            >
+              Atualizar Preferências
+            </button>
+          </div>
+        </div>
+
+        <div class="admin-settings-card">
+          <div class="admin-settings-card-header">
+            <span>Preferências de Envio</span>
+            <p>
+              Define quais notificações podem ser enviadas automaticamente,
+              manualmente e para quais destinatários.
+            </p>
+          </div>
+
+          <div class="admin-table-wrapper notification-preferences-wrapper">
+            <table class="admin-table notification-preferences-table">
+              <thead>
+                <tr>
+                  <th>Notificação</th>
+                  <th>Grupo</th>
+                  <th>Automática</th>
+                  <th>Manual</th>
+                  <th>Admin</th>
+                  <th>Convidado</th>
+                </tr>
+              </thead>
+              <tbody id="notificationPreferencesTableBody"></tbody>
+            </table>
+          </div>
+        </div>
       </section>
     </main>
 

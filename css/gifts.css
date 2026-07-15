@@ -15,6 +15,74 @@
   padding-bottom: 6rem;
 }
 
+.gift-email-hint {
+  display: none;
+  position: fixed;
+  right: 1.5rem;
+  bottom: 3rem;
+  z-index: 1200;
+  width: min(330px, calc(100vw - 2rem));
+  gap: 0.7rem;
+  padding: 0.85rem;
+  border: 1px solid var(--color-primary-muted);
+  border-left: 5px solid var(--color-primary);
+  border-radius: var(--radius-xl);
+  background: #f3edf8;
+  color: var(--color-text);
+  box-shadow: var(--shadow-toast);
+}
+
+.gift-email-hint.active {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+}
+
+.gift-email-hint p {
+  margin: 0;
+  padding-right: 2.5rem;
+  line-height: 1.5;
+  font-size: 0.88rem;
+}
+
+.gift-email-hint-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  grid-column: 1 / -1;
+}
+
+.gift-email-hint-actions .gift-button {
+  padding: 0.65rem 0.85rem;
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.gift-email-hint-actions .gift-button:hover,
+.gift-email-hint-actions .gift-button:focus-visible {
+  text-decoration: none;
+}
+
+.gift-email-hint-close {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--color-primary-muted);
+  border-radius: 50%;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  cursor: pointer;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.gift-email-hint-close:hover,
+.gift-email-hint-close:focus-visible {
+  border-color: var(--color-primary);
+}
+
 .gifts-pending-section {
   display: none;
   margin-bottom: 4rem;
@@ -58,13 +126,13 @@
 
 .pending-gifts-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
 }
 
 .pending-gift-card {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(180px, 0.65fr);
+  grid-template-columns: minmax(0, 1fr) minmax(160px, 0.5fr);
   gap: 1rem;
   align-items: center;
   padding: 1.1rem;
@@ -72,6 +140,10 @@
   border-radius: var(--radius-2xl);
   background: var(--white);
   box-shadow: var(--shadow-sm);
+}
+
+.pending-gift-card:only-child {
+  max-width: 680px;
 }
 
 .pending-gift-content span {
@@ -107,7 +179,7 @@
 
 .gifts-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 2rem;
   align-items: stretch;
   justify-content: center;
@@ -117,6 +189,28 @@
   display: flex;
   flex-direction: column;
   gap: 6rem;
+}
+
+.gifts-empty-state {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  border-top: 1px solid var(--color-primary-muted);
+  border-bottom: 1px solid var(--color-primary-muted);
+  text-align: center;
+}
+
+.gifts-empty-state h2 {
+  margin-bottom: 0.75rem;
+  color: var(--color-primary);
+  font-family: var(--font-heading);
+  font-size: clamp(1.7rem, 4vw, 2.3rem);
+}
+
+.gifts-empty-state p {
+  margin: 0;
+  color: var(--color-text-muted);
+  line-height: 1.8;
 }
 
 .gift-card {
@@ -524,6 +618,10 @@
   .gifts-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  .pending-gifts-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 768px) {
@@ -535,6 +633,15 @@
   .pending-gift-card {
     align-items: stretch;
     grid-template-columns: 1fr;
+  }
+
+  .gift-email-hint {
+    right: 1rem;
+    bottom: 1rem;
+  }
+
+  .gift-email-hint-actions {
+    padding-right: 2.25rem;
   }
 
   .gifts-pending-header {

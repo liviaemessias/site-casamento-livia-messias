@@ -18,19 +18,25 @@
   <body class="guest-auth-pending site-reference-rails">
     <header class="navbar navbar-light">
       <div class="container nav-content">
-        <div class="logo" data-wedding-names>Livia & Messias</div>
+        <a href="./index.html" class="logo" data-wedding-names>Livia & Messias</a>
         <ul class="nav-links">
           <li>
             <a href="./index.html"> Início </a>
-          </li>
-          <li>
-            <a href="./our-story.html"> Nossa História </a>
           </li>
           <li>
             <a href="./rsvp.html"> RSVP </a>
           </li>
           <li>
             <a href="./gifts.html" class="active"> Presentes </a>
+          </li>
+          <li>
+            <a href="./our-story.html"> Nossa História </a>
+          </li>
+          <li>
+            <a href="./photos.html"> Pré-Wedding </a>
+          </li>
+          <li>
+            <a href="./messages.html"> Recados </a>
           </li>
           <li class="guest-info"><span id="guestNameDisplay"></span></li>
           <li><button id="logoutButton" class="logout-button">Sair</button></li>
@@ -186,7 +192,7 @@
 
           <div id="moneyPaymentSection" class="payment-section">
             <div id="pixPaymentBlock">
-              <img id="pixQrCode" class="pix-qrcode" src="" alt="QR Code PIX" />
+              <img id="pixQrCode" class="pix-qrcode" src="" alt="QR-Code PIX" />
 
               <div class="pix-key-container">
                 <label class="pix-label"> PIX Copia e Cola </label>
@@ -227,19 +233,16 @@
           </button>
 
           <div class="pix-message">
-            <p class="pix-thanks">💜 Obrigado por presentear os noivos!</p>
+            <p id="paymentThanksText" class="pix-thanks">
+              💜 Obrigado por nos presentear!
+            </p>
 
             <p id="paymentModalFooterText"></p>
 
             <p class="pix-attention">
-              O presente continuará como reservado até a confirmação manual dos
-              noivos.
+              O presente continuará como reservado até confirmarmos manualmente.
             </p>
           </div>
-
-          <a id="sendReceiptButton" class="receipt-button" target="_blank">
-            Enviar comprovante
-          </a>
         </div>
       </div>
     </div>
@@ -285,6 +288,7 @@
       </div>
     </div>
 
+    <div id="giftEmailHint" class="gift-email-hint" hidden></div>
     <div id="toast" class="toast"></div>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
     <script src="./js/supabase.js"></script>

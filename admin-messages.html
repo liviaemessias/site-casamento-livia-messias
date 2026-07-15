@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://unpkg.com https://challenges.cloudflare.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Recados | Painel Admin | Livia &amp; Messias</title>
+    <link rel="stylesheet" href="./css/style.css" />
+    <link rel="stylesheet" href="./css/admin.css" />
+  </head>
+  <body class="admin-auth-pending">
+    <main class="admin-page admin-messages-page">
+      <section class="admin-header">
+        <div>
+          <p class="section-subtitle">Painel Administrativo</p>
+          <h1>Recados</h1>
+        </div>
+        <button id="logoutButton" class="admin-logout">Sair</button>
+      </section>
+
+      <nav class="admin-nav" aria-label="Navegação administrativa">
+        <a class="admin-nav-link" href="./admin-dashboard.html">Dashboard</a>
+        <a class="admin-nav-link" href="./admin-guests.html">Convidados</a>
+        <a class="admin-nav-link" href="./admin-rsvps.html">RSVP</a>
+        <a class="admin-nav-link" href="./admin-gifts.html">Presentes</a>
+        <a class="admin-nav-link active" href="./admin-messages.html">Recados</a>
+        <a class="admin-nav-link" href="./admin-settings.html">Configurações</a>
+      </nav>
+
+      <section class="admin-section">
+        <div class="admin-section-header">
+          <div>
+            <p class="section-subtitle">Mural</p>
+            <h2>Recados dos Convidados</h2>
+          </div>
+
+          <div class="admin-section-actions">
+            <button id="refreshWallMessagesButton" class="admin-action-button">
+              Atualizar
+            </button>
+          </div>
+        </div>
+
+        <section class="admin-grid dashboard-grid wall-message-summary-grid" aria-label="Resumo dos recados">
+          <article class="admin-card wall-message-summary-card" data-wall-status="pending" role="button" tabindex="0">
+            <div class="admin-card-header">
+              <span>Pendentes</span>
+              <button type="button" class="metric-help" aria-label="Ajuda sobre recados pendentes" data-tooltip="Recados enviados por convidados e aguardando aprovação.">?</button>
+            </div>
+            <strong id="wallPendingCount">0</strong>
+          </article>
+          <article class="admin-card wall-message-summary-card" data-wall-status="approved" role="button" tabindex="0">
+            <div class="admin-card-header">
+              <span>Aprovados</span>
+              <button type="button" class="metric-help" aria-label="Ajuda sobre recados aprovados" data-tooltip="Recados visíveis no mural público.">?</button>
+            </div>
+            <strong id="wallApprovedCount">0</strong>
+          </article>
+          <article class="admin-card wall-message-summary-card" data-wall-status="replied" role="button" tabindex="0">
+            <div class="admin-card-header">
+              <span>Respondidos</span>
+              <button type="button" class="metric-help" aria-label="Ajuda sobre recados respondidos" data-tooltip="Recados que já receberam resposta dos noivos.">?</button>
+            </div>
+            <strong id="wallRepliedCount">0</strong>
+          </article>
+          <article class="admin-card wall-message-summary-card" data-wall-status="hidden" role="button" tabindex="0">
+            <div class="admin-card-header">
+              <span>Ocultos</span>
+              <button type="button" class="metric-help" aria-label="Ajuda sobre recados ocultos" data-tooltip="Recados não exibidos no mural público.">?</button>
+            </div>
+            <strong id="wallHiddenCount">0</strong>
+          </article>
+        </section>
+
+        <div class="admin-filters" aria-label="Filtros de recados">
+          <div class="admin-filter-field">
+            <label for="wallMessageSearchInput">Buscar</label>
+            <input
+              type="search"
+              id="wallMessageSearchInput"
+              placeholder="Convidado, recado ou resposta"
+            />
+          </div>
+
+          <div class="admin-filter-field">
+            <label for="wallMessageStatusFilter">Status</label>
+            <select id="wallMessageStatusFilter">
+              <option value="">Todos</option>
+              <option value="pending">Pendentes</option>
+              <option value="approved">Aprovados</option>
+              <option value="hidden">Ocultos</option>
+              <option value="replied">Respondidos</option>
+            </select>
+          </div>
+
+          <div class="admin-filter-field">
+            <label for="wallMessageInviteTypeFilter">Convite</label>
+            <select id="wallMessageInviteTypeFilter">
+              <option value="">Todos</option>
+              <option value="individual">Individual</option>
+              <option value="couple">Casal</option>
+            </select>
+          </div>
+
+          <div class="admin-filter-field">
+            <label for="wallMessageReplyFilter">Resposta</label>
+            <select id="wallMessageReplyFilter">
+              <option value="">Todos</option>
+              <option value="with-reply">Com Resposta</option>
+              <option value="without-reply">Sem Resposta</option>
+            </select>
+          </div>
+
+          <div class="admin-filter-field">
+            <label for="wallMessageSortSelect">Ordenar</label>
+            <select id="wallMessageSortSelect">
+              <option value="updated-desc">Mais Recentes</option>
+              <option value="updated-asc">Mais Antigos</option>
+              <option value="pending-first">Pendentes Primeiro</option>
+              <option value="guest-asc">Convidado A-Z</option>
+            </select>
+          </div>
+
+          <div class="admin-filter-actions">
+            <span id="wallMessageFilterCount" class="admin-filter-count"></span>
+            <button
+              type="button"
+              id="clearWallMessageFiltersButton"
+              class="admin-clear-filters"
+            >
+              Limpar Filtros
+            </button>
+          </div>
+        </div>
+
+        <div class="admin-table-wrapper">
+          <table class="admin-table wall-messages-table">
+            <thead>
+              <tr>
+                <th>
+                  <button class="admin-sort-button" data-wall-sort="guest">
+                    Convidado
+                  </button>
+                </th>
+                <th>
+                  <button class="admin-sort-button" data-wall-sort="status">
+                    Status
+                  </button>
+                </th>
+                <th>Recado</th>
+                <th>Resposta</th>
+                <th>
+                  <button class="admin-sort-button" data-wall-sort="updated">
+                    Atualizado
+                  </button>
+                </th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="wallMessagesTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <div id="wallMessageDetailsModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content admin-details-modal-content">
+        <button
+          id="closeWallMessageDetailsModalButton"
+          type="button"
+          class="admin-modal-close"
+          aria-label="Fechar detalhes do recado"
+        >
+          ×
+        </button>
+
+        <h2 id="wallMessageDetailsTitle">Detalhes do Recado</h2>
+
+        <div id="wallMessageDetailsContent" class="admin-details-content"></div>
+      </div>
+    </div>
+
+    <div id="wallMessageReplyModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content">
+        <div class="admin-modal-header">
+          <div>
+            <p class="section-subtitle">Resposta</p>
+            <h2 id="wallMessageReplyTitle">Responder Recado</h2>
+          </div>
+          <button
+            id="closeWallMessageReplyModalButton"
+            type="button"
+            class="admin-modal-close"
+            aria-label="Fechar"
+          >
+            ×
+          </button>
+        </div>
+
+        <form id="wallMessageReplyForm" class="admin-form">
+          <div class="admin-form-group">
+            <label for="wallMessageReplyText">Resposta dos noivos</label>
+            <textarea
+              id="wallMessageReplyText"
+              maxlength="800"
+              rows="6"
+              placeholder="Escreva a resposta..."
+            ></textarea>
+          </div>
+
+          <div class="admin-modal-actions">
+            <button type="submit" class="admin-action-button success is-full-width">
+              Salvar Resposta
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="adminToast" class="admin-toast"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/event-config.js"></script>
+    <script src="js/event-settings.js"></script>
+    <script src="js/admin-common.js"></script>
+    <script src="js/admin-bootstrap.js"></script>
+  </body>
+</html>

@@ -180,7 +180,15 @@ function updateGiftBar(metrics) {
 }
 
 async function loadOverview() {
-  const [guestsResult, rsvpsResult, giftsResult, contributionsResult, settingsResult] =
+  const [
+    guestsResult,
+    rsvpsResult,
+    giftsResult,
+    contributionsResult,
+    settingsResult,
+    failedNotificationsResult,
+    pendingMessagesResult,
+  ] =
     await Promise.all([
       supabaseClient.from("guests").select("*"),
       supabaseClient.from("rsvps").select("*"),
@@ -189,6 +197,21 @@ async function loadOverview() {
       supabaseClient
         .rpc("get_public_settings")
         .maybeSingle(),
+      supabaseClient.rpc("admin_list_notification_deliveries", {
+        p_created_from: null,
+        p_created_to: null,
+        p_event_type: null,
+        p_limit: 1,
+        p_offset: 0,
+        p_recipient_type: null,
+        p_status: "failed",
+      }),
+      supabaseClient.rpc("admin_list_wall_messages", {
+        p_limit: 1,
+        p_offset: 0,
+        p_search: null,
+        p_status: "pending",
+      }),
     ]);
 
   const error =
@@ -196,7 +219,9 @@ async function loadOverview() {
     rsvpsResult.error ||
     giftsResult.error ||
     contributionsResult.error ||
-    settingsResult.error;
+    settingsResult.error ||
+    failedNotificationsResult.error ||
+    pendingMessagesResult.error;
 
   if (error) {
     console.error(error);
@@ -231,6 +256,14 @@ async function loadOverview() {
   setText("overviewPendingRSVPs", pending);
   setText("overviewPayingGuests", buffetMetrics.payingPeople);
   setText("overviewReportedGifts", giftMetrics.reported);
+  setText(
+    "overviewFailedNotifications",
+    Number(failedNotificationsResult.data?.[0]?.total_count || 0),
+  );
+  setText(
+    "overviewPendingMessages",
+    Number(pendingMessagesResult.data?.[0]?.total_count || 0),
+  );
   setText("overviewReservedGifts", giftMetrics.reserved);
   setText("overviewConfirmedValue", formatCurrency(giftMetrics.confirmedValue));
   setText("overviewInviteTotal", activeGuests.length);

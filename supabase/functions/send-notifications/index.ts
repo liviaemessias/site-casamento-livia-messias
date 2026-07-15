@@ -62,6 +62,7 @@ type NotificationEvent = {
   aggregate_type: string;
   aggregate_id: string;
   aggregate_version: string | null;
+  origin?: string | null;
   guest_id: string | null;
   dedupe_key: string;
   payload: Record<string, unknown>;
@@ -71,6 +72,31 @@ type DeliveryRecipient = {
   email: string | null;
   reason?: string;
   type: "admin" | "guest";
+};
+
+type NotificationActor = {
+  guestId: string | null;
+  isAdmin: boolean;
+};
+
+type PendingEventFilters = {
+  aggregateId: string | null;
+  eventType: string | null;
+  eventId: string | null;
+};
+
+type NotificationPreference = {
+  admin_enabled: boolean;
+  automatic_enabled: boolean;
+  guest_enabled: boolean;
+  manual_enabled: boolean;
+};
+
+const defaultNotificationPreference: NotificationPreference = {
+  admin_enabled: true,
+  automatic_enabled: true,
+  guest_enabled: true,
+  manual_enabled: false,
 };
 
 function getCorsHeaders(request: Request) {
@@ -187,6 +213,249 @@ function getSubjectPrefix(payload: Record<string, unknown>) {
     : "RSVP Recebido";
 }
 
+function formatCurrency(value: unknown) {
+  const amount = Number(value);
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return "Não informado";
+  }
+
+  return new Intl.NumberFormat("pt-BR", {
+    currency: "BRL",
+    style: "currency",
+  }).format(amount);
+}
+
+function getGiftEventTitle(eventType: string, recipientType: "admin" | "guest") {
+  const titles: Record<string, string> = {
+    gift_contribution_confirmed: "Cota Confirmada",
+    gift_contribution_payment_reported: "Pagamento Informado",
+    gift_contribution_released: "Cota Liberada",
+    gift_contribution_reminder: "Lembrete de Cota",
+    gift_contribution_reserved: "Cota Reservada",
+    gift_payment_reported: "Pagamento Informado",
+    gift_purchase_confirmed: "Presente Confirmado",
+    gift_reservation_reminder: "Lembrete de Presente",
+    gift_reservation_released: "Presente Liberado",
+    gift_reserved: "Presente Reservado",
+  };
+  const title = titles[eventType] || "Atualização de Presente";
+
+  return recipientType === "guest" ? `${title} 💜` : `[Casamento] ${title} 💜`;
+}
+
+function isWallMessageEvent(eventType: string) {
+  return [
+    "wall_message_approved",
+    "wall_message_replied",
+    "wall_message_submitted",
+  ].includes(eventType);
+}
+
+function getWallMessageEventTitle(eventType: string, recipientType: "admin" | "guest") {
+  const titles: Record<string, string> = {
+    wall_message_approved: "Recado Aprovado",
+    wall_message_replied: "Recado Respondido",
+    wall_message_submitted: "Novo Recado",
+  };
+  const title = titles[eventType] || "Recado";
+
+  return recipientType === "guest" ? `${title} 💜` : `[Casamento] ${title} 💜`;
+}
+
+function getWallMessageGuestIntro(eventType: string, inviteType: unknown) {
+  const isCouple = inviteType === "couple";
+  const messages: Record<string, [string, string]> = {
+    wall_message_approved: [
+      "O recado de vocês já está no nosso mural! Muito obrigado por deixarem esse carinho registrado com a gente! 💜",
+      "Seu recado já está no nosso mural! Muito obrigado por deixar esse carinho registrado com a gente! 💜",
+    ],
+    wall_message_replied: [
+      "Respondemos o recado de vocês no nosso mural! Ficamos muito felizes em receber essa mensagem de vocês! 💜",
+      "Respondemos seu recado no nosso mural! Ficamos muito felizes em receber sua mensagem! 💜",
+    ],
+  };
+  const [coupleMessage, individualMessage] =
+    messages[eventType] || ["Temos uma atualização sobre o recado de vocês. 💜", "Temos uma atualização sobre seu recado. 💜"];
+
+  return isCouple ? coupleMessage : individualMessage;
+}
+
+function getWallMessageAdminIntro(eventType: string) {
+  const messages: Record<string, string> = {
+    wall_message_approved: "Um recado foi aprovado para o mural público.",
+    wall_message_replied: "Um recado recebeu resposta dos noivos.",
+    wall_message_submitted: "Um convidado enviou ou atualizou um recado no mural.",
+  };
+
+  return messages[eventType] || "Houve uma atualização no Mural de Recados.";
+}
+
+function isExternalPurchaseMethod(value: unknown) {
+  const method = normalizeText(value);
+
+  return method === "online" || method === "physical";
+}
+
+function getGiftGuestIntro(
+  eventType: string,
+  inviteType: unknown,
+  purchaseMethod: unknown,
+) {
+  const isCouple = inviteType === "couple";
+  const giftPaymentReportedMessages: [string, string] = isExternalPurchaseMethod(purchaseMethod)
+    ? [
+      "Recebemos a informação de compra do presente de vocês. Ficamos muito felizes e agradecemos de coração! Vamos verificar tudo logo logo! 💜❤️",
+      "Recebemos sua informação de compra do presente. Ficamos muito felizes e agradecemos de coração! Vamos verificar tudo logo logo! 💜❤️",
+    ]
+    : [
+      "Recebemos a informação de pagamento do presente de vocês. Ficamos muito felizes e agradecemos de coração! Vamos verificar tudo logo logo! 💜❤️",
+      "Recebemos sua informação de pagamento do presente. Ficamos muito felizes e agradecemos de coração! Vamos verificar tudo logo logo! 💜❤️",
+    ];
+  const messages: Record<string, [string, string]> = {
+    gift_contribution_confirmed: [
+      "Confirmamos a contribuição de vocês para o nosso presente! Muito obrigado pelo carinho e por fazerem parte desse momento com a gente! 💜❤️",
+      "Confirmamos sua contribuição para o nosso presente! Muito obrigado pelo carinho e por fazer parte desse momento com a gente! 💜❤️",
+    ],
+    gift_contribution_payment_reported: [
+      "Recebemos a informação de pagamento da cota de vocês. Ficamos muito felizes e agradecemos de coração! Vamos verificar tudo logo logo! 💜❤️",
+      "Recebemos sua informação de pagamento da cota. Ficamos muito felizes e agradecemos de coração! Vamos verificar tudo logo logo! 💜❤️",
+    ],
+    gift_contribution_released: [
+      "A reserva de cota de vocês foi liberada, mas está tudo bem! Se quiserem, vocês podem escolher outra cota ou outro presente na nossa lista. 💜",
+      "Sua reserva de cota foi liberada, mas está tudo bem! Se quiser, você pode escolher outra cota ou outro presente na nossa lista. 💜",
+    ],
+    gift_contribution_reserved: [
+      "Recebemos a reserva de cota de vocês para o nosso presente. Desde já, muito obrigado pela contribuição de vocês! 💜",
+      "Recebemos sua reserva de cota para o nosso presente. Desde já, muito obrigado pela sua contribuição! 💜",
+    ],
+    gift_contribution_reminder: [
+      "Passando para lembrar com carinho da reserva de cota de vocês. Se vocês já tiverem feito o pagamento, podem desconsiderar este aviso. Se possível, informem o pagamento pelo site para conseguirmos acompanhar tudo direitinho! 💜❤️",
+      "Passando para lembrar com carinho da sua reserva de cota. Se você já tiver feito o pagamento, pode desconsiderar este aviso. Se possível, informe o pagamento pelo site para conseguirmos acompanhar tudo direitinho! 💜❤️",
+    ],
+    gift_payment_reported: giftPaymentReportedMessages,
+    gift_purchase_confirmed: [
+      "Confirmamos o presente de vocês! Muito obrigado pelo carinho e por fazerem parte desse momento com a gente! 💜❤️",
+      "Confirmamos seu presente! Muito obrigado pelo carinho e por fazer parte desse momento com a gente! 💜❤️",
+    ],
+    gift_reservation_released: [
+      "A reserva de presente de vocês foi liberada, mas está tudo bem! Se quiserem, vocês podem escolher outro presente na nossa lista. 💜",
+      "Sua reserva de presente foi liberada, mas está tudo bem! Se quiser, você pode escolher outro presente na nossa lista. 💜",
+    ],
+    gift_reservation_reminder: [
+      "Passando para lembrar com carinho da reserva de presente de vocês. Se vocês já tiverem feito a compra, podem desconsiderar este aviso. Se possível, informem a compra pelo site para conseguirmos acompanhar tudo direitinho! 💜❤️",
+      "Passando para lembrar com carinho da sua reserva de presente. Se você já tiver feito a compra, pode desconsiderar este aviso. Se possível, informe a compra pelo site para conseguirmos acompanhar tudo direitinho! 💜❤️",
+    ],
+    gift_reserved: [
+      "Recebemos a reserva de presente de vocês para o nosso casamento. Desde já, agradecemos a vocês! 💜",
+      "Recebemos sua reserva de presente para o nosso casamento. Desde já, agradecemos a você! 💜",
+    ],
+  };
+  const [coupleMessage, individualMessage] =
+    messages[eventType] || ["Temos uma atualização sobre o presente de vocês.", "Temos uma atualização sobre seu presente."];
+
+  return isCouple ? coupleMessage : individualMessage;
+}
+
+function getGiftAdminIntro(eventType: string, purchaseMethod: unknown) {
+  if (eventType === "gift_payment_reported") {
+    return isExternalPurchaseMethod(purchaseMethod)
+      ? "Um convidado informou compra de presente."
+      : "Um convidado informou pagamento de presente.";
+  }
+
+  const messages: Record<string, string> = {
+    gift_contribution_confirmed: "Uma contribuição de cota foi confirmada pelo admin.",
+    gift_contribution_payment_reported: "Um convidado informou pagamento de cota.",
+    gift_contribution_released: "Uma reserva de cota foi liberada pelo admin.",
+    gift_contribution_reminder: "Um lembrete manual de cota pendente foi enviado.",
+    gift_contribution_reserved: "Um convidado reservou cota de presente.",
+    gift_purchase_confirmed: "Um presente foi confirmado pelo admin.",
+    gift_reservation_reminder: "Um lembrete manual de presente pendente foi enviado.",
+    gift_reservation_released: "Uma reserva de presente foi liberada pelo admin.",
+    gift_reserved: "Um convidado reservou um presente.",
+  };
+
+  return messages[eventType] || "Houve uma atualização em presentes.";
+}
+
+function getGiftEventDisplayTitle(
+  eventType: string,
+  purchaseMethod: unknown,
+  recipientType: "admin" | "guest",
+) {
+  if (eventType !== "gift_payment_reported") {
+    return null;
+  }
+
+  const title = isExternalPurchaseMethod(purchaseMethod)
+    ? "Compra Informada"
+    : "Pagamento Informado";
+
+  return recipientType === "guest" ? `${title} 💜` : `[Casamento] ${title} 💜`;
+}
+
+function getPurchaseMethodLabel(value: unknown) {
+  const labels: Record<string, string> = {
+    card: "Cartão",
+    online: "Compra online",
+    physical: "Loja física",
+    pix: "PIX",
+  };
+  const method = normalizeText(value);
+
+  return labels[method] || method || "Não informado";
+}
+
+function renderGiftDetails(
+  payload: Record<string, unknown>,
+  recipientType: "admin" | "guest",
+) {
+  const quotaQuantity = normalizeText(payload.quota_quantity);
+  const totalValue = payload.total_value || payload.price;
+  const method = payload.purchase_method || payload.payment_method;
+  const inviteTypeRow = recipientType === "admin"
+    ? renderKeyValue(
+      "Tipo do convite",
+      payload.invite_type === "couple" ? "Casal" : "Individual",
+    )
+    : "";
+
+  return `
+    <table style="width:100%;border-collapse:collapse;margin:0 0 18px;background:#fbf8fd;border-radius:8px;">
+      ${renderKeyValue("Convidado", payload.guest_name)}
+      ${inviteTypeRow}
+      ${renderKeyValue("Presente", payload.gift_name)}
+      ${renderKeyValue("Categoria", payload.gift_category)}
+      ${quotaQuantity ? renderKeyValue("Quantidade de cotas", quotaQuantity) : ""}
+      ${renderKeyValue("Valor", formatCurrency(totalValue))}
+      ${renderKeyValue("Forma", getPurchaseMethodLabel(method))}
+      ${renderKeyValue("Mensagem", payload.message)}
+    </table>
+  `;
+}
+
+function renderWallMessageDetails(payload: Record<string, unknown>, recipientType: "admin" | "guest") {
+  const inviteTypeRow = recipientType === "admin"
+    ? renderKeyValue(
+      "Tipo do convite",
+      payload.invite_type === "couple" ? "Casal" : "Individual",
+    )
+    : "";
+  const replyRow = normalizeText(payload.couple_reply)
+    ? renderKeyValue("Resposta dos noivos", payload.couple_reply)
+    : "";
+
+  return `
+    <table style="width:100%;border-collapse:collapse;margin:0 0 18px;background:#fbf8fd;border-radius:8px;">
+      ${renderKeyValue("Convidado", payload.guest_name)}
+      ${inviteTypeRow}
+      ${renderKeyValue("Recado", payload.message)}
+      ${replyRow}
+    </table>
+  `;
+}
+
 function renderKeyValue(label: string, value: unknown) {
   const safeValue = normalizeText(value, "Não informado");
 
@@ -235,13 +504,64 @@ function getMemberLines(payload: Record<string, unknown>) {
   });
 }
 
+function isPresenceConfirmed(value: unknown) {
+  return normalizeText(value).toLowerCase() === "sim";
+}
+
+function isGuestComing(payload: Record<string, unknown>) {
+  const guestData = getGuestData(payload);
+  const members = asArray(guestData.members);
+
+  if (payload.invite_type === "couple" && members.length) {
+    return members.some((member) => isPresenceConfirmed(member.presence));
+  }
+
+  return isPresenceConfirmed(payload.presence);
+}
+
+function getGuestRsvpIntro(payload: Record<string, unknown>) {
+  const isUpdated = payload.operation === "updated";
+  const isCouple = payload.invite_type === "couple";
+  const isComing = isGuestComing(payload);
+
+  if (isCouple && isComing) {
+    const prefix = isUpdated
+      ? "Atualizamos a confirmação de presença de vocês para o nosso casamento!"
+      : "Recebemos a confirmação de presença de vocês para o nosso casamento!";
+
+    return `${prefix} Ficamos muito felizes em saber que vocês estarão com a gente nesse dia tão especial! 💜❤️`;
+  }
+
+  if (isCouple) {
+    const prefix = isUpdated
+      ? "Atualizamos a resposta de vocês para o nosso casamento."
+      : "Recebemos a resposta de vocês para o nosso casamento.";
+
+    return `${prefix} Sentiremos muito a falta de vocês nesse dia especial, mas agradecemos muito pelo carinho em nos avisarem. 😔💜❤️`;
+  }
+
+  if (isComing) {
+    const prefix = isUpdated
+      ? "Atualizamos sua confirmação de presença para o nosso casamento!"
+      : "Recebemos sua confirmação de presença para o nosso casamento!";
+
+    return `${prefix} Ficamos muito felizes em saber que você estará com a gente nesse dia tão especial! 💜❤️`;
+  }
+
+  const prefix = isUpdated
+    ? "Atualizamos sua resposta para o nosso casamento."
+    : "Recebemos sua resposta para o nosso casamento.";
+
+  return `${prefix} Sentiremos sua falta nesse dia especial, mas agradecemos muito pelo carinho em nos avisar. 😔💜❤️`;
+}
+
 function renderEmailShell(title: string, body: string) {
   return `
     <div style="margin:0;padding:24px;background:#f7f2fb;font-family:Arial,sans-serif;color:#2f2933;">
       <div style="max-width:640px;margin:0 auto;background:#ffffff;border-radius:12px;padding:24px;border:1px solid #eadff3;">
         <h1 style="margin:0 0 16px;color:#6f3fa7;font-size:24px;line-height:1.25;">${escapeHtml(title)}</h1>
         ${body}
-        <p style="margin:24px 0 0;color:#6b6473;font-size:13px;">Livia & Messias 💜</p>
+        <p style="margin:24px 0 0;color:#6b6473;font-size:13px;">Livia & Messias 💜❤️</p>
       </div>
     </div>
   `;
@@ -261,13 +581,7 @@ function buildGuestEmail(event: NotificationEvent) {
         <div style="margin-bottom:18px;">${renderList(members)}</div>
       `
     : "";
-  const intro = payload.invite_type === "couple"
-    ? payload.operation === "updated"
-      ? "Atualizamos a confirmação de presença de vocês para o nosso casamento."
-      : "Recebemos a confirmação de presença de vocês para o nosso casamento."
-    : payload.operation === "updated"
-    ? "Atualizamos sua confirmação de presença para o nosso casamento."
-    : "Recebemos sua confirmação de presença para o nosso casamento.";
+  const intro = getGuestRsvpIntro(payload);
 
   return {
     html: renderEmailShell(
@@ -321,6 +635,107 @@ function buildAdminEmail(event: NotificationEvent) {
   };
 }
 
+function buildGiftGuestEmail(event: NotificationEvent) {
+  const payload = event.payload;
+  const purchaseMethod = payload.purchase_method || payload.payment_method;
+  const title =
+    getGiftEventDisplayTitle(event.event_type, purchaseMethod, "guest") ||
+    getGiftEventTitle(event.event_type, "guest");
+  const guestName = normalizeText(payload.guest_name, "Convidado");
+  const intro = getGiftGuestIntro(
+    event.event_type,
+    payload.invite_type,
+    purchaseMethod,
+  );
+
+  return {
+    html: renderEmailShell(
+      title,
+      `
+        <p style="margin:0 0 16px;">Olá, ${escapeHtml(guestName)}! 💜</p>
+        <p style="margin:0 0 18px;">${escapeHtml(intro)}</p>
+        ${renderGiftDetails(payload, "guest")}
+      `,
+    ),
+    subject: `${title} - Livia & Messias`,
+  };
+}
+
+function buildGiftAdminEmail(event: NotificationEvent) {
+  const payload = event.payload;
+  const guestName = normalizeText(payload.guest_name, "Convidado");
+  const purchaseMethod = payload.purchase_method || payload.payment_method;
+  const baseTitle =
+    getGiftEventDisplayTitle(event.event_type, purchaseMethod, "admin") ||
+    getGiftEventTitle(event.event_type, "admin");
+  const title = `${baseTitle} - ${guestName}`;
+
+  return {
+    html: renderEmailShell(
+      title,
+      `
+        <p style="margin:0 0 18px;">${escapeHtml(getGiftAdminIntro(event.event_type, purchaseMethod))}</p>
+        ${renderGiftDetails(payload, "admin")}
+      `,
+    ),
+    subject: title,
+  };
+}
+
+function buildWallMessageGuestEmail(event: NotificationEvent) {
+  const payload = event.payload;
+  const title = getWallMessageEventTitle(event.event_type, "guest");
+  const guestName = normalizeText(payload.guest_name, "Convidado");
+  const intro = getWallMessageGuestIntro(event.event_type, payload.invite_type);
+
+  return {
+    html: renderEmailShell(
+      title,
+      `
+        <p style="margin:0 0 16px;">Olá, ${escapeHtml(guestName)}! 💜</p>
+        <p style="margin:0 0 18px;">${escapeHtml(intro)}</p>
+        ${renderWallMessageDetails(payload, "guest")}
+      `,
+    ),
+    subject: `${title} - Livia & Messias`,
+  };
+}
+
+function buildWallMessageAdminEmail(event: NotificationEvent) {
+  const payload = event.payload;
+  const guestName = normalizeText(payload.guest_name, "Convidado");
+  const title = `${getWallMessageEventTitle(event.event_type, "admin")} - ${guestName}`;
+
+  return {
+    html: renderEmailShell(
+      title,
+      `
+        <p style="margin:0 0 18px;">${escapeHtml(getWallMessageAdminIntro(event.event_type))}</p>
+        ${renderWallMessageDetails(payload, "admin")}
+      `,
+    ),
+    subject: title,
+  };
+}
+
+function buildEmail(event: NotificationEvent, recipientType: "admin" | "guest") {
+  if (event.event_type === "rsvp_saved") {
+    return recipientType === "admin"
+      ? buildAdminEmail(event)
+      : buildGuestEmail(event);
+  }
+
+  if (isWallMessageEvent(event.event_type)) {
+    return recipientType === "admin"
+      ? buildWallMessageAdminEmail(event)
+      : buildWallMessageGuestEmail(event);
+  }
+
+  return recipientType === "admin"
+    ? buildGiftAdminEmail(event)
+    : buildGiftGuestEmail(event);
+}
+
 async function getCurrentGuestId(accessToken: string) {
   const userClient = createClient(supabaseUrl!, supabaseAnonKey!, {
     auth: {
@@ -343,18 +758,87 @@ async function getCurrentGuestId(accessToken: string) {
   return String(guest.id);
 }
 
-async function loadPendingEvents(guestId: string | null, limit: number) {
+async function getNotificationActor(accessToken: string): Promise<NotificationActor | null> {
+  const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(accessToken);
+  const userId = userData?.user?.id;
+
+  if (!userError && userId) {
+    const { data: adminUser, error: adminError } = await supabaseAdmin
+      .from("admin_users")
+      .select("user_id")
+      .eq("user_id", userId)
+      .eq("active", true)
+      .maybeSingle();
+
+    if (adminError) {
+      throw adminError;
+    }
+
+    if (adminUser) {
+      return { guestId: null, isAdmin: true };
+    }
+  }
+
+  const guestId = await getCurrentGuestId(accessToken);
+
+  if (guestId) {
+    return { guestId, isAdmin: false };
+  }
+
+  return null;
+}
+
+function normalizeOptionalFilter(value: unknown) {
+  const text = normalizeText(value);
+
+  return text || null;
+}
+
+async function getPendingEventFilters(request: Request): Promise<PendingEventFilters> {
+  try {
+    const body = await request.json();
+
+    return {
+      aggregateId: normalizeOptionalFilter(body?.aggregate_id),
+      eventType: normalizeOptionalFilter(body?.event_type),
+      eventId: normalizeOptionalFilter(body?.notification_event_id),
+    };
+  } catch (_error) {
+    return {
+      aggregateId: null,
+      eventType: null,
+      eventId: null,
+    };
+  }
+}
+
+async function loadPendingEvents(
+  actor: NotificationActor,
+  limit: number,
+  filters: PendingEventFilters,
+) {
   let query = supabaseAdmin
     .from("notification_events")
     .select("*")
     .eq("status", "pending")
-    .eq("event_type", "rsvp_saved")
     .lte("next_attempt_at", new Date().toISOString())
     .order("created_at", { ascending: true })
     .limit(limit);
 
-  if (guestId) {
-    query = query.eq("guest_id", guestId);
+  if (!actor.isAdmin && actor.guestId) {
+    query = query.eq("guest_id", actor.guestId);
+  }
+
+  if (filters.eventType) {
+    query = query.eq("event_type", filters.eventType);
+  }
+
+  if (filters.eventId) {
+    query = query.eq("id", filters.eventId);
+  }
+
+  if (filters.aggregateId) {
+    query = query.eq("aggregate_id", filters.aggregateId);
   }
 
   const { data, error } = await query;
@@ -364,6 +848,77 @@ async function loadPendingEvents(guestId: string | null, limit: number) {
   }
 
   return (data || []) as NotificationEvent[];
+}
+
+async function countPendingEvents(
+  actor: NotificationActor,
+  filters: PendingEventFilters,
+  onlyReady: boolean,
+) {
+  let query = supabaseAdmin
+    .from("notification_events")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "pending");
+
+  if (onlyReady) {
+    query = query.lte("next_attempt_at", new Date().toISOString());
+  }
+
+  if (!actor.isAdmin && actor.guestId) {
+    query = query.eq("guest_id", actor.guestId);
+  }
+
+  if (filters.eventType) {
+    query = query.eq("event_type", filters.eventType);
+  }
+
+  if (filters.eventId) {
+    query = query.eq("id", filters.eventId);
+  }
+
+  if (filters.aggregateId) {
+    query = query.eq("aggregate_id", filters.aggregateId);
+  }
+
+  const { count, error } = await query;
+
+  if (error) {
+    throw error;
+  }
+
+  return count || 0;
+}
+
+function isMissingPreferenceTableError(error: Record<string, unknown>) {
+  return error.code === "42P01" ||
+    String(error.message || "").includes("notification_preferences");
+}
+
+async function getNotificationPreference(eventType: string) {
+  const { data, error } = await supabaseAdmin
+    .from("notification_preferences")
+    .select("automatic_enabled, manual_enabled, admin_enabled, guest_enabled")
+    .eq("event_type", eventType)
+    .maybeSingle();
+
+  if (error) {
+    if (isMissingPreferenceTableError(error as unknown as Record<string, unknown>)) {
+      return defaultNotificationPreference;
+    }
+
+    throw error;
+  }
+
+  const preference = data
+    ? {
+      admin_enabled: data.admin_enabled !== false,
+      automatic_enabled: data.automatic_enabled !== false,
+      guest_enabled: data.guest_enabled !== false,
+      manual_enabled: data.manual_enabled === true,
+    }
+    : defaultNotificationPreference;
+
+  return preference;
 }
 
 async function claimEvent(eventId: string) {
@@ -491,9 +1046,10 @@ async function sendDelivery(event: NotificationEvent, delivery: Record<string, u
 
   const recipientType = delivery.recipient_type;
   const email = normalizeText(delivery.recipient_email);
-  const message = recipientType === "admin"
-    ? buildAdminEmail(event)
-    : buildGuestEmail(event);
+  const message = buildEmail(
+    event,
+    recipientType === "admin" ? "admin" : "guest",
+  );
 
   try {
     await mailer.sendMail({
@@ -510,15 +1066,63 @@ async function sendDelivery(event: NotificationEvent, delivery: Record<string, u
   }
 }
 
-function resolveRecipients(event: NotificationEvent): DeliveryRecipient[] {
+function resolveRecipients(
+  event: NotificationEvent,
+  preference: NotificationPreference,
+): DeliveryRecipient[] {
   const guestEmail = getGuestEmail(event.payload);
+  const isManual = event.origin === "manual";
+  const manualRecipientType = normalizeText(event.payload?.manual_recipient_type);
+  const requestedRecipientType =
+    manualRecipientType === "admin" || manualRecipientType === "guest"
+      ? manualRecipientType
+      : "";
+  const flowEnabled = isManual
+    ? preference.manual_enabled
+    : preference.automatic_enabled;
 
-  return [
-    {
-      email: adminEmail,
-      type: "admin",
-    },
-    isValidEmail(guestEmail)
+  if (!flowEnabled) {
+    const reason = isManual
+      ? "manual_notification_disabled"
+      : "automatic_notification_disabled";
+    const disabledRecipients: DeliveryRecipient[] = [
+      {
+        email: null,
+        reason,
+        type: "admin",
+      },
+      {
+        email: null,
+        reason,
+        type: "guest",
+      },
+    ];
+
+    return requestedRecipientType
+      ? disabledRecipients.filter((recipient) =>
+        recipient.type === requestedRecipientType
+      )
+      : disabledRecipients;
+  }
+
+  const recipients: DeliveryRecipient[] = [
+    preference.admin_enabled
+      ? {
+        email: adminEmail,
+        type: "admin",
+      }
+      : {
+        email: null,
+        reason: "admin_notification_disabled",
+        type: "admin",
+      },
+    !preference.guest_enabled
+      ? {
+        email: null,
+        reason: "guest_notification_disabled",
+        type: "guest",
+      }
+      : isValidEmail(guestEmail)
       ? {
         email: guestEmail,
         type: "guest",
@@ -529,6 +1133,10 @@ function resolveRecipients(event: NotificationEvent): DeliveryRecipient[] {
         type: "guest",
       },
   ];
+
+  return requestedRecipientType
+    ? recipients.filter((recipient) => recipient.type === requestedRecipientType)
+    : recipients;
 }
 
 async function finalizeEvent(eventId: string, failed: boolean, lastError = "") {
@@ -549,13 +1157,14 @@ async function finalizeEvent(eventId: string, failed: boolean, lastError = "") {
 }
 
 async function processEvent(event: NotificationEvent) {
+  const preference = await getNotificationPreference(event.event_type);
   const claimed = await claimEvent(event.id);
 
   if (!claimed) {
     return { failed: false, skipped: true };
   }
 
-  const recipients = resolveRecipients(event);
+  const recipients = resolveRecipients(event, preference);
   let failed = false;
   let lastError = "";
 
@@ -612,14 +1221,18 @@ Deno.serve(async (request) => {
       return jsonResponse(request, { error: "Unauthorized." }, 401);
     }
 
-    const isServiceDispatch = accessToken === serviceRoleKey;
-    const guestId = isServiceDispatch ? null : await getCurrentGuestId(accessToken);
+    const actor = accessToken === serviceRoleKey
+      ? { guestId: null, isAdmin: true }
+      : await getNotificationActor(accessToken);
 
-    if (!isServiceDispatch && !guestId) {
+    if (!actor) {
       return jsonResponse(request, { error: "Unauthorized." }, 401);
     }
 
-    const events = await loadPendingEvents(guestId, MAX_EVENTS_PER_RUN);
+    const filters = await getPendingEventFilters(request);
+    const pending = await countPendingEvents(actor, filters, false);
+    const ready = await countPendingEvents(actor, filters, true);
+    const events = await loadPendingEvents(actor, MAX_EVENTS_PER_RUN, filters);
     let processed = 0;
     let failed = 0;
 
@@ -636,9 +1249,14 @@ Deno.serve(async (request) => {
     }
 
     return jsonResponse(request, {
+      actor: actor.isAdmin ? "admin" : "guest",
       failed,
+      filters,
       ok: true,
+      pending,
       processed,
+      ready,
+      selected: events.length,
     });
   } catch (error) {
     console.error(

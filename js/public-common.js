@@ -42,7 +42,7 @@
 
     if (guest && guestNameDisplay) {
       const greeting =
-        guest.invite_type === "couple" ? "Bem-vindos" : "Bem-vindo(a)";
+        guest.invite_type === "couple" ? "Bem-vindos(as)" : "Bem-vindo(a)";
 
       guestNameDisplay.textContent = `${greeting}, ${guest.name}`;
     }

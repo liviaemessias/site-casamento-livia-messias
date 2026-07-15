@@ -6,7 +6,7 @@
       "redirect",
     );
 
-    return requestedPage === "gifts" || requestedPage === "rsvp"
+    return ["gifts", "messages", "rsvp"].includes(requestedPage)
       ? requestedPage
       : "index";
   }

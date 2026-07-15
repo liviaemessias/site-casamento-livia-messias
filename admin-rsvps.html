@@ -83,6 +83,15 @@
           </div>
 
           <div class="admin-filter-field">
+            <label for="rsvpRestrictionFilter">Restrição Alimentar</label>
+            <select id="rsvpRestrictionFilter">
+              <option value="">Todas</option>
+              <option value="with">Com restrição</option>
+              <option value="without">Sem restrição</option>
+            </select>
+          </div>
+
+          <div class="admin-filter-field">
             <label for="rsvpBuffetFilter">Buffet</label>
             <select id="rsvpBuffetFilter">
               <option value="">Todas as Categorias</option>
@@ -110,7 +119,7 @@
         </div>
 
         <div class="admin-table-wrapper">
-          <table class="admin-table">
+          <table class="admin-table rsvps-table">
             <thead>
               <tr>
                 <th>
@@ -129,7 +138,6 @@
                   </button>
                 </th>
                 <th>Acompanhantes</th>
-                <th>Restrição alimentar</th>
                 <th>Mensagem</th>
                 <th>
                   <button class="admin-sort-button" data-rsvp-sort="updated">
@@ -145,6 +153,94 @@
         </div>
       </section>
     </main>
+
+    <div class="admin-modal" id="rsvpDetailsModal">
+      <div class="admin-modal-content admin-details-modal-content">
+        <button
+          type="button"
+          class="admin-modal-close"
+          id="closeRSVPDetailsModalButton"
+          aria-label="Fechar detalhes do RSVP"
+        >
+          ×
+        </button>
+
+        <h2 id="rsvpDetailsTitle">Detalhes do RSVP</h2>
+
+        <div id="rsvpDetailsContent" class="admin-details-content"></div>
+      </div>
+    </div>
+
+    <div class="admin-modal" id="adminRSVPModal">
+      <div class="admin-modal-content">
+        <button
+          type="button"
+          class="admin-modal-close"
+          id="closeAdminRSVPModalButton"
+          aria-label="Fechar edição do RSVP"
+        >
+          ×
+        </button>
+
+        <h2 id="adminRSVPModalTitle">Editar RSVP</h2>
+
+        <form id="adminRSVPForm">
+          <div class="admin-form-group">
+            <label> E-mail </label>
+            <input type="email" id="adminRSVPEmailInput" />
+          </div>
+
+          <div class="admin-form-group">
+            <label> Telefone / WhatsApp </label>
+            <input
+              type="tel"
+              id="adminRSVPPhoneInput"
+              placeholder="(85) 99999-9999"
+            />
+          </div>
+
+          <div id="adminRSVPPresenceGroup" class="admin-form-group">
+            <label> Presença </label>
+
+            <select id="adminRSVPPresenceInput">
+              <option value="Sim">Sim</option>
+              <option value="Não">Não</option>
+            </select>
+          </div>
+
+          <div id="adminRSVPCoupleMembers" class="is-hidden"></div>
+
+          <div class="admin-form-group">
+            <label> Quantidade de Acompanhantes </label>
+            <select id="adminRSVPGuestCountInput"></select>
+          </div>
+
+          <div id="adminRSVPGuestFields"></div>
+
+          <div class="admin-form-group">
+            <label> Restrição Alimentar </label>
+            <input type="text" id="adminRSVPFoodInput" />
+          </div>
+
+          <div class="admin-form-group">
+            <label> Mensagem </label>
+            <textarea id="adminRSVPMessageInput" rows="4"></textarea>
+          </div>
+
+          <button
+            type="button"
+            id="deleteAdminRSVPButton"
+            class="admin-action-button danger is-full-width has-bottom-space is-hidden"
+          >
+            Remover confirmação
+          </button>
+
+          <button type="submit" class="admin-save-button">
+            Salvar confirmação
+          </button>
+        </form>
+      </div>
+    </div>
 
     <div id="adminToast" class="admin-toast"></div>
 

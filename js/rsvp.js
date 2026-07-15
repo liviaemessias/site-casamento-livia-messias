@@ -9,6 +9,46 @@ const guestFields = document.getElementById("guestFields");
 const toast = document.getElementById("toast");
 const toastMessage = document.getElementById("toastMessage");
 const { safeText } = SecurityUtils;
+const emailInput = document.querySelector('input[name="email"]');
+const emailSuggestion = document.getElementById("emailSuggestion");
+
+const knownEmailDomains = [
+  "gmail.com",
+  "hotmail.com",
+  "outlook.com",
+  "live.com",
+  "yahoo.com",
+  "yahoo.com.br",
+  "icloud.com",
+  "me.com",
+  "uol.com.br",
+  "bol.com.br",
+  "terra.com.br",
+];
+
+const commonEmailDomainCorrections = {
+  "gamil.com": "gmail.com",
+  "gmail.co": "gmail.com",
+  "gmail.com.br": "gmail.com",
+  "gmail.con": "gmail.com",
+  "gmial.com": "gmail.com",
+  "gnail.com": "gmail.com",
+  "hotmai.com": "hotmail.com",
+  "hotmail.co": "hotmail.com",
+  "hotmail.com.br": "hotmail.com",
+  "hotmail.con": "hotmail.com",
+  "hotmial.com": "hotmail.com",
+  "outlok.com": "outlook.com",
+  "outlook.co": "outlook.com",
+  "outlook.com.br": "outlook.com",
+  "outlook.con": "outlook.com",
+  "yaho.com": "yahoo.com",
+  "yaho.com.br": "yahoo.com.br",
+  "yahoo.co": "yahoo.com",
+  "yahoo.co.br": "yahoo.com.br",
+  "yahoo.com.b": "yahoo.com.br",
+  "yahoo.con": "yahoo.com",
+};
 
 function setElementVisibility(element, visible) {
   if (!element) return;
@@ -27,7 +67,7 @@ document.querySelector('input[name="name"]').value = guest.name || "";
 
 document.querySelector('input[name="name"]').readOnly = true;
 
-document.querySelector('input[name="email"]').value = "";
+emailInput.value = "";
 
 /* =========================
    Invite Type
@@ -87,6 +127,125 @@ function showToast(message) {
     toast.classList.remove("show");
   }, 4000);
 }
+
+/* =========================
+   Email Suggestion
+========================= */
+
+function getLevenshteinDistance(left, right) {
+  const rows = left.length + 1;
+  const columns = right.length + 1;
+  const distances = Array.from({ length: rows }, () =>
+    Array(columns).fill(0),
+  );
+
+  for (let row = 0; row < rows; row++) {
+    distances[row][0] = row;
+  }
+
+  for (let column = 0; column < columns; column++) {
+    distances[0][column] = column;
+  }
+
+  for (let row = 1; row < rows; row++) {
+    for (let column = 1; column < columns; column++) {
+      const cost = left[row - 1] === right[column - 1] ? 0 : 1;
+
+      distances[row][column] = Math.min(
+        distances[row - 1][column] + 1,
+        distances[row][column - 1] + 1,
+        distances[row - 1][column - 1] + cost,
+      );
+    }
+  }
+
+  return distances[left.length][right.length];
+}
+
+function getEmailDomainSuggestion(email, { allowPartialDomain = false } = {}) {
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+  const parts = normalizedEmail.split("@");
+
+  if (parts.length !== 2 || !parts[0] || !parts[1]) {
+    return "";
+  }
+
+  const domain = parts[1];
+  const domainLooksComplete = domain.includes(".");
+
+  if (knownEmailDomains.includes(domain)) {
+    return "";
+  }
+
+  if (!allowPartialDomain && !domainLooksComplete) {
+    return "";
+  }
+
+  if (commonEmailDomainCorrections[domain]) {
+    return `${parts[0]}@${commonEmailDomainCorrections[domain]}`;
+  }
+
+  const prefixSuggestion = knownEmailDomains.find(
+    (knownDomain) => domain.length >= 3 && knownDomain.startsWith(domain),
+  );
+
+  if (prefixSuggestion) {
+    return `${parts[0]}@${prefixSuggestion}`;
+  }
+
+  const suggestion = knownEmailDomains
+    .map((knownDomain) => ({
+      distance: getLevenshteinDistance(domain, knownDomain),
+      knownDomain,
+    }))
+    .filter(({ distance }) => distance > 0 && distance <= 2)
+    .sort((left, right) => left.distance - right.distance)[0];
+
+  return suggestion ? `${parts[0]}@${suggestion.knownDomain}` : "";
+}
+
+function clearEmailSuggestion() {
+  emailInput.setCustomValidity("");
+
+  if (emailSuggestion) {
+    emailSuggestion.textContent = "";
+    setElementVisibility(emailSuggestion, false);
+  }
+}
+
+function validateEmailSuggestion({
+  allowPartialDomain = false,
+  report = false,
+} = {}) {
+  const suggestedEmail = getEmailDomainSuggestion(emailInput.value, {
+    allowPartialDomain,
+  });
+  const message = suggestedEmail
+    ? `Confira o e-mail. Você quis dizer ${suggestedEmail}?`
+    : "";
+
+  emailInput.setCustomValidity(message);
+
+  if (emailSuggestion) {
+    emailSuggestion.textContent = message;
+    setElementVisibility(emailSuggestion, Boolean(message));
+  }
+
+  if (message && report) {
+    emailInput.reportValidity();
+    showToast(`⚠️ ${message}`);
+  }
+
+  return !message;
+}
+
+emailInput.addEventListener("input", () => {
+  clearEmailSuggestion();
+});
+
+emailInput.addEventListener("blur", () => {
+  validateEmailSuggestion();
+});
 
 /* =========================
    Companion Fields
@@ -465,6 +624,10 @@ async function loadExistingRSVP() {
 
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
+
+  if (!validateEmailSuggestion({ allowPartialDomain: true, report: true })) {
+    return;
+  }
 
   const button = form.querySelector("button");
   const wasEditing = Boolean(existingRSVP);

@@ -3,8 +3,9 @@
 -- Site de Casamento - Livia & Messias
 -- ============================================================
 --
--- Run this first on a new Supabase project.
--- Security tables, functions, policies and grants are added by later scripts.
+-- Internal rebuild component.
+-- For a clean project setup, run docs/rebuild/supabase_rebuild_full_setup.sql
+-- instead of executing this file directly.
 
 begin;
 
@@ -142,6 +143,7 @@ create table if not exists public.notification_events (
   guest_id uuid null,
   dedupe_key text not null,
   payload jsonb not null default '{}'::jsonb,
+  origin text not null default 'automatic',
   status text not null default 'pending',
   attempts integer not null default 0,
   next_attempt_at timestamp with time zone not null default timezone('utc'::text, now()),
@@ -156,6 +158,8 @@ create table if not exists public.notification_events (
     references public.guests(id)
     on delete set null,
   constraint notification_events_dedupe_key_key unique (dedupe_key),
+  constraint notification_events_origin_check
+    check (origin in ('automatic', 'manual')),
   constraint notification_events_status_check
     check (status in ('pending', 'processing', 'processed', 'failed'))
 );
@@ -190,6 +194,25 @@ create table if not exists public.notification_deliveries (
     check (status in ('pending', 'processing', 'sent', 'failed', 'skipped'))
 );
 
+create table if not exists public.notification_preferences (
+  event_type text not null,
+  event_group text not null,
+  label text not null,
+  description text null,
+  automatic_enabled boolean not null default true,
+  manual_enabled boolean not null default false,
+  admin_enabled boolean not null default true,
+  guest_enabled boolean not null default true,
+  created_at timestamp with time zone not null default timezone('utc'::text, now()),
+  updated_at timestamp with time zone not null default timezone('utc'::text, now()),
+
+  constraint notification_preferences_pkey primary key (event_type),
+  constraint notification_preferences_event_type_check
+    check (event_type <> ''),
+  constraint notification_preferences_event_group_check
+    check (event_group in ('rsvp', 'gift', 'gift_contribution', 'manual'))
+);
+
 create index if not exists notification_events_pending_idx
   on public.notification_events (status, next_attempt_at, created_at)
   where status = 'pending';
@@ -209,6 +232,7 @@ alter table public.gift_contributions enable row level security;
 alter table public.settings enable row level security;
 alter table public.notification_events enable row level security;
 alter table public.notification_deliveries enable row level security;
+alter table public.notification_preferences enable row level security;
 
 revoke all on table public.guests from anon, authenticated;
 revoke all on table public.rsvps from anon, authenticated;
@@ -217,5 +241,35 @@ revoke all on table public.gift_contributions from anon, authenticated;
 revoke all on table public.settings from anon, authenticated;
 revoke all on table public.notification_events from anon, authenticated;
 revoke all on table public.notification_deliveries from anon, authenticated;
+revoke all on table public.notification_preferences from anon, authenticated;
+
+insert into public.notification_preferences (
+  event_type,
+  event_group,
+  label,
+  description,
+  automatic_enabled,
+  manual_enabled,
+  admin_enabled,
+  guest_enabled
+)
+values
+  ('rsvp_saved', 'rsvp', 'RSVP recebido/atualizado', 'Enviado quando o convidado salva ou atualiza o RSVP público.', true, false, true, true),
+  ('gift_reserved', 'gift', 'Presente reservado', 'Enviado quando o convidado reserva um presente individual.', true, false, true, true),
+  ('gift_payment_reported', 'gift', 'Pagamento ou compra de presente informado', 'Enviado quando o convidado informa pagamento ou compra de presente individual.', true, false, true, true),
+  ('gift_purchase_confirmed', 'gift', 'Presente confirmado', 'Enviado quando o admin confirma o pagamento ou compra de presente individual.', true, false, true, true),
+  ('gift_reservation_released', 'gift', 'Presente liberado', 'Enviado quando o admin libera uma reserva de presente individual.', true, false, true, true),
+  ('gift_reservation_reminder', 'gift', 'Lembrete de presente', 'Disparo manual para lembrar uma reserva de presente individual pendente.', false, true, true, true),
+  ('gift_contribution_reserved', 'gift_contribution', 'Cota reservada', 'Enviado quando o convidado reserva cotas de um presente.', true, false, true, true),
+  ('gift_contribution_payment_reported', 'gift_contribution', 'Pagamento de cota informado', 'Enviado quando o convidado informa pagamento de cotas.', true, false, true, true),
+  ('gift_contribution_confirmed', 'gift_contribution', 'Cota confirmada', 'Enviado quando o admin confirma uma contribuição por cotas.', true, false, true, true),
+  ('gift_contribution_released', 'gift_contribution', 'Cota liberada', 'Enviado quando o admin libera uma reserva de cotas.', true, false, true, true),
+  ('gift_contribution_reminder', 'gift_contribution', 'Lembrete de cota', 'Disparo manual para lembrar uma reserva de cota pendente.', false, true, true, true)
+on conflict (event_type) do update
+set
+  event_group = excluded.event_group,
+  label = excluded.label,
+  description = excluded.description,
+  updated_at = timezone('utc'::text, now());
 
 commit;

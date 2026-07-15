@@ -1,22 +1,30 @@
 # Notificações Por E-mail Via SMTP
 
-Este runbook configura as notificações transacionais da versão 3.4.
+Este runbook configura as notificações transacionais iniciadas na v3.4 e expandidas nas versões seguintes.
 
-O fluxo inicial envia e-mails quando o convidado salva o RSVP público:
+O fluxo envia e-mails quando o convidado salva o RSVP público e quando há
+eventos relevantes de presentes/cotas e do Mural de Recados:
 
 - admin recebe sempre;
 - convidado recebe somente se o RSVP tiver e-mail válido;
 - RSVP manual feito no painel administrativo não dispara e-mail automaticamente.
+- seleção de forma de pagamento, loja ou método de compra não dispara e-mail
+  por si só.
+- recado enviado/editado avisa o admin; recado aprovado ou respondido avisa o
+  convidado quando houver e-mail válido no RSVP.
 
 ## Arquitetura
 
-1. O RSVP público é salvo pela RPC `save_current_rsvp(...)`.
-2. A RPC cria um evento `rsvp_saved` em `notification_events`.
+1. O RSVP público é salvo pela RPC `save_current_rsvp(...)`, uma ação de
+   presente/cota é concluída por RPC pública/administrativa, ou um recado é
+   enviado, aprovado ou respondido no Mural de Recados.
+2. A RPC cria um evento em `notification_events`.
 3. O frontend chama a Edge Function `send-notifications` em segundo plano.
-4. A função valida a sessão do convidado, processa eventos pendentes do próprio convite e envia e-mails por SMTP.
+4. A função valida a sessão do convidado ou do admin, processa eventos
+   pendentes permitidos para aquele ator e envia e-mails por SMTP.
 5. Cada destinatário fica registrado em `notification_deliveries` como `sent`, `failed` ou `skipped`.
 
-O RSVP continua salvo mesmo se o envio de e-mail falhar.
+A ação principal continua salva mesmo se o envio de e-mail falhar.
 
 ## Segurança
 
@@ -24,9 +32,14 @@ O RSVP continua salvo mesmo se o envio de e-mail falhar.
 - Use Supabase Secrets para `SMTP_PASS`, `SMTP_USER`, `ADMIN_EMAIL` e demais configurações.
 - Mantenha `verify_jwt = true` em `supabase/config.toml`.
 - A função valida o Bearer token do convidado e processa apenas notificações do `guest_id` vinculado.
+- Quando chamada por admin autenticado, a função confirma vínculo ativo em
+  `admin_users` antes de processar eventos administrativos pendentes. Essa
+  validação de admin tem prioridade sobre eventual sessão pública de convidado
+  existente no mesmo navegador.
 - As tabelas `notification_events` e `notification_deliveries` têm RLS habilitado e não possuem acesso direto para `anon` ou `authenticated`.
 - A Edge Function usa `service_role` somente para gerenciar a outbox de notificações.
-- Todo conteúdo dinâmico do RSVP é escapado antes de entrar no HTML do e-mail.
+- Todo conteúdo dinâmico do RSVP e de presentes/cotas é escapado antes de
+  entrar no HTML do e-mail.
 - Não registre secrets, tokens ou payloads completos em logs.
 
 ## SQLs
@@ -36,13 +49,34 @@ Em um projeto existente, execute no SQL Editor:
 ```text
 docs/migrations/email_notifications_schema.sql
 docs/migrations/email_notifications_schema_verify.sql
+docs/migrations/notification_preferences.sql
+docs/migrations/notification_preferences_verify.sql
+docs/migrations/security_admin_notification_operations.sql
+docs/migrations/security_admin_notification_operations_verify.sql
+docs/migrations/security_admin_notification_preferences.sql
+docs/migrations/security_admin_notification_preferences_verify.sql
 docs/migrations/security_edge_function_service_role_grants.sql
 docs/migrations/security_edge_function_service_role_grants_verify.sql
 docs/migrations/security_guest_rsvp_validation.sql
 docs/migrations/security_guest_rsvp_validation_verify.sql
+docs/migrations/gift_email_notifications.sql
+docs/migrations/gift_email_notifications_verify.sql
+docs/migrations/manual_notification_reminders.sql
+docs/migrations/manual_notification_reminders_verify.sql
+docs/migrations/manual_notification_resends.sql
+docs/migrations/manual_notification_resends_verify.sql
+docs/migrations/wall_message_email_notifications.sql
+docs/migrations/wall_message_email_notifications_verify.sql
 ```
 
 A ordem importa: `email_notifications_schema.sql` deve rodar antes da versão atualizada de `security_guest_rsvp_validation.sql`.
+Execute `gift_email_notifications.sql` depois das RPCs de presentes/cotas já
+existirem no projeto. Execute `manual_notification_reminders.sql` depois de
+`notification_preferences.sql`, de `security_admin_notification_operations.sql`
+e de `gift_email_notifications.sql`. Execute `manual_notification_resends.sql`
+depois de `manual_notification_reminders.sql`. Execute
+`wall_message_email_notifications.sql` depois de `wall_messages.sql` e de
+`notification_preferences.sql`.
 
 ## Secrets
 
@@ -146,7 +180,30 @@ verify_jwt = true
 6. Em convite de casal, verifique se o e-mail do casal mostra a seção `Respostas do convite`.
 7. Atualize o RSVP.
 8. Verifique os assuntos `RSVP Atualizado 💜`.
-9. Teste um RSVP sem e-mail e confirme que o admin recebe, enquanto o delivery do convidado fica `skipped`.
+9. Teste RSVP individual e de casal com presença `Sim` e `Não`, confirmando
+   que a mensagem do convidado muda conforme presença confirmada ou ausência.
+10. Teste um RSVP sem e-mail e confirme que o admin recebe, enquanto o delivery do convidado fica `skipped`.
+11. Reserve um presente individual e confirme os e-mails de `Presente Reservado`.
+12. Informe o pagamento/compra do presente e confirme `Pagamento Informado`.
+13. Confirme o presente no admin e confira `Presente Confirmado`.
+14. Libere uma reserva pelo admin e confira `Presente Liberado`.
+15. Repita o fluxo com cotas: `Cota Reservada`, `Pagamento Informado`,
+    `Cota Confirmada` e `Cota Liberada`.
+16. Para um convidado sem e-mail válido no RSVP, confirme que o admin recebe e
+    o delivery do convidado fica `skipped`.
+17. No histórico de Notificações, abra uma entrega em `Detalhes` e use
+    `Reenviar`; confirme que uma nova entrega manual é registrada.
+18. No painel de RSVP, use `Reenviar Confirmação` para um RSVP com e-mail.
+19. No painel de Presentes, use os botões de reenvio dos detalhes de presente
+    individual e contribuição por cota.
+20. Envie ou edite um recado em `messages.html` e confirme que o admin recebe
+    `[Casamento] Novo Recado 💜`.
+21. Aprove o recado no admin e confirme que o convidado recebe
+    `Recado Aprovado 💜`.
+22. Responda o recado no admin e confirme que o convidado recebe
+    `Recado Respondido 💜`.
+23. Repita aprovação ou resposta para convidado sem e-mail no RSVP e confirme
+    que a entrega do convidado fica `skipped`.
 
 ## Consultas Úteis
 

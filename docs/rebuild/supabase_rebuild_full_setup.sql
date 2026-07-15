@@ -23,8 +23,9 @@
 -- Site de Casamento - Livia & Messias
 -- ============================================================
 --
--- Run this first on a new Supabase project.
--- Security tables, functions, policies and grants are added by later scripts.
+-- Internal rebuild component.
+-- For a clean project setup, run docs/rebuild/supabase_rebuild_full_setup.sql
+-- instead of executing this file directly.
 
 begin;
 
@@ -162,6 +163,7 @@ create table if not exists public.notification_events (
   guest_id uuid null,
   dedupe_key text not null,
   payload jsonb not null default '{}'::jsonb,
+  origin text not null default 'automatic',
   status text not null default 'pending',
   attempts integer not null default 0,
   next_attempt_at timestamp with time zone not null default timezone('utc'::text, now()),
@@ -176,6 +178,8 @@ create table if not exists public.notification_events (
     references public.guests(id)
     on delete set null,
   constraint notification_events_dedupe_key_key unique (dedupe_key),
+  constraint notification_events_origin_check
+    check (origin in ('automatic', 'manual')),
   constraint notification_events_status_check
     check (status in ('pending', 'processing', 'processed', 'failed'))
 );
@@ -210,6 +214,25 @@ create table if not exists public.notification_deliveries (
     check (status in ('pending', 'processing', 'sent', 'failed', 'skipped'))
 );
 
+create table if not exists public.notification_preferences (
+  event_type text not null,
+  event_group text not null,
+  label text not null,
+  description text null,
+  automatic_enabled boolean not null default true,
+  manual_enabled boolean not null default false,
+  admin_enabled boolean not null default true,
+  guest_enabled boolean not null default true,
+  created_at timestamp with time zone not null default timezone('utc'::text, now()),
+  updated_at timestamp with time zone not null default timezone('utc'::text, now()),
+
+  constraint notification_preferences_pkey primary key (event_type),
+  constraint notification_preferences_event_type_check
+    check (event_type <> ''),
+  constraint notification_preferences_event_group_check
+    check (event_group in ('rsvp', 'gift', 'gift_contribution', 'manual'))
+);
+
 create index if not exists notification_events_pending_idx
   on public.notification_events (status, next_attempt_at, created_at)
   where status = 'pending';
@@ -229,6 +252,7 @@ alter table public.gift_contributions enable row level security;
 alter table public.settings enable row level security;
 alter table public.notification_events enable row level security;
 alter table public.notification_deliveries enable row level security;
+alter table public.notification_preferences enable row level security;
 
 revoke all on table public.guests from anon, authenticated;
 revoke all on table public.rsvps from anon, authenticated;
@@ -237,6 +261,256 @@ revoke all on table public.gift_contributions from anon, authenticated;
 revoke all on table public.settings from anon, authenticated;
 revoke all on table public.notification_events from anon, authenticated;
 revoke all on table public.notification_deliveries from anon, authenticated;
+revoke all on table public.notification_preferences from anon, authenticated;
+
+insert into public.notification_preferences (
+  event_type,
+  event_group,
+  label,
+  description,
+  automatic_enabled,
+  manual_enabled,
+  admin_enabled,
+  guest_enabled
+)
+values
+  ('rsvp_saved', 'rsvp', 'RSVP recebido/atualizado', 'Enviado quando o convidado salva ou atualiza o RSVP público.', true, false, true, true),
+  ('gift_reserved', 'gift', 'Presente reservado', 'Enviado quando o convidado reserva um presente individual.', true, false, true, true),
+  ('gift_payment_reported', 'gift', 'Pagamento ou compra de presente informado', 'Enviado quando o convidado informa pagamento ou compra de presente individual.', true, false, true, true),
+  ('gift_purchase_confirmed', 'gift', 'Presente confirmado', 'Enviado quando o admin confirma o pagamento ou compra de presente individual.', true, false, true, true),
+  ('gift_reservation_released', 'gift', 'Presente liberado', 'Enviado quando o admin libera uma reserva de presente individual.', true, false, true, true),
+  ('gift_reservation_reminder', 'gift', 'Lembrete de presente', 'Disparo manual para lembrar uma reserva de presente individual pendente.', false, true, true, true),
+  ('gift_contribution_reserved', 'gift_contribution', 'Cota reservada', 'Enviado quando o convidado reserva cotas de um presente.', true, false, true, true),
+  ('gift_contribution_payment_reported', 'gift_contribution', 'Pagamento de cota informado', 'Enviado quando o convidado informa pagamento de cotas.', true, false, true, true),
+  ('gift_contribution_confirmed', 'gift_contribution', 'Cota confirmada', 'Enviado quando o admin confirma uma contribuição por cotas.', true, false, true, true),
+  ('gift_contribution_released', 'gift_contribution', 'Cota liberada', 'Enviado quando o admin libera uma reserva de cotas.', true, false, true, true),
+  ('gift_contribution_reminder', 'gift_contribution', 'Lembrete de cota', 'Disparo manual para lembrar uma reserva de cota pendente.', false, true, true, true)
+on conflict (event_type) do update
+set
+  event_group = excluded.event_group,
+  label = excluded.label,
+  description = excluded.description,
+  updated_at = timezone('utc'::text, now());
+
+commit;
+
+-- Source: docs\migrations\notification_delivery_sorting.sql
+
+begin;
+
+drop function if exists public.admin_list_notification_deliveries(
+  text,
+  text,
+  text,
+  timestamp with time zone,
+  timestamp with time zone,
+  integer,
+  integer,
+  text,
+  text
+);
+
+drop function if exists public.admin_list_notification_deliveries(
+  text,
+  text,
+  text,
+  timestamp with time zone,
+  timestamp with time zone,
+  integer,
+  integer,
+  text,
+  text,
+  text,
+  text
+);
+
+create or replace function public.admin_list_notification_deliveries(
+  p_status text default null,
+  p_event_type text default null,
+  p_recipient_type text default null,
+  p_created_from timestamp with time zone default null,
+  p_created_to timestamp with time zone default null,
+  p_limit integer default 50,
+  p_offset integer default 0,
+  p_origin text default null,
+  p_search text default null,
+  p_sort_key text default 'created_at',
+  p_sort_direction text default 'desc'
+)
+returns table (
+  total_count bigint,
+  notification_event_id uuid,
+  delivery_id uuid,
+  created_at timestamp with time zone,
+  event_type text,
+  origin text,
+  aggregate_type text,
+  aggregate_id uuid,
+  aggregate_version timestamp with time zone,
+  guest_id uuid,
+  guest_name text,
+  event_status text,
+  delivery_status text,
+  recipient_type text,
+  recipient_email text,
+  channel text,
+  processed_at timestamp with time zone,
+  sent_at timestamp with time zone,
+  skipped_at timestamp with time zone,
+  failed_at timestamp with time zone,
+  last_error text,
+  payload jsonb
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  p_status := lower(nullif(btrim(p_status), ''));
+  p_event_type := nullif(btrim(p_event_type), '');
+  p_recipient_type := lower(nullif(btrim(p_recipient_type), ''));
+  p_origin := lower(nullif(btrim(p_origin), ''));
+  p_search := lower(nullif(btrim(p_search), ''));
+  p_sort_key := lower(coalesce(nullif(btrim(p_sort_key), ''), 'created_at'));
+  p_sort_direction := lower(coalesce(nullif(btrim(p_sort_direction), ''), 'desc'));
+  p_limit := least(greatest(coalesce(p_limit, 50), 1), 100);
+  p_offset := greatest(coalesce(p_offset, 0), 0);
+
+  if p_sort_key not in (
+    'created_at',
+    'event_type',
+    'guest_name',
+    'recipient_type',
+    'recipient_email',
+    'status'
+  ) then
+    p_sort_key := 'created_at';
+  end if;
+
+  if p_sort_direction not in ('asc', 'desc') then
+    p_sort_direction := 'desc';
+  end if;
+
+  return query
+  select
+    count(*) over () as total_count,
+    event.id as notification_event_id,
+    delivery.id as delivery_id,
+    event.created_at,
+    event.event_type,
+    event.origin,
+    event.aggregate_type,
+    event.aggregate_id,
+    event.aggregate_version,
+    event.guest_id,
+    guest.name as guest_name,
+    event.status as event_status,
+    coalesce(delivery.status, event.status) as delivery_status,
+    delivery.recipient_type,
+    delivery.recipient_email,
+    delivery.channel,
+    event.processed_at,
+    delivery.sent_at,
+    delivery.skipped_at,
+    coalesce(delivery.failed_at, event.failed_at) as failed_at,
+    coalesce(delivery.last_error, event.last_error) as last_error,
+    event.payload
+  from public.notification_events as event
+  left join public.notification_deliveries as delivery
+    on delivery.event_id = event.id
+  left join public.guests as guest
+    on guest.id = event.guest_id
+  where (
+      p_status is null
+      or lower(event.status) = p_status
+      or lower(delivery.status) = p_status
+    )
+    and (p_event_type is null or event.event_type = p_event_type)
+    and (p_recipient_type is null or lower(delivery.recipient_type) = p_recipient_type)
+    and (p_origin is null or event.origin = p_origin)
+    and (p_created_from is null or event.created_at >= p_created_from)
+    and (p_created_to is null or event.created_at < p_created_to)
+    and (
+      p_search is null
+      or lower(coalesce(guest.name, '')) like '%' || p_search || '%'
+      or lower(coalesce(delivery.recipient_email, '')) like '%' || p_search || '%'
+      or lower(coalesce(delivery.last_error, event.last_error, '')) like '%' || p_search || '%'
+      or lower(event.event_type) like '%' || p_search || '%'
+      or lower(event.origin) like '%' || p_search || '%'
+      or lower(event.aggregate_type) like '%' || p_search || '%'
+      or lower(event.status) like '%' || p_search || '%'
+      or lower(coalesce(delivery.status, '')) like '%' || p_search || '%'
+      or lower(event.id::text) like '%' || p_search || '%'
+      or lower(coalesce(delivery.id::text, '')) like '%' || p_search || '%'
+      or lower(event.aggregate_id::text) like '%' || p_search || '%'
+      or lower(event.payload::text) like '%' || p_search || '%'
+    )
+  order by
+    case when p_sort_key = 'created_at' and p_sort_direction = 'asc' then event.created_at end asc nulls last,
+    case when p_sort_key = 'created_at' and p_sort_direction = 'desc' then event.created_at end desc nulls last,
+    case when p_sort_key = 'event_type' and p_sort_direction = 'asc' then event.event_type end asc nulls last,
+    case when p_sort_key = 'event_type' and p_sort_direction = 'desc' then event.event_type end desc nulls last,
+    case when p_sort_key = 'guest_name' and p_sort_direction = 'asc' then guest.name end asc nulls last,
+    case when p_sort_key = 'guest_name' and p_sort_direction = 'desc' then guest.name end desc nulls last,
+    case when p_sort_key = 'recipient_type' and p_sort_direction = 'asc' then delivery.recipient_type end asc nulls last,
+    case when p_sort_key = 'recipient_type' and p_sort_direction = 'desc' then delivery.recipient_type end desc nulls last,
+    case when p_sort_key = 'recipient_email' and p_sort_direction = 'asc' then delivery.recipient_email end asc nulls last,
+    case when p_sort_key = 'recipient_email' and p_sort_direction = 'desc' then delivery.recipient_email end desc nulls last,
+    case when p_sort_key = 'status' and p_sort_direction = 'asc' then coalesce(delivery.status, event.status) end asc nulls last,
+    case when p_sort_key = 'status' and p_sort_direction = 'desc' then coalesce(delivery.status, event.status) end desc nulls last,
+    event.created_at desc,
+    delivery.created_at desc nulls last
+  limit p_limit
+  offset p_offset;
+end;
+$$;
+
+comment on function public.admin_list_notification_deliveries(
+  text,
+  text,
+  text,
+  timestamp with time zone,
+  timestamp with time zone,
+  integer,
+  integer,
+  text,
+  text,
+  text,
+  text
+) is
+  'Returns notification events and delivery attempts for authenticated administrators, with filters and sorting.';
+
+revoke all on function public.admin_list_notification_deliveries(
+  text,
+  text,
+  text,
+  timestamp with time zone,
+  timestamp with time zone,
+  integer,
+  integer,
+  text,
+  text,
+  text,
+  text
+) from public, anon;
+grant execute on function public.admin_list_notification_deliveries(
+  text,
+  text,
+  text,
+  timestamp with time zone,
+  timestamp with time zone,
+  integer,
+  integer,
+  text,
+  text,
+  text,
+  text
+) to authenticated;
 
 commit;
 
@@ -3387,6 +3661,173 @@ revoke insert, update, delete on table public.settings from authenticated;
 commit;
 
 -- ============================================================
+-- Source: docs\migrations\security_admin_notification_operations.sql
+-- ============================================================
+
+-- ============================================================
+-- Secure administrative notification audit operations
+-- ============================================================
+
+begin;
+
+create or replace function public.admin_list_notification_deliveries(
+  p_status text default null,
+  p_event_type text default null,
+  p_recipient_type text default null,
+  p_created_from timestamp with time zone default null,
+  p_created_to timestamp with time zone default null,
+  p_limit integer default 50,
+  p_offset integer default 0,
+  p_origin text default null,
+  p_search text default null
+)
+returns table (
+  total_count bigint,
+  notification_event_id uuid,
+  delivery_id uuid,
+  created_at timestamp with time zone,
+  event_type text,
+  origin text,
+  aggregate_type text,
+  aggregate_id uuid,
+  aggregate_version timestamp with time zone,
+  guest_id uuid,
+  guest_name text,
+  event_status text,
+  delivery_status text,
+  recipient_type text,
+  recipient_email text,
+  channel text,
+  processed_at timestamp with time zone,
+  sent_at timestamp with time zone,
+  skipped_at timestamp with time zone,
+  failed_at timestamp with time zone,
+  last_error text,
+  payload jsonb
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not exists (
+    select 1
+    from public.admin_users as administrator
+    where administrator.user_id = (select auth.uid())
+      and administrator.active is true
+  ) then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  p_status := lower(nullif(btrim(p_status), ''));
+  p_event_type := nullif(btrim(p_event_type), '');
+  p_recipient_type := lower(nullif(btrim(p_recipient_type), ''));
+  p_origin := lower(nullif(btrim(p_origin), ''));
+  p_search := lower(nullif(btrim(p_search), ''));
+  p_limit := least(greatest(coalesce(p_limit, 50), 1), 100);
+  p_offset := greatest(coalesce(p_offset, 0), 0);
+
+  return query
+  select
+    count(*) over () as total_count,
+    event.id as notification_event_id,
+    delivery.id as delivery_id,
+    event.created_at,
+    event.event_type,
+    event.origin,
+    event.aggregate_type,
+    event.aggregate_id,
+    event.aggregate_version,
+    event.guest_id,
+    guest.name as guest_name,
+    event.status as event_status,
+    coalesce(delivery.status, event.status) as delivery_status,
+    delivery.recipient_type,
+    delivery.recipient_email,
+    delivery.channel,
+    event.processed_at,
+    delivery.sent_at,
+    delivery.skipped_at,
+    coalesce(delivery.failed_at, event.failed_at) as failed_at,
+    coalesce(delivery.last_error, event.last_error) as last_error,
+    event.payload
+  from public.notification_events as event
+  left join public.notification_deliveries as delivery
+    on delivery.event_id = event.id
+  left join public.guests as guest
+    on guest.id = event.guest_id
+  where (
+      p_status is null
+      or lower(event.status) = p_status
+      or lower(delivery.status) = p_status
+    )
+    and (p_event_type is null or event.event_type = p_event_type)
+    and (p_recipient_type is null or lower(delivery.recipient_type) = p_recipient_type)
+    and (p_origin is null or event.origin = p_origin)
+    and (p_created_from is null or event.created_at >= p_created_from)
+    and (p_created_to is null or event.created_at < p_created_to)
+    and (
+      p_search is null
+      or lower(coalesce(guest.name, '')) like '%' || p_search || '%'
+      or lower(coalesce(delivery.recipient_email, '')) like '%' || p_search || '%'
+      or lower(coalesce(delivery.last_error, event.last_error, '')) like '%' || p_search || '%'
+      or lower(event.event_type) like '%' || p_search || '%'
+      or lower(event.origin) like '%' || p_search || '%'
+      or lower(event.aggregate_type) like '%' || p_search || '%'
+      or lower(event.status) like '%' || p_search || '%'
+      or lower(coalesce(delivery.status, '')) like '%' || p_search || '%'
+      or lower(event.id::text) like '%' || p_search || '%'
+      or lower(coalesce(delivery.id::text, '')) like '%' || p_search || '%'
+      or lower(event.aggregate_id::text) like '%' || p_search || '%'
+      or lower(event.payload::text) like '%' || p_search || '%'
+    )
+  order by event.created_at desc, delivery.created_at desc nulls last
+  limit p_limit
+  offset p_offset;
+end;
+$$;
+
+comment on function public.admin_list_notification_deliveries(
+  text,
+  text,
+  text,
+  timestamp with time zone,
+  timestamp with time zone,
+  integer,
+  integer,
+  text,
+  text
+) is
+  'Returns notification events and delivery attempts for authenticated administrators.';
+
+revoke all on function public.admin_list_notification_deliveries(
+  text,
+  text,
+  text,
+  timestamp with time zone,
+  timestamp with time zone,
+  integer,
+  integer,
+  text,
+  text
+) from public, anon;
+
+grant execute on function public.admin_list_notification_deliveries(
+  text,
+  text,
+  text,
+  timestamp with time zone,
+  timestamp with time zone,
+  integer,
+  integer,
+  text,
+  text
+) to authenticated;
+
+commit;
+
+-- ============================================================
 -- Source: docs\migrations\security_public_settings_access.sql
 -- ============================================================
 
@@ -3515,6 +3956,10 @@ begin;
 
 grant usage on schema public to service_role;
 
+grant select
+  on table public.admin_users
+  to service_role;
+
 grant select, insert, update, delete
   on table public.guest_access_sessions
   to service_role;
@@ -3537,6 +3982,10 @@ grant select, insert, update, delete
 
 grant select, insert, update, delete
   on table public.notification_deliveries
+  to service_role;
+
+grant select
+  on table public.notification_preferences
   to service_role;
 
 grant execute
@@ -3585,5 +4034,2731 @@ grant select on table public.gift_contributions
   to authenticated;
 revoke select on table public.settings
   from authenticated;
+
+commit;
+
+-- ============================================================
+-- Final override: gift transactional email notifications
+-- Source: docs\migrations\gift_email_notifications.sql
+-- ============================================================
+
+begin;
+
+create or replace function public.enqueue_gift_notification_event(
+  p_event_type text,
+  p_aggregate_type text,
+  p_aggregate_id uuid,
+  p_aggregate_version timestamp with time zone,
+  p_guest_id uuid,
+  p_payload jsonb
+)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  event_version timestamp with time zone;
+  guest_name text;
+  guest_invite_type text;
+  guest_email text;
+begin
+  if p_event_type is null
+    or p_aggregate_type is null
+    or p_aggregate_id is null
+    or p_guest_id is null
+  then
+    return;
+  end if;
+
+  event_version := coalesce(p_aggregate_version, timezone('utc'::text, now()));
+
+  select guest.name, guest.invite_type
+  into guest_name, guest_invite_type
+  from public.guests as guest
+  where guest.id = p_guest_id;
+
+  select nullif(rsvp.email, '')
+  into guest_email
+  from public.rsvps as rsvp
+  where rsvp.guest_id = p_guest_id
+  order by rsvp.updated_at desc nulls last, rsvp.created_at desc nulls last
+  limit 1;
+
+  insert into public.notification_events (
+    event_type,
+    aggregate_type,
+    aggregate_id,
+    aggregate_version,
+    guest_id,
+    dedupe_key,
+    payload
+  )
+  values (
+    p_event_type,
+    p_aggregate_type,
+    p_aggregate_id,
+    event_version,
+    p_guest_id,
+    concat(
+      p_event_type,
+      ':',
+      p_aggregate_id::text,
+      ':',
+      extract(epoch from event_version)::text
+    ),
+    coalesce(p_payload, '{}'::jsonb)
+      || jsonb_build_object(
+        'guest_name', guest_name,
+        'invite_type', coalesce(guest_invite_type, 'individual'),
+        'email', guest_email
+      )
+  )
+  on conflict (dedupe_key) do nothing;
+end;
+$$;
+
+revoke all on function public.enqueue_gift_notification_event(
+  text,
+  text,
+  uuid,
+  timestamp with time zone,
+  uuid,
+  jsonb
+) from public, anon, authenticated;
+
+create or replace function public.reserve_gift(
+  target_gift_id uuid,
+  reservation_message text default null
+)
+returns setof public.gifts
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  current_guest uuid;
+  current_guest_name text;
+  event_time timestamp with time zone;
+  reserved_gift public.gifts%rowtype;
+begin
+  current_guest := public.current_guest_id();
+
+  if current_guest is null then
+    raise exception 'Unauthorized';
+  end if;
+
+  select name
+  into current_guest_name
+  from public.guests
+  where id = current_guest
+    and active is true;
+
+  if not found then
+    return;
+  end if;
+
+  event_time := timezone('utc'::text, now());
+
+  update public.gifts
+  set
+    status = 'Reservado',
+    reserved_guest_id = current_guest,
+    reserved_name = current_guest_name,
+    reservation_message = left(coalesce($2, ''), 2000),
+    reserved_at = event_time,
+    payment_status = 'Pendente',
+    payment_reported_at = null,
+    selected_purchase_method = null,
+    selected_purchase_details = null
+  where id = target_gift_id
+    and coalesce(gift_type, 'single') <> 'quota'
+    and reserved_guest_id is null
+    and status = 'Disponível'
+  returning * into reserved_gift;
+
+  if not found then
+    return;
+  end if;
+
+  perform public.enqueue_gift_notification_event(
+    'gift_reserved',
+    'gift',
+    reserved_gift.id,
+    event_time,
+    current_guest,
+    jsonb_build_object(
+      'gift_id', reserved_gift.id,
+      'gift_name', reserved_gift.name,
+      'gift_category', reserved_gift.category,
+      'gift_type', coalesce(reserved_gift.gift_type, 'single'),
+      'price', reserved_gift.price,
+      'message', reserved_gift.reservation_message,
+      'payment_status', reserved_gift.payment_status
+    )
+  );
+
+  return next reserved_gift;
+end;
+$$;
+
+create or replace function public.report_gift_payment(target_gift_id uuid)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  current_guest uuid;
+  event_time timestamp with time zone;
+  updated_gift public.gifts%rowtype;
+begin
+  current_guest := public.current_guest_id();
+
+  if current_guest is null then
+    return false;
+  end if;
+
+  event_time := timezone('utc'::text, now());
+
+  update public.gifts
+  set
+    payment_status = 'Informado',
+    payment_reported_at = event_time
+  where id = target_gift_id
+    and reserved_guest_id = current_guest
+    and coalesce(gift_type, 'single') <> 'quota'
+    and coalesce(payment_status, 'Pendente') = 'Pendente'
+    and (
+      (
+        coalesce(purchase_mode, 'money') = 'money'
+        and selected_purchase_method in ('pix', 'card')
+        and selected_purchase_details is not null
+      )
+      or (
+        purchase_mode = 'hybrid'
+        and selected_purchase_method in ('pix', 'card')
+        and selected_purchase_details is not null
+      )
+      or (
+        purchase_mode in ('external', 'hybrid')
+        and selected_purchase_method in ('online', 'physical')
+        and selected_purchase_details ->> 'type'
+          = selected_purchase_method
+      )
+    )
+  returning * into updated_gift;
+
+  if not found then
+    return false;
+  end if;
+
+  perform public.enqueue_gift_notification_event(
+    'gift_payment_reported',
+    'gift',
+    updated_gift.id,
+    event_time,
+    current_guest,
+    jsonb_build_object(
+      'gift_id', updated_gift.id,
+      'gift_name', updated_gift.name,
+      'gift_category', updated_gift.category,
+      'gift_type', coalesce(updated_gift.gift_type, 'single'),
+      'price', updated_gift.price,
+      'message', updated_gift.reservation_message,
+      'payment_status', updated_gift.payment_status,
+      'purchase_method', updated_gift.selected_purchase_method
+    )
+  );
+
+  return true;
+end;
+$$;
+
+create or replace function public.reserve_gift_quotas(
+  target_gift_id uuid,
+  contribution_message text,
+  requested_quantity integer
+)
+returns setof public.gift_contributions
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  current_guest uuid;
+  current_guest_name text;
+  gift_record public.gifts%rowtype;
+  reserved_quantity integer;
+  available_quantity integer;
+  effective_quota_value numeric;
+  event_time timestamp with time zone;
+  new_contribution public.gift_contributions%rowtype;
+begin
+  current_guest := public.current_guest_id();
+
+  if current_guest is null or requested_quantity <= 0 then
+    return;
+  end if;
+
+  select name
+  into current_guest_name
+  from public.guests
+  where id = current_guest
+    and active is true;
+
+  if not found then
+    return;
+  end if;
+
+  select *
+  into gift_record
+  from public.gifts
+  where id = target_gift_id
+    and gift_type = 'quota'
+  for update;
+
+  if not found or coalesce(gift_record.quota_count, 0) <= 0 then
+    return;
+  end if;
+
+  select coalesce(sum(quota_quantity), 0)::integer
+  into reserved_quantity
+  from public.gift_contributions
+  where gift_id = target_gift_id;
+
+  available_quantity := gift_record.quota_count - reserved_quantity;
+
+  if available_quantity < requested_quantity then
+    return;
+  end if;
+
+  effective_quota_value := coalesce(
+    nullif(gift_record.quota_value, 0),
+    gift_record.price / nullif(gift_record.quota_count, 0)
+  );
+
+  if effective_quota_value is null or effective_quota_value <= 0 then
+    return;
+  end if;
+
+  event_time := timezone('utc'::text, now());
+
+  insert into public.gift_contributions (
+    gift_id,
+    guest_id,
+    contributor_name,
+    message,
+    quota_quantity,
+    quota_value,
+    total_value,
+    payment_status,
+    payment_method
+  )
+  values (
+    target_gift_id,
+    current_guest,
+    left(current_guest_name, 200),
+    left(coalesce(contribution_message, ''), 2000),
+    requested_quantity,
+    effective_quota_value,
+    requested_quantity * effective_quota_value,
+    'Pendente',
+    'pix'
+  )
+  returning * into new_contribution;
+
+  perform public.enqueue_gift_notification_event(
+    'gift_contribution_reserved',
+    'gift_contribution',
+    new_contribution.id,
+    event_time,
+    current_guest,
+    jsonb_build_object(
+      'gift_id', gift_record.id,
+      'gift_name', gift_record.name,
+      'gift_category', gift_record.category,
+      'gift_type', 'quota',
+      'price', gift_record.price,
+      'quota_quantity', new_contribution.quota_quantity,
+      'quota_value', new_contribution.quota_value,
+      'total_value', new_contribution.total_value,
+      'message', new_contribution.message,
+      'payment_status', new_contribution.payment_status,
+      'payment_method', new_contribution.payment_method
+    )
+  );
+
+  return next new_contribution;
+end;
+$$;
+
+create or replace function public.report_gift_contribution_payment(
+  target_contribution_id uuid
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  current_guest uuid;
+  event_time timestamp with time zone;
+  updated_contribution public.gift_contributions%rowtype;
+  gift_record public.gifts%rowtype;
+begin
+  current_guest := public.current_guest_id();
+
+  if current_guest is null then
+    return false;
+  end if;
+
+  event_time := timezone('utc'::text, now());
+
+  update public.gift_contributions
+  set
+    payment_status = 'Informado',
+    payment_reported_at = event_time
+  where id = target_contribution_id
+    and guest_id = current_guest
+    and coalesce(payment_status, 'Pendente') = 'Pendente'
+  returning * into updated_contribution;
+
+  if not found then
+    return false;
+  end if;
+
+  select *
+  into gift_record
+  from public.gifts
+  where id = updated_contribution.gift_id;
+
+  perform public.enqueue_gift_notification_event(
+    'gift_contribution_payment_reported',
+    'gift_contribution',
+    updated_contribution.id,
+    event_time,
+    current_guest,
+    jsonb_build_object(
+      'gift_id', gift_record.id,
+      'gift_name', gift_record.name,
+      'gift_category', gift_record.category,
+      'gift_type', 'quota',
+      'price', gift_record.price,
+      'quota_quantity', updated_contribution.quota_quantity,
+      'quota_value', updated_contribution.quota_value,
+      'total_value', updated_contribution.total_value,
+      'message', updated_contribution.message,
+      'payment_status', updated_contribution.payment_status,
+      'payment_method', updated_contribution.payment_method
+    )
+  );
+
+  return true;
+end;
+$$;
+
+create or replace function public.admin_confirm_gift_purchase(
+  target_gift_id uuid
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  event_time timestamp with time zone;
+  updated_gift public.gifts%rowtype;
+begin
+  if not exists (
+    select 1
+    from public.admin_users as administrator
+    where administrator.user_id = (select auth.uid())
+      and administrator.active is true
+  ) then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  event_time := timezone('utc'::text, now());
+
+  update public.gifts
+  set
+    status = 'Comprado',
+    payment_status = 'Confirmado'
+  where id = target_gift_id
+    and coalesce(gift_type, 'single') <> 'quota'
+    and reserved_guest_id is not null
+  returning * into updated_gift;
+
+  if not found then
+    return false;
+  end if;
+
+  perform public.enqueue_gift_notification_event(
+    'gift_purchase_confirmed',
+    'gift',
+    updated_gift.id,
+    event_time,
+    updated_gift.reserved_guest_id,
+    jsonb_build_object(
+      'gift_id', updated_gift.id,
+      'gift_name', updated_gift.name,
+      'gift_category', updated_gift.category,
+      'gift_type', coalesce(updated_gift.gift_type, 'single'),
+      'price', updated_gift.price,
+      'message', updated_gift.reservation_message,
+      'payment_status', updated_gift.payment_status,
+      'purchase_method', updated_gift.selected_purchase_method
+    )
+  );
+
+  return true;
+end;
+$$;
+
+create or replace function public.admin_release_gift_reservation(
+  target_gift_id uuid
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  event_time timestamp with time zone;
+  gift_record public.gifts%rowtype;
+begin
+  if not exists (
+    select 1
+    from public.admin_users as administrator
+    where administrator.user_id = (select auth.uid())
+      and administrator.active is true
+  ) then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  select *
+  into gift_record
+  from public.gifts
+  where id = target_gift_id
+    and coalesce(gift_type, 'single') <> 'quota'
+    and reserved_guest_id is not null
+  for update;
+
+  if not found then
+    return false;
+  end if;
+
+  event_time := timezone('utc'::text, now());
+
+  update public.gifts
+  set
+    status = 'Disponível',
+    reserved_guest_id = null,
+    reserved_name = null,
+    reservation_message = null,
+    reserved_at = null,
+    payment_status = null,
+    payment_reported_at = null,
+    selected_purchase_method = null,
+    selected_purchase_details = null,
+    card_payment_reference = null
+  where id = target_gift_id;
+
+  perform public.enqueue_gift_notification_event(
+    'gift_reservation_released',
+    'gift',
+    gift_record.id,
+    event_time,
+    gift_record.reserved_guest_id,
+    jsonb_build_object(
+      'gift_id', gift_record.id,
+      'gift_name', gift_record.name,
+      'gift_category', gift_record.category,
+      'gift_type', coalesce(gift_record.gift_type, 'single'),
+      'price', gift_record.price,
+      'message', gift_record.reservation_message,
+      'payment_status', gift_record.payment_status,
+      'purchase_method', gift_record.selected_purchase_method
+    )
+  );
+
+  return true;
+end;
+$$;
+
+create or replace function public.admin_confirm_gift_contribution(
+  target_contribution_id uuid
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  event_time timestamp with time zone;
+  updated_contribution public.gift_contributions%rowtype;
+  gift_record public.gifts%rowtype;
+begin
+  if not exists (
+    select 1
+    from public.admin_users as administrator
+    where administrator.user_id = (select auth.uid())
+      and administrator.active is true
+  ) then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  select gift.*
+  into gift_record
+  from public.gift_contributions as contribution
+  inner join public.gifts as gift
+    on gift.id = contribution.gift_id
+  where contribution.id = target_contribution_id
+    and gift.gift_type = 'quota'
+  for update of contribution;
+
+  if not found then
+    return false;
+  end if;
+
+  event_time := timezone('utc'::text, now());
+
+  update public.gift_contributions
+  set payment_status = 'Confirmado'
+  where id = target_contribution_id
+  returning * into updated_contribution;
+
+  perform public.enqueue_gift_notification_event(
+    'gift_contribution_confirmed',
+    'gift_contribution',
+    updated_contribution.id,
+    event_time,
+    updated_contribution.guest_id,
+    jsonb_build_object(
+      'gift_id', gift_record.id,
+      'gift_name', gift_record.name,
+      'gift_category', gift_record.category,
+      'gift_type', 'quota',
+      'price', gift_record.price,
+      'quota_quantity', updated_contribution.quota_quantity,
+      'quota_value', updated_contribution.quota_value,
+      'total_value', updated_contribution.total_value,
+      'message', updated_contribution.message,
+      'payment_status', updated_contribution.payment_status,
+      'payment_method', updated_contribution.payment_method
+    )
+  );
+
+  return true;
+end;
+$$;
+
+create or replace function public.admin_release_gift_contribution(
+  target_contribution_id uuid
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  event_time timestamp with time zone;
+  contribution_record public.gift_contributions%rowtype;
+  gift_record public.gifts%rowtype;
+begin
+  if not exists (
+    select 1
+    from public.admin_users as administrator
+    where administrator.user_id = (select auth.uid())
+      and administrator.active is true
+  ) then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  select contribution.*
+  into contribution_record
+  from public.gift_contributions as contribution
+  inner join public.gifts as gift
+    on gift.id = contribution.gift_id
+  where contribution.id = target_contribution_id
+    and gift.gift_type = 'quota'
+  for update of contribution;
+
+  if not found then
+    return false;
+  end if;
+
+  select *
+  into gift_record
+  from public.gifts
+  where id = contribution_record.gift_id;
+
+  event_time := timezone('utc'::text, now());
+
+  delete from public.gift_contributions
+  where id = target_contribution_id;
+
+  perform public.enqueue_gift_notification_event(
+    'gift_contribution_released',
+    'gift_contribution',
+    contribution_record.id,
+    event_time,
+    contribution_record.guest_id,
+    jsonb_build_object(
+      'gift_id', gift_record.id,
+      'gift_name', gift_record.name,
+      'gift_category', gift_record.category,
+      'gift_type', 'quota',
+      'price', gift_record.price,
+      'quota_quantity', contribution_record.quota_quantity,
+      'quota_value', contribution_record.quota_value,
+      'total_value', contribution_record.total_value,
+      'message', contribution_record.message,
+      'payment_status', contribution_record.payment_status,
+      'payment_method', contribution_record.payment_method
+    )
+  );
+
+  return true;
+end;
+$$;
+
+revoke all on function public.reserve_gift(uuid, text) from public, anon;
+revoke all on function public.report_gift_payment(uuid) from public, anon;
+revoke all on function public.reserve_gift_quotas(uuid, text, integer)
+  from public, anon;
+revoke all on function public.report_gift_contribution_payment(uuid)
+  from public, anon;
+revoke all on function public.admin_confirm_gift_purchase(uuid)
+  from public, anon;
+revoke all on function public.admin_release_gift_reservation(uuid)
+  from public, anon;
+revoke all on function public.admin_confirm_gift_contribution(uuid)
+  from public, anon;
+revoke all on function public.admin_release_gift_contribution(uuid)
+  from public, anon;
+
+grant execute on function public.reserve_gift(uuid, text) to authenticated;
+grant execute on function public.report_gift_payment(uuid) to authenticated;
+grant execute on function public.reserve_gift_quotas(uuid, text, integer)
+  to authenticated;
+grant execute on function public.report_gift_contribution_payment(uuid)
+  to authenticated;
+grant execute on function public.admin_confirm_gift_purchase(uuid)
+  to authenticated;
+grant execute on function public.admin_release_gift_reservation(uuid)
+  to authenticated;
+grant execute on function public.admin_confirm_gift_contribution(uuid)
+  to authenticated;
+grant execute on function public.admin_release_gift_contribution(uuid)
+  to authenticated;
+
+commit;
+
+-- ============================================================
+-- Source: docs\migrations\security_admin_notification_preferences.sql
+-- ============================================================
+
+-- ============================================================
+-- Secure administrative notification preference operations
+-- ============================================================
+
+begin;
+
+create or replace function public.admin_list_notification_preferences()
+returns table (
+  event_type text,
+  event_group text,
+  label text,
+  description text,
+  automatic_enabled boolean,
+  manual_enabled boolean,
+  admin_enabled boolean,
+  guest_enabled boolean,
+  updated_at timestamp with time zone
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not exists (
+    select 1
+    from public.admin_users as administrator
+    where administrator.user_id = (select auth.uid())
+      and administrator.active is true
+  ) then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  return query
+  select
+    preference.event_type,
+    preference.event_group,
+    preference.label,
+    preference.description,
+    preference.automatic_enabled,
+    preference.manual_enabled,
+    preference.admin_enabled,
+    preference.guest_enabled,
+    preference.updated_at
+  from public.notification_preferences as preference
+  order by
+    case preference.event_group
+      when 'rsvp' then 1
+      when 'gift' then 2
+      when 'gift_contribution' then 3
+      else 4
+    end,
+    preference.label;
+end;
+$$;
+
+create or replace function public.admin_update_notification_preference(
+  target_event_type text,
+  submitted_automatic_enabled boolean,
+  submitted_manual_enabled boolean,
+  submitted_admin_enabled boolean,
+  submitted_guest_enabled boolean
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not exists (
+    select 1
+    from public.admin_users as administrator
+    where administrator.user_id = (select auth.uid())
+      and administrator.active is true
+  ) then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  update public.notification_preferences
+  set
+    automatic_enabled = coalesce(submitted_automatic_enabled, automatic_enabled),
+    manual_enabled = coalesce(submitted_manual_enabled, manual_enabled),
+    admin_enabled = coalesce(submitted_admin_enabled, admin_enabled),
+    guest_enabled = coalesce(submitted_guest_enabled, guest_enabled),
+    updated_at = timezone('utc'::text, now())
+  where event_type = nullif(btrim(target_event_type), '');
+
+  return found;
+end;
+$$;
+
+comment on function public.admin_list_notification_preferences() is
+  'Returns notification preferences for authenticated administrators.';
+
+comment on function public.admin_update_notification_preference(
+  text,
+  boolean,
+  boolean,
+  boolean,
+  boolean
+) is
+  'Updates one notification preference row as an authenticated administrator.';
+
+revoke all on function public.admin_list_notification_preferences() from public, anon;
+grant execute on function public.admin_list_notification_preferences() to authenticated;
+
+revoke all on function public.admin_update_notification_preference(
+  text,
+  boolean,
+  boolean,
+  boolean,
+  boolean
+) from public, anon;
+
+grant execute on function public.admin_update_notification_preference(
+  text,
+  boolean,
+  boolean,
+  boolean,
+  boolean
+) to authenticated;
+
+commit;
+
+-- ============================================================
+-- Source: docs\migrations\manual_notification_reminders.sql
+-- ============================================================
+
+-- ============================================================
+-- Manual notification reminders
+-- ============================================================
+
+begin;
+
+alter table public.notification_events
+  add column if not exists origin text not null default 'automatic';
+
+alter table public.notification_events
+  drop constraint if exists notification_events_origin_check;
+
+alter table public.notification_events
+  add constraint notification_events_origin_check
+  check (origin in ('automatic', 'manual'));
+
+insert into public.notification_preferences (
+  event_type,
+  event_group,
+  label,
+  description,
+  automatic_enabled,
+  manual_enabled,
+  admin_enabled,
+  guest_enabled
+)
+values
+  (
+    'gift_reservation_reminder',
+    'gift',
+    'Lembrete de presente',
+    'Disparo manual para lembrar uma reserva de presente individual pendente.',
+    false,
+    true,
+    true,
+    true
+  ),
+  (
+    'gift_contribution_reminder',
+    'gift_contribution',
+    'Lembrete de cota',
+    'Disparo manual para lembrar uma reserva de cota pendente.',
+    false,
+    true,
+    true,
+    true
+  )
+on conflict (event_type) do update
+set
+  event_group = excluded.event_group,
+  label = excluded.label,
+  description = excluded.description,
+  manual_enabled = excluded.manual_enabled,
+  updated_at = timezone('utc'::text, now());
+
+create or replace function public.admin_send_gift_reservation_reminder(
+  target_gift_id uuid
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  event_time timestamp with time zone;
+  gift_record public.gifts%rowtype;
+begin
+  if not exists (
+    select 1
+    from public.admin_users as administrator
+    where administrator.user_id = (select auth.uid())
+      and administrator.active is true
+  ) then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  select *
+  into gift_record
+  from public.gifts
+  where id = target_gift_id
+    and coalesce(gift_type, 'single') <> 'quota'
+    and status = 'Reservado'
+    and reserved_guest_id is not null
+    and coalesce(payment_status, 'Pendente') = 'Pendente';
+
+  if not found then
+    return false;
+  end if;
+
+  event_time := timezone('utc'::text, now());
+
+  perform public.enqueue_gift_notification_event(
+    'gift_reservation_reminder',
+    'gift',
+    gift_record.id,
+    event_time,
+    gift_record.reserved_guest_id,
+    jsonb_build_object(
+      'gift_id', gift_record.id,
+      'gift_name', gift_record.name,
+      'gift_category', gift_record.category,
+      'gift_type', coalesce(gift_record.gift_type, 'single'),
+      'price', gift_record.price,
+      'message', gift_record.reservation_message,
+      'payment_status', gift_record.payment_status,
+      'notification_origin', 'manual',
+      'triggered_by', 'admin',
+      'triggered_by_user_id', (select auth.uid()),
+      'reminder_kind', 'pending_reservation'
+    )
+  );
+
+  update public.notification_events
+  set origin = 'manual'
+  where dedupe_key = concat(
+    'gift_reservation_reminder',
+    ':',
+    gift_record.id::text,
+    ':',
+    extract(epoch from event_time)::text
+  );
+
+  return true;
+end;
+$$;
+
+create or replace function public.admin_send_gift_contribution_reminder(
+  target_contribution_id uuid
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  event_time timestamp with time zone;
+  contribution_record public.gift_contributions%rowtype;
+  gift_record public.gifts%rowtype;
+begin
+  if not exists (
+    select 1
+    from public.admin_users as administrator
+    where administrator.user_id = (select auth.uid())
+      and administrator.active is true
+  ) then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  select contribution.*
+  into contribution_record
+  from public.gift_contributions as contribution
+  inner join public.gifts as gift
+    on gift.id = contribution.gift_id
+  where contribution.id = target_contribution_id
+    and gift.gift_type = 'quota'
+    and coalesce(contribution.payment_status, 'Pendente') = 'Pendente';
+
+  if not found then
+    return false;
+  end if;
+
+  select *
+  into gift_record
+  from public.gifts
+  where id = contribution_record.gift_id;
+
+  event_time := timezone('utc'::text, now());
+
+  perform public.enqueue_gift_notification_event(
+    'gift_contribution_reminder',
+    'gift_contribution',
+    contribution_record.id,
+    event_time,
+    contribution_record.guest_id,
+    jsonb_build_object(
+      'gift_id', gift_record.id,
+      'gift_name', gift_record.name,
+      'gift_category', gift_record.category,
+      'gift_type', 'quota',
+      'price', gift_record.price,
+      'quota_quantity', contribution_record.quota_quantity,
+      'quota_value', contribution_record.quota_value,
+      'total_value', contribution_record.total_value,
+      'message', contribution_record.message,
+      'payment_status', contribution_record.payment_status,
+      'payment_method', contribution_record.payment_method,
+      'notification_origin', 'manual',
+      'triggered_by', 'admin',
+      'triggered_by_user_id', (select auth.uid()),
+      'reminder_kind', 'pending_reservation'
+    )
+  );
+
+  update public.notification_events
+  set origin = 'manual'
+  where dedupe_key = concat(
+    'gift_contribution_reminder',
+    ':',
+    contribution_record.id::text,
+    ':',
+    extract(epoch from event_time)::text
+  );
+
+  return true;
+end;
+$$;
+
+revoke all on function public.admin_send_gift_reservation_reminder(uuid)
+  from public, anon;
+revoke all on function public.admin_send_gift_contribution_reminder(uuid)
+  from public, anon;
+
+grant execute on function public.admin_send_gift_reservation_reminder(uuid)
+  to authenticated;
+grant execute on function public.admin_send_gift_contribution_reminder(uuid)
+  to authenticated;
+
+commit;
+-- ============================================================
+-- Manual notification resends
+-- ============================================================
+
+begin;
+
+update public.notification_preferences
+set
+  manual_enabled = true,
+  updated_at = timezone('utc'::text, now())
+where event_type in (
+  'rsvp_saved',
+  'gift_reserved',
+  'gift_payment_reported',
+  'gift_purchase_confirmed',
+  'gift_reservation_released',
+  'gift_contribution_reserved',
+  'gift_contribution_payment_reported',
+  'gift_contribution_confirmed',
+  'gift_contribution_released'
+);
+
+create or replace function public.admin_create_manual_notification_event(
+  target_event_type text,
+  target_aggregate_id uuid,
+  target_recipient_type text default null
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  event_id uuid;
+  event_time timestamp with time zone;
+  normalized_event_type text;
+  normalized_recipient_type text;
+  rsvp_record public.rsvps%rowtype;
+  guest_record public.guests%rowtype;
+  gift_record public.gifts%rowtype;
+  contribution_record public.gift_contributions%rowtype;
+  payload jsonb;
+begin
+  if not exists (
+    select 1
+    from public.admin_users as administrator
+    where administrator.user_id = (select auth.uid())
+      and administrator.active is true
+  ) then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  normalized_event_type := nullif(btrim(target_event_type), '');
+  normalized_recipient_type := lower(nullif(btrim(target_recipient_type), ''));
+
+  if normalized_event_type is null or target_aggregate_id is null then
+    raise exception 'Notification event type and aggregate id are required.'
+      using errcode = '22023';
+  end if;
+
+  if normalized_recipient_type is not null
+    and normalized_recipient_type not in ('admin', 'guest')
+  then
+    raise exception 'Invalid notification recipient type.'
+      using errcode = '22023';
+  end if;
+
+  event_time := timezone('utc'::text, now());
+
+  if normalized_event_type = 'rsvp_saved' then
+    select *
+    into rsvp_record
+    from public.rsvps
+    where id = target_aggregate_id
+      and guest_id is not null;
+
+    if not found then
+      return null;
+    end if;
+
+    select *
+    into guest_record
+    from public.guests
+    where id = rsvp_record.guest_id
+      and active is true;
+
+    if not found then
+      return null;
+    end if;
+
+    payload := jsonb_build_object(
+      'operation', case
+        when coalesce(rsvp_record.updated_at, rsvp_record.created_at)
+          > coalesce(rsvp_record.created_at, rsvp_record.updated_at)
+          then 'updated'
+        else 'created'
+      end,
+      'operation_label', case
+        when coalesce(rsvp_record.updated_at, rsvp_record.created_at)
+          > coalesce(rsvp_record.created_at, rsvp_record.updated_at)
+          then 'RSVP Atualizado'
+        else 'RSVP Recebido'
+      end,
+      'guest_name', guest_record.name,
+      'invite_type', guest_record.invite_type,
+      'couple_members', coalesce(guest_record.couple_members, '[]'::jsonb),
+      'rsvp_id', rsvp_record.id,
+      'rsvp_updated_at', rsvp_record.updated_at,
+      'presence', rsvp_record.presence,
+      'email', rsvp_record.email,
+      'phone', rsvp_record.phone,
+      'food', rsvp_record.food,
+      'message', rsvp_record.message,
+      'guest_data', rsvp_record.guest_data
+    );
+
+    insert into public.notification_events (
+      event_type,
+      aggregate_type,
+      aggregate_id,
+      aggregate_version,
+      origin,
+      guest_id,
+      dedupe_key,
+      payload
+    )
+    values (
+      normalized_event_type,
+      'rsvp',
+      rsvp_record.id,
+      event_time,
+      'manual',
+      rsvp_record.guest_id,
+      concat(
+        normalized_event_type,
+        ':manual:',
+        rsvp_record.id::text,
+        ':',
+        extract(epoch from event_time)::text,
+        ':',
+        gen_random_uuid()::text
+      ),
+      payload
+        || jsonb_build_object(
+          'notification_origin', 'manual',
+          'triggered_by', 'admin',
+          'triggered_by_user_id', (select auth.uid())
+        )
+        || case
+          when normalized_recipient_type is null then '{}'::jsonb
+          else jsonb_build_object('manual_recipient_type', normalized_recipient_type)
+        end
+    )
+    returning id into event_id;
+
+    return event_id;
+  end if;
+
+  if normalized_event_type in (
+    'gift_reserved',
+    'gift_payment_reported',
+    'gift_purchase_confirmed',
+    'gift_reservation_released'
+  ) then
+    select *
+    into gift_record
+    from public.gifts
+    where id = target_aggregate_id
+      and coalesce(gift_type, 'single') <> 'quota'
+      and reserved_guest_id is not null;
+
+    if not found then
+      return null;
+    end if;
+
+    if normalized_event_type = 'gift_payment_reported'
+      and coalesce(gift_record.payment_status, 'Pendente') not in ('Informado', 'Confirmado')
+    then
+      return null;
+    end if;
+
+    if normalized_event_type = 'gift_purchase_confirmed'
+      and (
+        gift_record.status <> 'Comprado'
+        and coalesce(gift_record.payment_status, 'Pendente') <> 'Confirmado'
+      )
+    then
+      return null;
+    end if;
+
+    if normalized_event_type = 'gift_reservation_released' then
+      return null;
+    end if;
+
+    perform public.enqueue_gift_notification_event(
+      normalized_event_type,
+      'gift',
+      gift_record.id,
+      event_time,
+      gift_record.reserved_guest_id,
+      jsonb_build_object(
+        'gift_id', gift_record.id,
+        'gift_name', gift_record.name,
+        'gift_category', gift_record.category,
+        'gift_type', coalesce(gift_record.gift_type, 'single'),
+        'price', gift_record.price,
+        'message', gift_record.reservation_message,
+        'payment_status', gift_record.payment_status,
+        'purchase_method', gift_record.selected_purchase_method,
+        'notification_origin', 'manual',
+        'triggered_by', 'admin',
+        'triggered_by_user_id', (select auth.uid())
+      )
+      || case
+        when normalized_recipient_type is null then '{}'::jsonb
+        else jsonb_build_object('manual_recipient_type', normalized_recipient_type)
+      end
+    );
+
+    update public.notification_events
+    set origin = 'manual'
+    where dedupe_key = concat(
+      normalized_event_type,
+      ':',
+      gift_record.id::text,
+      ':',
+      extract(epoch from event_time)::text
+    )
+    returning id into event_id;
+
+    return event_id;
+  end if;
+
+  if normalized_event_type in (
+    'gift_contribution_reserved',
+    'gift_contribution_payment_reported',
+    'gift_contribution_confirmed',
+    'gift_contribution_released'
+  ) then
+    select *
+    into contribution_record
+    from public.gift_contributions
+    where id = target_aggregate_id
+      and guest_id is not null;
+
+    if not found then
+      return null;
+    end if;
+
+    select *
+    into gift_record
+    from public.gifts
+    where id = contribution_record.gift_id
+      and gift_type = 'quota';
+
+    if not found then
+      return null;
+    end if;
+
+    if normalized_event_type = 'gift_contribution_payment_reported'
+      and coalesce(contribution_record.payment_status, 'Pendente') not in ('Informado', 'Confirmado')
+    then
+      return null;
+    end if;
+
+    if normalized_event_type = 'gift_contribution_confirmed'
+      and coalesce(contribution_record.payment_status, 'Pendente') <> 'Confirmado'
+    then
+      return null;
+    end if;
+
+    if normalized_event_type = 'gift_contribution_released' then
+      return null;
+    end if;
+
+    perform public.enqueue_gift_notification_event(
+      normalized_event_type,
+      'gift_contribution',
+      contribution_record.id,
+      event_time,
+      contribution_record.guest_id,
+      jsonb_build_object(
+        'gift_id', gift_record.id,
+        'gift_name', gift_record.name,
+        'gift_category', gift_record.category,
+        'gift_type', 'quota',
+        'price', gift_record.price,
+        'quota_quantity', contribution_record.quota_quantity,
+        'quota_value', contribution_record.quota_value,
+        'total_value', contribution_record.total_value,
+        'message', contribution_record.message,
+        'payment_status', contribution_record.payment_status,
+        'payment_method', contribution_record.payment_method,
+        'notification_origin', 'manual',
+        'triggered_by', 'admin',
+        'triggered_by_user_id', (select auth.uid())
+      )
+      || case
+        when normalized_recipient_type is null then '{}'::jsonb
+        else jsonb_build_object('manual_recipient_type', normalized_recipient_type)
+      end
+    );
+
+    update public.notification_events
+    set origin = 'manual'
+    where dedupe_key = concat(
+      normalized_event_type,
+      ':',
+      contribution_record.id::text,
+      ':',
+      extract(epoch from event_time)::text
+    )
+    returning id into event_id;
+
+    return event_id;
+  end if;
+
+  return null;
+end;
+$$;
+
+create or replace function public.admin_resend_notification_delivery(
+  target_delivery_id uuid
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  delivery_record public.notification_deliveries%rowtype;
+  event_record public.notification_events%rowtype;
+  event_id uuid;
+  event_time timestamp with time zone;
+  refreshed_email text;
+begin
+  if not exists (
+    select 1
+    from public.admin_users as administrator
+    where administrator.user_id = (select auth.uid())
+      and administrator.active is true
+  ) then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  select *
+  into delivery_record
+  from public.notification_deliveries
+  where id = target_delivery_id
+    and status not in ('pending', 'processing');
+
+  if not found then
+    return null;
+  end if;
+
+  select *
+  into event_record
+  from public.notification_events
+  where id = delivery_record.event_id;
+
+  if not found then
+    return null;
+  end if;
+
+  if event_record.guest_id is not null then
+    select nullif(rsvp.email, '')
+    into refreshed_email
+    from public.rsvps as rsvp
+    where rsvp.guest_id = event_record.guest_id
+    order by rsvp.updated_at desc nulls last, rsvp.created_at desc nulls last
+    limit 1;
+  end if;
+
+  event_time := timezone('utc'::text, now());
+
+  insert into public.notification_events (
+    event_type,
+    aggregate_type,
+    aggregate_id,
+    aggregate_version,
+    origin,
+    guest_id,
+    dedupe_key,
+    payload
+  )
+  values (
+    event_record.event_type,
+    event_record.aggregate_type,
+    event_record.aggregate_id,
+    event_time,
+    'manual',
+    event_record.guest_id,
+    concat(
+      event_record.event_type,
+      ':manual-resend:',
+      delivery_record.id::text,
+      ':',
+      extract(epoch from event_time)::text,
+      ':',
+      gen_random_uuid()::text
+    ),
+    coalesce(event_record.payload, '{}'::jsonb)
+      || case
+        when refreshed_email is null then '{}'::jsonb
+        else jsonb_build_object('email', refreshed_email)
+      end
+      || jsonb_build_object(
+        'manual_recipient_type', delivery_record.recipient_type,
+        'notification_origin', 'manual',
+        'resent_from_delivery_id', delivery_record.id,
+        'resent_from_event_id', event_record.id,
+        'triggered_by', 'admin',
+        'triggered_by_user_id', (select auth.uid())
+      )
+  )
+  returning id into event_id;
+
+  return event_id;
+end;
+$$;
+
+comment on function public.admin_create_manual_notification_event(
+  text,
+  uuid,
+  text
+) is
+  'Creates a manual notification event for an authenticated administrator.';
+
+comment on function public.admin_resend_notification_delivery(uuid) is
+  'Creates a manual resend event for one previous notification delivery.';
+
+revoke all on function public.admin_create_manual_notification_event(
+  text,
+  uuid,
+  text
+) from public, anon;
+revoke all on function public.admin_resend_notification_delivery(uuid)
+  from public, anon;
+
+grant execute on function public.admin_create_manual_notification_event(
+  text,
+  uuid,
+  text
+) to authenticated;
+grant execute on function public.admin_resend_notification_delivery(uuid)
+  to authenticated;
+
+commit;
+
+-- ============================================================
+-- Source: docs\migrations\wall_messages.sql
+-- ============================================================
+
+-- ============================================================
+-- Guest wall messages
+-- ============================================================
+
+begin;
+
+create table if not exists public.guest_wall_messages (
+  id uuid not null default gen_random_uuid(),
+  guest_id uuid not null,
+  message text not null,
+  status text not null default 'pending',
+  couple_reply text null,
+  created_at timestamp with time zone not null default timezone('utc'::text, now()),
+  updated_at timestamp with time zone not null default timezone('utc'::text, now()),
+  submitted_at timestamp with time zone not null default timezone('utc'::text, now()),
+  approved_at timestamp with time zone null,
+  hidden_at timestamp with time zone null,
+  couple_replied_at timestamp with time zone null,
+
+  constraint guest_wall_messages_pkey primary key (id),
+  constraint guest_wall_messages_guest_id_key unique (guest_id),
+  constraint guest_wall_messages_guest_id_fkey
+    foreign key (guest_id)
+    references public.guests(id)
+    on delete cascade,
+  constraint guest_wall_messages_status_check
+    check (status in ('pending', 'approved', 'hidden')),
+  constraint guest_wall_messages_message_length_check
+    check (char_length(btrim(message)) between 1 and 800),
+  constraint guest_wall_messages_reply_length_check
+    check (couple_reply is null or char_length(btrim(couple_reply)) <= 800)
+);
+
+create index if not exists guest_wall_messages_status_approved_idx
+  on public.guest_wall_messages (status, approved_at desc, created_at desc);
+
+create index if not exists guest_wall_messages_guest_status_idx
+  on public.guest_wall_messages (guest_id, status);
+
+alter table public.guest_wall_messages enable row level security;
+
+revoke all on table public.guest_wall_messages from anon, authenticated;
+grant all on table public.guest_wall_messages to service_role;
+
+create or replace function public.list_approved_wall_messages(
+  p_limit integer default 100,
+  p_offset integer default 0
+)
+returns table (
+  total_count bigint,
+  id uuid,
+  guest_name text,
+  message text,
+  couple_reply text,
+  approved_at timestamp with time zone,
+  couple_replied_at timestamp with time zone,
+  created_at timestamp with time zone
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  p_limit := least(greatest(coalesce(p_limit, 100), 1), 100);
+  p_offset := greatest(coalesce(p_offset, 0), 0);
+
+  return query
+  select
+    count(*) over () as total_count,
+    wall_message.id,
+    guest.name as guest_name,
+    wall_message.message,
+    wall_message.couple_reply,
+    wall_message.approved_at,
+    wall_message.couple_replied_at,
+    wall_message.created_at
+  from public.guest_wall_messages as wall_message
+  inner join public.guests as guest
+    on guest.id = wall_message.guest_id
+  where wall_message.status = 'approved'
+    and guest.active is true
+  order by
+    wall_message.approved_at desc nulls last,
+    wall_message.created_at desc
+  limit p_limit
+  offset p_offset;
+end;
+$$;
+
+create or replace function public.get_current_guest_wall_message()
+returns table (
+  id uuid,
+  message text,
+  status text,
+  couple_reply text,
+  created_at timestamp with time zone,
+  updated_at timestamp with time zone,
+  submitted_at timestamp with time zone,
+  approved_at timestamp with time zone,
+  hidden_at timestamp with time zone,
+  couple_replied_at timestamp with time zone
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  current_guest uuid;
+begin
+  current_guest := public.current_guest_id();
+
+  if current_guest is null then
+    return;
+  end if;
+
+  return query
+  select
+    wall_message.id,
+    wall_message.message,
+    wall_message.status,
+    wall_message.couple_reply,
+    wall_message.created_at,
+    wall_message.updated_at,
+    wall_message.submitted_at,
+    wall_message.approved_at,
+    wall_message.hidden_at,
+    wall_message.couple_replied_at
+  from public.guest_wall_messages as wall_message
+  where wall_message.guest_id = current_guest;
+end;
+$$;
+
+create or replace function public.save_current_guest_wall_message(
+  submitted_message text
+)
+returns table (
+  id uuid,
+  message text,
+  status text,
+  couple_reply text,
+  created_at timestamp with time zone,
+  updated_at timestamp with time zone,
+  submitted_at timestamp with time zone,
+  approved_at timestamp with time zone,
+  hidden_at timestamp with time zone,
+  couple_replied_at timestamp with time zone
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  current_guest uuid;
+  safe_message text;
+  saved_message public.guest_wall_messages%rowtype;
+begin
+  current_guest := public.current_guest_id();
+  safe_message := left(btrim(coalesce(submitted_message, '')), 800);
+
+  if current_guest is null or safe_message = '' then
+    return;
+  end if;
+
+  if not exists (
+    select 1
+    from public.guests as guest
+    where guest.id = current_guest
+      and guest.active is true
+  ) then
+    return;
+  end if;
+
+  insert into public.guest_wall_messages (
+    guest_id,
+    message,
+    status,
+    submitted_at,
+    updated_at,
+    approved_at,
+    hidden_at
+  )
+  values (
+    current_guest,
+    safe_message,
+    'pending',
+    timezone('utc'::text, now()),
+    timezone('utc'::text, now()),
+    null,
+    null
+  )
+  on conflict (guest_id)
+  do update set
+    message = excluded.message,
+    status = 'pending',
+    submitted_at = excluded.submitted_at,
+    updated_at = excluded.updated_at,
+    approved_at = null,
+    hidden_at = null
+  returning * into saved_message;
+
+  return query
+  select
+    saved_message.id,
+    saved_message.message,
+    saved_message.status,
+    saved_message.couple_reply,
+    saved_message.created_at,
+    saved_message.updated_at,
+    saved_message.submitted_at,
+    saved_message.approved_at,
+    saved_message.hidden_at,
+    saved_message.couple_replied_at;
+end;
+$$;
+
+create or replace function public.admin_list_wall_messages(
+  p_status text default null,
+  p_search text default null,
+  p_limit integer default 100,
+  p_offset integer default 0
+)
+returns table (
+  total_count bigint,
+  id uuid,
+  guest_id uuid,
+  guest_name text,
+  invite_type text,
+  message text,
+  status text,
+  couple_reply text,
+  created_at timestamp with time zone,
+  updated_at timestamp with time zone,
+  submitted_at timestamp with time zone,
+  approved_at timestamp with time zone,
+  hidden_at timestamp with time zone,
+  couple_replied_at timestamp with time zone
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  p_status := lower(nullif(btrim(p_status), ''));
+  p_search := lower(nullif(btrim(p_search), ''));
+  p_limit := least(greatest(coalesce(p_limit, 100), 1), 200);
+  p_offset := greatest(coalesce(p_offset, 0), 0);
+
+  return query
+  select
+    count(*) over () as total_count,
+    wall_message.id,
+    wall_message.guest_id,
+    guest.name as guest_name,
+    guest.invite_type,
+    wall_message.message,
+    wall_message.status,
+    wall_message.couple_reply,
+    wall_message.created_at,
+    wall_message.updated_at,
+    wall_message.submitted_at,
+    wall_message.approved_at,
+    wall_message.hidden_at,
+    wall_message.couple_replied_at
+  from public.guest_wall_messages as wall_message
+  inner join public.guests as guest
+    on guest.id = wall_message.guest_id
+  where (p_status is null or wall_message.status = p_status)
+    and (
+      p_search is null
+      or lower(guest.name) like '%' || p_search || '%'
+      or lower(wall_message.message) like '%' || p_search || '%'
+      or lower(coalesce(wall_message.couple_reply, '')) like '%' || p_search || '%'
+    )
+  order by wall_message.submitted_at desc, wall_message.created_at desc
+  limit p_limit
+  offset p_offset;
+end;
+$$;
+
+create or replace function public.admin_approve_wall_message(
+  target_message_id uuid
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  update public.guest_wall_messages
+  set
+    status = 'approved',
+    approved_at = timezone('utc'::text, now()),
+    hidden_at = null,
+    updated_at = timezone('utc'::text, now())
+  where id = target_message_id;
+
+  return found;
+end;
+$$;
+
+create or replace function public.admin_hide_wall_message(
+  target_message_id uuid
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  update public.guest_wall_messages
+  set
+    status = 'hidden',
+    hidden_at = timezone('utc'::text, now()),
+    updated_at = timezone('utc'::text, now())
+  where id = target_message_id;
+
+  return found;
+end;
+$$;
+
+create or replace function public.admin_reply_wall_message(
+  target_message_id uuid,
+  submitted_reply text
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  safe_reply text;
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  safe_reply := left(btrim(coalesce(submitted_reply, '')), 800);
+
+  update public.guest_wall_messages
+  set
+    couple_reply = nullif(safe_reply, ''),
+    couple_replied_at = case
+      when safe_reply = '' then null
+      else timezone('utc'::text, now())
+    end,
+    updated_at = timezone('utc'::text, now())
+  where id = target_message_id;
+
+  return found;
+end;
+$$;
+
+create or replace function public.admin_clear_wall_message_reply(
+  target_message_id uuid
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  update public.guest_wall_messages
+  set
+    couple_reply = null,
+    couple_replied_at = null,
+    updated_at = timezone('utc'::text, now())
+  where id = target_message_id;
+
+  return found;
+end;
+$$;
+
+create or replace function public.admin_delete_wall_message(
+  target_message_id uuid
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  delete from public.guest_wall_messages
+  where id = target_message_id;
+
+  return found;
+end;
+$$;
+
+comment on table public.guest_wall_messages is
+  'Moderated messages left by invited guests for the public wall.';
+
+comment on function public.list_approved_wall_messages(integer, integer) is
+  'Lists approved wall messages without exposing private guest data.';
+
+comment on function public.get_current_guest_wall_message() is
+  'Returns the current invited guest wall message.';
+
+comment on function public.save_current_guest_wall_message(text) is
+  'Creates or updates the current invited guest wall message and returns it to pending review.';
+
+comment on function public.admin_list_wall_messages(text, text, integer, integer) is
+  'Lists wall messages for authenticated administrators.';
+
+comment on function public.admin_approve_wall_message(uuid) is
+  'Approves a guest wall message as an authenticated administrator.';
+
+comment on function public.admin_hide_wall_message(uuid) is
+  'Hides a guest wall message as an authenticated administrator.';
+
+comment on function public.admin_reply_wall_message(uuid, text) is
+  'Adds or clears the couple reply to a wall message as an authenticated administrator.';
+
+comment on function public.admin_clear_wall_message_reply(uuid) is
+  'Clears the couple reply from a wall message as an authenticated administrator.';
+
+comment on function public.admin_delete_wall_message(uuid) is
+  'Deletes a guest wall message as an authenticated administrator.';
+
+revoke all on function public.list_approved_wall_messages(integer, integer)
+  from public;
+grant execute on function public.list_approved_wall_messages(integer, integer)
+  to anon, authenticated;
+
+revoke all on function public.get_current_guest_wall_message()
+  from public, anon;
+grant execute on function public.get_current_guest_wall_message()
+  to authenticated;
+
+revoke all on function public.save_current_guest_wall_message(text)
+  from public, anon;
+grant execute on function public.save_current_guest_wall_message(text)
+  to authenticated;
+
+revoke all on function public.admin_list_wall_messages(text, text, integer, integer)
+  from public, anon;
+grant execute on function public.admin_list_wall_messages(text, text, integer, integer)
+  to authenticated;
+
+revoke all on function public.admin_approve_wall_message(uuid)
+  from public, anon;
+grant execute on function public.admin_approve_wall_message(uuid)
+  to authenticated;
+
+revoke all on function public.admin_hide_wall_message(uuid)
+  from public, anon;
+grant execute on function public.admin_hide_wall_message(uuid)
+  to authenticated;
+
+revoke all on function public.admin_reply_wall_message(uuid, text)
+  from public, anon;
+grant execute on function public.admin_reply_wall_message(uuid, text)
+  to authenticated;
+
+revoke all on function public.admin_clear_wall_message_reply(uuid)
+  from public, anon;
+grant execute on function public.admin_clear_wall_message_reply(uuid)
+  to authenticated;
+
+revoke all on function public.admin_delete_wall_message(uuid)
+  from public, anon;
+grant execute on function public.admin_delete_wall_message(uuid)
+  to authenticated;
+
+commit;
+
+-- Source: docs\migrations\wall_message_email_notifications.sql
+
+begin;
+
+alter table public.notification_preferences
+  drop constraint if exists notification_preferences_event_group_check;
+
+alter table public.notification_preferences
+  add constraint notification_preferences_event_group_check
+  check (event_group in ('rsvp', 'gift', 'gift_contribution', 'manual', 'wall_message'));
+
+insert into public.notification_preferences (
+  event_type,
+  event_group,
+  label,
+  description,
+  automatic_enabled,
+  manual_enabled,
+  admin_enabled,
+  guest_enabled
+)
+values
+  ('wall_message_submitted', 'wall_message', 'Recado enviado', 'Enviado quando um convidado cria ou edita um recado no mural.', true, false, true, false),
+  ('wall_message_approved', 'wall_message', 'Recado aprovado', 'Enviado quando o admin aprova um recado para o mural público.', true, false, false, true),
+  ('wall_message_replied', 'wall_message', 'Recado respondido', 'Enviado quando os noivos respondem um recado aprovado.', true, false, false, true)
+on conflict (event_type) do update
+set
+  event_group = excluded.event_group,
+  label = excluded.label,
+  description = excluded.description,
+  automatic_enabled = excluded.automatic_enabled,
+  admin_enabled = excluded.admin_enabled,
+  guest_enabled = excluded.guest_enabled,
+  updated_at = timezone('utc'::text, now());
+
+create or replace function public.enqueue_wall_message_notification_event(
+  p_event_type text,
+  p_wall_message_id uuid,
+  p_event_time timestamp with time zone default null
+)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  event_time timestamp with time zone;
+  guest_email text;
+  guest_record public.guests%rowtype;
+  wall_message_record public.guest_wall_messages%rowtype;
+begin
+  if p_event_type is null
+    or p_wall_message_id is null
+    or p_event_type not in (
+      'wall_message_submitted',
+      'wall_message_approved',
+      'wall_message_replied'
+    )
+  then
+    return;
+  end if;
+
+  event_time := coalesce(p_event_time, timezone('utc'::text, now()));
+
+  select *
+  into wall_message_record
+  from public.guest_wall_messages
+  where id = p_wall_message_id;
+
+  if not found then
+    return;
+  end if;
+
+  select *
+  into guest_record
+  from public.guests
+  where id = wall_message_record.guest_id
+    and active is true;
+
+  if not found then
+    return;
+  end if;
+
+  select nullif(rsvp.email, '')
+  into guest_email
+  from public.rsvps as rsvp
+  where rsvp.guest_id = wall_message_record.guest_id
+  order by rsvp.updated_at desc nulls last, rsvp.created_at desc nulls last
+  limit 1;
+
+  insert into public.notification_events (
+    event_type,
+    aggregate_type,
+    aggregate_id,
+    aggregate_version,
+    guest_id,
+    dedupe_key,
+    payload
+  )
+  values (
+    p_event_type,
+    'wall_message',
+    wall_message_record.id,
+    event_time,
+    wall_message_record.guest_id,
+    concat(p_event_type, ':', wall_message_record.id::text, ':', extract(epoch from event_time)::text),
+    jsonb_build_object(
+      'wall_message_id', wall_message_record.id,
+      'guest_name', guest_record.name,
+      'invite_type', coalesce(guest_record.invite_type, 'individual'),
+      'email', guest_email,
+      'message', wall_message_record.message,
+      'status', wall_message_record.status,
+      'couple_reply', wall_message_record.couple_reply,
+      'submitted_at', wall_message_record.submitted_at,
+      'approved_at', wall_message_record.approved_at,
+      'couple_replied_at', wall_message_record.couple_replied_at
+    )
+  )
+  on conflict (dedupe_key) do nothing;
+end;
+$$;
+
+comment on function public.enqueue_wall_message_notification_event(text, uuid, timestamp with time zone) is
+  'Internal helper that writes wall-message transactional email events.';
+
+revoke all on function public.enqueue_wall_message_notification_event(text, uuid, timestamp with time zone)
+  from public, anon, authenticated;
+
+create or replace function public.save_current_guest_wall_message(
+  submitted_message text
+)
+returns table (
+  id uuid,
+  message text,
+  status text,
+  couple_reply text,
+  created_at timestamp with time zone,
+  updated_at timestamp with time zone,
+  submitted_at timestamp with time zone,
+  approved_at timestamp with time zone,
+  hidden_at timestamp with time zone,
+  couple_replied_at timestamp with time zone
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  current_guest uuid;
+  event_time timestamp with time zone;
+  safe_message text;
+  saved_message public.guest_wall_messages%rowtype;
+begin
+  current_guest := public.current_guest_id();
+  event_time := timezone('utc'::text, now());
+  safe_message := left(btrim(coalesce(submitted_message, '')), 800);
+
+  if current_guest is null or safe_message = '' then
+    return;
+  end if;
+
+  if not exists (
+    select 1
+    from public.guests as guest
+    where guest.id = current_guest
+      and guest.active is true
+  ) then
+    return;
+  end if;
+
+  insert into public.guest_wall_messages (
+    guest_id,
+    message,
+    status,
+    submitted_at,
+    updated_at,
+    approved_at,
+    hidden_at
+  )
+  values (
+    current_guest,
+    safe_message,
+    'pending',
+    event_time,
+    event_time,
+    null,
+    null
+  )
+  on conflict (guest_id)
+  do update set
+    message = excluded.message,
+    status = 'pending',
+    submitted_at = excluded.submitted_at,
+    updated_at = excluded.updated_at,
+    approved_at = null,
+    hidden_at = null
+  returning * into saved_message;
+
+  perform public.enqueue_wall_message_notification_event(
+    'wall_message_submitted',
+    saved_message.id,
+    event_time
+  );
+
+  return query
+  select
+    saved_message.id,
+    saved_message.message,
+    saved_message.status,
+    saved_message.couple_reply,
+    saved_message.created_at,
+    saved_message.updated_at,
+    saved_message.submitted_at,
+    saved_message.approved_at,
+    saved_message.hidden_at,
+    saved_message.couple_replied_at;
+end;
+$$;
+
+create or replace function public.admin_approve_wall_message(
+  target_message_id uuid
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  event_time timestamp with time zone;
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  event_time := timezone('utc'::text, now());
+
+  update public.guest_wall_messages
+  set
+    status = 'approved',
+    approved_at = event_time,
+    hidden_at = null,
+    updated_at = event_time
+  where id = target_message_id;
+
+  if found then
+    perform public.enqueue_wall_message_notification_event(
+      'wall_message_approved',
+      target_message_id,
+      event_time
+    );
+  end if;
+
+  return found;
+end;
+$$;
+
+create or replace function public.admin_reply_wall_message(
+  target_message_id uuid,
+  submitted_reply text
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  event_time timestamp with time zone;
+  safe_reply text;
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  event_time := timezone('utc'::text, now());
+  safe_reply := left(btrim(coalesce(submitted_reply, '')), 800);
+
+  update public.guest_wall_messages
+  set
+    couple_reply = nullif(safe_reply, ''),
+    couple_replied_at = case
+      when safe_reply = '' then null
+      else event_time
+    end,
+    updated_at = event_time
+  where id = target_message_id;
+
+  if found and safe_reply <> '' then
+    perform public.enqueue_wall_message_notification_event(
+      'wall_message_replied',
+      target_message_id,
+      event_time
+    );
+  end if;
+
+  return found;
+end;
+$$;
+
+commit;
+
+-- Final override: sortable notification audit RPC
+-- Source: docs\migrations\notification_delivery_sorting.sql
+
+begin;
+
+drop function if exists public.admin_list_notification_deliveries(
+  text,
+  text,
+  text,
+  timestamp with time zone,
+  timestamp with time zone,
+  integer,
+  integer,
+  text,
+  text
+);
+
+drop function if exists public.admin_list_notification_deliveries(
+  text,
+  text,
+  text,
+  timestamp with time zone,
+  timestamp with time zone,
+  integer,
+  integer,
+  text,
+  text,
+  text,
+  text
+);
+
+create or replace function public.admin_list_notification_deliveries(
+  p_status text default null,
+  p_event_type text default null,
+  p_recipient_type text default null,
+  p_created_from timestamp with time zone default null,
+  p_created_to timestamp with time zone default null,
+  p_limit integer default 50,
+  p_offset integer default 0,
+  p_origin text default null,
+  p_search text default null,
+  p_sort_key text default 'created_at',
+  p_sort_direction text default 'desc'
+)
+returns table (
+  total_count bigint,
+  notification_event_id uuid,
+  delivery_id uuid,
+  created_at timestamp with time zone,
+  event_type text,
+  origin text,
+  aggregate_type text,
+  aggregate_id uuid,
+  aggregate_version timestamp with time zone,
+  guest_id uuid,
+  guest_name text,
+  event_status text,
+  delivery_status text,
+  recipient_type text,
+  recipient_email text,
+  channel text,
+  processed_at timestamp with time zone,
+  sent_at timestamp with time zone,
+  skipped_at timestamp with time zone,
+  failed_at timestamp with time zone,
+  last_error text,
+  payload jsonb
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  p_status := lower(nullif(btrim(p_status), ''));
+  p_event_type := nullif(btrim(p_event_type), '');
+  p_recipient_type := lower(nullif(btrim(p_recipient_type), ''));
+  p_origin := lower(nullif(btrim(p_origin), ''));
+  p_search := lower(nullif(btrim(p_search), ''));
+  p_sort_key := lower(coalesce(nullif(btrim(p_sort_key), ''), 'created_at'));
+  p_sort_direction := lower(coalesce(nullif(btrim(p_sort_direction), ''), 'desc'));
+  p_limit := least(greatest(coalesce(p_limit, 50), 1), 100);
+  p_offset := greatest(coalesce(p_offset, 0), 0);
+
+  if p_sort_key not in (
+    'created_at',
+    'event_type',
+    'guest_name',
+    'recipient_type',
+    'recipient_email',
+    'status'
+  ) then
+    p_sort_key := 'created_at';
+  end if;
+
+  if p_sort_direction not in ('asc', 'desc') then
+    p_sort_direction := 'desc';
+  end if;
+
+  return query
+  select
+    count(*) over () as total_count,
+    event.id as notification_event_id,
+    delivery.id as delivery_id,
+    event.created_at,
+    event.event_type,
+    event.origin,
+    event.aggregate_type,
+    event.aggregate_id,
+    event.aggregate_version,
+    event.guest_id,
+    guest.name as guest_name,
+    event.status as event_status,
+    coalesce(delivery.status, event.status) as delivery_status,
+    delivery.recipient_type,
+    delivery.recipient_email,
+    delivery.channel,
+    event.processed_at,
+    delivery.sent_at,
+    delivery.skipped_at,
+    coalesce(delivery.failed_at, event.failed_at) as failed_at,
+    coalesce(delivery.last_error, event.last_error) as last_error,
+    event.payload
+  from public.notification_events as event
+  left join public.notification_deliveries as delivery
+    on delivery.event_id = event.id
+  left join public.guests as guest
+    on guest.id = event.guest_id
+  where (
+      p_status is null
+      or lower(event.status) = p_status
+      or lower(delivery.status) = p_status
+    )
+    and (p_event_type is null or event.event_type = p_event_type)
+    and (p_recipient_type is null or lower(delivery.recipient_type) = p_recipient_type)
+    and (p_origin is null or event.origin = p_origin)
+    and (p_created_from is null or event.created_at >= p_created_from)
+    and (p_created_to is null or event.created_at < p_created_to)
+    and (
+      p_search is null
+      or lower(coalesce(guest.name, '')) like '%' || p_search || '%'
+      or lower(coalesce(delivery.recipient_email, '')) like '%' || p_search || '%'
+      or lower(coalesce(delivery.last_error, event.last_error, '')) like '%' || p_search || '%'
+      or lower(event.event_type) like '%' || p_search || '%'
+      or lower(event.origin) like '%' || p_search || '%'
+      or lower(event.aggregate_type) like '%' || p_search || '%'
+      or lower(event.status) like '%' || p_search || '%'
+      or lower(coalesce(delivery.status, '')) like '%' || p_search || '%'
+      or lower(event.id::text) like '%' || p_search || '%'
+      or lower(coalesce(delivery.id::text, '')) like '%' || p_search || '%'
+      or lower(event.aggregate_id::text) like '%' || p_search || '%'
+      or lower(event.payload::text) like '%' || p_search || '%'
+    )
+  order by
+    case when p_sort_key = 'created_at' and p_sort_direction = 'asc' then event.created_at end asc nulls last,
+    case when p_sort_key = 'created_at' and p_sort_direction = 'desc' then event.created_at end desc nulls last,
+    case when p_sort_key = 'event_type' and p_sort_direction = 'asc' then event.event_type end asc nulls last,
+    case when p_sort_key = 'event_type' and p_sort_direction = 'desc' then event.event_type end desc nulls last,
+    case when p_sort_key = 'guest_name' and p_sort_direction = 'asc' then guest.name end asc nulls last,
+    case when p_sort_key = 'guest_name' and p_sort_direction = 'desc' then guest.name end desc nulls last,
+    case when p_sort_key = 'recipient_type' and p_sort_direction = 'asc' then delivery.recipient_type end asc nulls last,
+    case when p_sort_key = 'recipient_type' and p_sort_direction = 'desc' then delivery.recipient_type end desc nulls last,
+    case when p_sort_key = 'recipient_email' and p_sort_direction = 'asc' then delivery.recipient_email end asc nulls last,
+    case when p_sort_key = 'recipient_email' and p_sort_direction = 'desc' then delivery.recipient_email end desc nulls last,
+    case when p_sort_key = 'status' and p_sort_direction = 'asc' then coalesce(delivery.status, event.status) end asc nulls last,
+    case when p_sort_key = 'status' and p_sort_direction = 'desc' then coalesce(delivery.status, event.status) end desc nulls last,
+    event.created_at desc,
+    delivery.created_at desc nulls last
+  limit p_limit
+  offset p_offset;
+end;
+$$;
+
+comment on function public.admin_list_notification_deliveries(
+  text,
+  text,
+  text,
+  timestamp with time zone,
+  timestamp with time zone,
+  integer,
+  integer,
+  text,
+  text,
+  text,
+  text
+) is
+  'Returns notification events and delivery attempts for authenticated administrators, with filters and sorting.';
+
+revoke all on function public.admin_list_notification_deliveries(
+  text,
+  text,
+  text,
+  timestamp with time zone,
+  timestamp with time zone,
+  integer,
+  integer,
+  text,
+  text,
+  text,
+  text
+) from public, anon;
+grant execute on function public.admin_list_notification_deliveries(
+  text,
+  text,
+  text,
+  timestamp with time zone,
+  timestamp with time zone,
+  integer,
+  integer,
+  text,
+  text,
+  text,
+  text
+) to authenticated;
+
+commit;
+-- ============================================================
+-- Source: docs\migrations\notification_delivery_summary.sql
+-- ============================================================
+
+-- ============================================================
+-- Notification delivery summary
+-- ============================================================
+
+begin;
+
+create or replace function public.admin_get_notification_delivery_summary(
+  p_status text default null,
+  p_event_type text default null,
+  p_recipient_type text default null,
+  p_created_from timestamp with time zone default null,
+  p_created_to timestamp with time zone default null,
+  p_origin text default null,
+  p_search text default null
+)
+returns table (
+  total_count bigint,
+  sent_count bigint,
+  failed_count bigint,
+  skipped_count bigint,
+  pending_count bigint
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  p_status := lower(nullif(btrim(p_status), ''));
+  p_event_type := nullif(btrim(p_event_type), '');
+  p_recipient_type := lower(nullif(btrim(p_recipient_type), ''));
+  p_origin := lower(nullif(btrim(p_origin), ''));
+  p_search := lower(nullif(btrim(p_search), ''));
+
+  return query
+  select
+    count(*) as total_count,
+    count(*) filter (
+      where coalesce(delivery.status, event.status) = 'sent'
+    ) as sent_count,
+    count(*) filter (
+      where coalesce(delivery.status, event.status) = 'failed'
+    ) as failed_count,
+    count(*) filter (
+      where coalesce(delivery.status, event.status) = 'skipped'
+    ) as skipped_count,
+    count(*) filter (
+      where coalesce(delivery.status, event.status) in ('pending', 'processing')
+    ) as pending_count
+  from public.notification_events as event
+  left join public.notification_deliveries as delivery
+    on delivery.event_id = event.id
+  left join public.guests as guest
+    on guest.id = event.guest_id
+  where (
+      p_status is null
+      or lower(event.status) = p_status
+      or lower(delivery.status) = p_status
+    )
+    and (p_event_type is null or event.event_type = p_event_type)
+    and (p_recipient_type is null or lower(delivery.recipient_type) = p_recipient_type)
+    and (p_origin is null or event.origin = p_origin)
+    and (p_created_from is null or event.created_at >= p_created_from)
+    and (p_created_to is null or event.created_at < p_created_to)
+    and (
+      p_search is null
+      or lower(coalesce(guest.name, '')) like '%' || p_search || '%'
+      or lower(coalesce(delivery.recipient_email, '')) like '%' || p_search || '%'
+      or lower(coalesce(delivery.last_error, event.last_error, '')) like '%' || p_search || '%'
+      or lower(event.event_type) like '%' || p_search || '%'
+      or lower(event.origin) like '%' || p_search || '%'
+      or lower(event.aggregate_type) like '%' || p_search || '%'
+      or lower(event.status) like '%' || p_search || '%'
+      or lower(coalesce(delivery.status, '')) like '%' || p_search || '%'
+      or lower(event.id::text) like '%' || p_search || '%'
+      or lower(coalesce(delivery.id::text, '')) like '%' || p_search || '%'
+      or lower(event.aggregate_id::text) like '%' || p_search || '%'
+      or lower(event.payload::text) like '%' || p_search || '%'
+    );
+end;
+$$;
+
+comment on function public.admin_get_notification_delivery_summary(
+  text,
+  text,
+  text,
+  timestamp with time zone,
+  timestamp with time zone,
+  text,
+  text
+) is
+  'Returns total notification delivery counters for authenticated administrators using the current audit filters.';
+
+revoke all on function public.admin_get_notification_delivery_summary(
+  text,
+  text,
+  text,
+  timestamp with time zone,
+  timestamp with time zone,
+  text,
+  text
+) from public, anon;
+
+grant execute on function public.admin_get_notification_delivery_summary(
+  text,
+  text,
+  text,
+  timestamp with time zone,
+  timestamp with time zone,
+  text,
+  text
+) to authenticated;
+
+commit;
+
+-- ============================================================
+-- Source: docs\migrations\admin_nav_alerts.sql
+-- ============================================================
+
+-- ============================================================
+-- Admin navigation alerts
+-- ============================================================
+
+begin;
+
+create or replace function public.admin_get_nav_alerts()
+returns table (
+  has_pending_wall_messages boolean,
+  has_reported_gifts boolean
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  return query
+  select
+    exists (
+      select 1
+      from public.guest_wall_messages as wall_message
+      where wall_message.status = 'pending'
+      limit 1
+    ) as has_pending_wall_messages,
+    (
+      exists (
+        select 1
+        from public.gifts as gift
+        where gift.payment_status = 'Informado'
+        limit 1
+      )
+      or exists (
+        select 1
+        from public.gift_contributions as contribution
+        where contribution.payment_status = 'Informado'
+        limit 1
+      )
+    ) as has_reported_gifts;
+end;
+$$;
+
+comment on function public.admin_get_nav_alerts() is
+  'Returns compact boolean alerts for the authenticated administrator navigation menu.';
+
+revoke all on function public.admin_get_nav_alerts() from public, anon;
+grant execute on function public.admin_get_nav_alerts() to authenticated;
 
 commit;

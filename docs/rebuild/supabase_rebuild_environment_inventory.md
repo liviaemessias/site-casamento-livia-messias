@@ -83,6 +83,17 @@ Ao criar outro projeto Supabase, atualizar em `js/supabase.js`:
 
 A `service_role` nunca deve ser colocada no frontend.
 
+Páginas administrativas esperadas:
+
+- `admin-dashboard.html`;
+- `admin-guests.html`;
+- `admin-rsvps.html`;
+- `admin-gifts.html`;
+- `admin-notifications.html`;
+- `admin-indicators.html`;
+- `admin-reports.html`;
+- `admin-settings.html`.
+
 Metadados públicos padrão do site, mantidos no frontend e no `<head>` de
 `index.html`:
 
@@ -100,7 +111,8 @@ Dados que podem ser exportados e restaurados:
 - `gift_contributions`;
 - `settings`;
 - `notification_events`;
-- `notification_deliveries`.
+- `notification_deliveries`;
+- `notification_preferences`.
 
 Dados que normalmente não devem ser migrados:
 

@@ -154,6 +154,7 @@ As páginas abaixo devem carregar `js/admin-bootstrap.js`:
 - `admin-guests.html`;
 - `admin-rsvps.html`;
 - `admin-gifts.html`;
+- `admin-notifications.html`;
 - `admin-settings.html`.
 
 Elas não devem mais carregar diretamente seus scripts principais nem usar

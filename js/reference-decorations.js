@@ -153,9 +153,7 @@
     }
 
     if (document.querySelector(".timeline-section")) {
-      return [".timeline-section", ".final-section"]
-        .map((selector) => document.querySelector(selector))
-        .filter(Boolean);
+      return [];
     }
 
     return [];

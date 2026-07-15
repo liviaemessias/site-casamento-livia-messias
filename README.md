@@ -2,7 +2,7 @@
 
 Site de casamento personalizado para centralizar informações do evento, RSVP, lista de presentes e administração dos noivos.
 
-Versão atual: **3.4**.
+Versão atual: **3.7**.
 
 ## Desenvolvimento
 
@@ -14,7 +14,10 @@ GitHub: [messiasfl10](https://github.com/messiasfl10/)
 
 - Acesso por código de convite.
 - Controle administrativo de convites enviados ou ainda pendentes de envio.
-- Notificações transacionais por e-mail para RSVP público criado ou atualizado.
+- Notificações transacionais por e-mail para RSVP público, reservas,
+  pagamentos, confirmações/liberações de presentes e cotas e Mural de
+  Recados.
+- Reenvio manual e auditável de confirmações e avisos já existentes.
 - RSVP individual e para convites de casal.
 - Cadastro de acompanhantes, crianças e restrições alimentares.
 - Idade das crianças padronizada até 12 anos, conforme a data do casamento.
@@ -23,16 +26,20 @@ GitHub: [messiasfl10](https://github.com/messiasfl10/)
 - Seção da lista de presentes na página inicial.
 - Presentes por cotas para contribuições financeiras via PIX.
 - Área de acompanhamento dos presentes do convite que ainda possuem ações pendentes.
+- Dica na lista de presentes para informar e-mail no RSVP e receber confirmações, novidades e avisos.
 - Formas de presentear por PIX, cartão via checkout externo, compra online e loja física.
-- QR Code e PIX Copia e Cola gerados no frontend.
-- Envio de comprovante via WhatsApp.
+- QR-Code e PIX Copia e Cola gerados no frontend.
 - Confirmação antes de reservar presentes ou informar pagamentos e compras.
 - Painel administrativo repaginado com navegação lateral responsiva e páginas especializadas.
 - Dashboard operacional com indicadores clicáveis, resumos visuais de RSVP e presentes e atalhos para as principais pendências.
 - Página de Indicadores com métricas e gráficos detalhados de presença, buffet, presentes e valores financeiros.
 - Filtros, ordenação, contadores de resultado e limpeza de filtros no admin.
+- Alertas compactos no menu administrativo para recados pendentes e presentes
+  ou cotas com pagamento informado.
 - Exportação CSV de convidados, RSVPs e presentes respeitando filtros e ordenação atuais, incluindo convite enviado e totais planejados de convidados e acompanhantes.
 - Página de Relatórios com exportações CSV/XLSX, seleção de colunas, convite enviado e opções resumidas ou detalhadas para a lista de confirmados.
+- Mural de Recados com página pública, prévia na página inicial, moderação
+  administrativa, respostas dos noivos e notificações por e-mail.
 - Referências visuais personalizadas nos logins e nas páginas públicas, adaptadas para desktop e mobile.
 - Textos de saudação, reserva e pagamento adaptados para convites individuais e de casal.
 - Login administrativo com e-mail e senha pelo Supabase Auth.
@@ -71,6 +78,8 @@ GitHub: [messiasfl10](https://github.com/messiasfl10/)
 - `login.html`: entrada por código de convite.
 - `rsvp.html`: confirmação de presença.
 - `gifts.html`: lista de presentes e fluxo de reserva/pagamento.
+- `photos.html`: galeria do Pré-Wedding.
+- `messages.html`: Mural de Recados.
 
 ### Administrativas
 
@@ -83,6 +92,7 @@ O antigo painel único foi dividido em páginas dedicadas:
 - `admin-gifts.html`: gestão de presentes.
 - `admin-guests.html`: gestão de convidados e RSVP manual.
 - `admin-rsvps.html`: consulta e remoção de confirmações.
+- `admin-messages.html`: moderação e resposta dos recados.
 - `admin-settings.html`: configuração dos dados do casamento, PIX, WhatsApp e idade mínima pagante do buffet.
 
 Todas as páginas administrativas passam por `js/admin-bootstrap.js`, que
@@ -104,11 +114,14 @@ datas e atualização de textos simples.
 - `js/captcha-config.js`: ativação e Site Key pública do Cloudflare Turnstile.
 - `js/turnstile-captcha.js`: carregamento, token, expiração e reset do CAPTCHA compartilhado pelos logins.
 - `js/reference-decorations.js`: referências visuais aleatórias dos logins, laterais desktop e divisores mobile.
+- `js/photo-gallery-data.js`: lista compartilhada das fotos exibidas na seção e na página de Pré-Wedding.
+- `js/home-photos.js`: renderização da prévia do Pré-Wedding na página inicial.
+- `js/photos.js`: renderização da galeria completa e do lightbox da página de Pré-Wedding.
 - `js/child-age-options.js`: opções padronizadas para informar a idade das crianças na data do casamento.
 - `js/event-settings.js`: carrega e aplica nomes, datas e locais do casamento nas páginas públicas.
 - `js/security-utils.js`: valida textos e URLs e sanitiza conteúdo HTML dinâmico antes da renderização.
 - `js/admin-common.js`: comportamento comum das páginas administrativas.
-- `js/pix.js`: geração pura do payload PIX, CRC16 e URL do QR Code.
+- `js/pix.js`: geração pura do payload PIX, CRC16 e URL do QR-Code.
 - `js/gifts.js`: fluxo da lista de presentes, reserva, cotas, escolha da forma de presentear e confirmação de pagamento/compra.
 - `js/rsvp.js`: fluxo de confirmação de presença.
 - `js/admin-dashboard.js`: métricas detalhadas da página de Indicadores.
@@ -121,6 +134,8 @@ datas e atualização de textos simples.
 - `js/admin-gifts.js`: CRUD, filtros, ordenação, cotas e administração de presentes.
 - `js/admin-guests.js`: CRUD, filtros, ordenação de convidados e RSVP manual.
 - `js/admin-rsvps.js`: listagem, filtros, ordenação e remoção de RSVPs.
+- `js/admin-messages.js`: moderação, aprovação, ocultação e respostas do Mural de Recados.
+- `js/messages.js`: página pública do Mural de Recados, envio do convidado e listagem aprovada.
 - `js/admin-settings.js`: edição dos dados do casamento, PIX, WhatsApp e regra do buffet.
 
 ## Organização Dos CSSs
@@ -131,6 +146,8 @@ datas e atualização de textos simples.
 - `css/rsvp.css`: página de RSVP.
 - `css/gifts.css`: lista de presentes e modais de pagamento.
 - `css/story.css`: página Nossa História.
+- `css/photos.css`: página de Pré-Wedding e lightbox da galeria.
+- `css/messages.css`: página pública do Mural de Recados.
 - `css/admin.css`: todas as páginas administrativas.
 
 Os CSSs foram padronizados para usar tokens globais sempre que possível. Os HTMLs também evitam estilos inline; classes utilitárias como `is-hidden` são usadas para estados iniciais simples.
@@ -141,7 +158,25 @@ As imagens do site ficam organizadas por contexto em `assets/images/`:
 
 - `home/`: capa da página inicial e fotos da cerimônia e da recepção.
 - `our-story/`: capa e fotos dos carrosséis da página Nossa História.
+- `photos/`: fotos exibidas na seção e na página de Pré-Wedding.
 - `login-references/`: referências visuais usadas nos logins e nas decorações das páginas públicas.
+
+## Assets Do Pré-Wedding
+
+A página `photos.html` e a seção `Nosso Pré-Wedding` da página inicial usam a
+lista definida em `js/photo-gallery-data.js`.
+
+As imagens ficam em `assets/images/photos/` e devem usar nomes simples, sem
+espaços, como:
+
+- `pre-wedding-01.jpg`
+- `pre-wedding-02.jpg`
+- `pre-wedding-03.jpg`
+
+As fotos oficiais do Pré-Wedding ainda serão adicionadas ou substituídas após o
+ensaio. Ao incluir novas fotos, adicione uma entrada correspondente em
+`js/photo-gallery-data.js`; a página completa exibirá todas, enquanto a home usa
+as primeiras imagens como prévia.
 
 ## Assets Da Página Nossa História
 
@@ -202,7 +237,9 @@ Quando o RSVP público é salvo ou atualizado, a RPC cria um evento
 `send-notifications` em segundo plano, sem bloquear a confirmação do convidado.
 O admin recebe e-mail sempre; o convidado recebe somente quando informou um
 e-mail válido no RSVP. RSVPs manuais feitos no painel administrativo não
-disparam e-mail automaticamente.
+disparam e-mail automaticamente. As mensagens do convidado variam conforme
+RSVP recebido ou atualizado, presença confirmada ou ausência, com concordância
+para convite individual e de casal.
 
 ## Fluxo De Presentes
 
@@ -220,6 +257,20 @@ Presentes por cotas seguem um fluxo separado:
 3. O site registra a contribuição em `gift_contributions`.
 4. O PIX é gerado com o valor total das cotas escolhidas.
 5. O convidado informa o pagamento e os noivos confirmam depois.
+
+Reservas, pagamentos informados, confirmações administrativas e liberações de
+presentes/cotas criam eventos em `notification_events`. O admin recebe e-mail
+sempre; o convidado recebe quando possui e-mail válido no RSVP. A seleção de
+forma de pagamento, loja ou método de compra não dispara e-mail isoladamente.
+No painel administrativo, confirmações e liberações atualizam a tabela antes de
+o envio por SMTP terminar.
+
+O admin também pode enviar lembretes manuais para reservas pendentes. Em
+presentes individuais, a ação aparece quando o presente está reservado e com
+pagamento pendente. Em presentes por cotas, o lembrete é enviado por
+contribuição pendente, mesmo que o presente geral esteja como `Parcial`.
+Os detalhes de presentes e contribuições também permitem reenviar confirmações
+e avisos existentes, sempre como eventos manuais e auditáveis.
 
 Regras de valor:
 
@@ -260,6 +311,9 @@ Filtros disponíveis:
 - Presentes por cotas: filtros específicos para cotas disponíveis, parcialmente reservadas, totalmente reservadas, parcialmente confirmadas e totalmente confirmadas.
 - Convidados: busca por nome ou código; status; RSVP; envio do convite; tipo de convite.
 - RSVP: busca por convidado, acompanhante ou mensagem; presença; acompanhantes; categorias do buffet.
+- Recados: busca por convidado, recado ou resposta; status; tipo de convite;
+  resposta; ordenação por data, pendência ou convidado.
+- Notificações: busca server-side por convidado, e-mail, presente/cota, identificadores ou motivo; status; tipo; destinatário; origem automática/manual; período; métricas calculadas sobre todo o conjunto filtrado; ordenação por data, tipo, convidado, destinatário, e-mail e status.
 
 Cada tela filtrável exibe contador de resultados e botão para limpar filtros.
 
@@ -268,6 +322,15 @@ As colunas de dados das tabelas administrativas podem ser ordenadas pelo cabeça
 A página `admin-settings.html` permite editar os dados do casamento, cerimônia,
 recepção, chave PIX, nome/cidade do recebedor, WhatsApp e idade mínima em que
 uma criança passa a ser pagante para o buffet.
+
+Na mesma página, a seção de Notificações controla quais tipos de e-mail podem
+gerar entregas automáticas ou manuais e se cada evento deve enviar para admin,
+convidado ou ambos. A página `admin-notifications.html` concentra o histórico
+auditável, com paginação server-side e filtros por status, tipo, destinatário,
+origem automática/manual, período e busca por convidado, e-mail, presente,
+identificadores ou motivo. O modal de detalhes permite reenviar uma entrega já
+concluída, falha ou ignorada para o mesmo destinatário, registrando uma nova
+tentativa manual.
 
 Nomes dos noivos, data do casamento, prazo do RSVP, locais e horários são
 armazenados no registro único de `settings`. As páginas públicas carregam os
@@ -284,10 +347,16 @@ URLs e substituir conteúdo dinâmico com fragmentos sanitizados ou APIs do DOM.
 A tabela `settings` não é lida diretamente pelo frontend. Dados de pagamento e
 do evento são expostos por RPCs distintas, com colunas públicas explícitas.
 
-As tabelas `notification_events` e `notification_deliveries` têm RLS habilitado
-e não são acessíveis diretamente por `anon` ou `authenticated`. O envio de
-e-mail é feito somente pela Edge Function `send-notifications`, com secrets SMTP
-mantidos no Supabase e validação da sessão do convidado.
+As tabelas `notification_events`, `notification_deliveries` e
+`notification_preferences` têm RLS habilitado e não são acessíveis diretamente
+por `anon` ou `authenticated`. O envio de e-mail é feito somente pela Edge
+Function `send-notifications`, com secrets SMTP mantidos no Supabase, validação
+da sessão do convidado ou do admin ativo e preferências por tipo de evento. A
+origem do evento fica registrada como `automatic` ou `manual`.
+
+O Mural de Recados usa a mesma outbox: recado enviado/editado avisa o admin;
+recado aprovado ou respondido avisa o convidado quando há e-mail válido no
+RSVP.
 
 ## PIX e QR-Code
 
@@ -299,7 +368,7 @@ Responsabilidades:
 - Montar campos EMV.
 - Calcular CRC16.
 - Gerar payload PIX Copia e Cola.
-- Gerar URL do QR Code via `api.qrserver.com`.
+- Gerar URL do QR-Code via `api.qrserver.com`.
 
 O `gifts.js` apenas chama:
 
@@ -312,7 +381,10 @@ PixPayment.getQrCodeUrl(payload);
 
 - `docs/operations/captcha_turnstile_setup.md`: ativação, testes e rollback do Cloudflare Turnstile nos logins.
 - `docs/operations/smtp_email_notifications_setup.md`: configuração SMTP, Gmail, Outlook/Hotmail, deploy e testes das notificações por e-mail.
-- `docs/releases/release_v3.4.md`: notas da versão 3.4, com notificações por e-mail para RSVP público.
+- `docs/releases/release_v3.7.md`: notas da versão 3.7, com página/seção de Pré-Wedding, galeria responsiva, Mural de Recados e e-mails do mural.
+- `docs/releases/release_v3.6.md`: notas da versão 3.6, com reenvios manuais auditáveis.
+- `docs/releases/release_v3.5.md`: notas da versão 3.5, com preferências de notificação, auditoria, filtros, busca e lembretes manuais de presentes/cotas.
+- `docs/releases/release_v3.4.md`: notas da versão 3.4, com notificações por e-mail para RSVP público e presentes/cotas.
 - `docs/releases/release_v3.3.md`: notas da versão 3.3, com configurações do evento, segurança do frontend, metadados e melhorias da home.
 - `docs/releases/release_v3.2.md`: histórico da versão 3.2, com reforços nas operações protegidas, responsividade e formas de presentear.
 - `docs/releases/release_v3.1.md`: notas da versão 3.1, com métricas do buffet, melhorias nos presentes e referências visuais.
@@ -320,14 +392,38 @@ PixPayment.getQrCodeUrl(payload);
 - `docs/modeling/business_flow_and_limitations.md`: fluxos de negócio, limitações e roadmap.
 - `docs/modeling/database_modeling.md`: tabelas, campos e regras de banco.
 - `docs/modeling/json_payload_modeling.md`: estruturas JSON usadas em RSVP e presentes.
+- `docs/rebuild/README.md`: índice da reconstrução limpa em projeto Supabase novo.
 - `docs/rebuild/supabase_rebuild_runbook.md`: guia principal para reconstruir banco, Auth, Edge Function, grants e RLS em um projeto Supabase novo.
 - `docs/rebuild/supabase_rebuild_full_setup.sql`: setup consolidado para recriar a solução atual em um projeto Supabase vazio.
 - `docs/rebuild/supabase_rebuild_verify_final.sql`: verificação final da reconstrução, das permissões, da RLS e das configurações públicas.
 - `docs/rebuild/supabase_rebuild_environment_inventory.md`: inventário das configurações não secretas que devem ser reproduzidas.
+- `docs/migrations/README.md`: índice dos scripts incrementais, verificações, rollbacks e arquivos legados.
 - `docs/migrations/guest_invite_sent_migration.sql`: migração incremental para adicionar o controle de convite enviado aos convidados.
 - `docs/migrations/guest_invite_sent_verify.sql`: verificação incremental do campo de convite enviado.
 - `docs/migrations/email_notifications_schema.sql`: migração incremental das tabelas de outbox de notificações.
 - `docs/migrations/email_notifications_schema_verify.sql`: verificação incremental das tabelas e grants de notificações.
+- `docs/migrations/security_admin_notification_operations.sql`: RPC administrativa para auditar notificações sem expor as tabelas diretamente.
+- `docs/migrations/security_admin_notification_operations_verify.sql`: verificação da RPC administrativa de notificações.
+- `docs/migrations/gift_email_notifications.sql`: migração incremental para criar eventos de e-mail em reservas, pagamentos, confirmações e liberações de presentes/cotas.
+- `docs/migrations/gift_email_notifications_verify.sql`: verificação incremental dos eventos de e-mail de presentes/cotas.
+- `docs/migrations/notification_preferences.sql`: migração incremental das preferências por tipo de notificação.
+- `docs/migrations/notification_preferences_verify.sql`: verificação incremental das preferências de notificação.
+- `docs/migrations/security_admin_notification_preferences.sql`: RPCs administrativas para listar e atualizar preferências de notificação.
+- `docs/migrations/security_admin_notification_preferences_verify.sql`: verificação das RPCs administrativas de preferências.
+- `docs/migrations/manual_notification_reminders.sql`: migração incremental para origem automática/manual, filtro por origem e lembretes manuais de reservas pendentes.
+- `docs/migrations/manual_notification_reminders_verify.sql`: verificação incremental dos lembretes manuais.
+- `docs/migrations/manual_notification_resends.sql`: migração incremental para reenvio manual de notificações já existentes e criação manual de eventos por contexto.
+- `docs/migrations/manual_notification_resends_verify.sql`: verificação incremental dos reenvios manuais.
+- `docs/migrations/notification_delivery_sorting.sql`: migração incremental para ordenar o histórico de notificações por colunas úteis.
+- `docs/migrations/notification_delivery_sorting_verify.sql`: verificação incremental da RPC de notificações com ordenação.
+- `docs/migrations/notification_delivery_summary.sql`: migração incremental para calcular métricas de notificações sobre todo o conjunto filtrado.
+- `docs/migrations/notification_delivery_summary_verify.sql`: verificação incremental da RPC de resumo das métricas de notificações.
+- `docs/migrations/admin_nav_alerts.sql`: migração incremental dos alertas compactos do menu administrativo para Recados e Presentes.
+- `docs/migrations/admin_nav_alerts_verify.sql`: verificação incremental da RPC de alertas do menu administrativo.
+- `docs/migrations/wall_messages.sql`: migração incremental do Mural de Recados, com envio do convidado, listagem pública aprovada e moderação administrativa.
+- `docs/migrations/wall_messages_verify.sql`: verificação incremental da tabela, RLS, grants e RPCs do Mural de Recados.
+- `docs/migrations/wall_message_email_notifications.sql`: migração incremental dos eventos de e-mail do Mural de Recados.
+- `docs/migrations/wall_message_email_notifications_verify.sql`: verificação incremental dos eventos de e-mail do Mural de Recados.
 - `docs/operations/supabase_data_cleanup_runbook.md`: limpeza segura dos dados de teste, preservando administrador e configurações.
 
 Os demais SQLs em `docs/migrations/` são mantidos como histórico de migrações,
@@ -344,8 +440,13 @@ Concluído:
 - Idade das crianças padronizada até 12 anos e regra configurável de idade pagante do buffet.
 - Lista de presentes.
 - Seção da lista de presentes na página inicial.
+- Página e seção de Pré-Wedding com galeria responsiva e lightbox.
+- Mural de Recados com página pública, envio/edição pelo convidado logado,
+  prévia na página inicial, aprovação, ocultação, resposta dos noivos, remoção
+  de resposta e exclusão no painel administrativo.
 - Acompanhamento de presentes do convite com ações pendentes.
-- PIX com QR Code e copia e cola.
+- Dica pública para completar o e-mail do RSVP antes de reservar presentes.
+- PIX com QR-Code e copia e cola.
 - Presentes por cotas com contribuições via PIX.
 - Cartão via checkout externo e compras externas.
 - Painel administrativo repaginado com navegação lateral responsiva e páginas especializadas.
@@ -356,6 +457,8 @@ Concluído:
 - Atalhos nas métricas do Dashboard com filtros administrativos aplicados.
 - Dashboard financeiro com valores da lista, reservados, disponíveis, informados, confirmados e pendentes, incluindo gráficos de distribuição.
 - Filtros administrativos com ordenação, contadores e limpeza.
+- Alertas compactos no menu administrativo para indicar recados pendentes e
+  presentes/cotas com pagamento informado.
 - Exportação CSV de convidados, RSVPs e presentes respeitando filtros e ordenação atuais, incluindo convite enviado.
 - Página de Relatórios Consolidados de presença/buffet, financeiro e pendências, com CSV/XLSX, seleção de colunas, convite enviado, categorias de pagamento e regra aplicada.
 - Login e proteção das páginas administrativas com Supabase Auth.
@@ -371,7 +474,13 @@ Concluído:
 - Metadados de SEO e compartilhamento social na página inicial.
 - Content Security Policy e tratamento seguro do conteúdo HTML dinâmico.
 - Login seguro dos convidados por código, com sessão anônima e Edge Function.
-- Notificações por e-mail para RSVP público criado ou atualizado, com e-mail para admin e convidado quando disponível.
+- Notificações por e-mail para RSVP público, reservas, pagamentos,
+  confirmações e liberações de presentes/cotas e Mural de Recados, com e-mail
+  para admin e convidado quando disponível.
+- Preferências de notificação por evento, histórico auditável, busca
+  server-side e lembretes manuais para reservas pendentes de presentes/cotas.
+- Reenvio manual de RSVP, reservas, pagamentos e confirmações a partir dos
+  painéis administrativos ou do histórico de notificações.
 - Outbox de notificações com idempotência por evento/destinatário e tabelas protegidas por RLS.
 - Cloudflare Turnstile validado pelo Supabase Auth nos dois fluxos de login.
 - Row Level Security para isolamento dos dados de convidados e administradores.
@@ -387,8 +496,7 @@ Em aberto:
 - Upload interno de comprovantes.
 - Relatórios avançados por período ou fornecedor.
 - Indicadores financeiros avançados por período ou forma de pagamento.
-- Notificações e comunicação para eventos de presentes, reservas e pagamentos.
-- Mural de Recados.
+- Adicionar ou substituir as fotos oficiais do Pré-Wedding após o ensaio.
 - Código de Vestimenta.
 - Programação e Atrações do Evento.
 - Gerenciamento de Previsão/Controle de Gastos.

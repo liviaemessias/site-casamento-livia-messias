@@ -404,7 +404,7 @@ O payload PIX não é salvo no banco. Ele é gerado em tempo de exibição por `
 - `gift.name`
 - `gift.price`
 
-O QR Code também é derivado desse payload:
+O QR-Code também é derivado desse payload:
 
 ```js
 PixPayment.generatePayload(settings, gift);

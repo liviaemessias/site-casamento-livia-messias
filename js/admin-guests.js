@@ -482,7 +482,7 @@ function renderGuestsTable(guests) {
   if (!guests.length) {
     replaceSafeContent(guestsTableBody, `
       <tr>
-        <td colspan="10" class="admin-empty-state">
+        <td colspan="9" class="admin-empty-state">
           Nenhum convidado encontrado para os filtros selecionados.
         </td>
       </tr>
@@ -494,8 +494,12 @@ function renderGuestsTable(guests) {
     .map(
       (guest) => `
         <tr>
-          <td>${safeText(guest.name)}</td>
-          <td>${renderInviteTypeBadge(guest.invite_type)}</td>
+          <td>
+            <strong class="guest-table-name">${safeText(guest.name)}</strong>
+            <span class="admin-muted guest-table-type">
+              ${safeText(getInviteTypeLabel(guest.invite_type))}
+            </span>
+          </td>
           <td>${guest.max_guests || 0}</td>
           <td>
             ${

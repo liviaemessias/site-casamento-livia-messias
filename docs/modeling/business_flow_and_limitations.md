@@ -29,7 +29,7 @@ Scripts compartilhados:
 - `auth.js`: sessão local e validação do código de convite.
 - `public-common.js`: navbar, logout e saudação das páginas públicas autenticadas.
 - `admin-common.js`: autenticação admin, logout, toast e utilitários do painel.
-- `pix.js`: geração de payload PIX e URL de QR Code.
+- `pix.js`: geração de payload PIX e URL de QR-Code.
 
 CSS compartilhado:
 
@@ -173,8 +173,8 @@ Regras de valor:
 1. O convidado seleciona PIX.
 2. `gifts.selected_purchase_method` recebe `pix`.
 3. `pix.js` gera o payload PIX.
-4. `pix.js` gera a URL do QR Code.
-5. O modal exibe QR Code e PIX Copia e Cola.
+4. `pix.js` gera a URL do QR-Code.
+5. O modal exibe QR-Code e PIX Copia e Cola.
 6. O convidado informa que realizou o pagamento.
 
 Atualização:
@@ -326,7 +326,7 @@ Permite editar:
 - Chave PIX.
 - Nome do recebedor usado no payload PIX.
 - Cidade do recebedor usada no payload PIX.
-- WhatsApp usado para envio de comprovantes.
+- WhatsApp de contato configurado no site.
 - Idade mínima em que uma criança passa a ser pagante para o buffet.
 
 ### Gestão De Convidados
@@ -418,21 +418,25 @@ O sistema usa:
 ## Limitações Atuais
 
 - Contas anônimas e tentativas antigas ainda não possuem limpeza periódica automatizada.
-- A Content Security Policy e as dependências externas ainda precisam de revisão final.
+- As dependências externas carregadas por CDN ainda podem ser avaliadas para empacotamento local quando fizer sentido.
 - Os códigos de convite ainda devem ser rotacionados antes da publicação definitiva.
-- Comprovantes são enviados por WhatsApp, não armazenados no sistema.
+- Comprovantes não são enviados nem armazenados pelo sistema; o convidado
+  apenas informa pagamento ou compra pelo site.
 - O provedor de cartão ainda depende de URL externa configurada manualmente.
-- O QR Code PIX depende do serviço externo `api.qrserver.com`.
+- O QR-Code PIX depende do serviço externo `api.qrserver.com`.
 - A confirmação final de pagamentos ainda depende de conferência administrativa.
+- As fotos oficiais do Pré-Wedding ainda serão adicionadas ou substituídas após
+  o ensaio.
 
 ## Melhorias Futuras
 
 - Automatizar a limpeza de contas anônimas e tentativas antigas.
-- Revisar CSP, dependências CDN e usos de `innerHTML`.
+- Avaliar empacotamento local de dependências CDN restantes.
 - Upload de comprovantes no sistema.
 - Relatórios avançados por período ou fornecedor.
 - Indicadores financeiros avançados por período ou forma de pagamento.
 - Integração real com gateway de pagamento.
+- Adicionar ou substituir as fotos oficiais do Pré-Wedding após o ensaio.
 
 ## Status Atual
 
@@ -442,8 +446,12 @@ Concluído:
 - RSVP individual e casal.
 - Acompanhantes e crianças.
 - Lista de presentes.
+- Página e seção de Pré-Wedding com galeria responsiva e lightbox.
+- Mural de Recados com página pública, envio/edição pelo convidado logado,
+  prévia na página inicial, aprovação, ocultação, filtros e resposta dos
+  noivos no painel administrativo.
 - Presentes por cotas via PIX.
-- PIX com payload e QR Code.
+- PIX com payload e QR-Code.
 - Compra online e loja física.
 - Painel administrativo separado.
 - Dashboard administrativo com gráfico de distribuição de RSVPs.
@@ -457,11 +465,14 @@ Concluído:
 - RLS e RPCs restritas para isolamento por convite.
 - Limitação de tentativas no login por código.
 - Guia completo de reconstrução do ambiente Supabase.
+- Notificações por e-mail com preferências por evento, histórico auditável com
+  filtros, paginação e ordenação, lembretes manuais de presentes/cotas e
+  eventos do Mural de Recados.
 - Helpers `admin-common.js` e `public-common.js`.
 - Módulo `pix.js`.
 - CSS com tokens globais.
 
-Em desenvolvimento:
+Em aberto:
 
 - Endurecimentos adicionais de segurança antes da publicação definitiva.
 - Relatórios avançados por período ou fornecedor.

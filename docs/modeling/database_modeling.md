@@ -13,8 +13,10 @@ auth.users 1:0..1 admin_users
 guests 1:0..1 admin_users
 auth.users 1:0..1 guest_access_sessions
 guests 1:N guest_access_sessions
+guests 1:0..1 guest_wall_messages
 guests 1:N notification_events
 notification_events 1:N notification_deliveries
+notification_preferences 1:N notification_events por event_type
 ```
 
 ## Tabela `guests`
@@ -203,7 +205,7 @@ Campos principais:
 - `payment_status`: `Pendente`, `Informado` ou `Confirmado`.
 - `payment_method`: nesta fase, `pix`.
 - `payment_reported_at`: quando o convidado informou o pagamento.
-- `pix_code` e `pix_qr_code_url`: campos disponíveis no schema, mas atualmente o frontend gera PIX e QR Code em tempo de exibição.
+- `pix_code` e `pix_qr_code_url`: campos disponíveis no schema, mas atualmente o frontend gera PIX e QR-Code em tempo de exibição.
 
 ## Tabela `settings`
 
@@ -237,7 +239,7 @@ create table public.settings (
 Campos principais:
 
 - `pix_key`: chave PIX.
-- `whatsapp_number`: número para envio de comprovantes.
+- `whatsapp_number`: número de contato exibido/usado nas configurações do site.
 - `merchant_name`: nome usado no payload PIX.
 - `merchant_city`: cidade usada no payload PIX.
 - `buffet_paying_age`: idade mínima em que uma criança entra na contagem de pagantes. O padrão `7` significa que crianças de até 6 anos não pagam.
@@ -288,6 +290,43 @@ create table public.guest_access_sessions (
 Cada sessão pertence a um único convite. Um convite pode possuir sessões em
 mais de um dispositivo, e cada uma pode ser revogada individualmente.
 
+## Tabela `guest_wall_messages`
+
+Armazena os recados enviados pelos convidados para o Mural de Recados.
+
+```sql
+create table public.guest_wall_messages (
+  id uuid primary key default gen_random_uuid(),
+  guest_id uuid not null unique references public.guests(id) on delete cascade,
+  message text not null,
+  status text not null default 'pending',
+  couple_reply text null,
+  created_at timestamp with time zone not null default timezone('utc', now()),
+  updated_at timestamp with time zone not null default timezone('utc', now()),
+  submitted_at timestamp with time zone not null default timezone('utc', now()),
+  approved_at timestamp with time zone null,
+  hidden_at timestamp with time zone null,
+  couple_replied_at timestamp with time zone null
+);
+```
+
+Campos principais:
+
+- `guest_id`: convite dono do recado. Nesta fase, cada convite mantém um único
+  recado ativo/editável.
+- `message`: texto enviado pelo convidado, limitado no banco e no frontend.
+- `status`: `pending`, `approved` ou `hidden`.
+- `couple_reply`: resposta dos noivos, exibida junto do recado aprovado.
+- `submitted_at`, `approved_at`, `hidden_at` e `couple_replied_at`: marcos de
+  auditoria do fluxo.
+
+Recados novos ou editados voltam para `pending`. A página pública lista somente
+recados aprovados por meio de `list_approved_wall_messages(...)`, sem expor
+`guest_id` ou acesso direto à tabela. O convidado usa
+`get_current_guest_wall_message()` e `save_current_guest_wall_message(...)`
+para ler e editar somente o próprio recado. A administração usa RPCs protegidas
+por `is_admin()` para listar, aprovar, ocultar e responder.
+
 ## Tabelas De Notificação
 
 As notificações transacionais usam uma outbox genérica.
@@ -298,13 +337,23 @@ Registra o evento que aconteceu no sistema.
 
 Campos principais:
 
-- `event_type`: tipo do evento, como `rsvp_saved`.
-- `aggregate_type`: entidade de origem, como `rsvp`.
+- `event_type`: tipo do evento, como `rsvp_saved`, `gift_reserved`,
+  `gift_payment_reported`, `gift_purchase_confirmed`,
+  `gift_reservation_released`, `gift_contribution_reserved`,
+  `gift_contribution_payment_reported`, `gift_contribution_confirmed` ou
+  `gift_contribution_released`. Lembretes manuais usam
+  `gift_reservation_reminder` e `gift_contribution_reminder`. Recados usam
+  `wall_message_submitted`, `wall_message_approved` e
+  `wall_message_replied`.
+- `aggregate_type`: entidade de origem, como `rsvp`, `gift`,
+  `gift_contribution` ou `wall_message`.
 - `aggregate_id`: identificador da entidade de origem.
 - `aggregate_version`: versão temporal usada para idempotência.
 - `guest_id`: convidado relacionado, quando houver.
 - `dedupe_key`: chave única que evita duplicar o mesmo evento.
 - `payload`: dados sanitizados e necessários para montar os e-mails.
+- `origin`: `automatic` para eventos gerados pelo fluxo normal do site ou
+  `manual` para ações disparadas pelo administrador.
 - `status`: `pending`, `processing`, `processed` ou `failed`.
 
 ### `notification_deliveries`
@@ -321,9 +370,43 @@ Campos principais:
 - `status`: `pending`, `processing`, `sent`, `failed` ou `skipped`.
 - `last_error`: erro resumido e sem secrets.
 
+### `notification_preferences`
+
+Controla quais tipos de notificação podem gerar entregas automáticas ou
+manuais.
+
+Campos principais:
+
+- `event_type`: tipo do evento controlado, como `rsvp_saved` ou
+  `gift_contribution_released`.
+- `event_group`: agrupamento operacional, como `rsvp`, `gift` ou
+  `gift_contribution`; eventos do mural usam `wall_message`.
+- `label`: nome amigável para exibição futura no painel administrativo.
+- `automatic_enabled`: indica se eventos automáticos desse tipo geram entregas.
+- `manual_enabled`: indica se ações manuais desse tipo geram entregas.
+- `admin_enabled`: indica se o admin deve receber entregas desse evento.
+- `guest_enabled`: indica se o convidado deve receber entregas desse evento.
+
 As tabelas têm RLS habilitado e não são acessadas diretamente pelo frontend.
-Somente a Edge Function `send-notifications` gerencia eventos e entregas com
-`service_role`.
+Somente a Edge Function `send-notifications` gerencia eventos, entregas e lê as
+preferências com `service_role`. O painel administrativo consulta o histórico pela RPC
+`admin_list_notification_deliveries(...)`, que valida `is_admin()` antes de
+retornar dados de auditoria. Essa RPC usa paginação server-side com `p_limit`
+e `p_offset`, filtros `p_origin` e `p_search` e ordenação por `p_sort_key` e
+`p_sort_direction`, para evitar carregar históricos grandes no frontend. Os
+cards de métricas usam `admin_get_notification_delivery_summary(...)`, com os
+mesmos filtros, para contabilizar o conjunto completo filtrado em vez de apenas
+a página atual. A busca cobre convidado, e-mail, tipo de evento, status,
+identificadores, dados do payload e erro/motivo resumido.
+Alertas compactos do menu administrativo usam `admin_get_nav_alerts()`, que
+retorna apenas indicadores booleanos para recados pendentes e presentes/cotas
+com pagamento informado.
+Preferências são lidas e atualizadas pelo painel por
+`admin_list_notification_preferences()` e
+`admin_update_notification_preference(...)`. Lembretes manuais de presentes e
+cotas são criados por `admin_send_gift_reservation_reminder(...)` e
+`admin_send_gift_contribution_reminder(...)`. Eventos do Mural de Recados são
+criados pelo helper interno `enqueue_wall_message_notification_event(...)`.
 
 ## Funções De Autorização
 
@@ -351,9 +434,21 @@ Somente a Edge Function `send-notifications` gerencia eventos e entregas com
   membros, acompanhantes e idades e descarta campos adicionais enviados pelo
   cliente. Também cria um evento `rsvp_saved` para notificação por e-mail no
   RSVP público.
-- `set_gift_purchase_method()` e `report_gift_payment()`: cruzam a forma
-  escolhida com `purchase_mode` e exigem uma escolha válida antes de registrar
-  pagamento ou compra.
+- `reserve_gift()`, `reserve_gift_quotas()`, `report_gift_payment()` e
+  `report_gift_contribution_payment()`: validam ações públicas de presentes e
+  cotas e criam eventos de e-mail quando reserva ou pagamento são registrados.
+- `set_gift_purchase_method()`: cruza a forma escolhida com `purchase_mode` e
+  valida a escolha sem disparar e-mail isoladamente.
+- `list_approved_wall_messages()`: retorna somente recados aprovados e campos
+  públicos do Mural de Recados.
+- `get_current_guest_wall_message()` e `save_current_guest_wall_message()`:
+  leem e salvam o recado do convite da sessão atual. Ao salvar, criam evento de
+  e-mail para avisar o admin.
+- `admin_list_wall_messages()`, `admin_approve_wall_message()`,
+  `admin_hide_wall_message()`, `admin_reply_wall_message()`,
+  `admin_clear_wall_message_reply()` e `admin_delete_wall_message()`: moderam
+  o Mural de Recados no painel administrativo. Aprovação e resposta criam
+  eventos de e-mail para o convidado quando houver e-mail válido no RSVP.
 
 As funções serão usadas pelas políticas RLS. As tabelas de vínculo não possuem
 acesso direto para `anon` ou `authenticated`.
@@ -423,6 +518,14 @@ pix
 card
 online
 physical
+```
+
+Mural de Recados:
+
+```text
+pending
+approved
+hidden
 ```
 
 ## Observações

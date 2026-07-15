@@ -5,6 +5,14 @@
 -- Every row should have check_passed = true.
 
 select
+  'service_role can read admin users' as check_name,
+  has_table_privilege(
+    'service_role',
+    'public.admin_users',
+    'select'
+  ) as check_passed;
+
+select
   'service_role can manage guest access sessions' as check_name,
   has_table_privilege(
     'service_role',
@@ -50,6 +58,14 @@ select
     'service_role',
     'public.notification_deliveries',
     'select, insert, update, delete'
+  ) as check_passed;
+
+select
+  'service_role can read notification preferences' as check_name,
+  has_table_privilege(
+    'service_role',
+    'public.notification_preferences',
+    'select'
   ) as check_passed;
 
 select

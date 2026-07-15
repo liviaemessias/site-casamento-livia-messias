@@ -12,6 +12,7 @@ histórico operacional, mas não fazem parte da instalação limpa.
 
 Para uma reconstrução limpa, use poucos arquivos:
 
+0. `docs/rebuild/README.md`
 1. `docs/rebuild/supabase_rebuild_full_setup.sql`
 2. `supabase/functions/claim-invite/index.ts`
 3. `supabase/functions/send-notifications/index.ts`
@@ -21,6 +22,10 @@ Para uma reconstrução limpa, use poucos arquivos:
 O arquivo `docs/rebuild/supabase_rebuild_full_setup.sql` é a fonte principal para um
 projeto novo. Ele consolida schema, tabelas auxiliares, funções, RPCs, grants,
 triggers e RLS final.
+
+O arquivo `docs/rebuild/supabase_rebuild_01_base_schema.sql` é apenas um bloco
+interno usado para compor o setup consolidado. Não use esse arquivo sozinho como
+instalação completa.
 
 ## 2. O Que Não Deve Ser Executado Em Projeto Novo
 
@@ -36,7 +41,8 @@ Não execute em uma reconstrução limpa:
 - `docs/migrations/security_fix_guest_gift_rpcs.sql`.
 
 Esses arquivos registram a evolução incremental do projeto. O estado atual já
-está incorporado ao setup consolidado.
+está incorporado ao setup consolidado. Para entender a finalidade dos scripts
+incrementais, veja `docs/migrations/README.md`.
 
 ## 3. Preparar A Máquina
 
@@ -118,6 +124,8 @@ Esse script cria e protege:
 - configurações globais e metadados públicos do site;
 - grants da `service_role` usados pela Edge Function;
 - outbox de notificações por e-mail;
+- preferências, lembretes e reenvios manuais de notificações;
+- notificações automáticas do Mural de Recados;
 - RLS final.
 
 Se for restaurar dados exportados, faça isso depois do setup usando o SQL
@@ -341,7 +349,15 @@ Valide, nesta ordem:
 21. preview do link público com título, descrição e imagem.
 22. e-mail de RSVP Recebido para admin e convidado.
 23. e-mail de RSVP Atualizado para admin e convidado.
-24. RSVP sem e-mail válido, confirmando entrega para admin e delivery `guest` como `skipped`.
+24. e-mails de presente reservado, pagamento informado, presente confirmado e presente liberado.
+25. e-mails de cota reservada, pagamento informado, cota confirmada e cota liberada.
+26. RSVP sem e-mail válido, confirmando entrega para admin e delivery `guest` como `skipped`.
+27. página `admin-notifications.html`, busca, filtros, origem automática/manual, motivos de auditoria, detalhes das entregas de e-mail de RSVP, presentes, cotas, lembretes, reenvios manuais e recados.
+28. página `messages.html`, envio/edição de recado por convidado logado e listagem pública apenas de recados aprovados.
+29. página `admin-messages.html`, filtros, aprovação, ocultação, resposta dos noivos, remoção de resposta e exclusão de recados.
+30. e-mail para admin quando um convidado envia ou edita um recado.
+31. e-mail para convidado quando o recado é aprovado ou respondido, incluindo
+    o caso sem e-mail válido no RSVP como entrega `skipped`.
 
 Nos logs da `claim-invite`, confirme que não existem erros de grants, RLS ou
 acesso às tabelas internas.

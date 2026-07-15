@@ -73,6 +73,7 @@ body {
   font-size: 2rem;
   color: white;
   font-weight: 600;
+  text-decoration: none;
 }
 
 .navbar.scrolled .logo {
@@ -433,6 +434,216 @@ body {
   text-decoration: underline;
 }
 
+.home-photos-section {
+  padding: 8rem 0;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.72),
+      rgba(233, 217, 255, 0.24)
+    ),
+    var(--color-background);
+}
+
+.home-photos-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.82fr) minmax(0, 1.18fr);
+  align-items: center;
+  gap: 4rem;
+}
+
+.home-photos-copy .welcome-text {
+  margin-bottom: 2.5rem;
+}
+
+.home-photos-copy {
+  text-align: center;
+}
+
+.home-photo-preview {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: repeat(2, 190px);
+  gap: 0;
+}
+
+.home-photo-item {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  background: var(--color-background-tint);
+}
+
+.home-photo-item.featured {
+  grid-column: span 2;
+  grid-row: span 2;
+}
+
+.home-photo-item img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.home-photo-item:hover img,
+.home-photo-item:focus-visible img {
+  transform: scale(1.045);
+}
+
+.home-photo-item:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 4px;
+}
+
+.home-messages-section {
+  padding: 5.5rem 0;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.42),
+      rgba(233, 217, 255, 0.14)
+    ),
+    rgba(255, 255, 255, 0.24);
+  border-top: 1px solid rgba(111, 63, 167, 0.08);
+  text-align: center;
+}
+
+.home-messages-section[hidden] {
+  display: none;
+}
+
+.home-messages-header {
+  max-width: 760px;
+  margin: 0 auto 2.25rem;
+}
+
+.home-messages-header .welcome-text {
+  margin-bottom: 0;
+}
+
+.home-messages-carousel {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  background: transparent;
+  margin-bottom: 2rem;
+}
+
+.home-messages-track {
+  display: flex;
+  gap: 1rem;
+  overflow-x: auto;
+  background: transparent;
+  padding: 0.25rem;
+  scroll-behavior: smooth;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.home-messages-track::-webkit-scrollbar {
+  display: none;
+}
+
+.home-messages-nav {
+  display: grid;
+  place-items: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  border: 1px solid rgba(111, 63, 167, 0.2);
+  border-radius: 50%;
+  background: var(--white);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  font-size: 1.65rem;
+  line-height: 1;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.home-messages-nav:hover,
+.home-messages-nav:focus-visible {
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+}
+
+.home-messages-nav[hidden] {
+  display: none;
+}
+
+.home-message-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 min(320px, 82vw);
+  min-height: 220px;
+  padding: 1.85rem 1.35rem 1.3rem;
+  border: 1px solid rgba(111, 63, 167, 0.14);
+  border-radius: var(--radius-lg);
+  background: var(--white);
+  box-shadow: 0 12px 28px rgba(84, 49, 122, 0.09);
+  overflow: hidden;
+  scroll-snap-align: center;
+  text-align: left;
+}
+
+.home-message-card::before,
+.home-message-card::after {
+  position: absolute;
+  color: var(--color-primary);
+  font-family: var(--font-heading);
+  font-size: 3.65rem;
+  line-height: 1;
+  opacity: 0.24;
+  pointer-events: none;
+}
+
+.home-message-card::before {
+  top: 0.2rem;
+  left: 1rem;
+  content: "“";
+}
+
+.home-message-card::after {
+  right: 1rem;
+  bottom: 0.1rem;
+  content: "”";
+}
+
+.home-message-card h3 {
+  position: relative;
+  z-index: 1;
+  margin: 0.35rem 0 0.7rem;
+  color: var(--color-primary);
+  font-family: var(--font-heading);
+  font-size: 1.45rem;
+  line-height: 1.1;
+}
+
+.home-message-card p {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  color: var(--text-light);
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+
+.home-message-card time {
+  margin-top: 1rem;
+  color: var(--color-text-faded);
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.home-messages-actions {
+  text-align: center;
+}
+
 /* Animations */
 .fade-up {
   animation: fadeUp 1.2s ease;
@@ -509,6 +720,29 @@ body {
 
   .event-grid {
     grid-template-columns: 1fr;
+  }
+
+  .home-photos-grid {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+
+  .home-messages-carousel {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .home-messages-track {
+    margin-inline: -5vw;
+    padding-inline: 5vw;
+  }
+
+  .home-messages-nav {
+    display: none;
+  }
+
+  .home-photo-preview {
+    grid-template-rows: repeat(2, 150px);
   }
 
   .countdown-section {
@@ -638,5 +872,38 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .hero-scroll-arrow { animation: none; }
+}
+
+@media (max-width: 540px) {
+  .home-photos-section {
+    padding: 4.5rem 0;
+  }
+
+  .home-messages-section {
+    padding: 4.5rem 0;
+  }
+
+  .home-photos-grid {
+    gap: 2rem;
+  }
+
+  .home-photos-copy .welcome-text {
+    margin-bottom: 1.8rem;
+  }
+
+  .home-photo-preview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: 260px 126px;
+    gap: 0;
+  }
+
+  .home-photo-item.featured {
+    grid-column: 1 / -1;
+    grid-row: span 1;
+  }
+
+  .home-photo-item:nth-child(n+4) {
+    display: none;
+  }
 }
 

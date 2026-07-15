@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://unpkg.com https://challenges.cloudflare.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Nosso Pré-Wedding • Livia &amp; Messias</title>
+    <meta
+      name="description"
+      content="Um pedacinho do nosso pré-wedding para vocês."
+    />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="css/photos.css" />
+    <link rel="stylesheet" href="css/reference-rails.css" />
+  </head>
+  <body class="site-reference-rails">
+    <div class="background-glow"></div>
+
+    <header class="navbar">
+      <div class="container nav-content">
+        <a href="index.html" class="logo" data-wedding-names>Livia &amp; Messias</a>
+
+        <nav>
+          <ul class="nav-links">
+            <li><a href="index.html">Início</a></li>
+            <li><a href="login.html?redirect=rsvp">RSVP</a></li>
+            <li><a href="login.html?redirect=gifts">Presentes</a></li>
+            <li><a href="our-story.html">Nossa História</a></li>
+            <li><a href="messages.html">Recados</a></li>
+          </ul>
+        </nav>
+
+        <button type="button" class="mobile-menu" aria-label="Abrir menu" aria-expanded="false">☰</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="photos-hero">
+        <div class="photos-hero-content">
+          <p class="section-subtitle">Pré-wedding</p>
+          <h1>Nosso Pré-Wedding</h1>
+          <p>Um pedacinho do nosso pré-wedding para vocês.</p>
+        </div>
+      </section>
+
+      <section class="photos-section" aria-label="Galeria de fotos">
+        <div class="container">
+          <div id="photoGallery" class="photo-gallery"></div>
+        </div>
+      </section>
+    </main>
+
+    <div
+      id="photoLightbox"
+      class="photo-lightbox modal"
+      role="dialog"
+      aria-modal="true"
+      aria-hidden="true"
+      aria-label="Foto ampliada"
+    >
+      <button
+        id="lightboxClose"
+        class="lightbox-button lightbox-close"
+        type="button"
+        aria-label="Fechar foto"
+      >
+        ×
+      </button>
+      <button
+        id="lightboxPrevious"
+        class="lightbox-button lightbox-previous"
+        type="button"
+        aria-label="Foto anterior"
+      >
+        ‹
+      </button>
+      <img id="lightboxImage" class="lightbox-image" alt="" />
+      <button
+        id="lightboxNext"
+        class="lightbox-button lightbox-next"
+        type="button"
+        aria-label="Próxima foto"
+      >
+        ›
+      </button>
+      <span id="lightboxCounter" class="lightbox-counter"></span>
+    </div>
+
+    <footer class="footer">
+      <h3 data-wedding-names>Livia &amp; Messias</h3>
+      <p data-wedding-date-location>23 de Abril de 2027 • Fortaleza, Ceará</p>
+      <span> Feito com amor para celebrar nosso grande dia. </span>
+
+      <p class="site-credit">
+        Desenvolvido por
+        <a
+          href="https://github.com/messiasfl10/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Messias D. P. de M. Filho
+        </a>
+      </p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/event-config.js"></script>
+    <script src="js/event-settings.js"></script>
+    <script src="js/public-common.js"></script>
+    <script src="js/photo-gallery-data.js"></script>
+    <script src="js/photos.js"></script>
+  </body>
+</html>

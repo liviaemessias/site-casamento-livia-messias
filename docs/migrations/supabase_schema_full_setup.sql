@@ -7,8 +7,9 @@
 -- de segurança. Não o execute em uma reconstrução da versão 3.0.
 -- Use docs/rebuild/supabase_rebuild_runbook.md.
 --
--- Use este arquivo em um projeto Supabase novo para recriar o
--- schema atual usado pelo site, pelo RSVP e pelo painel admin.
+-- Este arquivo permanece apenas como histórico do modelo anterior.
+-- Para recriar a versão atual em um projeto Supabase novo, execute:
+-- docs/rebuild/supabase_rebuild_full_setup.sql
 --
 -- Importante:
 -- O projeto atual acessa o Supabase diretamente pelo frontend.

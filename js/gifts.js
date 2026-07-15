@@ -45,6 +45,7 @@ function setElementVisibility(element, visible) {
 }
 
 const giftsGrid = document.getElementById("giftsGrid");
+const giftEmailHint = document.getElementById("giftEmailHint");
 const giftsPendingSection = document.getElementById("giftsPendingSection");
 const reserveModal = document.getElementById("reserveModal");
 const pixModal = document.getElementById("pixModal");
@@ -78,7 +79,7 @@ const paymentModalTitle = document.getElementById("paymentModalTitle");
 const paymentModalDescription = document.getElementById(
   "paymentModalDescription",
 );
-const sendReceiptButton = document.getElementById("sendReceiptButton");
+const paymentThanksText = document.getElementById("paymentThanksText");
 const confirmPaymentButton = document.getElementById("confirmPaymentButton");
 const paymentConfirmationModal = document.getElementById(
   "paymentConfirmationModal",
@@ -186,12 +187,116 @@ function findContributionById(gift, contributionId) {
 }
 
 function refreshGiftCatalogIfStale() {
+  updateGiftEmailHint();
+
   if (Date.now() - lastGiftCatalogLoadAt < 5000) {
     return;
   }
 
   lastGiftCatalogLoadAt = Date.now();
   loadGifts();
+}
+
+function getGiftEmailHintStorageKey() {
+  return `gift_email_hint_dismissed:${guest?.id || "guest"}`;
+}
+
+function wasGiftEmailHintDismissed() {
+  try {
+    return localStorage.getItem(getGiftEmailHintStorageKey()) === "true";
+  } catch (error) {
+    console.warn("Não foi possível ler a preferência da dica de e-mail.", error);
+    return false;
+  }
+}
+
+function hideGiftEmailHint() {
+  if (!giftEmailHint) {
+    return;
+  }
+
+  giftEmailHint.replaceChildren();
+  giftEmailHint.hidden = true;
+  giftEmailHint.classList.remove("active");
+}
+
+function dismissGiftEmailHint() {
+  try {
+    localStorage.setItem(getGiftEmailHintStorageKey(), "true");
+  } catch (error) {
+    console.warn(
+      "Não foi possível salvar a preferência da dica de e-mail.",
+      error,
+    );
+  }
+
+  hideGiftEmailHint();
+}
+
+function hasValidRSVPEmail(email) {
+  if (!email || typeof email !== "string") {
+    return false;
+  }
+
+  const input = document.createElement("input");
+  input.type = "email";
+  input.required = true;
+  input.value = email.trim();
+  return input.checkValidity();
+}
+
+function showGiftEmailHint() {
+  if (!giftEmailHint) {
+    return;
+  }
+
+  const message = document.createElement("p");
+  message.textContent =
+    guest?.invite_type === "couple"
+      ? "Informem um e-mail no RSVP para receber confirmações, novidades sobre os presentes e outros avisos! 💜"
+      : "Informe seu e-mail no RSVP para receber confirmações, novidades sobre os presentes e outros avisos! 💜";
+
+  const actions = document.createElement("div");
+  actions.className = "gift-email-hint-actions";
+
+  const rsvpLink = document.createElement("a");
+  rsvpLink.className = "gift-button";
+  rsvpLink.href = "./rsvp.html";
+  rsvpLink.textContent = "Responder RSVP";
+
+  const dismissButton = document.createElement("button");
+  dismissButton.type = "button";
+  dismissButton.className = "gift-email-hint-close";
+  dismissButton.setAttribute("aria-label", "Dispensar dica de e-mail");
+  dismissButton.textContent = "×";
+  dismissButton.addEventListener("click", dismissGiftEmailHint);
+
+  actions.append(rsvpLink, dismissButton);
+  giftEmailHint.replaceChildren(message, actions);
+  giftEmailHint.hidden = false;
+  giftEmailHint.classList.add("active");
+}
+
+async function updateGiftEmailHint() {
+  if (!giftEmailHint || !guest?.id || wasGiftEmailHintDismissed()) {
+    hideGiftEmailHint();
+    return;
+  }
+
+  const { data, error } = await GuestData.loadRSVP(guest.id);
+
+  if (error) {
+    console.error(error);
+    hideGiftEmailHint();
+    return;
+  }
+
+  if (hasValidRSVPEmail(data?.email)) {
+    hideGiftEmailHint();
+    return;
+  }
+
+  showGiftEmailHint();
 }
 
 window.addEventListener("focus", refreshGiftCatalogIfStale);
@@ -322,10 +427,51 @@ function getGuestPronoun() {
   return guest.invite_type === "couple" ? "vocês" : "você";
 }
 
+function isCoupleInvite() {
+  return guest.invite_type === "couple";
+}
+
 function getCompletedActionLabel(action) {
-  const verb = guest.invite_type === "couple" ? "realizamos" : "realizei";
+  const verb = isCoupleInvite() ? "realizamos" : "realizei";
 
   return `Já ${verb} ${action}`;
+}
+
+function getGiftPaymentModalCopy(method) {
+  const isCouple = isCoupleInvite();
+  const paymentFooter = isCouple
+    ? "Após realizarem o pagamento, informem para que possamos confirmar depois."
+    : "Após realizar o pagamento, informe para que possamos confirmar depois.";
+  const purchaseFooter = isCouple
+    ? "Após realizarem a compra, informem para que possamos confirmar depois."
+    : "Após realizar a compra, informe para que possamos confirmar depois.";
+  const descriptions = {
+    pix: isCouple
+      ? "Usem o QR-Code ou copiem o código PIX abaixo para realizar o pagamento."
+      : "Use o QR-Code ou copie o código PIX abaixo para realizar o pagamento.",
+    card: isCouple
+      ? "Cliquem no botão abaixo para abrir a página de pagamento com cartão."
+      : "Clique no botão abaixo para abrir a página de pagamento com cartão.",
+    online: isCouple
+      ? "Vejam abaixo as opções de lojas online para comprar este presente."
+      : "Veja abaixo as opções de lojas online para comprar este presente.",
+    physical: isCouple
+      ? "Vejam abaixo as informações para comprar este presente presencialmente."
+      : "Veja abaixo as informações para comprar este presente presencialmente.",
+    default: isCouple
+      ? "Sigam as instruções abaixo para concluir o presente."
+      : "Siga as instruções abaixo para concluir o presente.",
+  };
+
+  return {
+    description: descriptions[method] || descriptions.default,
+    footer: method === "online" || method === "physical"
+      ? purchaseFooter
+      : paymentFooter,
+    thanks: isCouple
+      ? "💜 Obrigado por nos presentearem!"
+      : "💜 Obrigado por nos presentear!",
+  };
 }
 
 function getGiftCompletedActionLabel(gift) {
@@ -649,6 +795,23 @@ function renderGifts(gifts) {
 
   renderPendingGifts(gifts);
 
+  if (!gifts.length) {
+    const emptyState = document.createElement("div");
+    const title = document.createElement("h2");
+    const message = document.createElement("p");
+
+    emptyState.className = "gifts-empty-state";
+    title.textContent = "A lista de presentes ainda não está disponível";
+    message.textContent =
+      guest?.invite_type === "couple"
+        ? "Estamos preparando tudo com carinho. Voltem em breve para conferir as opções."
+        : "Estamos preparando tudo com carinho. Volte em breve para conferir as opções.";
+
+    emptyState.append(title, message);
+    giftsGrid.replaceChildren(emptyState);
+    return;
+  }
+
   gifts.forEach((gift) => {
     const category = gift.category || "Outros";
 
@@ -918,19 +1081,6 @@ function generatePixPayload(gift) {
   return PixPayment.generatePayload(settings, gift);
 }
 
-function configureReceiptLink(message) {
-  const whatsappNumber = settings?.whatsapp_number;
-
-  if (!whatsappNumber) {
-    sendReceiptButton.removeAttribute("href");
-    setElementVisibility(sendReceiptButton, false);
-    return;
-  }
-
-  sendReceiptButton.href =
-    `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
-}
-
 function buildContributionPixGift(gift, contribution) {
   const quantity = Number(contribution.quota_quantity || 1);
 
@@ -1160,7 +1310,7 @@ function openPurchaseMethodModal(gift) {
   }
 
   if (canUseMoneyPayment(gift)) {
-    addPurchaseMethod("pix", "💠", "PIX", "QR Code e código copia e cola");
+    addPurchaseMethod("pix", "💠", "PIX", "QR-Code e código copia e cola");
   }
 
   if (canUseCardPayment(gift)) {
@@ -1208,20 +1358,21 @@ function openPurchaseMethodModal(gift) {
 
 function configurePaymentModalTexts(gift) {
   const method = gift.selected_purchase_method;
+  const copy = getGiftPaymentModalCopy(method);
+
+  if (paymentThanksText) {
+    paymentThanksText.textContent = copy.thanks;
+  }
 
   if (method === "pix") {
     paymentModalTitle.textContent = "💜 Pagamento via PIX";
 
-    paymentModalDescription.textContent =
-      "Use o QR Code ou copie o código PIX abaixo para realizar o pagamento.";
+    paymentModalDescription.textContent = copy.description;
 
-    paymentModalFooterText.textContent =
-      "Após realizar o pagamento, informe para que os noivos possam confirmar depois.";
+    paymentModalFooterText.textContent = copy.footer;
 
     confirmPaymentButton.textContent =
       getCompletedActionLabel("o pagamento");
-
-    setElementVisibility(sendReceiptButton, true);
 
     return;
   }
@@ -1229,16 +1380,12 @@ function configurePaymentModalTexts(gift) {
   if (method === "card") {
     paymentModalTitle.textContent = "💳 Pagamento com cartão";
 
-    paymentModalDescription.textContent =
-      "Clique no botão abaixo para abrir a página de pagamento com cartão.";
+    paymentModalDescription.textContent = copy.description;
 
-    paymentModalFooterText.textContent =
-      "Após realizar o pagamento, informe para que os noivos possam confirmar depois.";
+    paymentModalFooterText.textContent = copy.footer;
 
     confirmPaymentButton.textContent =
       getCompletedActionLabel("o pagamento");
-
-    setElementVisibility(sendReceiptButton, false);
 
     return;
   }
@@ -1246,15 +1393,11 @@ function configurePaymentModalTexts(gift) {
   if (method === "online") {
     paymentModalTitle.textContent = "🛒 Compra online";
 
-    paymentModalDescription.textContent =
-      "Veja abaixo as opções de lojas online para comprar este presente.";
+    paymentModalDescription.textContent = copy.description;
 
-    paymentModalFooterText.textContent =
-      "Após realizar a compra, informe para que os noivos possam confirmar depois.";
+    paymentModalFooterText.textContent = copy.footer;
 
     confirmPaymentButton.textContent = getCompletedActionLabel("a compra");
-
-    setElementVisibility(sendReceiptButton, false);
 
     return;
   }
@@ -1262,28 +1405,23 @@ function configurePaymentModalTexts(gift) {
   if (method === "physical") {
     paymentModalTitle.textContent = "🏬 Compra em loja física";
 
-    paymentModalDescription.textContent =
-      "Veja abaixo as informações para comprar este presente presencialmente.";
+    paymentModalDescription.textContent = copy.description;
 
-    paymentModalFooterText.textContent =
-      "Após realizar a compra, informe para que os noivos possam confirmar depois.";
+    paymentModalFooterText.textContent = copy.footer;
 
     confirmPaymentButton.textContent = getCompletedActionLabel("a compra");
-
-    setElementVisibility(sendReceiptButton, false);
 
     return;
   }
 
   paymentModalTitle.textContent = "💜 Forma de presentear";
 
-  paymentModalDescription.textContent =
-    "Siga as instruções abaixo para concluir o presente.";
+  paymentModalDescription.textContent = copy.description;
+
+  paymentModalFooterText.textContent = copy.footer;
 
   confirmPaymentButton.textContent =
     getCompletedActionLabel("o pagamento / compra");
-
-  setElementVisibility(sendReceiptButton, false);
 }
 
 function updatePaymentGiftSummary(gift) {
@@ -1351,14 +1489,6 @@ window.openPixModalForContribution = function (gift, contribution) {
   document.getElementById("pixKey").textContent = pixPayload;
   document.getElementById("pixQrCode").src = PixPayment.getQrCodeUrl(pixPayload);
 
-  const eventDefaults = window.WeddingEventConfig?.defaults || {};
-  const coupleNames = `${settings?.bride_name || eventDefaults.bride_name} e ${settings?.groom_name || eventDefaults.groom_name}`;
-  const message =
-    `Olá, ${coupleNames}! Acabei de contribuir com ${contribution.quota_quantity} ` +
-    `cota${Number(contribution.quota_quantity) === 1 ? "" : "s"} do presente "${gift.name}" e estou enviando o comprovante.`;
-
-  configureReceiptLink(message);
-
   pixModal.classList.add("active");
   return true;
 };
@@ -1421,12 +1551,6 @@ window.openPixModalForGift = function (gift) {
   if (showExternal) {
     renderExternalPurchaseOptions(gift);
   }
-
-  const eventDefaults = window.WeddingEventConfig?.defaults || {};
-  const coupleNames = `${settings?.bride_name || eventDefaults.bride_name} e ${settings?.groom_name || eventDefaults.groom_name}`;
-  const message = `Olá, ${coupleNames}! Acabei de reservar o presente "${gift.name}" e estou enviando o comprovante.`;
-
-  configureReceiptLink(message);
 
   pixModal.classList.add("active");
   return true;
@@ -1541,6 +1665,10 @@ async function reserveGift(reservationData) {
     return null;
   }
 
+  GuestData.notifyPendingNotifications?.("gift_reserved", data.id).catch(
+    console.error,
+  );
+
   return data;
 }
 
@@ -1581,6 +1709,11 @@ async function createQuotaContribution(reservationData) {
   if (!GuestAuth.isSecureMode()) {
     await syncQuotaGiftStatus(selectedGift.id);
   }
+
+  GuestData.notifyPendingNotifications?.(
+    "gift_contribution_reserved",
+    data.id,
+  ).catch(console.error);
 
   return data;
 }
@@ -1710,6 +1843,11 @@ async function reportContributionPayment(gift, contribution) {
     await syncQuotaGiftStatus(gift.id);
   }
 
+  GuestData.notifyPendingNotifications?.(
+    "gift_contribution_payment_reported",
+    contribution.id,
+  ).catch(console.error);
+
   await loadGifts();
   selectedContribution = null;
   return true;
@@ -1730,6 +1868,10 @@ window.markPaymentAsDone = async function (gift) {
   }
 
   showToast("💜 Pagamento informado com sucesso!");
+  GuestData.notifyPendingNotifications?.(
+    "gift_payment_reported",
+    gift.id,
+  ).catch(console.error);
   await loadGifts();
   return true;
 };
@@ -1756,7 +1898,7 @@ window.requestPaymentConfirmation = function (gift, contribution = null) {
   paymentConfirmationTitle.textContent = `Confirmar ${action}?`;
   paymentConfirmationDescription.textContent =
     `${confirmVerb} somente se ${subject} já ${completedVerb} ${actionWithArticle}. ` +
-    "Os noivos receberão a informação e farão a validação depois.";
+    "Receberemos a informação e faremos a validação depois.";
   confirmPaymentConfirmation.textContent = `Sim, confirmar ${action}`;
   paymentConfirmationModal.classList.add("active");
 };
@@ -1973,6 +2115,7 @@ document.addEventListener("keydown", (e) => {
 /* Init */
 async function init() {
   await loadSettings();
+  await updateGiftEmailHint();
   await loadGifts();
 }
 

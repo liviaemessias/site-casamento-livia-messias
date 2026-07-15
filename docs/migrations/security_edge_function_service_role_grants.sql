@@ -8,6 +8,10 @@ begin;
 
 grant usage on schema public to service_role;
 
+grant select
+  on table public.admin_users
+  to service_role;
+
 grant select, insert, update, delete
   on table public.guest_access_sessions
   to service_role;
@@ -30,6 +34,10 @@ grant select, insert, update, delete
 
 grant select, insert, update, delete
   on table public.notification_deliveries
+  to service_role;
+
+grant select
+  on table public.notification_preferences
   to service_role;
 
 grant execute

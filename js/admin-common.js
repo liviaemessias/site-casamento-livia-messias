@@ -4,6 +4,8 @@
     "admin-gifts.html": "gift",
     "admin-rsvps.html": "clipboard-check",
     "admin-guests.html": "users",
+    "admin-messages.html": "message-square",
+    "admin-notifications.html": "mail-check",
     "admin-indicators.html": "chart-no-axes-combined",
     "admin-reports.html": "file-chart-column",
     "admin-settings.html": "settings",
@@ -15,6 +17,8 @@
     "admin-gifts.html",
     "admin-indicators.html",
     "admin-reports.html",
+    "admin-messages.html",
+    "admin-notifications.html",
     "admin-settings.html",
   ];
   const EVENT_DEFAULTS = window.WeddingEventConfig?.getDefaults() || {};
@@ -25,6 +29,72 @@
     icon.setAttribute("data-lucide", name);
     icon.setAttribute("aria-hidden", "true");
     return icon;
+  }
+
+  function createNavAlert(label) {
+    const alert = document.createElement("span");
+
+    alert.className = "admin-nav-alert";
+    alert.title = label;
+    alert.setAttribute("aria-label", label);
+    alert.appendChild(createIcon("circle-alert"));
+
+    return alert;
+  }
+
+  function setNavAlert(page, label) {
+    const link = document.querySelector(`.admin-nav-link[href="./${page}"]`);
+    const existingAlert = link?.querySelector(".admin-nav-alert");
+
+    if (!link) {
+      return;
+    }
+
+    if (existingAlert) {
+      existingAlert.remove();
+    }
+
+    if (!label) {
+      link.removeAttribute("data-has-alert");
+      return;
+    }
+
+    link.dataset.hasAlert = "true";
+    link.appendChild(createNavAlert(label));
+  }
+
+  async function updateAdminNavAlerts() {
+    if (typeof supabaseClient === "undefined") {
+      return;
+    }
+
+    try {
+      const { data, error } = await supabaseClient
+        .rpc("admin_get_nav_alerts")
+        .maybeSingle();
+
+      if (error) {
+        console.error(error);
+        return;
+      }
+
+      setNavAlert(
+        "admin-messages.html",
+        data?.has_pending_wall_messages ? "Há recados pendentes" : "",
+      );
+      setNavAlert(
+        "admin-gifts.html",
+        data?.has_reported_gifts
+          ? "Há presente ou cota com pagamento informado"
+          : "",
+      );
+
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   function getNameInitial(name, fallback) {
@@ -201,8 +271,10 @@
     brand.after(countdown);
 
     [
+      ["admin-notifications.html", "Notificações"],
       ["admin-indicators.html", "Indicadores"],
       ["admin-reports.html", "Relatórios"],
+      ["admin-messages.html", "Recados"],
     ].forEach(([page, label]) => {
       if (navigation.querySelector(`[href="./${page}"]`)) {
         return;
@@ -304,6 +376,7 @@
 
     updateAdminBrand();
     updateAdminCountdown();
+    updateAdminNavAlerts();
     loadAdminBrandSettings();
 
     if (!adminCountdownTimer) {

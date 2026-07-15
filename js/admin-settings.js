@@ -2,8 +2,15 @@ AdminCommon.setupLogout();
 
 const showAdminToast = AdminCommon.showToast;
 const eventDefaults = window.WeddingEventConfig?.getDefaults() || {};
+const { escapeAttribute, replaceSafeContent, safeText } = SecurityUtils;
 
 const settingsForm = document.getElementById("settingsForm");
+const notificationPreferencesTableBody = document.getElementById(
+  "notificationPreferencesTableBody",
+);
+const refreshNotificationPreferencesButton = document.getElementById(
+  "refreshNotificationPreferencesButton",
+);
 const pixKeyInput = document.getElementById("pixKeyInput");
 const merchantNameInput = document.getElementById("merchantNameInput");
 const merchantCityInput = document.getElementById("merchantCityInput");
@@ -21,6 +28,8 @@ const ceremonyTimeInput = document.getElementById("ceremonyTimeInput");
 const receptionNameInput = document.getElementById("receptionNameInput");
 const receptionAddressInput = document.getElementById("receptionAddressInput");
 const receptionTimeInput = document.getElementById("receptionTimeInput");
+
+let cachedNotificationPreferences = [];
 
 function normalizePhone(value) {
   return String(value || "").replace(/\D/g, "");
@@ -58,6 +67,72 @@ function fillSettingsForm(settings) {
   receptionTimeInput.value = String(settings?.reception_time || "").slice(0, 5);
 }
 
+function getNotificationGroupLabel(group) {
+  const labels = {
+    gift: "Presente",
+    gift_contribution: "Cota",
+    manual: "Manual",
+    rsvp: "RSVP",
+    wall_message: "Recados",
+  };
+
+  return labels[group] || group || "-";
+}
+
+function renderPreferenceCheckbox(preference, field, label) {
+  return `
+    <label class="admin-table-checkbox notification-preference-toggle">
+      <input
+        type="checkbox"
+        ${preference[field] ? "checked" : ""}
+        data-notification-preference-action="toggle"
+        data-notification-preference-event="${escapeAttribute(preference.event_type)}"
+        data-notification-preference-field="${escapeAttribute(field)}"
+        aria-label="${escapeAttribute(`${label}: ${preference.label}`)}"
+      />
+    </label>
+  `;
+}
+
+function renderNotificationPreferences(preferences) {
+  if (!preferences.length) {
+    replaceSafeContent(
+      notificationPreferencesTableBody,
+      `
+        <tr>
+          <td colspan="6" class="admin-empty-state">
+            Nenhuma preferência de notificação cadastrada.
+          </td>
+        </tr>
+      `,
+    );
+    return;
+  }
+
+  replaceSafeContent(
+    notificationPreferencesTableBody,
+    preferences
+      .map(
+        (preference) => `
+          <tr>
+            <td>
+              <strong class="notification-preference-name">${safeText(preference.label)}</strong>
+              <span class="notification-preference-description">
+                ${safeText(preference.description, preference.event_type)}
+              </span>
+            </td>
+            <td>${safeText(getNotificationGroupLabel(preference.event_group))}</td>
+            <td>${renderPreferenceCheckbox(preference, "automatic_enabled", "Envio automático")}</td>
+            <td>${renderPreferenceCheckbox(preference, "manual_enabled", "Envio manual")}</td>
+            <td>${renderPreferenceCheckbox(preference, "admin_enabled", "Enviar para admin")}</td>
+            <td>${renderPreferenceCheckbox(preference, "guest_enabled", "Enviar para convidado")}</td>
+          </tr>
+        `,
+      )
+      .join(""),
+  );
+}
+
 async function loadSettings() {
   const { data, error } = await supabaseClient
     .rpc("get_public_settings")
@@ -70,6 +145,66 @@ async function loadSettings() {
   }
 
   fillSettingsForm(data);
+}
+
+async function loadNotificationPreferences() {
+  refreshNotificationPreferencesButton.disabled = true;
+  refreshNotificationPreferencesButton.textContent = "Atualizando...";
+
+  const { data, error } = await supabaseClient.rpc(
+    "admin_list_notification_preferences",
+  );
+
+  refreshNotificationPreferencesButton.disabled = false;
+  refreshNotificationPreferencesButton.textContent = "Atualizar Preferências";
+
+  if (error) {
+    console.error(error);
+    showAdminToast("⚠️ Não foi possível carregar as preferências.");
+    return;
+  }
+
+  cachedNotificationPreferences = data || [];
+  renderNotificationPreferences(cachedNotificationPreferences);
+}
+
+async function updateNotificationPreference(eventType, field, checked, input) {
+  const preference = cachedNotificationPreferences.find(
+    (item) => item.event_type === eventType,
+  );
+
+  if (!preference) {
+    showAdminToast("⚠️ Preferência não encontrada. Atualize a lista.");
+    input.checked = !checked;
+    return;
+  }
+
+  const previousValue = preference[field];
+  preference[field] = checked;
+  input.disabled = true;
+
+  const { data, error } = await supabaseClient.rpc(
+    "admin_update_notification_preference",
+    {
+      submitted_admin_enabled: preference.admin_enabled,
+      submitted_automatic_enabled: preference.automatic_enabled,
+      submitted_guest_enabled: preference.guest_enabled,
+      submitted_manual_enabled: preference.manual_enabled,
+      target_event_type: eventType,
+    },
+  );
+
+  input.disabled = false;
+
+  if (error || data !== true) {
+    console.error(error);
+    preference[field] = previousValue;
+    input.checked = previousValue;
+    showAdminToast("⚠️ Não foi possível salvar a preferência.");
+    return;
+  }
+
+  showAdminToast("💜 Preferência atualizada.");
 }
 
 settingsForm.addEventListener("submit", async (event) => {
@@ -180,4 +315,24 @@ settingsForm.addEventListener("submit", async (event) => {
   showAdminToast("💜 Configurações salvas com sucesso!");
 });
 
+refreshNotificationPreferencesButton.addEventListener("click", () =>
+  loadNotificationPreferences(),
+);
+
+notificationPreferencesTableBody.addEventListener("change", (event) => {
+  const input = event.target.closest("[data-notification-preference-action]");
+
+  if (!input) {
+    return;
+  }
+
+  updateNotificationPreference(
+    input.dataset.notificationPreferenceEvent,
+    input.dataset.notificationPreferenceField,
+    input.checked,
+    input,
+  );
+});
+
 loadSettings();
+loadNotificationPreferences();

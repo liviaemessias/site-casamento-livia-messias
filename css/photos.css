@@ -1,0 +1,405 @@
+@import url("./tokens.css");
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--background);
+  color: var(--text);
+  overflow-x: hidden;
+}
+
+body.public-modal-open {
+  overflow: hidden;
+}
+
+.background-glow {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(circle at top left, var(--color-accent-soft), transparent 34%),
+    radial-gradient(circle at bottom right, var(--color-primary-selected), transparent 38%);
+}
+
+.container {
+  width: 90%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.navbar {
+  position: fixed;
+  top: 0;
+  z-index: 1000;
+  width: 100%;
+  padding: 1.2rem 0;
+  transition: 0.4s ease;
+}
+
+.navbar.scrolled {
+  background: var(--white);
+  backdrop-filter: blur(15px);
+  box-shadow: var(--shadow-sm);
+}
+
+.nav-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-family: var(--font-heading);
+  font-size: 2rem;
+  color: var(--color-inverse);
+  text-decoration: none;
+}
+
+.navbar.scrolled .logo {
+  color: var(--primary);
+}
+
+.nav-links {
+  display: flex;
+  gap: 2rem;
+  list-style: none;
+}
+
+.nav-links a {
+  color: var(--color-inverse);
+  text-decoration: none;
+  transition: 0.3s ease;
+}
+
+.navbar.scrolled .nav-links a {
+  color: var(--text);
+}
+
+.nav-links a:hover {
+  color: var(--color-accent-pale);
+}
+
+.mobile-menu {
+  display: none;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-inverse);
+  font-size: 1.65rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+.navbar.scrolled .mobile-menu {
+  border-color: var(--color-primary-muted);
+  background: var(--color-surface-strong);
+  color: var(--color-primary);
+}
+
+.photos-hero {
+  position: relative;
+  display: grid;
+  min-height: 78vh;
+  place-items: center;
+  padding: 9rem 1rem 5rem;
+  overflow: hidden;
+  text-align: center;
+}
+
+.photos-hero::before {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background:
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.24), rgba(70, 20, 120, 0.42)),
+    url("../assets/images/photos/pre-wedding-01.jpg") center / cover;
+}
+
+.photos-hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 850px;
+  color: var(--color-inverse);
+}
+
+.section-subtitle {
+  margin-bottom: 1rem;
+  color: var(--color-accent-pale);
+  font-size: 0.8rem;
+  letter-spacing: 0.35rem;
+  text-transform: uppercase;
+}
+
+.photos-hero h1 {
+  margin-bottom: 1.4rem;
+  font-family: var(--font-heading);
+  font-size: clamp(3.4rem, 9vw, 6.5rem);
+  line-height: 0.95;
+}
+
+.photos-hero p {
+  color: var(--color-hero-text);
+  font-size: 1.18rem;
+  line-height: 2;
+}
+
+.photos-section {
+  padding: 7rem 0;
+}
+
+.photo-gallery {
+  display: grid;
+  aspect-ratio: 5 / 7;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-rows: repeat(7, minmax(0, 1fr));
+  grid-template-areas:
+    "photo-1 photo-1 photo-2 photo-3 photo-3"
+    "photo-1 photo-1 photo-4 photo-3 photo-3"
+    "photo-5 photo-6 photo-6 photo-8 photo-8"
+    "photo-7 photo-6 photo-6 photo-8 photo-8"
+    "photo-11 photo-11 photo-12 photo-13 photo-14"
+    "photo-11 photo-11 photo-15 photo-16 photo-17"
+    "photo-18 photo-19 photo-20 photo-10 photo-9";
+  gap: 0;
+}
+
+.photo-card {
+  position: relative;
+  display: grid;
+  overflow: hidden;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  background: var(--color-background-tint);
+  cursor: pointer;
+}
+
+.photo-card:nth-child(1) { grid-area: photo-1; }
+.photo-card:nth-child(2) { grid-area: photo-2; }
+.photo-card:nth-child(3) { grid-area: photo-3; }
+.photo-card:nth-child(4) { grid-area: photo-4; }
+.photo-card:nth-child(5) { grid-area: photo-5; }
+.photo-card:nth-child(6) { grid-area: photo-6; }
+.photo-card:nth-child(7) { grid-area: photo-7; }
+.photo-card:nth-child(8) { grid-area: photo-8; }
+.photo-card:nth-child(9) { grid-area: photo-9; }
+.photo-card:nth-child(10) { grid-area: photo-10; }
+.photo-card:nth-child(11) { grid-area: photo-11; }
+.photo-card:nth-child(12) { grid-area: photo-12; }
+.photo-card:nth-child(13) { grid-area: photo-13; }
+.photo-card:nth-child(14) { grid-area: photo-14; }
+.photo-card:nth-child(15) { grid-area: photo-15; }
+.photo-card:nth-child(16) { grid-area: photo-16; }
+.photo-card:nth-child(17) { grid-area: photo-17; }
+.photo-card:nth-child(18) { grid-area: photo-18; }
+.photo-card:nth-child(19) { grid-area: photo-19; }
+.photo-card:nth-child(20) { grid-area: photo-20; }
+
+.photo-card img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.photo-card:hover img,
+.photo-card:focus-visible img {
+  transform: scale(1.045);
+}
+
+.photo-card:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 4px;
+}
+
+.photo-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 1.25rem;
+  background: rgba(21, 13, 30, 0.88);
+}
+
+.photo-lightbox.active {
+  display: flex;
+}
+
+.lightbox-image {
+  max-width: min(100%, 1080px);
+  max-height: 82vh;
+  border-radius: var(--radius-xl);
+  object-fit: contain;
+  box-shadow: var(--shadow-modal);
+}
+
+.lightbox-button {
+  position: absolute;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--color-inverse);
+  cursor: pointer;
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.lightbox-button:hover,
+.lightbox-button:focus-visible {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.lightbox-close {
+  top: 1.5rem;
+  right: 1.5rem;
+}
+
+.lightbox-previous {
+  left: 1.5rem;
+}
+
+.lightbox-next {
+  right: 1.5rem;
+}
+
+.lightbox-counter {
+  position: absolute;
+  bottom: 1.5rem;
+  left: 50%;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--color-inverse);
+  font-size: 0.85rem;
+  transform: translateX(-50%);
+}
+
+.footer {
+  padding: 4rem 2rem;
+  border-top: 1px solid rgba(111, 63, 167, 0.1);
+  text-align: center;
+}
+
+.footer h3 {
+  margin-bottom: 1rem;
+  color: var(--primary);
+  font-family: var(--font-heading);
+  font-size: 2.5rem;
+}
+
+.footer p {
+  margin-bottom: 1rem;
+  color: var(--text-light);
+}
+
+.footer span {
+  color: var(--color-text-faded);
+}
+
+.site-credit {
+  margin-top: 1.5rem;
+  color: var(--color-text-faded);
+  font-size: 0.75rem;
+  opacity: 0.72;
+}
+
+.site-credit a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.site-credit a:hover,
+.site-credit a:focus-visible {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+@media (max-width: 900px) {
+  .photo-gallery {
+    aspect-ratio: auto;
+    grid-auto-rows: auto;
+    grid-template-areas: none;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: none;
+  }
+
+  .photo-card {
+    aspect-ratio: 1 / 1;
+    grid-area: auto !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .nav-links {
+    position: fixed;
+    top: 80px;
+    right: -100%;
+    flex-direction: column;
+    width: 260px;
+    height: calc(100vh - 80px);
+    padding: 2rem;
+    background: rgba(255, 255, 255, 0.95);
+    transition: 0.4s ease;
+  }
+
+  .nav-links.active {
+    right: 0;
+  }
+
+  .nav-links a {
+    color: var(--text);
+  }
+
+  .mobile-menu {
+    display: block;
+  }
+
+  .photos-hero {
+    min-height: 70vh;
+  }
+
+  .photos-section {
+    padding: 4rem 0;
+  }
+
+  .photo-lightbox {
+    padding: 4.5rem 0.75rem;
+  }
+
+  .lightbox-previous {
+    left: 0.75rem;
+  }
+
+  .lightbox-next {
+    right: 0.75rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .photo-gallery {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .photos-hero p {
+    font-size: 1rem;
+  }
+}

@@ -21,6 +21,14 @@
       "js/admin-export.js",
       "js/admin-gifts.js",
     ],
+    "admin-messages.html": [
+      "js/security-utils.js",
+      "js/admin-messages.js",
+    ],
+    "admin-notifications.html": [
+      "js/security-utils.js",
+      "js/admin-notifications.js",
+    ],
     "admin-guests.html": [
       "js/security-utils.js",
       "js/admin-export.js",
@@ -30,10 +38,11 @@
     "admin-rsvps.html": [
       "js/security-utils.js",
       "js/admin-export.js",
+      "js/child-age-options.js",
       "js/buffet-metrics.js",
       "js/admin-rsvps.js",
     ],
-    "admin-settings.html": ["js/admin-settings.js"],
+    "admin-settings.html": ["js/security-utils.js", "js/admin-settings.js"],
   };
 
   function getCurrentPage() {

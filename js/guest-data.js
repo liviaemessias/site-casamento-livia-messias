@@ -68,15 +68,83 @@
       return { data: null, error: null };
     }
 
-    return supabaseClient.functions.invoke("send-notifications", {
+    const result = await supabaseClient.functions.invoke("send-notifications", {
       body: {
         event_type: "rsvp_saved",
       },
     });
+
+    if (result.error) {
+      throw result.error;
+    }
+
+    return result;
+  }
+
+  async function notifyPendingNotifications(
+    eventType = "gift_event",
+    aggregateId = null,
+  ) {
+    if (!isSecureMode()) {
+      return { data: null, error: null };
+    }
+
+    const result = await supabaseClient.functions.invoke("send-notifications", {
+      body: {
+        aggregate_id: aggregateId,
+        event_type: eventType,
+      },
+    });
+
+    if (result.error) {
+      throw result.error;
+    }
+
+    return result;
   }
 
   async function loadSettings() {
     return supabaseClient.rpc("get_public_settings").maybeSingle();
+  }
+
+  async function listApprovedWallMessages(limit = 100, offset = 0) {
+    return supabaseClient.rpc("list_approved_wall_messages", {
+      p_limit: limit,
+      p_offset: offset,
+    });
+  }
+
+  async function loadCurrentWallMessage() {
+    if (!isSecureMode()) {
+      return { data: null, error: null };
+    }
+
+    const { data, error } = await supabaseClient.rpc(
+      "get_current_guest_wall_message",
+    );
+
+    return {
+      data: data?.[0] || null,
+      error,
+    };
+  }
+
+  async function saveCurrentWallMessage(message) {
+    if (!isSecureMode()) {
+      return { data: null, error: new Error("Fluxo indisponível.") };
+    }
+
+    const { data, error } = await supabaseClient.rpc(
+      "save_current_guest_wall_message",
+      {
+        submitted_message: message,
+      },
+    );
+
+    return {
+      data: data?.[0] || null,
+      error,
+    };
   }
 
   async function loadGiftCatalog() {
@@ -223,14 +291,18 @@
 
   window.GuestData = {
     loadGiftCatalog,
+    listApprovedWallMessages,
+    loadCurrentWallMessage,
     loadRSVP,
     loadSettings,
     markGuestConfirmed,
+    notifyPendingNotifications,
     notifyRSVP,
     reportContributionPayment,
     reportGiftPayment,
     reserveGift,
     reserveGiftQuotas,
+    saveCurrentWallMessage,
     saveRSVP,
     setGiftPurchaseMethod,
   };

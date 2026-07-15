@@ -60,17 +60,18 @@
     <!-- Navbar -->
     <header class="navbar" id="navbar">
       <div class="container nav-content">
-        <div class="logo" data-wedding-names>Livia & Messias</div>
+        <a href="index.html" class="logo" data-wedding-names>Livia & Messias</a>
 
         <nav>
           <ul class="nav-links" id="navLinks">
             <li><a href="#home">Início</a></li>
-            <li><a href="our-story.html">Nossa História</a></li>
             <li><a href="#ceremony">Cerimônia</a></li>
             <li><a href="#reception">Recepção</a></li>
             <li><a href="login.html?redirect=rsvp">RSVP</a></li>
             <li><a href="login.html?redirect=gifts">Presentes</a></li>
-            <li><a href="#photos">Fotos</a></li>
+            <li><a href="our-story.html">Nossa História</a></li>
+            <li><a href="photos.html">Pré-Wedding</a></li>
+            <li><a href="messages.html">Recados</a></li>
           </ul>
         </nav>
 
@@ -267,6 +268,72 @@
       </div>
     </section>
 
+    <section class="home-photos-section reveal" id="photos">
+      <div class="container home-photos-grid">
+        <div class="home-photos-copy">
+          <p class="section-subtitle">Pré-wedding</p>
+
+          <h2 class="section-title">Nosso Pré-Wedding</h2>
+
+          <p class="welcome-text">
+            Um pedacinho do nosso pré-wedding para vocês.
+          </p>
+
+          <a href="photos.html" class="hero-button"> Ver Fotos </a>
+        </div>
+
+        <div
+          id="homePhotoPreview"
+          class="home-photo-preview"
+          aria-label="Prévia da galeria de fotos"
+        ></div>
+      </div>
+    </section>
+
+    <section id="homeMessagesSection" class="home-messages-section reveal" hidden>
+      <div class="container">
+        <div class="home-messages-header">
+          <p class="section-subtitle">Recados</p>
+
+          <h2 class="section-title">Mensagens que guardamos com carinho</h2>
+
+          <p class="welcome-text">
+            Alguns recados especiais que já chegaram para nós.
+          </p>
+        </div>
+
+        <div class="home-messages-carousel">
+          <button
+            id="homeMessagesPrev"
+            type="button"
+            class="home-messages-nav"
+            aria-label="Recado anterior"
+          >
+            ‹
+          </button>
+
+          <div
+            id="homeMessagesTrack"
+            class="home-messages-track"
+            aria-label="Prévia dos recados aprovados"
+          ></div>
+
+          <button
+            id="homeMessagesNext"
+            type="button"
+            class="home-messages-nav"
+            aria-label="Próximo recado"
+          >
+            ›
+          </button>
+        </div>
+
+        <div class="home-messages-actions">
+          <a href="messages.html" class="hero-button"> Ver Mural </a>
+        </div>
+      </div>
+    </section>
+
     <!-- Footer -->
     <footer class="footer">
       <h3 data-wedding-names>Livia & Messias</h3>
@@ -292,6 +359,9 @@
     <script src="js/event-config.js"></script>
     <script src="js/event-settings.js"></script>
     <script src="js/reference-decorations.js"></script>
+    <script src="js/photo-gallery-data.js"></script>
+    <script src="js/home-photos.js"></script>
+    <script src="js/home-messages.js"></script>
     <script src="js/script.js"></script>
   </body>
 </html>
