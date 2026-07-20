@@ -140,7 +140,7 @@ async function loadSettings() {
 
   if (error) {
     console.error(error);
-    showAdminToast("⚠️ Erro ao carregar configurações.");
+    showAdminToast("⚠️ Erro ao carregar configurações");
     return;
   }
 
@@ -160,7 +160,7 @@ async function loadNotificationPreferences() {
 
   if (error) {
     console.error(error);
-    showAdminToast("⚠️ Não foi possível carregar as preferências.");
+    showAdminToast("⚠️ Não foi possível carregar as preferências");
     return;
   }
 
@@ -174,7 +174,7 @@ async function updateNotificationPreference(eventType, field, checked, input) {
   );
 
   if (!preference) {
-    showAdminToast("⚠️ Preferência não encontrada. Atualize a lista.");
+    showAdminToast("⚠️ Preferência não encontrada. Atualize a lista");
     input.checked = !checked;
     return;
   }
@@ -200,11 +200,11 @@ async function updateNotificationPreference(eventType, field, checked, input) {
     console.error(error);
     preference[field] = previousValue;
     input.checked = previousValue;
-    showAdminToast("⚠️ Não foi possível salvar a preferência.");
+    showAdminToast("⚠️ Não foi possível salvar a preferência");
     return;
   }
 
-  showAdminToast("💜 Preferência atualizada.");
+  showAdminToast("💜 Preferência atualizada!");
 }
 
 settingsForm.addEventListener("submit", async (event) => {
@@ -233,7 +233,7 @@ settingsForm.addEventListener("submit", async (event) => {
     !payload.merchant_name ||
     !payload.merchant_city
   ) {
-    showAdminToast("⚠️ Preencha todos os dados necessários para o PIX.");
+    showAdminToast("⚠️ Preencha todos os dados necessários para o PIX");
     return;
   }
 
@@ -249,17 +249,17 @@ settingsForm.addEventListener("submit", async (event) => {
     !payload.reception_address ||
     !payload.reception_time
   ) {
-    showAdminToast("⚠️ Preencha todos os dados do casamento.");
+    showAdminToast("⚠️ Preencha todos os dados do casamento");
     return;
   }
 
   if (payload.rsvp_deadline > payload.wedding_date.slice(0, 10)) {
-    showAdminToast("⚠️ A data limite do RSVP deve ser anterior ao casamento.");
+    showAdminToast("⚠️ A data limite do RSVP deve ser anterior ao casamento");
     return;
   }
 
   if (!isValidBrazilianWhatsapp(payload.whatsapp_number)) {
-    showAdminToast("⚠️ Informe o WhatsApp no formato 55 + DDD + número.");
+    showAdminToast("⚠️ Informe o WhatsApp no formato 55 + DDD + número");
     return;
   }
 
@@ -268,7 +268,7 @@ settingsForm.addEventListener("submit", async (event) => {
     payload.buffet_paying_age < 1 ||
     payload.buffet_paying_age > 18
   ) {
-    showAdminToast("⚠️ Informe uma idade mínima pagante entre 1 e 18 anos.");
+    showAdminToast("⚠️ Informe uma idade mínima pagante entre 1 e 18 anos");
     return;
   }
 
@@ -295,7 +295,7 @@ settingsForm.addEventListener("submit", async (event) => {
   if (result.error || !result.data) {
     console.error(result.error);
     showAdminToast(
-      "⚠️ Não foi possível salvar as configurações. Revise os dados informados.",
+      "⚠️ Não foi possível salvar as configurações. Revise os dados informados",
     );
     return;
   }

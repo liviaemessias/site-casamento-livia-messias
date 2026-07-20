@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://unpkg.com https://challenges.cloudflare.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fornecedores | Painel Admin | Livia &amp; Messias</title>
+    <link rel="stylesheet" href="./css/style.css" />
+    <link rel="stylesheet" href="./css/admin.css" />
+  </head>
+  <body class="admin-auth-pending">
+    <main class="admin-page admin-vendors-page">
+      <section class="admin-header">
+        <div>
+          <p class="section-subtitle">Painel Administrativo</p>
+          <h1>Fornecedores</h1>
+        </div>
+        <button id="logoutButton" class="admin-logout">Sair</button>
+      </section>
+
+      <nav class="admin-nav" aria-label="Navegação administrativa">
+        <a class="admin-nav-link" href="./admin-dashboard.html">Dashboard</a>
+        <a class="admin-nav-link" href="./admin-guests.html">Convidados</a>
+        <a class="admin-nav-link" href="./admin-rsvps.html">RSVP</a>
+        <a class="admin-nav-link" href="./admin-gifts.html">Presentes</a>
+        <a class="admin-nav-link" href="./admin-messages.html">Recados</a>
+        <a class="admin-nav-link active" href="./admin-vendors.html">Fornecedores</a>
+        <a class="admin-nav-link" href="./admin-settings.html">Configurações</a>
+      </nav>
+
+      <section class="admin-section">
+        <div class="admin-section-header">
+          <div>
+            <p class="section-subtitle">Site público</p>
+            <h2>Fornecedores do Casamento</h2>
+          </div>
+
+          <div class="admin-section-actions">
+            <button id="refreshVendorsButton" class="admin-action-button icon-action">
+              <i data-lucide="refresh-cw" aria-hidden="true"></i>
+              Atualizar
+            </button>
+            <button id="openVendorOrderModalButton" class="admin-action-button icon-action">
+              <i data-lucide="list-ordered" aria-hidden="true"></i>
+              Organizar Ordem
+            </button>
+            <button id="openVendorModalButton" class="admin-action-button icon-action success">
+              <i data-lucide="plus" aria-hidden="true"></i>
+              Novo Fornecedor
+            </button>
+          </div>
+        </div>
+
+        <section class="admin-grid dashboard-grid vendor-summary-grid" aria-label="Resumo dos fornecedores">
+          <article class="admin-card admin-card-link vendor-summary-card" data-vendor-summary="total" role="button" tabindex="0">
+            <div class="admin-card-header">
+              <span>Total</span>
+              <button type="button" class="metric-help" aria-label="Ajuda sobre total" data-tooltip="Todos os fornecedores cadastrados.">?</button>
+            </div>
+            <strong id="vendorTotalCount">0</strong>
+          </article>
+          <article class="admin-card admin-card-link vendor-summary-card" data-vendor-summary="visible" role="button" tabindex="0">
+            <div class="admin-card-header">
+              <span>Visíveis</span>
+              <button type="button" class="metric-help" aria-label="Ajuda sobre visíveis" data-tooltip="Fornecedores exibidos na página pública.">?</button>
+            </div>
+            <strong id="vendorVisibleCount">0</strong>
+          </article>
+          <article class="admin-card admin-card-link vendor-summary-card" data-vendor-summary="hidden" role="button" tabindex="0">
+            <div class="admin-card-header">
+              <span>Ocultos</span>
+              <button type="button" class="metric-help" aria-label="Ajuda sobre ocultos" data-tooltip="Fornecedores cadastrados, mas escondidos do site público.">?</button>
+            </div>
+            <strong id="vendorHiddenCount">0</strong>
+          </article>
+          <article class="admin-card admin-card-link vendor-summary-card" data-vendor-summary="featured" role="button" tabindex="0">
+            <div class="admin-card-header">
+              <span>Destaques</span>
+              <button type="button" class="metric-help" aria-label="Ajuda sobre destaques" data-tooltip="Fornecedores marcados como destaque.">?</button>
+            </div>
+            <strong id="vendorFeaturedCount">0</strong>
+          </article>
+        </section>
+
+        <div class="admin-filters" aria-label="Filtros de fornecedores">
+          <div class="admin-filter-field">
+            <label for="vendorSearchInput">Buscar</label>
+            <input
+              type="search"
+              id="vendorSearchInput"
+              placeholder="Nome, categoria, responsável ou descrição"
+            />
+          </div>
+
+          <div class="admin-filter-field">
+            <label for="vendorCategoryFilter">Categoria</label>
+            <select id="vendorCategoryFilter">
+              <option value="">Todas</option>
+            </select>
+          </div>
+
+          <div class="admin-filter-field">
+            <label for="vendorVisibilityFilter">Visibilidade</label>
+            <select id="vendorVisibilityFilter">
+              <option value="">Todos</option>
+              <option value="visible">Visíveis</option>
+              <option value="hidden">Ocultos</option>
+            </select>
+          </div>
+
+          <div class="admin-filter-field">
+            <label for="vendorFeaturedFilter">Destaque</label>
+            <select id="vendorFeaturedFilter">
+              <option value="">Todos</option>
+              <option value="featured">Destaques</option>
+              <option value="regular">Sem destaque</option>
+            </select>
+          </div>
+
+          <div class="admin-filter-actions">
+            <span id="vendorFilterCount" class="admin-filter-count"></span>
+            <button
+              type="button"
+              id="clearVendorFiltersButton"
+              class="admin-clear-filters"
+            >
+              Limpar Filtros
+            </button>
+          </div>
+        </div>
+
+        <div class="admin-table-wrapper">
+          <table class="admin-table vendors-table">
+            <thead>
+              <tr>
+                <th>
+                  <button class="admin-sort-button" data-vendor-sort="name">
+                    Nome / Marca
+                  </button>
+                </th>
+                <th>
+                  <button class="admin-sort-button" data-vendor-sort="category">
+                    Categoria
+                  </button>
+                </th>
+                <th>
+                  <button class="admin-sort-button" data-vendor-sort="responsible">
+                    Responsáveis
+                  </button>
+                </th>
+                <th>
+                  <button class="admin-sort-button" data-vendor-sort="visible">
+                    Visível
+                  </button>
+                </th>
+                <th>
+                  <button class="admin-sort-button" data-vendor-sort="featured">
+                    Destaque
+                  </button>
+                </th>
+                <th>
+                  <button class="admin-sort-button" data-vendor-sort="order">
+                    Ordem
+                  </button>
+                </th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="vendorsTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <div id="vendorModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content">
+        <div class="admin-modal-header">
+          <div>
+            <p class="section-subtitle">Fornecedor</p>
+            <h2 id="vendorModalTitle">Novo Fornecedor</h2>
+          </div>
+          <button
+            id="closeVendorModalButton"
+            type="button"
+            class="admin-modal-close"
+            aria-label="Fechar"
+          >
+            ×
+          </button>
+        </div>
+
+        <form id="vendorForm" class="admin-form">
+          <div class="admin-form-grid">
+            <div class="admin-form-group">
+              <label for="vendorNameInput">Nome / Marca</label>
+              <input id="vendorNameInput" type="text" maxlength="160" required />
+            </div>
+
+            <div class="admin-form-group">
+              <label for="vendorCategoryInput">Categoria</label>
+              <input id="vendorCategoryInput" type="text" maxlength="120" required />
+            </div>
+
+            <div class="admin-form-group">
+              <label for="vendorResponsibleInput">Responsáveis</label>
+              <input id="vendorResponsibleInput" type="text" maxlength="240" />
+            </div>
+
+            <div class="admin-form-group">
+              <label for="vendorOrderInput">Ordem</label>
+              <input id="vendorOrderInput" type="number" step="1" value="0" />
+              <small class="admin-field-hint">
+                Menor número aparece primeiro. Se deixar vazio, entra no final.
+              </small>
+            </div>
+          </div>
+
+          <div class="admin-form-group">
+            <label for="vendorDescriptionInput">Descrição</label>
+            <textarea id="vendorDescriptionInput" maxlength="800" rows="4"></textarea>
+          </div>
+
+          <div class="admin-form-grid">
+            <div class="admin-form-group">
+              <label for="vendorImageInput">Imagem / Logo</label>
+              <input id="vendorImageInput" type="url" />
+            </div>
+
+            <div class="admin-form-group">
+              <label for="vendorInstagramInput">Instagram</label>
+              <input id="vendorInstagramInput" type="url" />
+            </div>
+
+            <div class="admin-form-group">
+              <label for="vendorWebsiteInput">Site</label>
+              <input id="vendorWebsiteInput" type="url" />
+            </div>
+
+            <div class="admin-form-group">
+              <label for="vendorWhatsappInput">WhatsApp</label>
+              <input id="vendorWhatsappInput" type="tel" />
+            </div>
+          </div>
+
+          <div class="admin-form-grid compact-form-grid">
+            <label class="admin-checkbox-label">
+              <input id="vendorVisibleInput" type="checkbox" checked />
+              Visível no site
+            </label>
+
+            <label class="admin-checkbox-label">
+              <input id="vendorFeaturedInput" type="checkbox" />
+              Destaque
+            </label>
+          </div>
+
+          <div class="admin-modal-actions vendor-modal-actions">
+            <button type="submit" class="admin-save-button">
+              Salvar Fornecedor
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="vendorDetailsModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content admin-details-modal-content">
+        <button
+          id="closeVendorDetailsModalButton"
+          type="button"
+          class="admin-modal-close"
+          aria-label="Fechar detalhes do fornecedor"
+        >
+          ×
+        </button>
+
+        <h2 id="vendorDetailsTitle">Detalhes do Fornecedor</h2>
+        <div id="vendorDetailsContent" class="admin-details-content"></div>
+      </div>
+    </div>
+
+    <div id="vendorOrderModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content admin-details-modal-content">
+        <button
+          id="closeVendorOrderModalButton"
+          type="button"
+          class="admin-modal-close"
+          aria-label="Fechar organização de fornecedores"
+        >
+          ×
+        </button>
+
+        <h2>Organizar Ordem</h2>
+        <p class="admin-modal-helper">
+          Arraste os fornecedores ou use as setas para definir a ordem pública.
+        </p>
+
+        <div
+          id="vendorOrderList"
+          class="vendor-order-list"
+          aria-label="Ordem dos fornecedores"
+        ></div>
+
+        <div class="admin-modal-actions vendor-modal-actions">
+          <button id="saveVendorOrderButton" type="button" class="admin-save-button">
+            Salvar Ordem
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="adminToast" class="admin-toast"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/event-config.js"></script>
+    <script src="js/event-settings.js"></script>
+    <script src="js/admin-common.js"></script>
+    <script src="js/admin-bootstrap.js"></script>
+  </body>
+</html>

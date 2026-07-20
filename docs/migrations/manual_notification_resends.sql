@@ -110,6 +110,7 @@ begin
       'presence', rsvp_record.presence,
       'email', rsvp_record.email,
       'phone', rsvp_record.phone,
+      'food_restriction', rsvp_record.food_restriction,
       'food', rsvp_record.food,
       'message', rsvp_record.message,
       'guest_data', rsvp_record.guest_data

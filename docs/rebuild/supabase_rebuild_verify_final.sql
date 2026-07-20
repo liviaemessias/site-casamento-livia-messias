@@ -40,6 +40,12 @@ from (
     ('public.notification_deliveries'),
     ('public.notification_preferences'),
     ('public.guest_wall_messages'),
+    ('public.wedding_vendors'),
+    ('public.wedding_schedule_sections'),
+    ('public.wedding_schedule_activities'),
+    ('public.wedding_checklist_categories'),
+    ('public.wedding_checklist_responsibles'),
+    ('public.wedding_checklist_items'),
     ('public.admin_users'),
     ('public.guest_access_sessions'),
     ('public.invite_login_attempts')
@@ -62,6 +68,12 @@ where n.nspname = 'public'
     'notification_deliveries',
     'notification_preferences',
     'guest_wall_messages',
+    'wedding_vendors',
+    'wedding_schedule_sections',
+    'wedding_schedule_activities',
+    'wedding_checklist_categories',
+    'wedding_checklist_responsibles',
+    'wedding_checklist_items',
     'admin_users',
     'guest_access_sessions',
     'invite_login_attempts'
@@ -79,7 +91,7 @@ from (
     ('public.admin_release_gift_reservation(uuid)'),
     ('public.admin_confirm_gift_contribution(uuid)'),
     ('public.admin_release_gift_contribution(uuid)'),
-    ('public.admin_save_guest_rsvp(uuid,text,text,text,text,text,jsonb)'),
+    ('public.admin_save_guest_rsvp(uuid,text,text,text,text,boolean,text,jsonb)'),
     ('public.admin_delete_guest_rsvp(uuid)'),
     ('public.admin_update_guest(uuid,text,text,jsonb,integer,boolean)'),
     ('public.admin_set_guest_active(uuid,boolean)'),
@@ -102,6 +114,34 @@ from (
     ('public.admin_reply_wall_message(uuid,text)'),
     ('public.admin_clear_wall_message_reply(uuid)'),
     ('public.admin_delete_wall_message(uuid)'),
+    ('public.list_public_vendors()'),
+    ('public.admin_list_vendors()'),
+    ('public.admin_save_vendor(uuid,text,text,text,text,text,text,text,text,integer,boolean,boolean)'),
+    ('public.admin_set_vendor_visible(uuid,boolean)'),
+    ('public.admin_reorder_vendors(uuid[])'),
+    ('public.admin_delete_vendor(uuid)'),
+    ('public.list_public_schedule()'),
+    ('public.admin_list_schedule_sections()'),
+    ('public.admin_list_schedule_activities()'),
+    ('public.admin_save_schedule_section(uuid,text,text,text,text,integer,boolean)'),
+    ('public.admin_save_schedule_activity(uuid,uuid,text,text,text,time without time zone,time without time zone,text,integer,boolean)'),
+    ('public.admin_set_schedule_section_visible(uuid,boolean)'),
+    ('public.admin_set_schedule_activity_visible(uuid,boolean)'),
+    ('public.admin_reorder_schedule_sections(uuid[])'),
+    ('public.admin_reorder_schedule_activities(uuid,uuid[])'),
+    ('public.admin_delete_schedule_section(uuid)'),
+    ('public.admin_delete_schedule_activity(uuid)'),
+    ('public.admin_list_checklist_categories()'),
+    ('public.admin_list_checklist_responsibles()'),
+    ('public.admin_list_checklist_items()'),
+    ('public.admin_save_checklist_category(uuid,text,text,text,integer,boolean)'),
+    ('public.admin_save_checklist_responsible(uuid,text,text,integer,boolean)'),
+    ('public.admin_save_checklist_item(uuid,uuid,text,text,text,text,text,uuid,date,text,integer)'),
+    ('public.admin_set_checklist_item_status(uuid,text)'),
+    ('public.admin_reorder_checklist_items(text,uuid[])'),
+    ('public.admin_delete_checklist_category(uuid)'),
+    ('public.admin_delete_checklist_responsible(uuid)'),
+    ('public.admin_delete_checklist_item(uuid)'),
     ('public.enqueue_gift_notification_event(text,text,uuid,timestamp with time zone,uuid,jsonb)'),
     ('public.enqueue_wall_message_notification_event(text,uuid,timestamp with time zone)'),
     ('public.get_public_settings()'),
@@ -112,7 +152,7 @@ from (
     ('public.get_current_guest_wall_message()'),
     ('public.save_current_guest_wall_message(text)'),
     ('public.get_gift_catalog()'),
-    ('public.save_current_rsvp(text,text,text,text,text,jsonb)'),
+    ('public.save_current_rsvp(text,text,text,text,boolean,text,jsonb)'),
     ('public.reserve_gift(uuid,text)'),
     ('public.set_gift_purchase_method(uuid,text,jsonb)'),
     ('public.report_gift_payment(uuid)'),
@@ -300,6 +340,182 @@ select
   ) as check_passed
 union all
 select
+  'wedding vendor RPCs have restricted execution' as check_name,
+  has_function_privilege(
+    'anon',
+    'public.list_public_vendors()',
+    'execute'
+  )
+  and has_function_privilege(
+    'authenticated',
+    'public.list_public_vendors()',
+    'execute'
+  )
+  and not has_function_privilege(
+    'anon',
+    'public.admin_list_vendors()',
+    'execute'
+  )
+  and has_function_privilege(
+    'authenticated',
+    'public.admin_list_vendors()',
+    'execute'
+  )
+  and not has_function_privilege(
+    'anon',
+    'public.admin_save_vendor(uuid,text,text,text,text,text,text,text,text,integer,boolean,boolean)',
+    'execute'
+  )
+  and has_function_privilege(
+    'authenticated',
+    'public.admin_save_vendor(uuid,text,text,text,text,text,text,text,text,integer,boolean,boolean)',
+    'execute'
+  )
+  and not has_function_privilege(
+    'anon',
+    'public.admin_set_vendor_visible(uuid,boolean)',
+    'execute'
+  )
+  and has_function_privilege(
+    'authenticated',
+    'public.admin_set_vendor_visible(uuid,boolean)',
+    'execute'
+  )
+  and not has_function_privilege(
+    'anon',
+    'public.admin_reorder_vendors(uuid[])',
+    'execute'
+  )
+  and has_function_privilege(
+    'authenticated',
+    'public.admin_reorder_vendors(uuid[])',
+    'execute'
+  )
+  and not has_function_privilege(
+    'anon',
+    'public.admin_delete_vendor(uuid)',
+    'execute'
+  )
+  and has_function_privilege(
+    'authenticated',
+    'public.admin_delete_vendor(uuid)',
+    'execute'
+  ) as check_passed
+union all
+select
+  'wedding schedule RPCs have restricted execution' as check_name,
+  not has_function_privilege(
+    'anon',
+    'public.list_public_schedule()',
+    'execute'
+  )
+  and has_function_privilege(
+    'authenticated',
+    'public.list_public_schedule()',
+    'execute'
+  )
+  and not has_function_privilege(
+    'anon',
+    'public.admin_list_schedule_sections()',
+    'execute'
+  )
+  and has_function_privilege(
+    'authenticated',
+    'public.admin_list_schedule_sections()',
+    'execute'
+  )
+  and not has_function_privilege(
+    'anon',
+    'public.admin_list_schedule_activities()',
+    'execute'
+  )
+  and has_function_privilege(
+    'authenticated',
+    'public.admin_list_schedule_activities()',
+    'execute'
+  )
+  and not has_function_privilege(
+    'anon',
+    'public.admin_save_schedule_section(uuid,text,text,text,text,integer,boolean)',
+    'execute'
+  )
+  and has_function_privilege(
+    'authenticated',
+    'public.admin_save_schedule_section(uuid,text,text,text,text,integer,boolean)',
+    'execute'
+  )
+  and not has_function_privilege(
+    'anon',
+    'public.admin_save_schedule_activity(uuid,uuid,text,text,text,time without time zone,time without time zone,text,integer,boolean)',
+    'execute'
+  )
+  and has_function_privilege(
+    'authenticated',
+    'public.admin_save_schedule_activity(uuid,uuid,text,text,text,time without time zone,time without time zone,text,integer,boolean)',
+    'execute'
+  )
+  and not has_function_privilege(
+    'anon',
+    'public.admin_set_schedule_section_visible(uuid,boolean)',
+    'execute'
+  )
+  and has_function_privilege(
+    'authenticated',
+    'public.admin_set_schedule_section_visible(uuid,boolean)',
+    'execute'
+  )
+  and not has_function_privilege(
+    'anon',
+    'public.admin_set_schedule_activity_visible(uuid,boolean)',
+    'execute'
+  )
+  and has_function_privilege(
+    'authenticated',
+    'public.admin_set_schedule_activity_visible(uuid,boolean)',
+    'execute'
+  )
+  and not has_function_privilege(
+    'anon',
+    'public.admin_reorder_schedule_sections(uuid[])',
+    'execute'
+  )
+  and has_function_privilege(
+    'authenticated',
+    'public.admin_reorder_schedule_sections(uuid[])',
+    'execute'
+  )
+  and not has_function_privilege(
+    'anon',
+    'public.admin_reorder_schedule_activities(uuid,uuid[])',
+    'execute'
+  )
+  and has_function_privilege(
+    'authenticated',
+    'public.admin_reorder_schedule_activities(uuid,uuid[])',
+    'execute'
+  )
+  and not has_function_privilege(
+    'anon',
+    'public.admin_delete_schedule_section(uuid)',
+    'execute'
+  )
+  and has_function_privilege(
+    'authenticated',
+    'public.admin_delete_schedule_section(uuid)',
+    'execute'
+  )
+  and not has_function_privilege(
+    'anon',
+    'public.admin_delete_schedule_activity(uuid)',
+    'execute'
+  )
+  and has_function_privilege(
+    'authenticated',
+    'public.admin_delete_schedule_activity(uuid)',
+    'execute'
+  ) as check_passed
+union all
+select
   'administrative notification preference RPCs have restricted execution' as check_name,
   not has_function_privilege(
     'anon',
@@ -435,7 +651,7 @@ select
   'administrative RSVP RPCs have restricted execution' as check_name,
   not has_function_privilege(
     'anon',
-    'public.admin_save_guest_rsvp(uuid,text,text,text,text,text,jsonb)',
+    'public.admin_save_guest_rsvp(uuid,text,text,text,text,boolean,text,jsonb)',
     'execute'
   )
   and not has_function_privilege(
@@ -445,7 +661,7 @@ select
   )
   and has_function_privilege(
     'authenticated',
-    'public.admin_save_guest_rsvp(uuid,text,text,text,text,text,jsonb)',
+    'public.admin_save_guest_rsvp(uuid,text,text,text,text,boolean,text,jsonb)',
     'execute'
   )
   and has_function_privilege(
@@ -552,6 +768,21 @@ select
     'authenticated',
     'public.guest_wall_messages',
     'select, insert, update, delete'
+  )
+  and not has_table_privilege(
+    'authenticated',
+    'public.wedding_vendors',
+    'select, insert, update, delete'
+  )
+  and not has_table_privilege(
+    'authenticated',
+    'public.wedding_schedule_sections',
+    'select, insert, update, delete'
+  )
+  and not has_table_privilege(
+    'authenticated',
+    'public.wedding_schedule_activities',
+    'select, insert, update, delete'
   ) as check_passed
 union all
 select
@@ -574,6 +805,21 @@ select
   and not has_table_privilege(
     'anon',
     'public.guest_wall_messages',
+    'select, insert, update, delete'
+  )
+  and not has_table_privilege(
+    'anon',
+    'public.wedding_vendors',
+    'select, insert, update, delete'
+  )
+  and not has_table_privilege(
+    'anon',
+    'public.wedding_schedule_sections',
+    'select, insert, update, delete'
+  )
+  and not has_table_privilege(
+    'anon',
+    'public.wedding_schedule_activities',
     'select, insert, update, delete'
   ) as check_passed
 union all
@@ -710,7 +956,9 @@ select
         ('settings'),
         ('notification_events'),
         ('notification_deliveries'),
-        ('guest_wall_messages')
+        ('guest_wall_messages'),
+        ('wedding_schedule_sections'),
+        ('wedding_schedule_activities')
     ) as application_tables(table_name)
     where has_table_privilege(
       'anon',
@@ -894,5 +1142,17 @@ select
       and nullif(btrim(reception_address), '') is not null
       and reception_time is not null
   ) as check_passed
+union all
+select
+  'wedding checklist tables exist' as check_name,
+  to_regclass('public.wedding_checklist_categories') is not null
+  and to_regclass('public.wedding_checklist_responsibles') is not null
+  and to_regclass('public.wedding_checklist_items') is not null as check_passed
+union all
+select
+  'wedding checklist seed data exists' as check_name,
+  (select count(*) >= 18 from public.wedding_checklist_categories)
+  and (select count(*) >= 16 from public.wedding_checklist_responsibles)
+  and (select count(*) >= 30 from public.wedding_checklist_items) as check_passed
 ) as rebuild_checks
 order by check_passed asc, check_name asc;

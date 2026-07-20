@@ -2,7 +2,7 @@
 
 Site de casamento personalizado para centralizar informações do evento, RSVP, lista de presentes e administração dos noivos.
 
-Versão atual: **3.7**.
+Versão atual: **4.0**.
 
 ## Desenvolvimento
 
@@ -40,6 +40,18 @@ GitHub: [messiasfl10](https://github.com/messiasfl10/)
 - Página de Relatórios com exportações CSV/XLSX, seleção de colunas, convite enviado e opções resumidas ou detalhadas para a lista de confirmados.
 - Mural de Recados com página pública, prévia na página inicial, moderação
   administrativa, respostas dos noivos e notificações por e-mail.
+- Página pública de Fornecedores, com cards visíveis para convidados e estado
+  vazio amigável quando ainda não houver fornecedores cadastrados.
+- Administração de fornecedores com cadastro, edição, listagem, visibilidade,
+  destaque, ordenação manual por modal e exclusão.
+- Página protegida de Programação do casamento, com etapas e atividades
+  visíveis apenas para convidados logados.
+- Administração da programação com cadastro de etapas, atividades, filtros,
+  ordenação manual por modal, visibilidade e exclusão.
+- Checklist administrativo do casamento, com tarefas em cards por período,
+  categorias e responsáveis editáveis, ações rápidas por período, organização
+  manual da ordem, exportação CSV, status, prioridade, alerta de tarefas
+  atrasadas e seed inicial.
 - Referências visuais personalizadas nos logins e nas páginas públicas, adaptadas para desktop e mobile.
 - Textos de saudação, reserva e pagamento adaptados para convites individuais e de casal.
 - Login administrativo com e-mail e senha pelo Supabase Auth.
@@ -80,6 +92,8 @@ GitHub: [messiasfl10](https://github.com/messiasfl10/)
 - `gifts.html`: lista de presentes e fluxo de reserva/pagamento.
 - `photos.html`: galeria do Pré-Wedding.
 - `messages.html`: Mural de Recados.
+- `vendors.html`: fornecedores do casamento.
+- `schedule.html`: programação do casamento para convidados logados.
 
 ### Administrativas
 
@@ -93,6 +107,9 @@ O antigo painel único foi dividido em páginas dedicadas:
 - `admin-guests.html`: gestão de convidados e RSVP manual.
 - `admin-rsvps.html`: consulta e remoção de confirmações.
 - `admin-messages.html`: moderação e resposta dos recados.
+- `admin-checklist.html`: organização interna do checklist do casamento.
+- `admin-vendors.html`: cadastro e gestão dos fornecedores exibidos no site.
+- `admin-schedule.html`: cadastro e gestão das etapas e atividades da programação do casamento.
 - `admin-settings.html`: configuração dos dados do casamento, PIX, WhatsApp e idade mínima pagante do buffet.
 
 Todas as páginas administrativas passam por `js/admin-bootstrap.js`, que
@@ -136,6 +153,11 @@ datas e atualização de textos simples.
 - `js/admin-rsvps.js`: listagem, filtros, ordenação e remoção de RSVPs.
 - `js/admin-messages.js`: moderação, aprovação, ocultação e respostas do Mural de Recados.
 - `js/messages.js`: página pública do Mural de Recados, envio do convidado e listagem aprovada.
+- `js/admin-vendors.js`: cadastro, edição, filtros e visibilidade dos fornecedores.
+- `js/vendors.js`: página pública de Fornecedores e estado vazio.
+- `js/admin-schedule.js`: cadastro, edição, filtros, visibilidade e ordenação da programação.
+- `js/schedule.js`: página protegida da programação para convidados logados.
+- `js/admin-checklist.js`: checklist administrativo em cards por período, com categorias, responsáveis, ordenação, CSV e modais de tarefas.
 - `js/admin-settings.js`: edição dos dados do casamento, PIX, WhatsApp e regra do buffet.
 
 ## Organização Dos CSSs
@@ -148,6 +170,8 @@ datas e atualização de textos simples.
 - `css/story.css`: página Nossa História.
 - `css/photos.css`: página de Pré-Wedding e lightbox da galeria.
 - `css/messages.css`: página pública do Mural de Recados.
+- `css/vendors.css`: página pública de Fornecedores.
+- `css/schedule.css`: página protegida da Programação.
 - `css/admin.css`: todas as páginas administrativas.
 
 Os CSSs foram padronizados para usar tokens globais sempre que possível. Os HTMLs também evitam estilos inline; classes utilitárias como `is-hidden` são usadas para estados iniciais simples.
@@ -159,6 +183,8 @@ As imagens do site ficam organizadas por contexto em `assets/images/`:
 - `home/`: capa da página inicial e fotos da cerimônia e da recepção.
 - `our-story/`: capa e fotos dos carrosséis da página Nossa História.
 - `photos/`: fotos exibidas na seção e na página de Pré-Wedding.
+- `vendors/`: imagem de referência da página pública de Fornecedores.
+- `schedule/`: imagem de referência da página protegida de Programação.
 - `login-references/`: referências visuais usadas nos logins e nas decorações das páginas públicas.
 
 ## Assets Do Pré-Wedding
@@ -226,7 +252,8 @@ Ele não representa o fluxo ativo da versão 3.3.
 O RSVP permite:
 
 - Confirmar presença com `Sim` ou `Não`.
-- Informar e-mail, telefone, restrição alimentar e mensagem.
+- Informar e-mail, telefone, se possui restrição alimentar e mensagem.
+  Quando houver restrição, o campo de detalhe é liberado.
 - Adicionar acompanhantes dentro do limite do convite.
 - Confirmar membros de convite de casal individualmente.
 
@@ -381,6 +408,7 @@ PixPayment.getQrCodeUrl(payload);
 
 - `docs/operations/captcha_turnstile_setup.md`: ativação, testes e rollback do Cloudflare Turnstile nos logins.
 - `docs/operations/smtp_email_notifications_setup.md`: configuração SMTP, Gmail, Outlook/Hotmail, deploy e testes das notificações por e-mail.
+- `docs/releases/release_v4.0.md`: notas da versão 4.0, com páginas públicas e administração de Fornecedores e Programação, além de ajustes na experiência pública de Presentes.
 - `docs/releases/release_v3.7.md`: notas da versão 3.7, com página/seção de Pré-Wedding, galeria responsiva, Mural de Recados e e-mails do mural.
 - `docs/releases/release_v3.6.md`: notas da versão 3.6, com reenvios manuais auditáveis.
 - `docs/releases/release_v3.5.md`: notas da versão 3.5, com preferências de notificação, auditoria, filtros, busca e lembretes manuais de presentes/cotas.
@@ -420,6 +448,12 @@ PixPayment.getQrCodeUrl(payload);
 - `docs/migrations/notification_delivery_summary_verify.sql`: verificação incremental da RPC de resumo das métricas de notificações.
 - `docs/migrations/admin_nav_alerts.sql`: migração incremental dos alertas compactos do menu administrativo para Recados e Presentes.
 - `docs/migrations/admin_nav_alerts_verify.sql`: verificação incremental da RPC de alertas do menu administrativo.
+- `docs/migrations/wedding_vendors.sql`: migração incremental da tabela e RPCs de Fornecedores.
+- `docs/migrations/wedding_vendors_verify.sql`: verificação incremental da tabela, RLS e permissões de Fornecedores.
+- `docs/migrations/wedding_schedule.sql`: migração incremental das tabelas e RPCs da Programação.
+- `docs/migrations/wedding_schedule_verify.sql`: verificação incremental das tabelas, RLS e permissões da Programação.
+- `docs/migrations/wedding_checklist.sql`: migração incremental das tabelas, seeds e RPCs do Checklist.
+- `docs/migrations/wedding_checklist_verify.sql`: verificação incremental das tabelas, RLS, seeds e RPCs do Checklist.
 - `docs/migrations/wall_messages.sql`: migração incremental do Mural de Recados, com envio do convidado, listagem pública aprovada e moderação administrativa.
 - `docs/migrations/wall_messages_verify.sql`: verificação incremental da tabela, RLS, grants e RPCs do Mural de Recados.
 - `docs/migrations/wall_message_email_notifications.sql`: migração incremental dos eventos de e-mail do Mural de Recados.
@@ -444,6 +478,15 @@ Concluído:
 - Mural de Recados com página pública, envio/edição pelo convidado logado,
   prévia na página inicial, aprovação, ocultação, resposta dos noivos, remoção
   de resposta e exclusão no painel administrativo.
+- Fornecedores com página pública, cadastro administrativo, controle de
+  visibilidade, destaque, organização manual da ordem e estado vazio amigável.
+- Programação do casamento com página protegida para convidados, cadastro
+  administrativo de etapas e atividades, visibilidade, filtros e organização
+  manual da ordem.
+- Checklist do casamento no painel administrativo, com tarefas padrão
+  organizadas de 12 meses antes até depois do casamento, categorias e
+  responsáveis editáveis, ações rápidas por período, organização manual por
+  período, alerta de tarefas atrasadas no menu e exportação CSV filtrada.
 - Acompanhamento de presentes do convite com ações pendentes.
 - Dica pública para completar o e-mail do RSVP antes de reservar presentes.
 - PIX com QR-Code e copia e cola.
@@ -498,6 +541,5 @@ Em aberto:
 - Indicadores financeiros avançados por período ou forma de pagamento.
 - Adicionar ou substituir as fotos oficiais do Pré-Wedding após o ensaio.
 - Código de Vestimenta.
-- Programação e Atrações do Evento.
 - Gerenciamento de Previsão/Controle de Gastos.
 - Gerar Relatórios em PDF, complementando XLS.

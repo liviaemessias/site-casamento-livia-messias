@@ -49,7 +49,7 @@ from (
   values
     ('public.get_current_guest_profile()'),
     ('public.get_gift_catalog()'),
-    ('public.save_current_rsvp(text,text,text,text,text,jsonb)'),
+    ('public.save_current_rsvp(text,text,text,text,boolean,text,jsonb)'),
     ('public.reserve_gift(uuid,text)'),
     ('public.set_gift_purchase_method(uuid,text,jsonb)'),
     ('public.report_gift_payment(uuid)'),
@@ -74,7 +74,7 @@ from (
   values
     ('public.get_current_guest_profile()'),
     ('public.get_gift_catalog()'),
-    ('public.save_current_rsvp(text,text,text,text,text,jsonb)'),
+    ('public.save_current_rsvp(text,text,text,text,boolean,text,jsonb)'),
     ('public.reserve_gift(uuid,text)'),
     ('public.set_gift_purchase_method(uuid,text,jsonb)'),
     ('public.report_gift_payment(uuid)'),

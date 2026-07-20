@@ -4,10 +4,13 @@
 
 begin;
 
+drop function if exists public.admin_get_nav_alerts();
+
 create or replace function public.admin_get_nav_alerts()
 returns table (
   has_pending_wall_messages boolean,
-  has_reported_gifts boolean
+  has_reported_gifts boolean,
+  has_overdue_checklist_tasks boolean
 )
 language plpgsql
 security definer
@@ -40,7 +43,14 @@ begin
         where contribution.payment_status = 'Informado'
         limit 1
       )
-    ) as has_reported_gifts;
+    ) as has_reported_gifts,
+    exists (
+      select 1
+      from public.wedding_checklist_items as checklist_item
+      where checklist_item.status <> 'completed'
+        and checklist_item.due_date < current_date
+      limit 1
+    ) as has_overdue_checklist_tasks;
 end;
 $$;
 

@@ -25,6 +25,19 @@
       "js/security-utils.js",
       "js/admin-messages.js",
     ],
+    "admin-checklist.html": [
+      "js/security-utils.js",
+      "js/admin-export.js",
+      "js/admin-checklist.js",
+    ],
+    "admin-schedule.html": [
+      "js/security-utils.js",
+      "js/admin-schedule.js",
+    ],
+    "admin-vendors.html": [
+      "js/security-utils.js",
+      "js/admin-vendors.js",
+    ],
     "admin-notifications.html": [
       "js/security-utils.js",
       "js/admin-notifications.js",

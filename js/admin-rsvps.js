@@ -13,6 +13,7 @@ const rsvpCompanionFilter = document.getElementById("rsvpCompanionFilter");
 const rsvpRestrictionFilter = document.getElementById("rsvpRestrictionFilter");
 const rsvpBuffetFilter = document.getElementById("rsvpBuffetFilter");
 const rsvpFilterCount = document.getElementById("rsvpFilterCount");
+const refreshRSVPsButton = document.getElementById("refreshRSVPsButton");
 const exportRSVPsButton = document.getElementById("exportRSVPsButton");
 const clearRSVPFiltersButton = document.getElementById(
   "clearRSVPFiltersButton",
@@ -44,6 +45,12 @@ const adminRSVPGuestCountInput = document.getElementById(
   "adminRSVPGuestCountInput",
 );
 const adminRSVPGuestFields = document.getElementById("adminRSVPGuestFields");
+const adminRSVPFoodRestrictionInput = document.getElementById(
+  "adminRSVPFoodRestrictionInput",
+);
+const adminRSVPFoodDetailsGroup = document.getElementById(
+  "adminRSVPFoodDetailsGroup",
+);
 const adminRSVPFoodInput = document.getElementById("adminRSVPFoodInput");
 const adminRSVPMessageInput = document.getElementById("adminRSVPMessageInput");
 const deleteAdminRSVPButton = document.getElementById("deleteAdminRSVPButton");
@@ -145,9 +152,39 @@ function renderInviteTypeBadge(type) {
 }
 
 function hasDietaryRestriction(rsvp) {
-  const food = String(rsvp.food || "").trim();
+  if (typeof rsvp?.food_restriction === "boolean") {
+    return rsvp.food_restriction;
+  }
+
+  const food = String(rsvp?.food || "").trim();
 
   return Boolean(food && food !== "-");
+}
+
+function getDietaryRestrictionLabel(rsvp) {
+  return hasDietaryRestriction(rsvp) ? "Sim" : "Não";
+}
+
+function getDietaryRestrictionDetails(rsvp) {
+  if (!hasDietaryRestriction(rsvp)) {
+    return "-";
+  }
+
+  return String(rsvp.food || "").trim() || "Sim, sem detalhes informados";
+}
+
+function updateAdminRSVPFoodVisibility() {
+  const hasRestriction = adminRSVPFoodRestrictionInput?.value === "Sim";
+
+  setElementVisibility(adminRSVPFoodDetailsGroup, hasRestriction);
+
+  if (adminRSVPFoodInput) {
+    adminRSVPFoodInput.required = hasRestriction;
+
+    if (!hasRestriction) {
+      adminRSVPFoodInput.value = "";
+    }
+  }
 }
 
 function renderRSVPDietaryIndicator(rsvp) {
@@ -532,14 +569,14 @@ async function openRSVPEditModal(rsvpId) {
   const rsvp = getRSVPById(rsvpId);
 
   if (!rsvp) {
-    showAdminToast("⚠️ Não foi possível encontrar este RSVP.");
+    showAdminToast("⚠️ Não foi possível encontrar este RSVP");
     return;
   }
 
   const guest = await getRSVPGuestForEdit(rsvp);
 
   if (!guest) {
-    showAdminToast("⚠️ Não foi possível encontrar o convidado deste RSVP.");
+    showAdminToast("⚠️ Não foi possível encontrar o convidado deste RSVP");
     return;
   }
 
@@ -578,7 +615,8 @@ window.openRSVPDetailsModal = function (rsvp) {
       ${renderRSVPMetaGrid([
         ["E-mail", rsvp.email || "-"],
         ["Telefone", rsvp.phone || "-"],
-        ["Restrição alimentar", hasDietaryRestriction(rsvp) ? rsvp.food : "-"],
+        ["Possui restrição alimentar", getDietaryRestrictionLabel(rsvp)],
+        ["Restrição alimentar", getDietaryRestrictionDetails(rsvp)],
         ["Mensagem", rsvp.message || "-"],
       ])}
     </section>
@@ -627,7 +665,7 @@ function openRSVPDietaryRestrictionModal(rsvpId) {
   const rsvp = getRSVPById(rsvpId);
 
   if (!rsvp || !hasDietaryRestriction(rsvp)) {
-    showAdminToast("⚠️ Restrição alimentar não encontrada.");
+    showAdminToast("⚠️ Restrição alimentar não encontrada");
     return;
   }
 
@@ -643,7 +681,7 @@ function openRSVPDietaryRestrictionModal(rsvpId) {
 
     <section class="admin-details-section">
       <span class="admin-details-label">Restrição informada</span>
-      <p>${safeText(rsvp.food)}</p>
+      <p>${safeText(getDietaryRestrictionDetails(rsvp))}</p>
     </section>
   `);
 
@@ -856,7 +894,7 @@ window.openAdminRSVPModal = async function (selectedGuest) {
 
   if (error) {
     console.error(error);
-    showAdminToast("⚠️ Erro ao carregar RSVP.");
+    showAdminToast("⚠️ Erro ao carregar RSVP");
     return;
   }
 
@@ -926,7 +964,13 @@ window.openAdminRSVPModal = async function (selectedGuest) {
     updateAdminRSVPCoupleCompanionVisibility();
   }
 
+  if (adminRSVPFoodRestrictionInput) {
+    adminRSVPFoodRestrictionInput.value = hasDietaryRestriction(data)
+      ? "Sim"
+      : "Não";
+  }
   adminRSVPFoodInput.value = data?.food || "";
+  updateAdminRSVPFoodVisibility();
   adminRSVPMessageInput.value = data?.message || "";
   adminRSVPModal.classList.add("active");
 };
@@ -946,7 +990,7 @@ async function loadRSVPsAdmin() {
 
   if (guestsError || rsvpsError || settingsError) {
     console.error(guestsError || rsvpsError || settingsError);
-    showAdminToast("⚠️ Erro ao carregar confirmações.");
+    showAdminToast("⚠️ Erro ao carregar confirmações");
     return;
   }
 
@@ -1183,7 +1227,7 @@ function updateRSVPFilterCount(count) {
 
 function exportRSVPsCSV() {
   if (!visibleRSVPs.length) {
-    showAdminToast("Nenhum RSVP para exportar.");
+    showAdminToast("⚠️ Nenhum RSVP para exportar");
     return;
   }
 
@@ -1232,7 +1276,11 @@ function exportRSVPsCSV() {
       label: "Crianças Sem Idade",
       value: (rsvp) => getMetrics(rsvp).unknownAgeChildren,
     },
-    { label: "Restrição Alimentar", value: "food" },
+    {
+      label: "Possui Restrição Alimentar",
+      value: getDietaryRestrictionLabel,
+    },
+    { label: "Restrição Alimentar", value: getDietaryRestrictionDetails },
     { label: "Mensagem", value: "message" },
     {
       label: "Atualizado em",
@@ -1240,7 +1288,7 @@ function exportRSVPsCSV() {
     },
   ], visibleRSVPs);
 
-  showAdminToast("CSV de RSVPs exportado.");
+  showAdminToast("💜 CSV de RSVPs exportado!");
 }
 
 function clearRSVPFilters() {
@@ -1276,7 +1324,7 @@ window.deleteRSVPFromTable = async function (rsvpId) {
   if (error || data !== true) {
     console.error(error);
     showAdminToast(
-      "⚠️ Não foi possível remover o RSVP. Atualize a lista e tente novamente.",
+      "⚠️ Não foi possível remover o RSVP. Atualize a lista e tente novamente",
     );
     return;
   }
@@ -1320,7 +1368,7 @@ window.resendRSVPConfirmation = async function (rsvpId) {
 
   if (error || !data) {
     console.error(error);
-    showAdminToast("⚠️ Não foi possível criar o reenvio do RSVP.");
+    showAdminToast("⚠️ Não foi possível criar o reenvio do RSVP");
     return;
   }
 
@@ -1376,7 +1424,11 @@ adminRSVPForm?.addEventListener("submit", async (event) => {
     presence: finalPresence,
     email: adminRSVPEmailInput.value || "",
     phone: adminRSVPPhoneInput.value || "",
-    food: adminRSVPFoodInput.value || "",
+    food:
+      adminRSVPFoodRestrictionInput?.value === "Sim"
+        ? adminRSVPFoodInput.value || ""
+        : "",
+    food_restriction: adminRSVPFoodRestrictionInput?.value === "Sim",
     message: adminRSVPMessageInput.value || "",
     guest_data: {
       name: selectedRSVPGuest.name,
@@ -1394,6 +1446,7 @@ adminRSVPForm?.addEventListener("submit", async (event) => {
     submitted_email: payload.email,
     submitted_phone: payload.phone,
     submitted_food: payload.food,
+    submitted_food_restriction: payload.food_restriction,
     submitted_message: payload.message,
     submitted_guest_data: payload.guest_data,
   });
@@ -1401,7 +1454,7 @@ adminRSVPForm?.addEventListener("submit", async (event) => {
   if (result.error || result.data !== true) {
     console.error(result.error);
     showAdminToast(
-      "⚠️ Não foi possível salvar o RSVP. Revise os dados e tente novamente.",
+      "⚠️ Não foi possível salvar o RSVP. Revise os dados e tente novamente",
     );
     return;
   }
@@ -1433,7 +1486,7 @@ deleteAdminRSVPButton?.addEventListener("click", async () => {
   if (error || data !== true) {
     console.error(error);
     showAdminToast(
-      "⚠️ Não foi possível remover o RSVP. Atualize a lista e tente novamente.",
+      "⚠️ Não foi possível remover o RSVP. Atualize a lista e tente novamente",
     );
     return;
   }
@@ -1455,6 +1508,7 @@ deleteAdminRSVPButton?.addEventListener("click", async () => {
 });
 
 clearRSVPFiltersButton?.addEventListener("click", clearRSVPFilters);
+refreshRSVPsButton?.addEventListener("click", loadRSVPsAdmin);
 exportRSVPsButton?.addEventListener("click", exportRSVPsCSV);
 
 rsvpsTableBody?.addEventListener("click", (event) => {
@@ -1544,6 +1598,11 @@ adminRSVPPresenceInput?.addEventListener("change", () => {
     showAdminRSVPCompanionsIfAllowed();
   }
 });
+
+adminRSVPFoodRestrictionInput?.addEventListener(
+  "change",
+  updateAdminRSVPFoodVisibility,
+);
 
 if (adminRSVPPhoneInput) {
   maskPhoneInput(adminRSVPPhoneInput);

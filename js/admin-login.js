@@ -5,9 +5,13 @@
     "admin-gifts.html",
     "admin-guests.html",
     "admin-indicators.html",
+    "admin-messages.html",
+    "admin-notifications.html",
     "admin-reports.html",
     "admin-rsvps.html",
+    "admin-schedule.html",
     "admin-settings.html",
+    "admin-vendors.html",
   ]);
 
   const form = document.getElementById("adminLoginForm");

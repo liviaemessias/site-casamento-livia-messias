@@ -5,7 +5,7 @@ select
   to_regprocedure(expected.function_name) is not null as check_passed
 from (
   values
-    ('public.admin_save_guest_rsvp(uuid,text,text,text,text,text,jsonb)'),
+    ('public.admin_save_guest_rsvp(uuid,text,text,text,text,boolean,text,jsonb)'),
     ('public.admin_delete_guest_rsvp(uuid)')
 ) as expected(function_name);
 
@@ -13,7 +13,7 @@ select
   'administrative RSVP RPCs have restricted execution' as check_name,
   not has_function_privilege(
     'anon',
-    'public.admin_save_guest_rsvp(uuid,text,text,text,text,text,jsonb)',
+    'public.admin_save_guest_rsvp(uuid,text,text,text,text,boolean,text,jsonb)',
     'execute'
   )
   and not has_function_privilege(
@@ -23,7 +23,7 @@ select
   )
   and has_function_privilege(
     'authenticated',
-    'public.admin_save_guest_rsvp(uuid,text,text,text,text,text,jsonb)',
+    'public.admin_save_guest_rsvp(uuid,text,text,text,text,boolean,text,jsonb)',
     'execute'
   )
   and has_function_privilege(

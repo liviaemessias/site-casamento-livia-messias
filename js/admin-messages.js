@@ -562,7 +562,7 @@ async function loadWallMessages() {
 
   if (error) {
     console.error(error);
-    showAdminToast("Não foi possível carregar os recados.");
+    showAdminToast("⚠️ Não foi possível carregar os recados");
     return;
   }
 
@@ -605,10 +605,10 @@ async function updateWallMessage(action, messageId) {
     hide: "Deseja ocultar este recado do mural público?",
   };
   const toastByAction = {
-    approve: "Recado aprovado.",
-    "clear-reply": "Resposta removida.",
-    delete: "Recado excluído.",
-    hide: "Recado ocultado.",
+    approve: "💜 Recado aprovado!",
+    "clear-reply": "💜 Resposta removida!",
+    delete: "💜 Recado excluído!",
+    hide: "💜 Recado ocultado!",
   };
   const rpc = rpcByAction[action];
 
@@ -628,7 +628,7 @@ async function updateWallMessage(action, messageId) {
 
   if (error || data !== true) {
     console.error(error);
-    showAdminToast("Não foi possível atualizar o recado.");
+    showAdminToast("⚠️ Não foi possível atualizar o recado");
     return;
   }
 
@@ -682,12 +682,12 @@ async function saveReply(event) {
 
   if (error || data !== true) {
     console.error(error);
-    showAdminToast("Não foi possível salvar a resposta.");
+    showAdminToast("⚠️ Não foi possível salvar a resposta");
     return;
   }
 
   closeReplyModal();
-  showAdminToast("Resposta salva.");
+  showAdminToast("💜 Resposta salva!");
   void notifyWallMessageEvent("wall_message_replied", messageId);
   await loadWallMessages();
 }

@@ -75,7 +75,8 @@ administrativos.
 1. O convidado acessa `rsvp.html`.
 2. O sistema preenche o nome do convite.
 3. O convidado escolhe `Sim` ou `Não`.
-4. Pode informar e-mail, telefone, restrição alimentar e mensagem.
+4. Pode informar e-mail, telefone, se possui restrição alimentar e mensagem.
+   Quando marca `Sim` para restrição alimentar, o campo de detalhe é liberado.
 5. Se houver acompanhantes disponíveis, o sistema exibe a quantidade permitida.
 6. Para cada acompanhante, são informados nome, se é criança e, quando
    aplicável, a idade que terá na data do casamento.
@@ -369,6 +370,31 @@ Permite:
 - Ordenar por convidado, presença, quantidade de acompanhantes e data de atualização.
 - Ver contador de resultados e limpar filtros.
 
+### Checklist Do Casamento
+
+Arquivo:
+
+```text
+admin-checklist.html
+```
+
+Permite:
+
+- Organizar tarefas internas do casamento em cards por período, de `12 meses
+  antes` até `Depois do casamento`.
+- Filtrar por busca textual, período, status, categoria, responsável e
+  prioridade.
+- Criar, editar, detalhar, concluir/reabrir e excluir tarefas.
+- Criar tarefa diretamente a partir do card do período desejado.
+- Criar, editar e excluir categorias quando elas ainda não possuem tarefas.
+- Criar, editar e excluir responsáveis quando eles ainda não possuem tarefas.
+- Organizar manualmente a ordem das tarefas dentro de cada período, com setas
+  ou arrastar/soltar.
+- Exibir alerta simples no menu administrativo quando existirem tarefas
+  atrasadas.
+- Usar categorias, responsáveis e tarefas padrão populadas pelo SQL de rebuild
+  ou pela migration incremental.
+
 ### Comportamento Dos Filtros E Ordenação Administrativos
 
 Os filtros e a ordenação do admin são aplicados no frontend, em memória, sobre os dados já carregados do Supabase.
@@ -468,6 +494,8 @@ Concluído:
 - Notificações por e-mail com preferências por evento, histórico auditável com
   filtros, paginação e ordenação, lembretes manuais de presentes/cotas e
   eventos do Mural de Recados.
+- Fornecedores e Programação do casamento com páginas públicas/protegidas,
+  estados vazios amigáveis e gestão administrativa por RPCs seguras.
 - Helpers `admin-common.js` e `public-common.js`.
 - Módulo `pix.js`.
 - CSS com tokens globais.

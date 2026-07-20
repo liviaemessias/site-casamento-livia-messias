@@ -24,6 +24,10 @@ Exemplos recentes:
 - `wall_messages.sql` + `wall_messages_verify.sql`
 - `wall_message_email_notifications.sql` + `wall_message_email_notifications_verify.sql`
 - `admin_nav_alerts.sql` + `admin_nav_alerts_verify.sql`
+- `wedding_vendors.sql` + `wedding_vendors_verify.sql`
+- `wedding_schedule.sql` + `wedding_schedule_verify.sql`
+- `rsvp_food_restriction_choice.sql` + `rsvp_food_restriction_choice_verify.sql`
+- `wedding_checklist.sql` + `wedding_checklist_verify.sql`
 
 Alguns arquivos dependem de outros já terem sido aplicados. Quando houver dúvida,
 consulte o runbook da funcionalidade, como

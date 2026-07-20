@@ -5,6 +5,15 @@ select
   to_regprocedure('public.admin_get_nav_alerts()') is not null as check_passed;
 
 select
+  'admin navigation alerts include checklist overdue flag' as check_name,
+  exists (
+    select 1
+    from pg_proc
+    where oid = 'public.admin_get_nav_alerts()'::regprocedure
+      and proargnames @> array['has_overdue_checklist_tasks']
+  ) as check_passed;
+
+select
   'admin navigation alerts RPC is authenticated only' as check_name,
   not has_function_privilege(
     'anon',

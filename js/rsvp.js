@@ -11,6 +11,9 @@ const toastMessage = document.getElementById("toastMessage");
 const { safeText } = SecurityUtils;
 const emailInput = document.querySelector('input[name="email"]');
 const emailSuggestion = document.getElementById("emailSuggestion");
+const foodRestrictionInput = document.getElementById("foodRestrictionInput");
+const foodDetailsGroup = document.getElementById("foodDetailsGroup");
+const foodInput = document.querySelector('input[name="food"]');
 
 const knownEmailDomains = [
   "gmail.com",
@@ -59,6 +62,28 @@ function setElementVisibility(element, visible) {
 let existingRSVP = null;
 let cachedCompanions = [];
 
+function hasDietaryRestriction(rsvp) {
+  if (typeof rsvp?.food_restriction === "boolean") {
+    return rsvp.food_restriction;
+  }
+
+  return Boolean(String(rsvp?.food || "").trim());
+}
+
+function updateFoodRestrictionVisibility() {
+  const hasRestriction = foodRestrictionInput?.value === "Sim";
+
+  setElementVisibility(foodDetailsGroup, hasRestriction);
+
+  if (foodInput) {
+    foodInput.required = hasRestriction;
+
+    if (!hasRestriction) {
+      foodInput.value = "";
+    }
+  }
+}
+
 /* =========================
    Auto Fill
 ========================= */
@@ -82,6 +107,12 @@ if (messageField) {
     ? "Se quiserem, deixem uma mensagem carinhosa para nós 💜"
     : "Se quiser, deixe uma mensagem carinhosa para nós 💜";
 }
+
+foodRestrictionInput?.addEventListener(
+  "change",
+  updateFoodRestrictionVisibility,
+);
+updateFoodRestrictionVisibility();
 
 const coupleMembersSection = document.getElementById("coupleMembersSection");
 
@@ -593,7 +624,17 @@ async function loadExistingRSVP() {
     }
   }
 
-  document.querySelector('input[name="food"]').value = existingRSVP.food || "";
+  if (foodRestrictionInput) {
+    foodRestrictionInput.value = hasDietaryRestriction(existingRSVP)
+      ? "Sim"
+      : "Não";
+  }
+
+  if (foodInput) {
+    foodInput.value = existingRSVP.food || "";
+  }
+
+  updateFoodRestrictionVisibility();
 
   document.querySelector('textarea[name="message"]').value =
     existingRSVP.message || "";
@@ -695,6 +736,9 @@ form.addEventListener("submit", async (e) => {
       }
     }
 
+    const hasFoodRestriction = data.food_restriction === "Sim";
+    const food = hasFoodRestriction ? data.food || "" : "";
+
     const rsvpPayload = {
       guest_id: guest.id,
 
@@ -704,7 +748,9 @@ form.addEventListener("submit", async (e) => {
 
       phone: data.phone || "",
 
-      food: data.food || "",
+      food,
+
+      food_restriction: hasFoodRestriction,
 
       message: data.message || "",
 

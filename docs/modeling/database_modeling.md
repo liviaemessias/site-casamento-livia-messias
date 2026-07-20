@@ -17,6 +17,7 @@ guests 1:0..1 guest_wall_messages
 guests 1:N notification_events
 notification_events 1:N notification_deliveries
 notification_preferences 1:N notification_events por event_type
+settings 1:N wedding_vendors (conteúdo público gerenciado pelo admin)
 ```
 
 ## Tabela `guests`
@@ -68,6 +69,7 @@ create table public.rsvps (
   guest_id uuid null,
   presence text null,
   food text null,
+  food_restriction boolean not null default false,
   message text null,
   guest_data jsonb null,
   email text null,
@@ -87,7 +89,8 @@ Campos principais:
 
 - `guest_id`: referência `guests.id`.
 - `presence`: `Sim` ou `Não`.
-- `food`: restrições alimentares.
+- `food_restriction`: indica se o convidado declarou restrição alimentar.
+- `food`: detalhe da restrição alimentar quando `food_restriction = true`.
 - `message`: mensagem aos noivos.
 - `email`: e-mail informado.
 - `phone`: telefone informado.
@@ -327,6 +330,71 @@ recados aprovados por meio de `list_approved_wall_messages(...)`, sem expor
 para ler e editar somente o próprio recado. A administração usa RPCs protegidas
 por `is_admin()` para listar, aprovar, ocultar e responder.
 
+## Tabela `wedding_vendors`
+
+Armazena os fornecedores do casamento exibidos aos convidados.
+
+Campos principais:
+
+- `name`: nome da marca, empresa ou fornecedor.
+- `category`: categoria exibida no site, como Fotografia e Filmagem,
+  Cerimonial ou Ilha de Açaí e Gelatos.
+- `responsible_names`: responsáveis pela empresa ou serviço, quando essa
+  informação estiver disponível.
+- `description`: texto curto exibido no card público.
+- `image_url`, `instagram_url`, `website_url` e `whatsapp_number`: canais
+  opcionais exibidos somente quando preenchidos.
+- `display_order`: ordenação manual no site e no painel.
+- `is_visible`: controla se o fornecedor aparece na página pública.
+- `is_featured`: marca fornecedores de destaque.
+
+A tabela tem RLS habilitado e não é acessada diretamente por `anon` ou
+`authenticated`. A página pública consulta apenas fornecedores visíveis por
+`list_public_vendors()`. O painel administrativo usa `admin_list_vendors()`,
+`admin_save_vendor(...)`, `admin_set_vendor_visible(...)` e
+`admin_reorder_vendors(...)` e `admin_delete_vendor(...)`, todos protegidos por
+`is_admin()`. A reordenação recebe a lista de IDs na ordem final e atualiza
+`display_order` em lote.
+
+## Tabelas `wedding_schedule_sections` E `wedding_schedule_activities`
+
+Armazenam a programação do casamento exibida aos convidados logados.
+
+`wedding_schedule_sections` representa as etapas da programação, como
+Cerimônia ou Recepção.
+
+Campos principais:
+
+- `title`: nome da etapa.
+- `location_name`: local principal, como Igreja ou Buffet.
+- `address`: endereço opcional.
+- `description`: texto curto de contexto.
+- `display_order`: ordenação manual da etapa no site e no painel.
+- `is_visible`: controla se a etapa aparece para os convidados.
+
+`wedding_schedule_activities` representa os itens dentro de cada etapa.
+
+Campos principais:
+
+- `section_id`: etapa à qual a atividade pertence.
+- `title`: nome da atividade.
+- `activity_type`: `moment`, `attraction`, `island`, `service` ou `other`.
+- `time_mode`: `scheduled`, `period`, `available` ou `tbd`.
+- `start_time` e `end_time`: horários usados conforme o tipo de horário.
+- `description`: detalhes opcionais da atividade.
+- `display_order`: ordenação manual dentro da etapa.
+- `is_visible`: controla se a atividade aparece para os convidados.
+
+A tabela de atividades valida que horário específico exige `start_time`,
+período exige `start_time` e `end_time`, e itens disponíveis durante a etapa ou
+com horário a definir não gravam horários. As tabelas têm RLS habilitado e não
+são acessadas diretamente por `anon` ou `authenticated`.
+
+A página pública usa `list_public_schedule()`, que exige sessão autenticada com
+perfil de convidado válido e retorna somente etapas e atividades visíveis. O
+painel administrativo usa RPCs protegidas por `is_admin()` para listar, salvar,
+alterar visibilidade, reordenar e excluir etapas e atividades.
+
 ## Tabelas De Notificação
 
 As notificações transacionais usam uma outbox genérica.
@@ -449,6 +517,16 @@ criados pelo helper interno `enqueue_wall_message_notification_event(...)`.
   `admin_clear_wall_message_reply()` e `admin_delete_wall_message()`: moderam
   o Mural de Recados no painel administrativo. Aprovação e resposta criam
   eventos de e-mail para o convidado quando houver e-mail válido no RSVP.
+- `list_public_schedule()`: retorna a programação visível somente para sessões
+  com convidado válido.
+- `admin_list_schedule_sections()`, `admin_save_schedule_section(...)`,
+  `admin_set_schedule_section_visible(...)`,
+  `admin_reorder_schedule_sections(...)` e
+  `admin_delete_schedule_section(...)`: gerenciam as etapas da programação.
+- `admin_list_schedule_activities()`, `admin_save_schedule_activity(...)`,
+  `admin_set_schedule_activity_visible(...)`,
+  `admin_reorder_schedule_activities(...)` e
+  `admin_delete_schedule_activity(...)`: gerenciam as atividades da programação.
 
 As funções serão usadas pelas políticas RLS. As tabelas de vínculo não possuem
 acesso direto para `anon` ou `authenticated`.
@@ -527,6 +605,30 @@ pending
 approved
 hidden
 ```
+
+Checklist:
+
+```text
+pending
+in_progress
+completed
+```
+
+## Checklist Do Casamento
+
+O checklist administrativo usa três tabelas:
+
+- `wedding_checklist_categories`: categorias editáveis, como Cerimônia,
+  Recepção, Pré-Wedding, Save the Date, Caixinha dos Padrinhos e Financeiro.
+- `wedding_checklist_responsibles`: responsáveis editáveis, como Casal,
+  Noiva, Noivo, Cerimonialista, Família, mães, pais, padrinhos, madrinhas e
+  amigos.
+- `wedding_checklist_items`: tarefas agrupadas por período, de `12 meses
+  antes` até `Depois do casamento`, com status, prioridade, responsável
+  vinculado, prazo, ordem, descrição e observações.
+
+O setup inicial popula categorias, responsáveis e tarefas padrão pelo SQL de
+construção ou pela migration incremental `wedding_checklist.sql`.
 
 ## Observações
 

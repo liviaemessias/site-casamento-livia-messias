@@ -226,7 +226,7 @@ async function loadOverview() {
   if (error) {
     console.error(error);
     setText("overviewStatus", "Não foi possível atualizar a visão geral.");
-    AdminCommon.showToast("⚠️ Erro ao carregar o Dashboard.");
+    AdminCommon.showToast("⚠️ Erro ao carregar o Dashboard");
     return;
   }
 

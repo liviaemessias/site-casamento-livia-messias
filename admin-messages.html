@@ -35,35 +35,36 @@
           </div>
 
           <div class="admin-section-actions">
-            <button id="refreshWallMessagesButton" class="admin-action-button">
+            <button id="refreshWallMessagesButton" class="admin-action-button icon-action">
+              <i data-lucide="refresh-cw" aria-hidden="true"></i>
               Atualizar
             </button>
           </div>
         </div>
 
         <section class="admin-grid dashboard-grid wall-message-summary-grid" aria-label="Resumo dos recados">
-          <article class="admin-card wall-message-summary-card" data-wall-status="pending" role="button" tabindex="0">
+          <article class="admin-card admin-card-link wall-message-summary-card" data-wall-status="pending" role="button" tabindex="0">
             <div class="admin-card-header">
               <span>Pendentes</span>
               <button type="button" class="metric-help" aria-label="Ajuda sobre recados pendentes" data-tooltip="Recados enviados por convidados e aguardando aprovação.">?</button>
             </div>
             <strong id="wallPendingCount">0</strong>
           </article>
-          <article class="admin-card wall-message-summary-card" data-wall-status="approved" role="button" tabindex="0">
+          <article class="admin-card admin-card-link wall-message-summary-card" data-wall-status="approved" role="button" tabindex="0">
             <div class="admin-card-header">
               <span>Aprovados</span>
               <button type="button" class="metric-help" aria-label="Ajuda sobre recados aprovados" data-tooltip="Recados visíveis no mural público.">?</button>
             </div>
             <strong id="wallApprovedCount">0</strong>
           </article>
-          <article class="admin-card wall-message-summary-card" data-wall-status="replied" role="button" tabindex="0">
+          <article class="admin-card admin-card-link wall-message-summary-card" data-wall-status="replied" role="button" tabindex="0">
             <div class="admin-card-header">
               <span>Respondidos</span>
               <button type="button" class="metric-help" aria-label="Ajuda sobre recados respondidos" data-tooltip="Recados que já receberam resposta dos noivos.">?</button>
             </div>
             <strong id="wallRepliedCount">0</strong>
           </article>
-          <article class="admin-card wall-message-summary-card" data-wall-status="hidden" role="button" tabindex="0">
+          <article class="admin-card admin-card-link wall-message-summary-card" data-wall-status="hidden" role="button" tabindex="0">
             <div class="admin-card-header">
               <span>Ocultos</span>
               <button type="button" class="metric-help" aria-label="Ajuda sobre recados ocultos" data-tooltip="Recados não exibidos no mural público.">?</button>

@@ -34,6 +34,10 @@
           </li>
 
           <li>
+            <a href="./schedule.html"> Programação </a>
+          </li>
+
+          <li>
             <a href="./our-story.html"> Nossa História </a>
           </li>
 
@@ -43,6 +47,9 @@
 
           <li>
             <a href="./messages.html"> Recados </a>
+          </li>
+          <li>
+            <a href="./vendors.html"> Fornecedores </a>
           </li>
 
           <li class="guest-info">
@@ -130,7 +137,14 @@
             </div>
             <div id="guestFields"></div>
             <div class="form-group">
-              <label> Restrição alimentar </label>
+              <label for="foodRestrictionInput"> Possui restrição alimentar? </label>
+              <select id="foodRestrictionInput" name="food_restriction">
+                <option value="Não">Não</option>
+                <option value="Sim">Sim</option>
+              </select>
+            </div>
+            <div id="foodDetailsGroup" class="form-group is-hidden" hidden>
+              <label> Qual restrição alimentar? </label>
               <input
                 type="text"
                 name="food"

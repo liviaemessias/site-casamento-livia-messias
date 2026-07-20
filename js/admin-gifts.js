@@ -26,6 +26,7 @@ const giftPaymentFilter = document.getElementById("giftPaymentFilter");
 const giftQuotaFilter = document.getElementById("giftQuotaFilter");
 const giftMethodFilter = document.getElementById("giftMethodFilter");
 const giftFilterCount = document.getElementById("giftFilterCount");
+const refreshGiftsButton = document.getElementById("refreshGiftsButton");
 const exportGiftsButton = document.getElementById("exportGiftsButton");
 const clearGiftFiltersButton = document.getElementById("clearGiftFiltersButton");
 const giftModal = document.getElementById("giftModal");
@@ -1006,13 +1007,13 @@ async function loadGiftsAdmin() {
 
   if (guestsError || giftsError) {
     console.error(guestsError || giftsError);
-    showAdminToast("⚠️ Erro ao carregar presentes.");
+    showAdminToast("⚠️ Erro ao carregar presentes");
     return;
   }
 
   if (contributionsError) {
     console.error(contributionsError);
-    showAdminToast("⚠️ Presentes carregados, mas as cotas não puderam ser lidas.");
+    showAdminToast("⚠️ Presentes carregados, mas as cotas não puderam ser lidas");
   }
 
   cachedGifts = withGiftContributionStats(gifts || [], contributions || []);
@@ -1311,7 +1312,7 @@ function openGiftMessageModal(giftId) {
   const message = String(gift?.reservation_message || "").trim();
 
   if (!gift || !message) {
-    showAdminToast("⚠️ Mensagem não encontrada.");
+    showAdminToast("⚠️ Mensagem não encontrada");
     return;
   }
 
@@ -1342,7 +1343,7 @@ function openGiftContributionMessageModal(contributionId) {
   const message = String(contribution?.message || "").trim();
 
   if (!contribution || !message) {
-    showAdminToast("⚠️ Mensagem não encontrada.");
+    showAdminToast("⚠️ Mensagem não encontrada");
     return;
   }
 
@@ -1372,7 +1373,7 @@ function handleGiftAction(action, giftId, eventType = "") {
   const gift = giftId ? findCachedGiftById(giftId) : null;
 
   if ((action === "details" || action === "edit" || action === "delete") && !gift) {
-    showAdminToast("⚠️ Presente não encontrado. Atualize a lista e tente novamente.");
+    showAdminToast("⚠️ Presente não encontrado. Atualize a lista e tente novamente");
     return;
   }
 
@@ -1414,7 +1415,7 @@ function handleGiftAction(action, giftId, eventType = "") {
 
 function exportGiftsCSV() {
   if (!visibleGifts.length) {
-    showAdminToast("Nenhum presente para exportar.");
+    showAdminToast("⚠️ Nenhum presente para exportar");
     return;
   }
 
@@ -1438,7 +1439,7 @@ function exportGiftsCSV() {
     { label: "Mensagem", value: "reservation_message" },
   ], visibleGifts);
 
-  showAdminToast("CSV de presentes exportado.");
+  showAdminToast("💜 CSV de presentes exportado!");
 }
 
 function clearGiftFilters() {
@@ -1532,7 +1533,7 @@ async function sendManualGiftNotification(eventType, aggregateId) {
 
   if (error || !data) {
     console.error(error);
-    showAdminToast("⚠️ Não foi possível criar o reenvio.");
+    showAdminToast("⚠️ Não foi possível criar o reenvio");
     return;
   }
 
@@ -1669,7 +1670,7 @@ window.markGiftAsBought = async function (giftId) {
   if (error || data !== true) {
     console.error(error);
     showAdminToast(
-      "⚠️ Não foi possível confirmar a compra. Atualize a lista e tente novamente.",
+      "⚠️ Não foi possível confirmar a compra. Atualize a lista e tente novamente",
     );
     return;
   }
@@ -1699,7 +1700,7 @@ window.sendGiftReservationReminder = async function (giftId) {
   if (error || data !== true) {
     console.error(error);
     showAdminToast(
-      "⚠️ Não foi possível criar o lembrete. Atualize a lista e tente novamente.",
+      "⚠️ Não foi possível criar o lembrete. Atualize a lista e tente novamente",
     );
     return;
   }
@@ -1729,7 +1730,7 @@ window.releaseGiftReservation = async function (giftId) {
   if (error || data !== true) {
     console.error(error);
     showAdminToast(
-      "⚠️ Não foi possível liberar a reserva. Atualize a lista e tente novamente.",
+      "⚠️ Não foi possível liberar a reserva. Atualize a lista e tente novamente",
     );
     return;
   }
@@ -1757,7 +1758,7 @@ window.markQuotaContributionAsBought = async function (contributionId) {
   if (error || data !== true) {
     console.error(error);
     showAdminToast(
-      "⚠️ Não foi possível confirmar a contribuição. Atualize a lista e tente novamente.",
+      "⚠️ Não foi possível confirmar a contribuição. Atualize a lista e tente novamente",
     );
     return;
   }
@@ -1787,7 +1788,7 @@ window.sendGiftContributionReminder = async function (contributionId) {
   if (error || data !== true) {
     console.error(error);
     showAdminToast(
-      "⚠️ Não foi possível criar o lembrete. Atualize a lista e tente novamente.",
+      "⚠️ Não foi possível criar o lembrete. Atualize a lista e tente novamente",
     );
     return;
   }
@@ -1817,7 +1818,7 @@ window.releaseQuotaContribution = async function (contributionId) {
   if (error || data !== true) {
     console.error(error);
     showAdminToast(
-      "⚠️ Não foi possível liberar a cota. Atualize a lista e tente novamente.",
+      "⚠️ Não foi possível liberar a cota. Atualize a lista e tente novamente",
     );
     return;
   }
@@ -2079,7 +2080,7 @@ window.deleteGift = async function (gift) {
   if (error || data !== true) {
     console.error(error);
     showAdminToast(
-      "⚠️ Não foi possível excluir o presente. Atualize a lista e tente novamente.",
+      "⚠️ Não foi possível excluir o presente. Atualize a lista e tente novamente",
     );
     return;
   }
@@ -2108,6 +2109,7 @@ closeGiftDetailsModalButton.addEventListener("click", () => {
 });
 
 clearGiftFiltersButton?.addEventListener("click", clearGiftFilters);
+refreshGiftsButton?.addEventListener("click", loadGiftsAdmin);
 exportGiftsButton?.addEventListener("click", exportGiftsCSV);
 
 giftsTableBody?.addEventListener("click", (event) => {
@@ -2279,13 +2281,13 @@ giftForm.addEventListener("submit", async (e) => {
 
   if (requiresPrice && !price) {
     showAdminToast(
-      "⚠️ Informe um valor maior que zero para este tipo de presente.",
+      "⚠️ Informe um valor maior que zero para este tipo de presente",
     );
     return;
   }
 
   if (giftType === "quota" && quotaCount <= 0) {
-    showAdminToast("⚠️ Informe a quantidade de cotas.");
+    showAdminToast("⚠️ Informe a quantidade de cotas");
     return;
   }
 
@@ -2331,8 +2333,8 @@ giftForm.addEventListener("submit", async (e) => {
     console.error(result.error);
     showAdminToast(
       editingGift
-        ? "⚠️ Não foi possível atualizar. Presentes com reservas não permitem alterar tipo, valor ou forma de compra."
-        : "⚠️ Não foi possível criar o presente. Revise os dados informados.",
+        ? "⚠️ Não foi possível atualizar. Presentes com reservas não permitem alterar tipo, valor ou forma de compra"
+        : "⚠️ Não foi possível criar o presente. Revise os dados informados",
     );
     return;
   }
@@ -2357,7 +2359,7 @@ externalOptionForm.addEventListener("submit", (e) => {
   const notes = externalOptionNotesInput.value.trim();
 
   if (!store) {
-    showAdminToast("⚠️ Informe o nome da loja.");
+    showAdminToast("⚠️ Informe o nome da loja");
     return;
   }
 

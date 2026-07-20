@@ -3,19 +3,19 @@
 select
   'guest RSVP RPC exists' as check_name,
   to_regprocedure(
-    'public.save_current_rsvp(text,text,text,text,text,jsonb)'
+    'public.save_current_rsvp(text,text,text,text,boolean,text,jsonb)'
   ) is not null as check_passed;
 
 select
   'guest RSVP RPC has restricted execution' as check_name,
   not has_function_privilege(
     'anon',
-    'public.save_current_rsvp(text,text,text,text,text,jsonb)',
+    'public.save_current_rsvp(text,text,text,text,boolean,text,jsonb)',
     'execute'
   )
   and has_function_privilege(
     'authenticated',
-    'public.save_current_rsvp(text,text,text,text,text,jsonb)',
+    'public.save_current_rsvp(text,text,text,text,boolean,text,jsonb)',
     'execute'
   ) as check_passed;
 

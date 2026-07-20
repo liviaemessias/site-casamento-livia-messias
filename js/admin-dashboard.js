@@ -310,7 +310,7 @@ async function loadDashboard() {
         contributionsError ||
         settingsError,
     );
-    showAdminToast("⚠️ Erro ao carregar dashboard.");
+    showAdminToast("⚠️ Erro ao carregar dashboard");
     return;
   }
 

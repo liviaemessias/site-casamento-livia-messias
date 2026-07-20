@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://unpkg.com https://challenges.cloudflare.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fornecedores • Livia &amp; Messias</title>
+    <meta
+      name="description"
+      content="Conheça alguns dos fornecedores que estão fazendo o casamento de Livia e Messias acontecer."
+    />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="css/vendors.css" />
+    <link rel="stylesheet" href="css/reference-rails.css" />
+  </head>
+  <body class="site-reference-rails">
+    <div class="background-glow"></div>
+
+    <header class="navbar">
+      <div class="container nav-content">
+        <a href="index.html" class="logo" data-wedding-names>Livia &amp; Messias</a>
+
+        <nav>
+          <ul class="nav-links">
+            <li><a href="index.html">Início</a></li>
+            <li><a href="login.html?redirect=rsvp">RSVP</a></li>
+            <li><a href="login.html?redirect=gifts">Presentes</a></li>
+            <li><a href="login.html?redirect=schedule">Programação</a></li>
+            <li><a href="our-story.html">Nossa História</a></li>
+            <li><a href="photos.html">Pré-Wedding</a></li>
+            <li><a href="messages.html">Recados</a></li>
+            <li><a href="vendors.html">Fornecedores</a></li>
+            <li id="guestInfoItem" class="guest-info" hidden>
+              <span id="guestNameDisplay"></span>
+            </li>
+            <li id="logoutItem" hidden>
+              <button id="logoutButton" class="logout-button">Sair</button>
+            </li>
+          </ul>
+        </nav>
+
+        <button type="button" class="mobile-menu" aria-label="Abrir menu" aria-expanded="false">☰</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="vendors-hero">
+        <div class="vendors-hero-content">
+          <p class="section-subtitle">Parceiros Especiais</p>
+          <h1>Nossos Fornecedores</h1>
+          <p>
+            Algumas das pessoas e equipes que estão fazendo esse dia acontecer com a gente.
+          </p>
+        </div>
+      </section>
+
+      <section class="vendors-section">
+        <div class="container">
+          <section
+            id="vendorsEmptyState"
+            class="vendors-empty-state"
+            aria-live="polite"
+            hidden
+          >
+            <h2>Ainda estamos organizando essa parte 💜</h2>
+            <p>
+              Em breve vamos compartilhar por aqui os fornecedores que estão nos
+              ajudando a preparar esse dia tão especial.
+            </p>
+            <a href="index.html" class="vendor-button">Voltar para o início</a>
+          </section>
+
+          <div
+            id="vendorsGrid"
+            class="vendors-grid"
+            aria-label="Fornecedores do casamento"
+          ></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <h3 data-wedding-names>Livia &amp; Messias</h3>
+      <p data-wedding-date-location>23 de Abril de 2027 • Fortaleza, Ceará</p>
+      <span> Feito com amor para celebrar nosso grande dia. </span>
+
+      <p class="site-credit">
+        Desenvolvido por
+        <a
+          href="https://github.com/messiasfl10/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Messias D. P. de M. Filho
+        </a>
+      </p>
+    </footer>
+
+    <div id="toast" class="toast" aria-live="polite">
+      <div class="toast-content">
+        <span id="toastMessage">Mensagem</span>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/event-config.js"></script>
+    <script src="js/event-settings.js"></script>
+    <script src="js/guest-auth-config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/guest-auth.js"></script>
+    <script src="js/public-common.js"></script>
+    <script src="js/reference-decorations.js"></script>
+    <script src="js/vendors.js"></script>
+  </body>
+</html>

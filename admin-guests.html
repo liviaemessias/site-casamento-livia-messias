@@ -46,12 +46,19 @@
           </div>
 
           <div class="admin-section-actions">
-            <button id="exportGuestsButton" class="admin-action-button">
+            <button id="refreshGuestsButton" class="admin-action-button icon-action">
+              <i data-lucide="refresh-cw" aria-hidden="true"></i>
+              Atualizar
+            </button>
+
+            <button id="exportGuestsButton" class="admin-action-button icon-action">
+              <i data-lucide="download" aria-hidden="true"></i>
               Exportar CSV
             </button>
 
-            <button id="openGuestModalButton" class="admin-action-button success">
-              + Novo Convidado
+            <button id="openGuestModalButton" class="admin-action-button icon-action success">
+              <i data-lucide="plus" aria-hidden="true"></i>
+              Novo Convidado
             </button>
           </div>
         </div>
@@ -324,8 +331,26 @@
           <div id="adminRSVPGuestFields"></div>
 
           <div class="admin-form-group">
-            <label> Restrição Alimentar </label>
-            <input type="text" id="adminRSVPFoodInput" />
+            <label for="adminRSVPFoodRestrictionInput">
+              Possui Restrição Alimentar?
+            </label>
+            <select id="adminRSVPFoodRestrictionInput">
+              <option value="Não">Não</option>
+              <option value="Sim">Sim</option>
+            </select>
+          </div>
+
+          <div
+            id="adminRSVPFoodDetailsGroup"
+            class="admin-form-group is-hidden"
+            hidden
+          >
+            <label> Qual Restrição Alimentar? </label>
+            <input
+              type="text"
+              id="adminRSVPFoodInput"
+              placeholder="Ex.: intolerância à lactose ou alergia a frutos do mar"
+            />
           </div>
 
           <div class="admin-form-group">

@@ -221,6 +221,7 @@ physical
   "presence": "Sim",
   "email": "messias@email.com",
   "phone": "(85) 99999-9999",
+  "food_restriction": true,
   "food": "Vegetariano",
   "message": "Estamos ansiosos!",
   "updated_at": "2026-06-13T18:00:00Z",

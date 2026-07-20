@@ -92,6 +92,10 @@ Páginas administrativas esperadas:
 - `admin-notifications.html`;
 - `admin-indicators.html`;
 - `admin-reports.html`;
+- `admin-messages.html`;
+- `admin-checklist.html`;
+- `admin-schedule.html`;
+- `admin-vendors.html`;
 - `admin-settings.html`.
 
 Metadados públicos padrão do site, mantidos no frontend e no `<head>` de
@@ -112,7 +116,14 @@ Dados que podem ser exportados e restaurados:
 - `settings`;
 - `notification_events`;
 - `notification_deliveries`;
-- `notification_preferences`.
+- `notification_preferences`;
+- `wall_messages`;
+- `wedding_checklist_categories`;
+- `wedding_checklist_responsibles`;
+- `wedding_checklist_items`;
+- `wedding_schedule_sections`;
+- `wedding_schedule_activities`;
+- `wedding_vendors`.
 
 Dados que normalmente não devem ser migrados:
 

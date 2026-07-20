@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://unpkg.com https://challenges.cloudflare.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Programação | Painel Admin | Livia &amp; Messias</title>
+    <link rel="stylesheet" href="./css/style.css" />
+    <link rel="stylesheet" href="./css/admin.css" />
+  </head>
+  <body class="admin-auth-pending">
+    <main class="admin-page admin-schedule-page">
+      <section class="admin-header">
+        <div>
+          <p class="section-subtitle">Painel Administrativo</p>
+          <h1>Programação</h1>
+        </div>
+        <button id="logoutButton" class="admin-logout">Sair</button>
+      </section>
+
+      <nav class="admin-nav" aria-label="Navegação administrativa">
+        <a class="admin-nav-link" href="./admin-dashboard.html">Dashboard</a>
+        <a class="admin-nav-link" href="./admin-guests.html">Convidados</a>
+        <a class="admin-nav-link" href="./admin-rsvps.html">RSVP</a>
+        <a class="admin-nav-link" href="./admin-gifts.html">Presentes</a>
+        <a class="admin-nav-link" href="./admin-messages.html">Recados</a>
+        <a class="admin-nav-link active" href="./admin-schedule.html">Programação</a>
+        <a class="admin-nav-link" href="./admin-vendors.html">Fornecedores</a>
+        <a class="admin-nav-link" href="./admin-settings.html">Configurações</a>
+      </nav>
+
+      <section class="admin-section">
+        <div class="admin-section-header">
+          <div>
+            <p class="section-subtitle">Etapas</p>
+            <h2>Etapas da Programação</h2>
+          </div>
+
+          <div class="admin-section-actions">
+            <button id="refreshScheduleButton" class="admin-action-button icon-action">
+              <i data-lucide="refresh-cw" aria-hidden="true"></i>
+              Atualizar
+            </button>
+            <button id="openSectionOrderModalButton" class="admin-action-button icon-action">
+              <i data-lucide="list-ordered" aria-hidden="true"></i>
+              Organizar Ordem
+            </button>
+            <button id="openSectionModalButton" class="admin-action-button icon-action success">
+              <i data-lucide="plus" aria-hidden="true"></i>
+              Nova Etapa
+            </button>
+          </div>
+        </div>
+
+        <section class="admin-grid dashboard-grid schedule-summary-grid" aria-label="Resumo da programação">
+          <article class="admin-card admin-card-link schedule-summary-card" data-schedule-summary="sections" role="button" tabindex="0">
+            <div class="admin-card-header">
+              <span>Etapas</span>
+              <button type="button" class="metric-help" aria-label="Ajuda sobre etapas" data-tooltip="Total de etapas cadastradas.">?</button>
+            </div>
+            <strong id="scheduleSectionCount">0</strong>
+          </article>
+          <article class="admin-card admin-card-link schedule-summary-card" data-schedule-summary="activities" role="button" tabindex="0">
+            <div class="admin-card-header">
+              <span>Atividades</span>
+              <button type="button" class="metric-help" aria-label="Ajuda sobre atividades" data-tooltip="Total de atividades cadastradas.">?</button>
+            </div>
+            <strong id="scheduleActivityCount">0</strong>
+          </article>
+          <article class="admin-card admin-card-link schedule-summary-card" data-schedule-summary="visible" role="button" tabindex="0">
+            <div class="admin-card-header">
+              <span>Visíveis</span>
+              <button type="button" class="metric-help" aria-label="Ajuda sobre visíveis" data-tooltip="Atividades exibidas na página pública.">?</button>
+            </div>
+            <strong id="scheduleVisibleCount">0</strong>
+          </article>
+          <article class="admin-card admin-card-link schedule-summary-card" data-schedule-summary="tbd" role="button" tabindex="0">
+            <div class="admin-card-header">
+              <span>A Definir</span>
+              <button type="button" class="metric-help" aria-label="Ajuda sobre horários a definir" data-tooltip="Atividades com horário a definir.">?</button>
+            </div>
+            <strong id="scheduleTbdCount">0</strong>
+          </article>
+        </section>
+
+        <div class="admin-filters" aria-label="Filtros de etapas">
+          <div class="admin-filter-field">
+            <label for="sectionSearchInput">Buscar Etapa</label>
+            <input id="sectionSearchInput" type="search" placeholder="Título, local ou endereço" />
+          </div>
+          <div class="admin-filter-field">
+            <label for="sectionVisibilityFilter">Visibilidade</label>
+            <select id="sectionVisibilityFilter">
+              <option value="">Todas</option>
+              <option value="visible">Visíveis</option>
+              <option value="hidden">Ocultas</option>
+            </select>
+          </div>
+          <div class="admin-filter-actions">
+            <span id="sectionFilterCount" class="admin-filter-count"></span>
+            <button id="clearSectionFiltersButton" type="button" class="admin-clear-filters">
+              Limpar Filtros
+            </button>
+          </div>
+        </div>
+
+        <div class="admin-table-wrapper">
+          <table class="admin-table schedule-sections-table">
+            <thead>
+              <tr>
+                <th><button class="admin-sort-button" data-section-sort="title">Título</button></th>
+                <th><button class="admin-sort-button" data-section-sort="location">Local</button></th>
+                <th><button class="admin-sort-button" data-section-sort="visible">Visível</button></th>
+                <th><button class="admin-sort-button" data-section-sort="order">Ordem</button></th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="sectionsTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="admin-section">
+        <div class="admin-section-header">
+          <div>
+            <p class="section-subtitle">Atividades</p>
+            <h2>Atividades da Programação</h2>
+          </div>
+
+          <div class="admin-section-actions">
+            <button id="openActivityOrderModalButton" class="admin-action-button icon-action">
+              <i data-lucide="list-ordered" aria-hidden="true"></i>
+              Organizar Ordem
+            </button>
+            <button id="openActivityModalButton" class="admin-action-button icon-action success">
+              <i data-lucide="plus" aria-hidden="true"></i>
+              Nova Atividade
+            </button>
+          </div>
+        </div>
+
+        <div class="admin-filters" aria-label="Filtros de atividades">
+          <div class="admin-filter-field">
+            <label for="activitySearchInput">Buscar Atividade</label>
+            <input id="activitySearchInput" type="search" placeholder="Título, etapa ou descrição" />
+          </div>
+          <div class="admin-filter-field">
+            <label for="activitySectionFilter">Etapa</label>
+            <select id="activitySectionFilter">
+              <option value="">Todas</option>
+            </select>
+          </div>
+          <div class="admin-filter-field">
+            <label for="activityTypeFilter">Tipo</label>
+            <select id="activityTypeFilter">
+              <option value="">Todos</option>
+              <option value="moment">Momento</option>
+              <option value="attraction">Atração</option>
+              <option value="island">Ilha</option>
+              <option value="service">Serviço</option>
+              <option value="other">Outro</option>
+            </select>
+          </div>
+          <div class="admin-filter-field">
+            <label for="activityTimeModeFilter">Horário</label>
+            <select id="activityTimeModeFilter">
+              <option value="">Todos</option>
+              <option value="scheduled">Horário Específico</option>
+              <option value="period">Período</option>
+              <option value="available">Disponível</option>
+              <option value="tbd">A Definir</option>
+            </select>
+          </div>
+          <div class="admin-filter-field">
+            <label for="activityVisibilityFilter">Visibilidade</label>
+            <select id="activityVisibilityFilter">
+              <option value="">Todas</option>
+              <option value="visible">Visíveis</option>
+              <option value="hidden">Ocultas</option>
+            </select>
+          </div>
+          <div class="admin-filter-actions">
+            <span id="activityFilterCount" class="admin-filter-count"></span>
+            <button id="clearActivityFiltersButton" type="button" class="admin-clear-filters">
+              Limpar Filtros
+            </button>
+          </div>
+        </div>
+
+        <div class="admin-table-wrapper">
+          <table class="admin-table schedule-activities-table">
+            <thead>
+              <tr>
+                <th><button class="admin-sort-button" data-activity-sort="title">Atividade</button></th>
+                <th><button class="admin-sort-button" data-activity-sort="section">Etapa</button></th>
+                <th><button class="admin-sort-button" data-activity-sort="type">Tipo</button></th>
+                <th><button class="admin-sort-button" data-activity-sort="timeMode">Horário</button></th>
+                <th><button class="admin-sort-button" data-activity-sort="visible">Visível</button></th>
+                <th><button class="admin-sort-button" data-activity-sort="order">Ordem</button></th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="activitiesTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <div id="sectionModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content">
+        <div class="admin-modal-header">
+          <div>
+            <p class="section-subtitle">Etapa</p>
+            <h2 id="sectionModalTitle">Nova Etapa</h2>
+          </div>
+          <button id="closeSectionModalButton" type="button" class="admin-modal-close" aria-label="Fechar">×</button>
+        </div>
+
+        <form id="sectionForm" class="admin-form">
+          <div class="admin-form-grid">
+            <div class="admin-form-group">
+              <label for="sectionTitleInput">Título</label>
+              <input id="sectionTitleInput" type="text" maxlength="120" required />
+            </div>
+            <div class="admin-form-group">
+              <label for="sectionLocationInput">Local</label>
+              <input id="sectionLocationInput" type="text" maxlength="160" required />
+            </div>
+            <div class="admin-form-group">
+              <label for="sectionAddressInput">Endereço</label>
+              <input id="sectionAddressInput" type="text" maxlength="260" />
+            </div>
+            <div class="admin-form-group">
+              <label for="sectionOrderInput">Ordem</label>
+              <input id="sectionOrderInput" type="number" step="1" />
+              <small class="admin-field-hint">Menor número aparece primeiro. Se deixar vazio, entra no final.</small>
+            </div>
+          </div>
+          <div class="admin-form-group">
+            <label for="sectionDescriptionInput">Descrição</label>
+            <textarea id="sectionDescriptionInput" maxlength="700" rows="4"></textarea>
+          </div>
+          <label class="admin-checkbox-label">
+            <input id="sectionVisibleInput" type="checkbox" checked />
+            Visível no site
+          </label>
+          <div class="admin-modal-actions vendor-modal-actions">
+            <button type="submit" class="admin-save-button">Salvar Etapa</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="activityModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content">
+        <div class="admin-modal-header">
+          <div>
+            <p class="section-subtitle">Atividade</p>
+            <h2 id="activityModalTitle">Nova Atividade</h2>
+          </div>
+          <button id="closeActivityModalButton" type="button" class="admin-modal-close" aria-label="Fechar">×</button>
+        </div>
+
+        <form id="activityForm" class="admin-form">
+          <div class="admin-form-grid">
+            <div class="admin-form-group">
+              <label for="activitySectionInput">Etapa</label>
+              <select id="activitySectionInput" required></select>
+            </div>
+            <div class="admin-form-group">
+              <label for="activityTitleInput">Título</label>
+              <input id="activityTitleInput" type="text" maxlength="140" required />
+            </div>
+            <div class="admin-form-group">
+              <label for="activityTypeInput">Tipo</label>
+              <select id="activityTypeInput">
+                <option value="moment">Momento</option>
+                <option value="attraction">Atração</option>
+                <option value="island">Ilha</option>
+                <option value="service">Serviço</option>
+                <option value="other">Outro</option>
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label for="activityTimeModeInput">Horário</label>
+              <select id="activityTimeModeInput">
+                <option value="scheduled">Horário Específico</option>
+                <option value="period">Período</option>
+                <option value="available">Disponível Durante a Etapa</option>
+                <option value="tbd">Horário a Definir</option>
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label for="activityStartTimeInput">Início</label>
+              <input id="activityStartTimeInput" type="time" />
+            </div>
+            <div class="admin-form-group">
+              <label for="activityEndTimeInput">Fim</label>
+              <input id="activityEndTimeInput" type="time" />
+            </div>
+            <div class="admin-form-group">
+              <label for="activityOrderInput">Ordem</label>
+              <input id="activityOrderInput" type="number" step="1" />
+              <small class="admin-field-hint">A ordem vale dentro da etapa selecionada.</small>
+            </div>
+          </div>
+          <div class="admin-form-group">
+            <label for="activityDescriptionInput">Descrição</label>
+            <textarea id="activityDescriptionInput" maxlength="800" rows="4"></textarea>
+          </div>
+          <label class="admin-checkbox-label">
+            <input id="activityVisibleInput" type="checkbox" checked />
+            Visível no site
+          </label>
+          <div class="admin-modal-actions vendor-modal-actions">
+            <button type="submit" class="admin-save-button">Salvar Atividade</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="scheduleDetailsModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content admin-details-modal-content">
+        <button id="closeScheduleDetailsModalButton" type="button" class="admin-modal-close" aria-label="Fechar detalhes">×</button>
+        <h2 id="scheduleDetailsTitle">Detalhes</h2>
+        <div id="scheduleDetailsContent" class="admin-details-content"></div>
+      </div>
+    </div>
+
+    <div id="scheduleOrderModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content admin-details-modal-content">
+        <button id="closeScheduleOrderModalButton" type="button" class="admin-modal-close" aria-label="Fechar organização">×</button>
+        <h2 id="scheduleOrderTitle">Organizar Ordem</h2>
+        <p id="scheduleOrderDescription" class="admin-modal-helper"></p>
+        <div id="scheduleOrderSectionField" class="admin-form-group schedule-order-section-field" hidden>
+          <label for="scheduleOrderSectionSelect">Etapa</label>
+          <select id="scheduleOrderSectionSelect"></select>
+        </div>
+        <div id="scheduleOrderList" class="vendor-order-list" aria-label="Ordem da programação"></div>
+        <div class="admin-modal-actions vendor-modal-actions">
+          <button id="saveScheduleOrderButton" type="button" class="admin-save-button">Salvar Ordem</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="adminToast" class="admin-toast"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/event-config.js"></script>
+    <script src="js/event-settings.js"></script>
+    <script src="js/admin-common.js"></script>
+    <script src="js/admin-bootstrap.js"></script>
+  </body>
+</html>

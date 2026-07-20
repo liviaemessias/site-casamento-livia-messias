@@ -86,6 +86,22 @@
     return value ? "Sim" : "Não";
   }
 
+  function hasDietaryRestriction(rsvp) {
+    if (typeof rsvp?.food_restriction === "boolean") {
+      return rsvp.food_restriction;
+    }
+
+    return Boolean(String(rsvp?.food || "").trim());
+  }
+
+  function getDietaryRestrictionDetails(rsvp) {
+    if (!hasDietaryRestriction(rsvp)) {
+      return "";
+    }
+
+    return String(rsvp?.food || "").trim() || "Sim, sem detalhes informados";
+  }
+
   function isQuotaGift(gift) {
     return gift?.gift_type === "quota";
   }
@@ -182,7 +198,7 @@
 
   function downloadReport({ filename, format, rows, sheetName, columns }) {
     if (!columns.length) {
-      AdminCommon.showToast("Selecione pelo menos uma coluna para exportar.");
+      AdminCommon.showToast("⚠️ Selecione pelo menos uma coluna para exportar");
       return false;
     }
 
@@ -198,7 +214,7 @@
     );
 
     if (!exported) {
-      AdminCommon.showToast("XLSX indisponível. Tente novamente em instantes.");
+      AdminCommon.showToast("⚠️ XLSX indisponível. Tente novamente em instantes");
       return false;
     }
 
@@ -295,6 +311,11 @@
         label: "Regra do buffet",
         value: "buffetRule",
       },
+      {
+        key: "hasFoodRestriction",
+        label: "Possui restrição alimentar",
+        value: "hasFoodRestriction",
+      },
       { key: "food", label: "Restrição alimentar", value: "food" },
       { key: "message", label: "Mensagem", value: "message" },
       { key: "updatedAt", label: "Atualizado em", value: "updatedAt" },
@@ -316,7 +337,8 @@
       nonPayingChildCount: row.buffetMetrics.nonPayingChildren,
       unknownChildCount: row.buffetMetrics.unknownAgeChildren,
       buffetRule: getBuffetRuleLabel(),
-      food: row.rsvp.food,
+      hasFoodRestriction: formatBoolean(hasDietaryRestriction(row.rsvp)),
+      food: getDietaryRestrictionDetails(row.rsvp),
       message: row.rsvp.message,
       updatedAt: formatDate(row.rsvp.updated_at || row.rsvp.created_at),
     }));
@@ -382,6 +404,11 @@
         label: "Regra do buffet",
         value: "buffetRule",
       },
+      {
+        key: "hasFoodRestriction",
+        label: "Possui restrição alimentar",
+        value: "hasFoodRestriction",
+      },
       { key: "food", label: "Restrição alimentar", value: "food" },
       { key: "message", label: "Mensagem", value: "message" },
       { key: "updatedAt", label: "Atualizado em", value: "updatedAt" },
@@ -411,7 +438,8 @@
         nonPayingChildCount: row.buffetMetrics.nonPayingChildren,
         unknownChildCount: row.buffetMetrics.unknownAgeChildren,
         buffetRule: getBuffetRuleLabel(),
-        food: row.rsvp.food,
+        hasFoodRestriction: formatBoolean(hasDietaryRestriction(row.rsvp)),
+        food: getDietaryRestrictionDetails(row.rsvp),
         message: row.rsvp.message,
         updatedAt: formatDate(row.rsvp.updated_at || row.rsvp.created_at),
       }));
@@ -445,6 +473,7 @@
       "nonPayingChildCount",
       "unknownChildCount",
       "buffetRule",
+      "hasFoodRestriction",
       "food",
       "message",
       "updatedAt",
@@ -477,7 +506,9 @@
           unknownChildCount:
             index === 0 ? row.buffetMetrics.unknownAgeChildren : "",
           buffetRule: index === 0 ? getBuffetRuleLabel() : "",
-          food: index === 0 ? row.rsvp.food || "" : "",
+          food: index === 0 ? getDietaryRestrictionDetails(row.rsvp) : "",
+          hasFoodRestriction:
+            index === 0 ? formatBoolean(hasDietaryRestriction(row.rsvp)) : "",
           invite: index === 0 ? row.guest.name : "",
           message: index === 0 ? row.rsvp.message || "" : "",
           person: person.name,
@@ -530,12 +561,12 @@
     const columns = getFilteredAttendanceColumns(mode);
 
     if (!rows.length) {
-      AdminCommon.showToast("Nenhuma presença confirmada para exportar.");
+      AdminCommon.showToast("⚠️ Nenhuma presença confirmada para exportar");
       return;
     }
 
     if (!columns.length) {
-      AdminCommon.showToast("Selecione pelo menos uma coluna para exportar.");
+      AdminCommon.showToast("⚠️ Selecione pelo menos uma coluna para exportar");
       return;
     }
 
@@ -555,7 +586,7 @@
       );
 
       if (!exported) {
-        AdminCommon.showToast("XLSX indisponível. Tente novamente em instantes.");
+        AdminCommon.showToast("⚠️ XLSX indisponível. Tente novamente em instantes");
         return;
       }
     }
@@ -578,13 +609,13 @@
       );
 
       if (!exported) {
-        AdminCommon.showToast("XLSX indisponível. Tente novamente em instantes.");
+        AdminCommon.showToast("⚠️ XLSX indisponível. Tente novamente em instantes");
         return;
       }
     }
 
     closeAttendanceReportModal();
-    AdminCommon.showToast("Relatório de presença exportado.");
+    AdminCommon.showToast("💜 Relatório de presença exportado!");
   }
 
   function getSingleGiftFinancialRows(gift, guestMap) {
@@ -671,7 +702,7 @@
     );
 
     if (!rows.length) {
-      AdminCommon.showToast("Nenhum valor reservado para exportar.");
+      AdminCommon.showToast("⚠️ Nenhum valor reservado para exportar");
       return;
     }
 
@@ -685,7 +716,7 @@
 
     if (exported) {
       closeFinancialReportModal();
-      AdminCommon.showToast("Relatório financeiro exportado.");
+      AdminCommon.showToast("💜 Relatório financeiro exportado!");
     }
   }
 
@@ -786,7 +817,7 @@
     );
 
     if (!rows.length) {
-      AdminCommon.showToast("Nenhuma pendência para exportar.");
+      AdminCommon.showToast("⚠️ Nenhuma pendência para exportar");
       return;
     }
 
@@ -800,7 +831,7 @@
 
     if (exported) {
       closePendingReportModal();
-      AdminCommon.showToast("Relatório de pendências exportado.");
+      AdminCommon.showToast("💜 Relatório de pendências exportado!");
     }
   }
 

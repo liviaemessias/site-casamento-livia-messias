@@ -33,7 +33,7 @@ async function loadReports() {
   if (error) {
     console.error(error);
     reportsStatus.textContent = "Não foi possível carregar os dados dos relatórios.";
-    AdminCommon.showToast("⚠️ Erro ao carregar relatórios.");
+    AdminCommon.showToast("⚠️ Erro ao carregar relatórios");
     return;
   }
 

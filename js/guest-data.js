@@ -16,6 +16,7 @@
       const { data, error } = await supabaseClient.rpc("save_current_rsvp", {
         submitted_email: payload.email,
         submitted_food: payload.food,
+        submitted_food_restriction: payload.food_restriction,
         submitted_guest_data: payload.guest_data,
         submitted_message: payload.message,
         submitted_phone: payload.phone,

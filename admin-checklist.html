@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://unpkg.com https://challenges.cloudflare.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Checklist | Painel Admin | Livia &amp; Messias</title>
+    <link rel="stylesheet" href="./css/style.css" />
+    <link rel="stylesheet" href="./css/admin.css" />
+  </head>
+  <body class="admin-auth-pending">
+    <main class="admin-page admin-checklist-page">
+      <section class="admin-header">
+        <div>
+          <p class="section-subtitle">Painel Administrativo</p>
+          <h1>Checklist</h1>
+        </div>
+        <button id="logoutButton" class="admin-logout">Sair</button>
+      </section>
+
+      <nav class="admin-nav" aria-label="Navegação administrativa">
+        <a class="admin-nav-link" href="./admin-dashboard.html">Dashboard</a>
+        <a class="admin-nav-link" href="./admin-guests.html">Convidados</a>
+        <a class="admin-nav-link" href="./admin-rsvps.html">RSVP</a>
+        <a class="admin-nav-link" href="./admin-gifts.html">Presentes</a>
+        <a class="admin-nav-link active" href="./admin-checklist.html">Checklist</a>
+        <a class="admin-nav-link" href="./admin-schedule.html">Programação</a>
+        <a class="admin-nav-link" href="./admin-vendors.html">Fornecedores</a>
+        <a class="admin-nav-link" href="./admin-settings.html">Configurações</a>
+      </nav>
+
+      <section class="admin-section">
+        <div class="admin-section-header">
+          <div>
+            <p class="section-subtitle">Organização</p>
+            <h2>Checklist do Casamento</h2>
+          </div>
+
+          <div class="admin-section-actions">
+            <button id="refreshChecklistButton" class="admin-action-button icon-action">
+              <i data-lucide="refresh-cw" aria-hidden="true"></i>
+              Atualizar
+            </button>
+            <button id="exportChecklistButton" class="admin-action-button icon-action">
+              <i data-lucide="download" aria-hidden="true"></i>
+              Exportar CSV
+            </button>
+            <button id="openCategoryManagerButton" class="admin-action-button icon-action">
+              <i data-lucide="tags" aria-hidden="true"></i>
+              Categorias
+            </button>
+            <button id="openResponsibleManagerButton" class="admin-action-button icon-action">
+              <i data-lucide="user-check" aria-hidden="true"></i>
+              Responsáveis
+            </button>
+            <button id="openChecklistItemModalButton" class="admin-action-button icon-action success">
+              <i data-lucide="plus" aria-hidden="true"></i>
+              Nova Tarefa
+            </button>
+          </div>
+        </div>
+
+        <section class="admin-grid dashboard-grid checklist-summary-grid" aria-label="Resumo do checklist">
+          <article class="admin-card admin-card-link checklist-summary-card" data-checklist-summary="total" role="button" tabindex="0">
+            <div class="admin-card-header">
+              <span>Total</span>
+              <button type="button" class="metric-help" aria-label="Ajuda sobre total" data-tooltip="Todas as tarefas cadastradas no checklist.">?</button>
+            </div>
+            <strong id="checklistTotalCount">0</strong>
+          </article>
+          <article class="admin-card admin-card-link checklist-summary-card" data-checklist-summary="pending" role="button" tabindex="0">
+            <div class="admin-card-header">
+              <span>Pendentes</span>
+              <button type="button" class="metric-help" aria-label="Ajuda sobre pendentes" data-tooltip="Tarefas ainda não iniciadas.">?</button>
+            </div>
+            <strong id="checklistPendingCount">0</strong>
+          </article>
+          <article class="admin-card admin-card-link checklist-summary-card" data-checklist-summary="in_progress" role="button" tabindex="0">
+            <div class="admin-card-header">
+              <span>Em Andamento</span>
+              <button type="button" class="metric-help" aria-label="Ajuda sobre andamento" data-tooltip="Tarefas marcadas como em andamento.">?</button>
+            </div>
+            <strong id="checklistProgressCount">0</strong>
+          </article>
+          <article class="admin-card admin-card-link checklist-summary-card" data-checklist-summary="completed" role="button" tabindex="0">
+            <div class="admin-card-header">
+              <span>Concluídas</span>
+              <button type="button" class="metric-help" aria-label="Ajuda sobre concluídas" data-tooltip="Tarefas finalizadas.">?</button>
+            </div>
+            <strong id="checklistCompletedCount">0</strong>
+          </article>
+          <article class="admin-card admin-card-link checklist-summary-card" data-checklist-summary="overdue" role="button" tabindex="0">
+            <div class="admin-card-header">
+              <span>Atrasadas</span>
+              <button type="button" class="metric-help" aria-label="Ajuda sobre atrasadas" data-tooltip="Tarefas não concluídas com prazo anterior a hoje.">?</button>
+            </div>
+            <strong id="checklistOverdueCount">0</strong>
+          </article>
+        </section>
+
+        <div class="admin-filters" aria-label="Filtros do checklist">
+          <div class="admin-filter-field">
+            <label for="checklistSearchInput">Buscar</label>
+            <input id="checklistSearchInput" type="search" placeholder="Tarefa, descrição, categoria ou observação" />
+          </div>
+          <div class="admin-filter-field">
+            <label for="checklistPeriodFilter">Período</label>
+            <select id="checklistPeriodFilter">
+              <option value="">Todos</option>
+            </select>
+          </div>
+          <div class="admin-filter-field">
+            <label for="checklistStatusFilter">Status</label>
+            <select id="checklistStatusFilter">
+              <option value="">Todos</option>
+              <option value="pending">Pendentes</option>
+              <option value="in_progress">Em Andamento</option>
+              <option value="completed">Concluídas</option>
+              <option value="overdue">Atrasadas</option>
+            </select>
+          </div>
+          <div class="admin-filter-field">
+            <label for="checklistCategoryFilter">Categoria</label>
+            <select id="checklistCategoryFilter">
+              <option value="">Todas</option>
+            </select>
+          </div>
+          <div class="admin-filter-field">
+            <label for="checklistOwnerFilter">Responsável</label>
+            <select id="checklistOwnerFilter">
+              <option value="">Todos</option>
+            </select>
+          </div>
+          <div class="admin-filter-field">
+            <label for="checklistPriorityFilter">Prioridade</label>
+            <select id="checklistPriorityFilter">
+              <option value="">Todas</option>
+              <option value="high">Alta</option>
+              <option value="normal">Normal</option>
+              <option value="low">Baixa</option>
+            </select>
+          </div>
+          <div class="admin-filter-actions">
+            <span id="checklistFilterCount" class="admin-filter-count"></span>
+            <button id="clearChecklistFiltersButton" type="button" class="admin-clear-filters">
+              Limpar Filtros
+            </button>
+          </div>
+        </div>
+
+        <div id="checklistPeriodNav" class="checklist-period-nav" aria-label="Atalhos dos períodos"></div>
+        <div id="checklistBoard" class="checklist-board"></div>
+      </section>
+    </main>
+
+    <div id="checklistItemModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content">
+        <div class="admin-modal-header">
+          <div>
+            <p class="section-subtitle">Checklist</p>
+            <h2 id="checklistItemModalTitle">Nova Tarefa</h2>
+          </div>
+          <button id="closeChecklistItemModalButton" type="button" class="admin-modal-close" aria-label="Fechar">×</button>
+        </div>
+
+        <form id="checklistItemForm" class="admin-form">
+          <div class="admin-form-grid">
+            <div class="admin-form-group admin-form-group-wide">
+              <label for="checklistTitleInput">Tarefa</label>
+              <input id="checklistTitleInput" type="text" maxlength="180" required />
+            </div>
+            <div class="admin-form-group">
+              <label for="checklistCategoryInput">Categoria</label>
+              <select id="checklistCategoryInput" required></select>
+            </div>
+            <div class="admin-form-group">
+              <label for="checklistPeriodInput">Período</label>
+              <select id="checklistPeriodInput" required></select>
+            </div>
+            <div class="admin-form-group">
+              <label for="checklistStatusInput">Status</label>
+              <select id="checklistStatusInput">
+                <option value="pending">Pendente</option>
+                <option value="in_progress">Em Andamento</option>
+                <option value="completed">Concluída</option>
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label for="checklistPriorityInput">Prioridade</label>
+              <select id="checklistPriorityInput">
+                <option value="normal">Normal</option>
+                <option value="high">Alta</option>
+                <option value="low">Baixa</option>
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label for="checklistOwnerInput">Responsável</label>
+              <select id="checklistOwnerInput" required></select>
+            </div>
+            <div class="admin-form-group">
+              <label for="checklistDueDateInput">Prazo</label>
+              <input id="checklistDueDateInput" type="date" />
+            </div>
+            <div class="admin-form-group">
+              <label for="checklistOrderInput">Ordem</label>
+              <input id="checklistOrderInput" type="number" step="1" />
+              <small class="admin-field-hint">Se deixar vazio, entra no final do período.</small>
+            </div>
+          </div>
+
+          <div class="admin-form-group">
+            <label for="checklistDescriptionInput">Descrição</label>
+            <textarea id="checklistDescriptionInput" maxlength="900" rows="3"></textarea>
+          </div>
+
+          <div class="admin-form-group">
+            <label for="checklistNotesInput">Observações</label>
+            <textarea id="checklistNotesInput" maxlength="1600" rows="4"></textarea>
+          </div>
+
+          <div class="admin-modal-actions vendor-modal-actions">
+            <button type="submit" class="admin-save-button">Salvar Tarefa</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="checklistCategoryModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content admin-details-modal-content">
+        <div class="admin-modal-header">
+          <div>
+            <p class="section-subtitle">Checklist</p>
+            <h2>Categorias</h2>
+          </div>
+          <button id="closeCategoryManagerButton" type="button" class="admin-modal-close" aria-label="Fechar">×</button>
+        </div>
+
+        <form id="checklistCategoryForm" class="admin-form checklist-category-form">
+          <div class="admin-form-grid">
+            <div class="admin-form-group">
+              <label for="categoryNameInput">Nome</label>
+              <input id="categoryNameInput" type="text" maxlength="120" required />
+            </div>
+            <div class="admin-form-group">
+              <label for="categoryColorInput">Cor</label>
+              <input id="categoryColorInput" type="color" value="#6f3fa7" />
+            </div>
+            <div class="admin-form-group">
+              <label for="categoryIconInput">Ícone</label>
+              <div class="checklist-icon-picker">
+                <select id="categoryIconInput"></select>
+                <span
+                  id="categoryIconPreview"
+                  class="checklist-icon-preview"
+                  aria-hidden="true"
+                ></span>
+              </div>
+            </div>
+            <div class="admin-form-group">
+              <label for="categoryOrderInput">Ordem</label>
+              <input id="categoryOrderInput" type="number" step="1" />
+              <small class="admin-field-hint">
+                Se deixar vazio, entra no final.
+              </small>
+            </div>
+          </div>
+          <label class="admin-checkbox-label">
+            <input id="categoryActiveInput" type="checkbox" checked />
+            Categoria ativa
+          </label>
+          <div class="admin-modal-actions vendor-modal-actions checklist-category-actions">
+            <button type="submit" class="admin-save-button" id="saveCategoryButton">Salvar Categoria</button>
+            <button type="button" class="admin-action-button" id="cancelCategoryEditButton">Cancelar Edição</button>
+          </div>
+        </form>
+
+        <div id="checklistCategoryList" class="checklist-category-list"></div>
+      </div>
+    </div>
+
+    <div id="checklistResponsibleModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content admin-details-modal-content">
+        <div class="admin-modal-header">
+          <div>
+            <p class="section-subtitle">Checklist</p>
+            <h2>Responsáveis</h2>
+          </div>
+          <button id="closeResponsibleManagerButton" type="button" class="admin-modal-close" aria-label="Fechar">×</button>
+        </div>
+
+        <form id="checklistResponsibleForm" class="admin-form checklist-category-form">
+          <div class="admin-form-grid">
+            <div class="admin-form-group">
+              <label for="responsibleNameInput">Nome</label>
+              <input id="responsibleNameInput" type="text" maxlength="120" required />
+            </div>
+            <div class="admin-form-group">
+              <label for="responsibleTypeInput">Tipo</label>
+              <select id="responsibleTypeInput">
+                <option value="person">Pessoa</option>
+                <option value="group">Grupo</option>
+                <option value="family">Família</option>
+                <option value="planner">Cerimonial</option>
+                <option value="other">Outro</option>
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label for="responsibleOrderInput">Ordem</label>
+              <input id="responsibleOrderInput" type="number" step="1" />
+              <small class="admin-field-hint">
+                Se deixar vazio, entra no final.
+              </small>
+            </div>
+          </div>
+          <label class="admin-checkbox-label">
+            <input id="responsibleActiveInput" type="checkbox" checked />
+            Responsável ativo
+          </label>
+          <div class="admin-modal-actions vendor-modal-actions checklist-category-actions">
+            <button type="submit" class="admin-save-button" id="saveResponsibleButton">Salvar Responsável</button>
+            <button type="button" class="admin-action-button" id="cancelResponsibleEditButton">Cancelar Edição</button>
+          </div>
+        </form>
+
+        <div id="checklistResponsibleList" class="checklist-category-list"></div>
+      </div>
+    </div>
+
+    <div id="checklistDetailsModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content admin-details-modal-content">
+        <button id="closeChecklistDetailsModalButton" type="button" class="admin-modal-close" aria-label="Fechar">×</button>
+        <h2 id="checklistDetailsTitle">Detalhes da Tarefa</h2>
+        <div id="checklistDetailsContent" class="admin-details-content"></div>
+      </div>
+    </div>
+
+    <div id="checklistOrderModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content admin-details-modal-content">
+        <button id="closeChecklistOrderModalButton" type="button" class="admin-modal-close" aria-label="Fechar organização">×</button>
+        <h2>Organizar Ordem</h2>
+        <p id="checklistOrderDescription" class="admin-modal-helper"></p>
+        <div class="admin-form-group schedule-order-section-field">
+          <label for="checklistOrderPeriodSelect">Período</label>
+          <select id="checklistOrderPeriodSelect"></select>
+        </div>
+        <div id="checklistOrderList" class="vendor-order-list" aria-label="Ordem das tarefas"></div>
+        <div class="admin-modal-actions vendor-modal-actions">
+          <button id="saveChecklistOrderButton" type="button" class="admin-save-button">Salvar Ordem</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="adminToast" class="admin-toast"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="./js/supabase.js"></script>
+    <script src="./js/event-config.js"></script>
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+    <script src="./js/admin-common.js"></script>
+    <script src="./js/admin-bootstrap.js"></script>
+  </body>
+</html>

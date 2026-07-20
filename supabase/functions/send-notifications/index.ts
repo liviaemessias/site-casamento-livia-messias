@@ -174,6 +174,18 @@ function normalizeText(value: unknown, fallback = "") {
   return text || fallback;
 }
 
+function getDietaryRestrictionText(payload: Record<string, unknown>) {
+  const hasRestriction = typeof payload.food_restriction === "boolean"
+    ? payload.food_restriction
+    : Boolean(normalizeText(payload.food));
+
+  if (!hasRestriction) {
+    return "Não";
+  }
+
+  return normalizeText(payload.food, "Sim, sem detalhes informados");
+}
+
 function isValidEmail(value: unknown) {
   const email = String(value || "").trim();
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -582,6 +594,7 @@ function buildGuestEmail(event: NotificationEvent) {
       `
     : "";
   const intro = getGuestRsvpIntro(payload);
+  const dietaryRestriction = getDietaryRestrictionText(payload);
 
   return {
     html: renderEmailShell(
@@ -591,7 +604,7 @@ function buildGuestEmail(event: NotificationEvent) {
         <p style="margin:0 0 18px;">${escapeHtml(intro)}</p>
         <table style="width:100%;border-collapse:collapse;margin:0 0 18px;background:#fbf8fd;border-radius:8px;">
           ${renderKeyValue("Presença", presence)}
-          ${renderKeyValue("Restrição alimentar", payload.food)}
+          ${renderKeyValue("Restrição alimentar", dietaryRestriction)}
         </table>
         ${memberResponses}
         <h2 style="margin:0 0 8px;color:#6f3fa7;font-size:16px;">Acompanhantes</h2>
@@ -609,6 +622,7 @@ function buildAdminEmail(event: NotificationEvent) {
   const title = `[Casamento] ${prefix} 💜 - ${guestName}`;
   const companions = getCompanionLines(payload);
   const members = getMemberLines(payload);
+  const dietaryRestriction = getDietaryRestrictionText(payload);
 
   return {
     html: renderEmailShell(
@@ -622,7 +636,7 @@ function buildAdminEmail(event: NotificationEvent) {
           ${renderKeyValue("Presença", payload.presence)}
           ${renderKeyValue("E-mail", payload.email)}
           ${renderKeyValue("Telefone", payload.phone)}
-          ${renderKeyValue("Restrição alimentar", payload.food)}
+          ${renderKeyValue("Restrição alimentar", dietaryRestriction)}
           ${renderKeyValue("Mensagem", payload.message)}
         </table>
         <h2 style="margin:0 0 8px;color:#6f3fa7;font-size:16px;">Membros do convite</h2>

@@ -6,7 +6,7 @@
       "redirect",
     );
 
-    return ["gifts", "messages", "rsvp"].includes(requestedPage)
+    return ["gifts", "messages", "rsvp", "schedule"].includes(requestedPage)
       ? requestedPage
       : "index";
   }

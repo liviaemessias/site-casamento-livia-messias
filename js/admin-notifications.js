@@ -454,7 +454,7 @@ function openNotificationDetails(index) {
   const notification = cachedNotifications[Number(index)];
 
   if (!notification) {
-    showAdminToast("⚠️ Notificação não encontrada. Atualize a lista.");
+    showAdminToast("⚠️ Notificação não encontrada. Atualize a lista");
     return;
   }
 
@@ -491,7 +491,7 @@ async function resendNotificationDelivery(deliveryId) {
   const notification = selectedNotification;
 
   if (!notification || notification.delivery_id !== deliveryId) {
-    showAdminToast("⚠️ Notificação não encontrada. Atualize a lista.");
+    showAdminToast("⚠️ Notificação não encontrada. Atualize a lista");
     return;
   }
 
@@ -514,7 +514,7 @@ async function resendNotificationDelivery(deliveryId) {
 
   if (error || !data) {
     console.error(error);
-    showAdminToast("⚠️ Não foi possível criar o reenvio.");
+    showAdminToast("⚠️ Não foi possível criar o reenvio");
     return;
   }
 
@@ -558,9 +558,20 @@ function getSummaryFilterParams() {
   return params;
 }
 
+function setRefreshNotificationsButtonLabel(label) {
+  refreshNotificationsButton.replaceChildren();
+
+  const icon = document.createElement("i");
+  icon.setAttribute("data-lucide", "refresh-cw");
+  icon.setAttribute("aria-hidden", "true");
+
+  refreshNotificationsButton.append(icon, document.createTextNode(label));
+  window.lucide?.createIcons();
+}
+
 async function loadNotifications() {
   refreshNotificationsButton.disabled = true;
-  refreshNotificationsButton.textContent = "Atualizando...";
+  setRefreshNotificationsButtonLabel("Atualizando...");
 
   const [notificationsResult, summaryResult] = await Promise.all([
     supabaseClient.rpc("admin_list_notification_deliveries", getFilterParams()),
@@ -570,13 +581,13 @@ async function loadNotifications() {
   ]);
 
   refreshNotificationsButton.disabled = false;
-  refreshNotificationsButton.textContent = "Atualizar";
+  setRefreshNotificationsButtonLabel("Atualizar");
 
   const error = notificationsResult.error || summaryResult.error;
 
   if (error) {
     console.error(error);
-    showAdminToast("⚠️ Não foi possível carregar as notificações.");
+    showAdminToast("⚠️ Não foi possível carregar as notificações");
     return;
   }
 

@@ -336,27 +336,36 @@ Valide, nesta ordem:
 8. rejeição de código inválido;
 9. RSVP individual;
 10. RSVP de casal;
-11. idade de criança com opções de `Menos de 1 ano` até `12 anos`;
-12. carregamento da lista de presentes;
-13. reserva de presente individual;
-14. seleção da forma de presentear;
-15. informação de pagamento;
-16. reserva e pagamento de cotas;
-17. liberação administrativa de presentes e cotas;
-18. logout e novo login;
-19. isolamento entre dois convidados diferentes;
-20. bloqueio das páginas administrativas para convidados;
-21. preview do link público com título, descrição e imagem.
-22. e-mail de RSVP Recebido para admin e convidado.
-23. e-mail de RSVP Atualizado para admin e convidado.
-24. e-mails de presente reservado, pagamento informado, presente confirmado e presente liberado.
-25. e-mails de cota reservada, pagamento informado, cota confirmada e cota liberada.
-26. RSVP sem e-mail válido, confirmando entrega para admin e delivery `guest` como `skipped`.
-27. página `admin-notifications.html`, busca, filtros, origem automática/manual, motivos de auditoria, detalhes das entregas de e-mail de RSVP, presentes, cotas, lembretes, reenvios manuais e recados.
-28. página `messages.html`, envio/edição de recado por convidado logado e listagem pública apenas de recados aprovados.
-29. página `admin-messages.html`, filtros, aprovação, ocultação, resposta dos noivos, remoção de resposta e exclusão de recados.
-30. e-mail para admin quando um convidado envia ou edita um recado.
-31. e-mail para convidado quando o recado é aprovado ou respondido, incluindo
+11. restrição alimentar com escolha `Sim`/`Não`, campo de detalhe liberado
+    somente para `Sim` e filtro administrativo correspondente;
+12. idade de criança com opções de `Menos de 1 ano` até `12 anos`;
+13. carregamento da lista de presentes;
+14. reserva de presente individual;
+15. seleção da forma de presentear;
+16. informação de pagamento;
+17. reserva e pagamento de cotas;
+18. liberação administrativa de presentes e cotas;
+19. logout e novo login;
+20. isolamento entre dois convidados diferentes;
+21. bloqueio das páginas administrativas para convidados;
+22. preview do link público com título, descrição e imagem.
+23. e-mail de RSVP Recebido para admin e convidado.
+24. e-mail de RSVP Atualizado para admin e convidado.
+25. e-mails de presente reservado, pagamento informado, presente confirmado e presente liberado.
+26. e-mails de cota reservada, pagamento informado, cota confirmada e cota liberada.
+27. RSVP sem e-mail válido, confirmando entrega para admin e delivery `guest` como `skipped`.
+28. página `admin-notifications.html`, busca, filtros, origem automática/manual, motivos de auditoria, detalhes das entregas de e-mail de RSVP, presentes, cotas, lembretes, reenvios manuais e recados.
+29. página `messages.html`, envio/edição de recado por convidado logado e listagem pública apenas de recados aprovados.
+30. página `admin-messages.html`, filtros, aprovação, ocultação, resposta dos noivos, remoção de resposta e exclusão de recados.
+31. página `vendors.html`, estado vazio e listagem pública de fornecedores visíveis.
+32. página `admin-vendors.html`, cadastro, edição, filtros, visibilidade, destaque, organização de ordem e exclusão de fornecedores.
+33. página `schedule.html`, redirecionamento para login quando não houver convidado logado, estado vazio e listagem protegida de etapas e atividades visíveis.
+34. página `admin-schedule.html`, cadastro, edição, filtros, ordenação, visibilidade, organização de ordem e exclusão de etapas e atividades.
+35. página `admin-checklist.html`, cards por período, filtros, categorias,
+    responsáveis, organização manual da ordem, criação/edição/exclusão de
+    tarefas, marcação de conclusão e alerta de tarefas atrasadas no menu.
+36. e-mail para admin quando um convidado envia ou edita um recado.
+37. e-mail para convidado quando o recado é aprovado ou respondido, incluindo
     o caso sem e-mail válido no RSVP como entrega `skipped`.
 
 Nos logs da `claim-invite`, confirme que não existem erros de grants, RLS ou

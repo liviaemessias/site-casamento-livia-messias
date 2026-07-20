@@ -55,6 +55,7 @@ create table if not exists public.rsvps (
   guest_id uuid null,
   presence text null,
   food text null,
+  food_restriction boolean not null default false,
   message text null,
   guest_data jsonb null,
   email text null,
@@ -6708,17 +6709,19 @@ commit;
 -- ============================================================
 -- Source: docs\migrations\admin_nav_alerts.sql
 -- ============================================================
-
 -- ============================================================
 -- Admin navigation alerts
 -- ============================================================
 
 begin;
 
+drop function if exists public.admin_get_nav_alerts();
+
 create or replace function public.admin_get_nav_alerts()
 returns table (
   has_pending_wall_messages boolean,
-  has_reported_gifts boolean
+  has_reported_gifts boolean,
+  has_overdue_checklist_tasks boolean
 )
 language plpgsql
 security definer
@@ -6751,7 +6754,14 @@ begin
         where contribution.payment_status = 'Informado'
         limit 1
       )
-    ) as has_reported_gifts;
+    ) as has_reported_gifts,
+    exists (
+      select 1
+      from public.wedding_checklist_items as checklist_item
+      where checklist_item.status <> 'completed'
+        and checklist_item.due_date < current_date
+      limit 1
+    ) as has_overdue_checklist_tasks;
 end;
 $$;
 
@@ -6760,5 +6770,2574 @@ comment on function public.admin_get_nav_alerts() is
 
 revoke all on function public.admin_get_nav_alerts() from public, anon;
 grant execute on function public.admin_get_nav_alerts() to authenticated;
+
+commit;
+
+-- ============================================================
+-- Source: docs\migrations\wedding_vendors.sql
+-- ============================================================
+
+begin;
+
+create table if not exists public.wedding_vendors (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  category text not null,
+  responsible_names text null,
+  description text null,
+  image_url text null,
+  instagram_url text null,
+  website_url text null,
+  whatsapp_number text null,
+  display_order integer not null default 0,
+  is_visible boolean not null default true,
+  is_featured boolean not null default false,
+  created_at timestamp with time zone not null default now(),
+  updated_at timestamp with time zone not null default now(),
+  constraint wedding_vendors_name_length_check
+    check (char_length(btrim(name)) between 1 and 160),
+  constraint wedding_vendors_category_length_check
+    check (char_length(btrim(category)) between 1 and 120),
+  constraint wedding_vendors_responsible_names_length_check
+    check (responsible_names is null or char_length(responsible_names) <= 240),
+  constraint wedding_vendors_description_length_check
+    check (description is null or char_length(description) <= 800),
+  constraint wedding_vendors_image_url_length_check
+    check (image_url is null or char_length(image_url) <= 1000),
+  constraint wedding_vendors_instagram_url_length_check
+    check (instagram_url is null or char_length(instagram_url) <= 1000),
+  constraint wedding_vendors_website_url_length_check
+    check (website_url is null or char_length(website_url) <= 1000),
+  constraint wedding_vendors_whatsapp_number_length_check
+    check (whatsapp_number is null or char_length(whatsapp_number) <= 30)
+);
+
+create index if not exists wedding_vendors_public_order_idx
+  on public.wedding_vendors (is_visible, display_order, category, name);
+
+create index if not exists wedding_vendors_admin_order_idx
+  on public.wedding_vendors (display_order, category, name);
+
+alter table public.wedding_vendors enable row level security;
+
+revoke all on table public.wedding_vendors from anon, authenticated;
+grant all on table public.wedding_vendors to service_role;
+
+create or replace function public.touch_wedding_vendor_updated_at()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+drop trigger if exists touch_wedding_vendor_updated_at
+  on public.wedding_vendors;
+
+create trigger touch_wedding_vendor_updated_at
+  before update on public.wedding_vendors
+  for each row
+  execute function public.touch_wedding_vendor_updated_at();
+
+create or replace function public.list_public_vendors()
+returns table (
+  id uuid,
+  name text,
+  category text,
+  responsible_names text,
+  description text,
+  image_url text,
+  instagram_url text,
+  website_url text,
+  whatsapp_number text,
+  display_order integer,
+  is_featured boolean
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  return query
+  select
+    vendor.id,
+    vendor.name,
+    vendor.category,
+    vendor.responsible_names,
+    vendor.description,
+    vendor.image_url,
+    vendor.instagram_url,
+    vendor.website_url,
+    vendor.whatsapp_number,
+    vendor.display_order,
+    vendor.is_featured
+  from public.wedding_vendors as vendor
+  where vendor.is_visible = true
+  order by vendor.is_featured desc,
+    vendor.display_order asc,
+    vendor.category asc,
+    vendor.name asc;
+end;
+$$;
+
+create or replace function public.admin_list_vendors()
+returns table (
+  id uuid,
+  name text,
+  category text,
+  responsible_names text,
+  description text,
+  image_url text,
+  instagram_url text,
+  website_url text,
+  whatsapp_number text,
+  display_order integer,
+  is_visible boolean,
+  is_featured boolean,
+  created_at timestamp with time zone,
+  updated_at timestamp with time zone
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  return query
+  select
+    vendor.id,
+    vendor.name,
+    vendor.category,
+    vendor.responsible_names,
+    vendor.description,
+    vendor.image_url,
+    vendor.instagram_url,
+    vendor.website_url,
+    vendor.whatsapp_number,
+    vendor.display_order,
+    vendor.is_visible,
+    vendor.is_featured,
+    vendor.created_at,
+    vendor.updated_at
+  from public.wedding_vendors as vendor
+  order by vendor.display_order asc, vendor.category asc, vendor.name asc;
+end;
+$$;
+
+create or replace function public.admin_save_vendor(
+  target_vendor_id uuid,
+  submitted_name text,
+  submitted_category text,
+  submitted_responsible_names text default null,
+  submitted_description text default null,
+  submitted_image_url text default null,
+  submitted_instagram_url text default null,
+  submitted_website_url text default null,
+  submitted_whatsapp_number text default null,
+  submitted_display_order integer default 0,
+  submitted_is_visible boolean default true,
+  submitted_is_featured boolean default false
+)
+returns setof public.wedding_vendors
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  saved_vendor public.wedding_vendors%rowtype;
+  safe_name text := nullif(btrim(submitted_name), '');
+  safe_category text := nullif(btrim(submitted_category), '');
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  if safe_name is null or safe_category is null then
+    raise exception 'Vendor name and category are required.'
+      using errcode = '22023';
+  end if;
+
+  if target_vendor_id is null then
+    insert into public.wedding_vendors (
+      name,
+      category,
+      responsible_names,
+      description,
+      image_url,
+      instagram_url,
+      website_url,
+      whatsapp_number,
+      display_order,
+      is_visible,
+      is_featured
+    )
+    values (
+      safe_name,
+      safe_category,
+      nullif(btrim(submitted_responsible_names), ''),
+      nullif(btrim(submitted_description), ''),
+      nullif(btrim(submitted_image_url), ''),
+      nullif(btrim(submitted_instagram_url), ''),
+      nullif(btrim(submitted_website_url), ''),
+      nullif(btrim(submitted_whatsapp_number), ''),
+      coalesce(submitted_display_order, 0),
+      coalesce(submitted_is_visible, true),
+      coalesce(submitted_is_featured, false)
+    )
+    returning * into saved_vendor;
+  else
+    update public.wedding_vendors
+    set
+      name = safe_name,
+      category = safe_category,
+      responsible_names = nullif(btrim(submitted_responsible_names), ''),
+      description = nullif(btrim(submitted_description), ''),
+      image_url = nullif(btrim(submitted_image_url), ''),
+      instagram_url = nullif(btrim(submitted_instagram_url), ''),
+      website_url = nullif(btrim(submitted_website_url), ''),
+      whatsapp_number = nullif(btrim(submitted_whatsapp_number), ''),
+      display_order = coalesce(submitted_display_order, 0),
+      is_visible = coalesce(submitted_is_visible, true),
+      is_featured = coalesce(submitted_is_featured, false)
+    where wedding_vendors.id = target_vendor_id
+    returning * into saved_vendor;
+  end if;
+
+  if saved_vendor.id is null then
+    raise exception 'Vendor not found.'
+      using errcode = 'P0002';
+  end if;
+
+  return next saved_vendor;
+end;
+$$;
+
+create or replace function public.admin_set_vendor_visible(
+  target_vendor_id uuid,
+  submitted_is_visible boolean
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  update public.wedding_vendors
+  set is_visible = coalesce(submitted_is_visible, false)
+  where id = target_vendor_id;
+
+  if not found then
+    raise exception 'Vendor not found.'
+      using errcode = 'P0002';
+  end if;
+
+  return true;
+end;
+$$;
+
+create or replace function public.admin_reorder_vendors(submitted_vendor_ids uuid[])
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  submitted_count integer;
+  existing_count integer;
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  if submitted_vendor_ids is null or cardinality(submitted_vendor_ids) = 0 then
+    return true;
+  end if;
+
+  select count(*), count(distinct vendor_id)
+    into submitted_count, existing_count
+  from unnest(submitted_vendor_ids) as submitted(vendor_id);
+
+  if submitted_count <> existing_count then
+    raise exception 'Vendor order list contains duplicate vendors.'
+      using errcode = '22023';
+  end if;
+
+  select count(*)
+    into existing_count
+  from public.wedding_vendors
+  where id = any(submitted_vendor_ids);
+
+  if existing_count <> submitted_count then
+    raise exception 'Vendor order list contains unknown vendors.'
+      using errcode = 'P0002';
+  end if;
+
+  with ordered_vendors as (
+    select
+      vendor_id,
+      row_number() over (order by ordinality)::integer as next_display_order
+    from unnest(submitted_vendor_ids) with ordinality as ordered(vendor_id, ordinality)
+  )
+  update public.wedding_vendors as vendor
+  set display_order = ordered_vendors.next_display_order
+  from ordered_vendors
+  where vendor.id = ordered_vendors.vendor_id;
+
+  return true;
+end;
+$$;
+
+create or replace function public.admin_delete_vendor(target_vendor_id uuid)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  delete from public.wedding_vendors
+  where id = target_vendor_id;
+
+  if not found then
+    raise exception 'Vendor not found.'
+      using errcode = 'P0002';
+  end if;
+
+  return true;
+end;
+$$;
+
+revoke all on function public.touch_wedding_vendor_updated_at()
+  from public, anon, authenticated;
+
+revoke all on function public.list_public_vendors() from public;
+grant execute on function public.list_public_vendors()
+  to anon, authenticated;
+
+revoke all on function public.admin_list_vendors() from public, anon;
+grant execute on function public.admin_list_vendors() to authenticated;
+
+revoke all on function public.admin_save_vendor(
+  uuid,
+  text,
+  text,
+  text,
+  text,
+  text,
+  text,
+  text,
+  text,
+  integer,
+  boolean,
+  boolean
+) from public, anon;
+grant execute on function public.admin_save_vendor(
+  uuid,
+  text,
+  text,
+  text,
+  text,
+  text,
+  text,
+  text,
+  text,
+  integer,
+  boolean,
+  boolean
+) to authenticated;
+
+revoke all on function public.admin_set_vendor_visible(uuid, boolean)
+  from public, anon;
+grant execute on function public.admin_set_vendor_visible(uuid, boolean)
+  to authenticated;
+
+revoke all on function public.admin_reorder_vendors(uuid[]) from public, anon;
+grant execute on function public.admin_reorder_vendors(uuid[]) to authenticated;
+
+revoke all on function public.admin_delete_vendor(uuid) from public, anon;
+grant execute on function public.admin_delete_vendor(uuid) to authenticated;
+
+
+-- Source: docs/migrations/wedding_schedule.sql
+create table if not exists public.wedding_schedule_sections (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  location_name text not null,
+  address text null,
+  description text null,
+  display_order integer not null default 0,
+  is_visible boolean not null default true,
+  created_at timestamp with time zone not null default now(),
+  updated_at timestamp with time zone not null default now(),
+  constraint wedding_schedule_sections_title_length_check
+    check (char_length(btrim(title)) between 1 and 120),
+  constraint wedding_schedule_sections_location_name_length_check
+    check (char_length(btrim(location_name)) between 1 and 160),
+  constraint wedding_schedule_sections_address_length_check
+    check (address is null or char_length(address) <= 260),
+  constraint wedding_schedule_sections_description_length_check
+    check (description is null or char_length(description) <= 700)
+);
+
+create table if not exists public.wedding_schedule_activities (
+  id uuid primary key default gen_random_uuid(),
+  section_id uuid not null references public.wedding_schedule_sections(id) on delete cascade,
+  title text not null,
+  activity_type text not null default 'moment',
+  time_mode text not null default 'scheduled',
+  start_time time without time zone null,
+  end_time time without time zone null,
+  description text null,
+  display_order integer not null default 0,
+  is_visible boolean not null default true,
+  created_at timestamp with time zone not null default now(),
+  updated_at timestamp with time zone not null default now(),
+  constraint wedding_schedule_activities_title_length_check
+    check (char_length(btrim(title)) between 1 and 140),
+  constraint wedding_schedule_activities_type_check
+    check (activity_type in ('moment', 'attraction', 'island', 'service', 'other')),
+  constraint wedding_schedule_activities_time_mode_check
+    check (time_mode in ('scheduled', 'period', 'available', 'tbd')),
+  constraint wedding_schedule_activities_description_length_check
+    check (description is null or char_length(description) <= 800),
+  constraint wedding_schedule_activities_time_required_check
+    check (
+      (time_mode = 'scheduled' and start_time is not null)
+      or (time_mode = 'period' and start_time is not null and end_time is not null)
+      or (time_mode in ('available', 'tbd') and start_time is null and end_time is null)
+    )
+);
+
+create index if not exists wedding_schedule_sections_public_order_idx
+  on public.wedding_schedule_sections (is_visible, display_order, title);
+
+create index if not exists wedding_schedule_sections_admin_order_idx
+  on public.wedding_schedule_sections (display_order, title);
+
+create index if not exists wedding_schedule_activities_section_order_idx
+  on public.wedding_schedule_activities (section_id, is_visible, display_order, start_time, title);
+
+create index if not exists wedding_schedule_activities_admin_order_idx
+  on public.wedding_schedule_activities (section_id, display_order, start_time, title);
+
+alter table public.wedding_schedule_sections enable row level security;
+alter table public.wedding_schedule_activities enable row level security;
+
+revoke all on table public.wedding_schedule_sections from anon, authenticated;
+revoke all on table public.wedding_schedule_activities from anon, authenticated;
+grant all on table public.wedding_schedule_sections to service_role;
+grant all on table public.wedding_schedule_activities to service_role;
+
+create or replace function public.touch_wedding_schedule_updated_at()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists touch_wedding_schedule_sections_updated_at
+  on public.wedding_schedule_sections;
+create trigger touch_wedding_schedule_sections_updated_at
+  before update on public.wedding_schedule_sections
+  for each row
+  execute function public.touch_wedding_schedule_updated_at();
+
+drop trigger if exists touch_wedding_schedule_activities_updated_at
+  on public.wedding_schedule_activities;
+create trigger touch_wedding_schedule_activities_updated_at
+  before update on public.wedding_schedule_activities
+  for each row
+  execute function public.touch_wedding_schedule_updated_at();
+
+create or replace function public.list_public_schedule()
+returns table (
+  section_id uuid,
+  section_title text,
+  location_name text,
+  address text,
+  section_description text,
+  section_display_order integer,
+  activity_id uuid,
+  activity_title text,
+  activity_type text,
+  time_mode text,
+  start_time time without time zone,
+  end_time time without time zone,
+  activity_description text,
+  activity_display_order integer
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not exists (select 1 from public.get_current_guest_profile()) then
+    raise exception 'Guest access required.'
+      using errcode = '42501';
+  end if;
+
+  return query
+  select
+    section.id,
+    section.title,
+    section.location_name,
+    section.address,
+    section.description,
+    section.display_order,
+    activity.id,
+    activity.title,
+    activity.activity_type,
+    activity.time_mode,
+    activity.start_time,
+    activity.end_time,
+    activity.description,
+    activity.display_order
+  from public.wedding_schedule_sections as section
+  left join public.wedding_schedule_activities as activity
+    on activity.section_id = section.id
+   and activity.is_visible = true
+  where section.is_visible = true
+  order by
+    section.display_order asc,
+    section.title asc,
+    activity.display_order asc nulls last,
+    activity.start_time asc nulls last,
+    activity.title asc nulls last;
+end;
+$$;
+
+create or replace function public.admin_list_schedule_sections()
+returns table (
+  id uuid,
+  title text,
+  location_name text,
+  address text,
+  description text,
+  display_order integer,
+  is_visible boolean,
+  created_at timestamp with time zone,
+  updated_at timestamp with time zone
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  return query
+  select
+    section.id,
+    section.title,
+    section.location_name,
+    section.address,
+    section.description,
+    section.display_order,
+    section.is_visible,
+    section.created_at,
+    section.updated_at
+  from public.wedding_schedule_sections as section
+  order by section.display_order asc, section.title asc;
+end;
+$$;
+
+create or replace function public.admin_list_schedule_activities()
+returns table (
+  id uuid,
+  section_id uuid,
+  section_title text,
+  title text,
+  activity_type text,
+  time_mode text,
+  start_time time without time zone,
+  end_time time without time zone,
+  description text,
+  display_order integer,
+  is_visible boolean,
+  created_at timestamp with time zone,
+  updated_at timestamp with time zone
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  return query
+  select
+    activity.id,
+    activity.section_id,
+    section.title,
+    activity.title,
+    activity.activity_type,
+    activity.time_mode,
+    activity.start_time,
+    activity.end_time,
+    activity.description,
+    activity.display_order,
+    activity.is_visible,
+    activity.created_at,
+    activity.updated_at
+  from public.wedding_schedule_activities as activity
+  join public.wedding_schedule_sections as section
+    on section.id = activity.section_id
+  order by section.display_order asc, activity.display_order asc, activity.start_time asc nulls last, activity.title asc;
+end;
+$$;
+
+create or replace function public.admin_save_schedule_section(
+  target_section_id uuid,
+  submitted_title text,
+  submitted_location_name text,
+  submitted_address text default null,
+  submitted_description text default null,
+  submitted_display_order integer default 0,
+  submitted_is_visible boolean default true
+)
+returns setof public.wedding_schedule_sections
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  saved_section public.wedding_schedule_sections%rowtype;
+  safe_title text := nullif(btrim(submitted_title), '');
+  safe_location_name text := nullif(btrim(submitted_location_name), '');
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  if safe_title is null then
+    raise exception 'Schedule section title is required.'
+      using errcode = '22023';
+  end if;
+
+  if safe_location_name is null then
+    raise exception 'Schedule section location is required.'
+      using errcode = '22023';
+  end if;
+
+  if target_section_id is null then
+    insert into public.wedding_schedule_sections (
+      title,
+      location_name,
+      address,
+      description,
+      display_order,
+      is_visible
+    )
+    values (
+      safe_title,
+      safe_location_name,
+      nullif(btrim(submitted_address), ''),
+      nullif(btrim(submitted_description), ''),
+      coalesce(submitted_display_order, 0),
+      coalesce(submitted_is_visible, true)
+    )
+    returning * into saved_section;
+  else
+    update public.wedding_schedule_sections
+    set
+      title = safe_title,
+      location_name = safe_location_name,
+      address = nullif(btrim(submitted_address), ''),
+      description = nullif(btrim(submitted_description), ''),
+      display_order = coalesce(submitted_display_order, 0),
+      is_visible = coalesce(submitted_is_visible, true)
+    where wedding_schedule_sections.id = target_section_id
+    returning * into saved_section;
+
+    if saved_section.id is null then
+      raise exception 'Schedule section not found.'
+        using errcode = 'P0002';
+    end if;
+  end if;
+
+  return next saved_section;
+end;
+$$;
+
+create or replace function public.admin_save_schedule_activity(
+  target_activity_id uuid,
+  submitted_section_id uuid,
+  submitted_title text,
+  submitted_activity_type text default 'moment',
+  submitted_time_mode text default 'scheduled',
+  submitted_start_time time without time zone default null,
+  submitted_end_time time without time zone default null,
+  submitted_description text default null,
+  submitted_display_order integer default 0,
+  submitted_is_visible boolean default true
+)
+returns setof public.wedding_schedule_activities
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  saved_activity public.wedding_schedule_activities%rowtype;
+  safe_title text := nullif(btrim(submitted_title), '');
+  safe_activity_type text := coalesce(nullif(btrim(submitted_activity_type), ''), 'moment');
+  safe_time_mode text := coalesce(nullif(btrim(submitted_time_mode), ''), 'scheduled');
+  safe_start_time time without time zone := submitted_start_time;
+  safe_end_time time without time zone := submitted_end_time;
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  if safe_title is null then
+    raise exception 'Schedule activity title is required.'
+      using errcode = '22023';
+  end if;
+
+  if not exists (
+    select 1
+    from public.wedding_schedule_sections
+    where id = submitted_section_id
+  ) then
+    raise exception 'Schedule section not found.'
+      using errcode = 'P0002';
+  end if;
+
+  if safe_time_mode in ('available', 'tbd') then
+    safe_start_time := null;
+    safe_end_time := null;
+  end if;
+
+  if target_activity_id is null then
+    insert into public.wedding_schedule_activities (
+      section_id,
+      title,
+      activity_type,
+      time_mode,
+      start_time,
+      end_time,
+      description,
+      display_order,
+      is_visible
+    )
+    values (
+      submitted_section_id,
+      safe_title,
+      safe_activity_type,
+      safe_time_mode,
+      safe_start_time,
+      safe_end_time,
+      nullif(btrim(submitted_description), ''),
+      coalesce(submitted_display_order, 0),
+      coalesce(submitted_is_visible, true)
+    )
+    returning * into saved_activity;
+  else
+    update public.wedding_schedule_activities
+    set
+      section_id = submitted_section_id,
+      title = safe_title,
+      activity_type = safe_activity_type,
+      time_mode = safe_time_mode,
+      start_time = safe_start_time,
+      end_time = safe_end_time,
+      description = nullif(btrim(submitted_description), ''),
+      display_order = coalesce(submitted_display_order, 0),
+      is_visible = coalesce(submitted_is_visible, true)
+    where wedding_schedule_activities.id = target_activity_id
+    returning * into saved_activity;
+
+    if saved_activity.id is null then
+      raise exception 'Schedule activity not found.'
+        using errcode = 'P0002';
+    end if;
+  end if;
+
+  return next saved_activity;
+end;
+$$;
+
+create or replace function public.admin_set_schedule_section_visible(
+  target_section_id uuid,
+  submitted_is_visible boolean
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  update public.wedding_schedule_sections
+  set is_visible = coalesce(submitted_is_visible, false)
+  where id = target_section_id;
+
+  if not found then
+    raise exception 'Schedule section not found.'
+      using errcode = 'P0002';
+  end if;
+
+  return true;
+end;
+$$;
+
+create or replace function public.admin_set_schedule_activity_visible(
+  target_activity_id uuid,
+  submitted_is_visible boolean
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  update public.wedding_schedule_activities
+  set is_visible = coalesce(submitted_is_visible, false)
+  where id = target_activity_id;
+
+  if not found then
+    raise exception 'Schedule activity not found.'
+      using errcode = 'P0002';
+  end if;
+
+  return true;
+end;
+$$;
+
+create or replace function public.admin_reorder_schedule_sections(submitted_section_ids uuid[])
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  submitted_count integer;
+  existing_count integer;
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  if submitted_section_ids is null or cardinality(submitted_section_ids) = 0 then
+    return true;
+  end if;
+
+  select count(*), count(distinct section_id)
+    into submitted_count, existing_count
+  from unnest(submitted_section_ids) as submitted(section_id);
+
+  if submitted_count <> existing_count then
+    raise exception 'Schedule section order list contains duplicates.'
+      using errcode = '22023';
+  end if;
+
+  select count(*)
+    into existing_count
+  from public.wedding_schedule_sections
+  where id = any(submitted_section_ids);
+
+  if existing_count <> submitted_count then
+    raise exception 'Schedule section order list contains unknown sections.'
+      using errcode = 'P0002';
+  end if;
+
+  with ordered_sections as (
+    select
+      section_id,
+      row_number() over (order by ordinality)::integer as next_display_order
+    from unnest(submitted_section_ids) with ordinality as ordered(section_id, ordinality)
+  )
+  update public.wedding_schedule_sections as section
+  set display_order = ordered_sections.next_display_order
+  from ordered_sections
+  where section.id = ordered_sections.section_id;
+
+  return true;
+end;
+$$;
+
+create or replace function public.admin_reorder_schedule_activities(
+  target_section_id uuid,
+  submitted_activity_ids uuid[]
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  submitted_count integer;
+  existing_count integer;
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  if submitted_activity_ids is null or cardinality(submitted_activity_ids) = 0 then
+    return true;
+  end if;
+
+  select count(*), count(distinct activity_id)
+    into submitted_count, existing_count
+  from unnest(submitted_activity_ids) as submitted(activity_id);
+
+  if submitted_count <> existing_count then
+    raise exception 'Schedule activity order list contains duplicates.'
+      using errcode = '22023';
+  end if;
+
+  select count(*)
+    into existing_count
+  from public.wedding_schedule_activities
+  where section_id = target_section_id
+    and id = any(submitted_activity_ids);
+
+  if existing_count <> submitted_count then
+    raise exception 'Schedule activity order list contains unknown activities.'
+      using errcode = 'P0002';
+  end if;
+
+  with ordered_activities as (
+    select
+      activity_id,
+      row_number() over (order by ordinality)::integer as next_display_order
+    from unnest(submitted_activity_ids) with ordinality as ordered(activity_id, ordinality)
+  )
+  update public.wedding_schedule_activities as activity
+  set display_order = ordered_activities.next_display_order
+  from ordered_activities
+  where activity.id = ordered_activities.activity_id
+    and activity.section_id = target_section_id;
+
+  return true;
+end;
+$$;
+
+create or replace function public.admin_delete_schedule_section(target_section_id uuid)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  delete from public.wedding_schedule_sections
+  where id = target_section_id;
+
+  if not found then
+    raise exception 'Schedule section not found.'
+      using errcode = 'P0002';
+  end if;
+
+  return true;
+end;
+$$;
+
+create or replace function public.admin_delete_schedule_activity(target_activity_id uuid)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  delete from public.wedding_schedule_activities
+  where id = target_activity_id;
+
+  if not found then
+    raise exception 'Schedule activity not found.'
+      using errcode = 'P0002';
+  end if;
+
+  return true;
+end;
+$$;
+
+comment on table public.wedding_schedule_sections is
+  'Program schedule sections such as ceremony and reception.';
+
+comment on table public.wedding_schedule_activities is
+  'Program schedule activities that belong to schedule sections.';
+
+revoke all on function public.touch_wedding_schedule_updated_at()
+  from public, anon, authenticated;
+
+revoke all on function public.list_public_schedule() from public;
+grant execute on function public.list_public_schedule() to authenticated;
+
+revoke all on function public.admin_list_schedule_sections() from public, anon;
+grant execute on function public.admin_list_schedule_sections() to authenticated;
+
+revoke all on function public.admin_list_schedule_activities() from public, anon;
+grant execute on function public.admin_list_schedule_activities() to authenticated;
+
+revoke all on function public.admin_save_schedule_section(uuid, text, text, text, text, integer, boolean)
+  from public, anon;
+grant execute on function public.admin_save_schedule_section(uuid, text, text, text, text, integer, boolean)
+  to authenticated;
+
+revoke all on function public.admin_save_schedule_activity(uuid, uuid, text, text, text, time without time zone, time without time zone, text, integer, boolean)
+  from public, anon;
+grant execute on function public.admin_save_schedule_activity(uuid, uuid, text, text, text, time without time zone, time without time zone, text, integer, boolean)
+  to authenticated;
+
+revoke all on function public.admin_set_schedule_section_visible(uuid, boolean)
+  from public, anon;
+grant execute on function public.admin_set_schedule_section_visible(uuid, boolean)
+  to authenticated;
+
+revoke all on function public.admin_set_schedule_activity_visible(uuid, boolean)
+  from public, anon;
+grant execute on function public.admin_set_schedule_activity_visible(uuid, boolean)
+  to authenticated;
+
+revoke all on function public.admin_reorder_schedule_sections(uuid[]) from public, anon;
+grant execute on function public.admin_reorder_schedule_sections(uuid[]) to authenticated;
+
+revoke all on function public.admin_reorder_schedule_activities(uuid, uuid[]) from public, anon;
+grant execute on function public.admin_reorder_schedule_activities(uuid, uuid[]) to authenticated;
+
+revoke all on function public.admin_delete_schedule_section(uuid) from public, anon;
+grant execute on function public.admin_delete_schedule_section(uuid) to authenticated;
+
+revoke all on function public.admin_delete_schedule_activity(uuid) from public, anon;
+grant execute on function public.admin_delete_schedule_activity(uuid) to authenticated;
+
+commit;
+
+-- ============================================================
+-- Included migration: rsvp_food_restriction_choice.sql
+-- ============================================================
+
+-- ============================================================
+-- RSVP dietary restriction explicit choice
+-- ============================================================
+--
+-- Adds an explicit yes/no field for dietary restrictions and updates the
+-- public/admin RSVP RPCs to keep the boolean and detail text consistent.
+
+begin;
+
+alter table public.rsvps
+  add column if not exists food_restriction boolean not null default false;
+
+update public.rsvps
+set food_restriction = true
+where nullif(btrim(coalesce(food, '')), '') is not null;
+
+drop function if exists public.save_current_rsvp(
+  text,
+  text,
+  text,
+  text,
+  text,
+  jsonb
+);
+
+create or replace function public.save_current_rsvp(
+  submitted_presence text,
+  submitted_email text,
+  submitted_phone text,
+  submitted_food text,
+  submitted_food_restriction boolean,
+  submitted_message text,
+  submitted_guest_data jsonb
+)
+returns setof public.rsvps
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  current_guest uuid;
+  guest_record public.guests%rowtype;
+  safe_guest_data jsonb;
+  safe_members jsonb := '[]'::jsonb;
+  safe_companions jsonb := '[]'::jsonb;
+  safe_food text := '';
+  safe_food_restriction boolean := coalesce(submitted_food_restriction, false);
+  requested_guest_count integer;
+  companion_count integer;
+  event_operation text;
+  submitted_member_count integer;
+  expected_member_count integer;
+  member_is_coming boolean;
+  saved_rsvp public.rsvps%rowtype;
+  was_existing boolean;
+begin
+  current_guest := public.current_guest_id();
+
+  if current_guest is null
+    or submitted_presence is null
+    or submitted_presence not in ('Sim', 'Não')
+    or jsonb_typeof(coalesce(submitted_guest_data, '{}'::jsonb)) <> 'object'
+  then
+    return;
+  end if;
+
+  if safe_food_restriction then
+    safe_food := left(btrim(coalesce(submitted_food, '')), 1000);
+
+    if safe_food = '' then
+      return;
+    end if;
+  end if;
+
+  select *
+  into guest_record
+  from public.guests
+  where id = current_guest
+    and active is true
+  for update;
+
+  if not found then
+    return;
+  end if;
+
+  select exists (
+    select 1
+    from public.rsvps as existing_rsvp
+    where existing_rsvp.guest_id = current_guest
+  )
+  into was_existing;
+
+  begin
+    requested_guest_count := coalesce(
+      nullif(submitted_guest_data ->> 'guest_count', '')::integer,
+      0
+    );
+  exception
+    when invalid_text_representation then
+      return;
+  end;
+
+  companion_count := case
+    when jsonb_typeof(submitted_guest_data -> 'companions') = 'array'
+      then jsonb_array_length(submitted_guest_data -> 'companions')
+    else 0
+  end;
+
+  if requested_guest_count < 0
+    or requested_guest_count > coalesce(guest_record.max_guests, 0)
+    or companion_count <> requested_guest_count
+    or (submitted_presence = 'Não' and requested_guest_count <> 0)
+  then
+    return;
+  end if;
+
+  if exists (
+    select 1
+    from jsonb_array_elements(
+      case
+        when jsonb_typeof(submitted_guest_data -> 'companions') = 'array'
+          then submitted_guest_data -> 'companions'
+        else '[]'::jsonb
+      end
+    ) as companion
+    where jsonb_typeof(companion) <> 'object'
+      or nullif(btrim(companion ->> 'name'), '') is null
+      or companion ->> 'is_child' is null
+      or companion ->> 'is_child' not in ('Sim', 'Não')
+      or (
+        companion ->> 'is_child' = 'Sim'
+        and not (
+          companion ->> 'age' = 'Menos de 1 ano'
+          or companion ->> 'age' = '1 ano'
+          or companion ->> 'age' ~ '^([2-9]|1[0-2]) anos$'
+        )
+      )
+  ) then
+    return;
+  end if;
+
+  select coalesce(
+    jsonb_agg(
+      jsonb_build_object(
+        'name', left(btrim(companion ->> 'name'), 200),
+        'is_child', companion ->> 'is_child',
+        'age', case
+          when companion ->> 'is_child' = 'Sim'
+            then companion ->> 'age'
+          else ''
+        end
+      )
+      order by position
+    ),
+    '[]'::jsonb
+  )
+  into safe_companions
+  from jsonb_array_elements(
+    case
+      when jsonb_typeof(submitted_guest_data -> 'companions') = 'array'
+        then submitted_guest_data -> 'companions'
+      else '[]'::jsonb
+    end
+  ) with ordinality as companions(companion, position);
+
+  if guest_record.invite_type = 'couple' then
+    expected_member_count := case
+      when jsonb_typeof(guest_record.couple_members) = 'array'
+        then jsonb_array_length(guest_record.couple_members)
+      else 0
+    end;
+    submitted_member_count := case
+      when jsonb_typeof(submitted_guest_data -> 'members') = 'array'
+        then jsonb_array_length(submitted_guest_data -> 'members')
+      else 0
+    end;
+
+    if expected_member_count <> 2
+      or submitted_member_count <> expected_member_count
+      or exists (
+        select 1
+        from jsonb_array_elements(submitted_guest_data -> 'members') as member
+        where member ->> 'presence' is null
+          or member ->> 'presence' not in ('Sim', 'Não')
+      )
+    then
+      return;
+    end if;
+
+    select
+      coalesce(
+        jsonb_agg(
+          jsonb_build_object(
+            'name', expected.member ->> 'name',
+            'presence', submitted.member ->> 'presence'
+          )
+          order by expected.position
+        ),
+        '[]'::jsonb
+      ),
+      bool_or(submitted.member ->> 'presence' = 'Sim')
+    into safe_members, member_is_coming
+    from jsonb_array_elements(guest_record.couple_members)
+      with ordinality as expected(member, position)
+    inner join jsonb_array_elements(submitted_guest_data -> 'members')
+      with ordinality as submitted(member, position)
+      using (position);
+
+    if submitted_presence <> (
+      case
+        when coalesce(member_is_coming, false) then 'Sim'
+        else 'Não'
+      end
+    ) then
+      return;
+    end if;
+  elsif jsonb_array_length(
+    case
+      when jsonb_typeof(submitted_guest_data -> 'members') = 'array'
+        then submitted_guest_data -> 'members'
+      else '[]'::jsonb
+    end
+  ) <> 0 then
+    return;
+  end if;
+
+  safe_guest_data := jsonb_build_object(
+    'name', guest_record.name,
+    'email', left(coalesce(submitted_email, ''), 320),
+    'phone', left(coalesce(submitted_phone, ''), 40),
+    'guest_count', requested_guest_count,
+    'members', safe_members,
+    'companions', safe_companions
+  );
+
+  insert into public.rsvps (
+    guest_id,
+    presence,
+    email,
+    phone,
+    food,
+    food_restriction,
+    message,
+    guest_data,
+    updated_at
+  )
+  values (
+    current_guest,
+    submitted_presence,
+    left(coalesce(submitted_email, ''), 320),
+    left(coalesce(submitted_phone, ''), 40),
+    safe_food,
+    safe_food_restriction,
+    left(coalesce(submitted_message, ''), 4000),
+    safe_guest_data,
+    timezone('utc'::text, now())
+  )
+  on conflict (guest_id) where guest_id is not null
+  do update set
+    presence = excluded.presence,
+    email = excluded.email,
+    phone = excluded.phone,
+    food = excluded.food,
+    food_restriction = excluded.food_restriction,
+    message = excluded.message,
+    guest_data = excluded.guest_data,
+    updated_at = excluded.updated_at
+  returning * into saved_rsvp;
+
+  event_operation := case
+    when was_existing then 'updated'
+    else 'created'
+  end;
+
+  insert into public.notification_events (
+    event_type,
+    aggregate_type,
+    aggregate_id,
+    aggregate_version,
+    guest_id,
+    dedupe_key,
+    payload
+  )
+  values (
+    'rsvp_saved',
+    'rsvp',
+    saved_rsvp.id,
+    saved_rsvp.updated_at,
+    current_guest,
+    concat(
+      'rsvp_saved:',
+      saved_rsvp.id::text,
+      ':',
+      extract(epoch from saved_rsvp.updated_at)::text
+    ),
+    jsonb_build_object(
+      'operation', event_operation,
+      'operation_label', case
+        when event_operation = 'updated' then 'RSVP Atualizado'
+        else 'RSVP Recebido'
+      end,
+      'guest_name', guest_record.name,
+      'invite_type', guest_record.invite_type,
+      'couple_members', coalesce(guest_record.couple_members, '[]'::jsonb),
+      'rsvp_id', saved_rsvp.id,
+      'rsvp_updated_at', saved_rsvp.updated_at,
+      'presence', saved_rsvp.presence,
+      'email', saved_rsvp.email,
+      'phone', saved_rsvp.phone,
+      'food_restriction', saved_rsvp.food_restriction,
+      'food', saved_rsvp.food,
+      'message', saved_rsvp.message,
+      'guest_data', saved_rsvp.guest_data
+    )
+  )
+  on conflict (dedupe_key) do nothing;
+
+  return next saved_rsvp;
+end;
+$$;
+
+comment on function public.save_current_rsvp(
+  text,
+  text,
+  text,
+  text,
+  boolean,
+  text,
+  jsonb
+) is
+  'Validates and saves the current guest RSVP using canonical invitation data.';
+
+revoke all on function public.save_current_rsvp(
+  text,
+  text,
+  text,
+  text,
+  boolean,
+  text,
+  jsonb
+) from public, anon;
+grant execute on function public.save_current_rsvp(
+  text,
+  text,
+  text,
+  text,
+  boolean,
+  text,
+  jsonb
+) to authenticated;
+
+drop function if exists public.admin_save_guest_rsvp(
+  uuid,
+  text,
+  text,
+  text,
+  text,
+  text,
+  jsonb
+);
+
+create or replace function public.admin_save_guest_rsvp(
+  target_guest_id uuid,
+  submitted_presence text,
+  submitted_email text,
+  submitted_phone text,
+  submitted_food text,
+  submitted_food_restriction boolean,
+  submitted_message text,
+  submitted_guest_data jsonb
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  guest_record public.guests%rowtype;
+  safe_guest_data jsonb;
+  safe_members jsonb := '[]'::jsonb;
+  safe_companions jsonb := '[]'::jsonb;
+  safe_food text := '';
+  safe_food_restriction boolean := coalesce(submitted_food_restriction, false);
+  requested_guest_count integer;
+  companion_count integer;
+  submitted_member_count integer;
+  expected_member_count integer;
+  member_is_coming boolean;
+begin
+  if not exists (
+    select 1
+    from public.admin_users as administrator
+    where administrator.user_id = (select auth.uid())
+      and administrator.active is true
+  ) then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  if submitted_presence is null
+    or submitted_presence not in ('Sim', 'Não')
+    or jsonb_typeof(coalesce(submitted_guest_data, '{}'::jsonb)) <> 'object'
+  then
+    return false;
+  end if;
+
+  if safe_food_restriction then
+    safe_food := left(btrim(coalesce(submitted_food, '')), 1000);
+
+    if safe_food = '' then
+      return false;
+    end if;
+  end if;
+
+  select *
+  into guest_record
+  from public.guests
+  where id = target_guest_id
+  for update;
+
+  if not found then
+    return false;
+  end if;
+
+  begin
+    requested_guest_count := coalesce(
+      nullif(submitted_guest_data ->> 'guest_count', '')::integer,
+      0
+    );
+  exception
+    when invalid_text_representation then
+      return false;
+  end;
+
+  companion_count := case
+    when jsonb_typeof(submitted_guest_data -> 'companions') = 'array'
+      then jsonb_array_length(submitted_guest_data -> 'companions')
+    else 0
+  end;
+
+  if requested_guest_count < 0
+    or requested_guest_count > coalesce(guest_record.max_guests, 0)
+    or companion_count <> requested_guest_count
+    or (submitted_presence = 'Não' and requested_guest_count <> 0)
+  then
+    return false;
+  end if;
+
+  if exists (
+    select 1
+    from jsonb_array_elements(
+      case
+        when jsonb_typeof(submitted_guest_data -> 'companions') = 'array'
+          then submitted_guest_data -> 'companions'
+        else '[]'::jsonb
+      end
+    ) as companion
+    where jsonb_typeof(companion) <> 'object'
+      or nullif(btrim(companion ->> 'name'), '') is null
+      or companion ->> 'is_child' is null
+      or companion ->> 'is_child' not in ('Sim', 'Não')
+      or (
+        companion ->> 'is_child' = 'Sim'
+        and not (
+          companion ->> 'age' = 'Menos de 1 ano'
+          or companion ->> 'age' = '1 ano'
+          or companion ->> 'age' ~ '^([2-9]|1[0-2]) anos$'
+        )
+      )
+  ) then
+    return false;
+  end if;
+
+  select coalesce(
+    jsonb_agg(
+      jsonb_build_object(
+        'name', left(btrim(companion ->> 'name'), 200),
+        'is_child', companion ->> 'is_child',
+        'age', case
+          when companion ->> 'is_child' = 'Sim'
+            then left(btrim(companion ->> 'age'), 40)
+          else ''
+        end
+      )
+      order by position
+    ),
+    '[]'::jsonb
+  )
+  into safe_companions
+  from jsonb_array_elements(
+    case
+      when jsonb_typeof(submitted_guest_data -> 'companions') = 'array'
+        then submitted_guest_data -> 'companions'
+      else '[]'::jsonb
+    end
+  ) with ordinality as companions(companion, position);
+
+  if guest_record.invite_type = 'couple' then
+    expected_member_count := case
+      when jsonb_typeof(guest_record.couple_members) = 'array'
+        then jsonb_array_length(guest_record.couple_members)
+      else 0
+    end;
+    submitted_member_count := case
+      when jsonb_typeof(submitted_guest_data -> 'members') = 'array'
+        then jsonb_array_length(submitted_guest_data -> 'members')
+      else 0
+    end;
+
+    if expected_member_count <> 2
+      or submitted_member_count <> expected_member_count
+      or exists (
+        select 1
+        from jsonb_array_elements(submitted_guest_data -> 'members') as member
+        where member ->> 'presence' is null
+          or member ->> 'presence' not in ('Sim', 'Não')
+      )
+    then
+      return false;
+    end if;
+
+    select
+      coalesce(
+        jsonb_agg(
+          jsonb_build_object(
+            'name', expected.member ->> 'name',
+            'presence', submitted.member ->> 'presence'
+          )
+          order by expected.position
+        ),
+        '[]'::jsonb
+      ),
+      bool_or(submitted.member ->> 'presence' = 'Sim')
+    into safe_members, member_is_coming
+    from jsonb_array_elements(guest_record.couple_members)
+      with ordinality as expected(member, position)
+    inner join jsonb_array_elements(submitted_guest_data -> 'members')
+      with ordinality as submitted(member, position)
+      using (position);
+
+    if submitted_presence <> (
+      case
+        when coalesce(member_is_coming, false) then 'Sim'
+        else 'Não'
+      end
+    ) then
+      return false;
+    end if;
+  elsif jsonb_array_length(
+    case
+      when jsonb_typeof(submitted_guest_data -> 'members') = 'array'
+        then submitted_guest_data -> 'members'
+      else '[]'::jsonb
+    end
+  ) <> 0 then
+    return false;
+  end if;
+
+  safe_guest_data := jsonb_build_object(
+    'name', guest_record.name,
+    'email', left(coalesce(submitted_email, ''), 320),
+    'phone', left(coalesce(submitted_phone, ''), 40),
+    'guest_count', requested_guest_count,
+    'members', safe_members,
+    'companions', safe_companions
+  );
+
+  insert into public.rsvps (
+    guest_id,
+    presence,
+    email,
+    phone,
+    food,
+    food_restriction,
+    message,
+    guest_data,
+    updated_at
+  )
+  values (
+    target_guest_id,
+    submitted_presence,
+    left(coalesce(submitted_email, ''), 320),
+    left(coalesce(submitted_phone, ''), 40),
+    safe_food,
+    safe_food_restriction,
+    left(coalesce(submitted_message, ''), 4000),
+    safe_guest_data,
+    timezone('utc'::text, now())
+  )
+  on conflict (guest_id) where guest_id is not null
+  do update set
+    presence = excluded.presence,
+    email = excluded.email,
+    phone = excluded.phone,
+    food = excluded.food,
+    food_restriction = excluded.food_restriction,
+    message = excluded.message,
+    guest_data = excluded.guest_data,
+    updated_at = excluded.updated_at;
+
+  return true;
+end;
+$$;
+
+comment on function public.admin_save_guest_rsvp(
+  uuid,
+  text,
+  text,
+  text,
+  text,
+  boolean,
+  text,
+  jsonb
+) is
+  'Validates and saves an RSVP for a selected guest as an administrator.';
+
+revoke all on function public.admin_save_guest_rsvp(
+  uuid,
+  text,
+  text,
+  text,
+  text,
+  boolean,
+  text,
+  jsonb
+) from public, anon;
+grant execute on function public.admin_save_guest_rsvp(
+  uuid,
+  text,
+  text,
+  text,
+  text,
+  boolean,
+  text,
+  jsonb
+) to authenticated;
+
+revoke insert, update, delete on table public.rsvps from authenticated;
+
+commit;
+
+-- ============================================================
+-- Included migration: wedding_checklist.sql
+-- ============================================================
+begin;
+
+create table if not exists public.wedding_checklist_categories (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  color text not null default '#6f3fa7',
+  icon text not null default 'check-square',
+  display_order integer not null default 0,
+  is_active boolean not null default true,
+  created_at timestamp with time zone not null default now(),
+  updated_at timestamp with time zone not null default now(),
+  constraint wedding_checklist_categories_name_key unique (name),
+  constraint wedding_checklist_categories_name_length_check
+    check (char_length(btrim(name)) between 1 and 120),
+  constraint wedding_checklist_categories_color_check
+    check (color ~ '^#[0-9A-Fa-f]{6}$'),
+  constraint wedding_checklist_categories_icon_length_check
+    check (char_length(btrim(icon)) between 1 and 60)
+);
+
+create table if not exists public.wedding_checklist_responsibles (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  responsible_type text not null default 'person',
+  display_order integer not null default 0,
+  is_active boolean not null default true,
+  created_at timestamp with time zone not null default now(),
+  updated_at timestamp with time zone not null default now(),
+  constraint wedding_checklist_responsibles_name_key unique (name),
+  constraint wedding_checklist_responsibles_name_length_check
+    check (char_length(btrim(name)) between 1 and 120),
+  constraint wedding_checklist_responsibles_type_check
+    check (responsible_type in ('person', 'group', 'family', 'planner', 'other'))
+);
+
+create table if not exists public.wedding_checklist_items (
+  id uuid primary key default gen_random_uuid(),
+  category_id uuid not null references public.wedding_checklist_categories(id) on delete restrict,
+  responsible_id uuid null references public.wedding_checklist_responsibles(id) on delete restrict,
+  title text not null,
+  description text null,
+  period_key text not null,
+  status text not null default 'pending',
+  priority text not null default 'normal',
+  owner text not null default 'couple',
+  due_date date null,
+  notes text null,
+  display_order integer not null default 0,
+  completed_at timestamp with time zone null,
+  created_at timestamp with time zone not null default now(),
+  updated_at timestamp with time zone not null default now(),
+  constraint wedding_checklist_items_unique_period_title unique (period_key, title),
+  constraint wedding_checklist_items_title_length_check
+    check (char_length(btrim(title)) between 1 and 180),
+  constraint wedding_checklist_items_description_length_check
+    check (description is null or char_length(description) <= 900),
+  constraint wedding_checklist_items_notes_length_check
+    check (notes is null or char_length(notes) <= 1600),
+  constraint wedding_checklist_items_period_check
+    check (
+      period_key in (
+        '12_months_before',
+        '11_months_before',
+        '10_months_before',
+        '9_months_before',
+        '8_months_before',
+        '7_months_before',
+        '6_months_before',
+        '5_months_before',
+        '4_months_before',
+        '3_months_before',
+        '2_months_before',
+        '1_month_before',
+        'wedding_week',
+        'wedding_day',
+        'after_wedding'
+      )
+    ),
+  constraint wedding_checklist_items_status_check
+    check (status in ('pending', 'in_progress', 'completed')),
+  constraint wedding_checklist_items_priority_check
+    check (priority in ('low', 'normal', 'high')),
+  constraint wedding_checklist_items_owner_check
+    check (owner in ('bride', 'groom', 'couple', 'planner', 'family'))
+);
+
+alter table public.wedding_checklist_items
+  add column if not exists responsible_id uuid null references public.wedding_checklist_responsibles(id) on delete restrict;
+
+create index if not exists wedding_checklist_categories_order_idx
+  on public.wedding_checklist_categories (is_active, display_order, name);
+
+create index if not exists wedding_checklist_responsibles_order_idx
+  on public.wedding_checklist_responsibles (is_active, display_order, name);
+
+create index if not exists wedding_checklist_items_period_order_idx
+  on public.wedding_checklist_items (period_key, display_order, title);
+
+create index if not exists wedding_checklist_items_status_idx
+  on public.wedding_checklist_items (status, due_date);
+
+alter table public.wedding_checklist_categories enable row level security;
+alter table public.wedding_checklist_responsibles enable row level security;
+alter table public.wedding_checklist_items enable row level security;
+
+revoke all on table public.wedding_checklist_categories from anon, authenticated;
+revoke all on table public.wedding_checklist_responsibles from anon, authenticated;
+revoke all on table public.wedding_checklist_items from anon, authenticated;
+grant all on table public.wedding_checklist_categories to service_role;
+grant all on table public.wedding_checklist_responsibles to service_role;
+grant all on table public.wedding_checklist_items to service_role;
+
+create or replace function public.touch_wedding_checklist_updated_at()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists touch_wedding_checklist_categories_updated_at
+  on public.wedding_checklist_categories;
+create trigger touch_wedding_checklist_categories_updated_at
+  before update on public.wedding_checklist_categories
+  for each row
+  execute function public.touch_wedding_checklist_updated_at();
+
+drop trigger if exists touch_wedding_checklist_responsibles_updated_at
+  on public.wedding_checklist_responsibles;
+create trigger touch_wedding_checklist_responsibles_updated_at
+  before update on public.wedding_checklist_responsibles
+  for each row
+  execute function public.touch_wedding_checklist_updated_at();
+
+drop trigger if exists touch_wedding_checklist_items_updated_at
+  on public.wedding_checklist_items;
+create trigger touch_wedding_checklist_items_updated_at
+  before update on public.wedding_checklist_items
+  for each row
+  execute function public.touch_wedding_checklist_updated_at();
+
+insert into public.wedding_checklist_categories
+  (name, color, icon, display_order)
+values
+  ('Cerimônia', '#6f3fa7', 'church', 1),
+  ('Recepção', '#a6607c', 'party-popper', 2),
+  ('Convidados', '#3f7f8f', 'users', 3),
+  ('Fornecedores', '#7b6f3f', 'handshake', 4),
+  ('Documentação', '#8f5f3f', 'file-check', 5),
+  ('Trajes', '#5f6f9f', 'shirt', 6),
+  ('Beleza', '#b45f8a', 'sparkles', 7),
+  ('Música', '#6b7f3f', 'music', 8),
+  ('Decoração', '#8a6bb4', 'flower-2', 9),
+  ('Presentes', '#b47a3f', 'gift', 10),
+  ('Papelaria e Convites', '#4f7a5a', 'mail', 11),
+  ('Pré-Wedding', '#6f8fb4', 'camera', 12),
+  ('Save the Date', '#9f6f6f', 'calendar-heart', 13),
+  ('Caixinha dos Padrinhos', '#7f5fa7', 'package', 14),
+  ('Caixinha dos Pais', '#a75f7f', 'heart', 15),
+  ('Lua de Mel', '#3f7fa7', 'plane', 16),
+  ('Financeiro', '#5f8f5f', 'wallet', 17),
+  ('Outros', '#6b6473', 'more-horizontal', 18)
+on conflict (name) do nothing;
+
+insert into public.wedding_checklist_responsibles
+  (name, responsible_type, display_order)
+values
+  ('Casal', 'group', 1),
+  ('Noiva', 'person', 2),
+  ('Noivo', 'person', 3),
+  ('Cerimonialista', 'planner', 4),
+  ('Família', 'family', 5),
+  ('Mãe da Noiva', 'family', 6),
+  ('Pai da Noiva', 'family', 7),
+  ('Mãe do Noivo', 'family', 8),
+  ('Pai do Noivo', 'family', 9),
+  ('Padrinhos', 'group', 10),
+  ('Madrinhas', 'group', 11),
+  ('Padrinho', 'person', 12),
+  ('Madrinha', 'person', 13),
+  ('Amigo(a)', 'person', 14),
+  ('Amigos', 'group', 15),
+  ('Outro', 'other', 16)
+on conflict (name) do nothing;
+
+update public.wedding_checklist_responsibles
+set name = 'Noiva'
+where name = 'Livia'
+  and not exists (
+    select 1
+    from public.wedding_checklist_responsibles
+    where name = 'Noiva'
+  );
+
+update public.wedding_checklist_responsibles
+set name = 'Noivo'
+where name = 'Messias'
+  and not exists (
+    select 1
+    from public.wedding_checklist_responsibles
+    where name = 'Noivo'
+  );
+
+do $$
+begin
+  if (
+    select coalesce(max(display_order), 0)
+    from public.wedding_checklist_categories
+  ) > (
+    select greatest(count(*) * 2, 1)
+    from public.wedding_checklist_categories
+  ) then
+    with ordered_categories as (
+      select
+        id,
+        row_number() over (order by display_order asc, name asc) as normalized_order
+      from public.wedding_checklist_categories
+    )
+    update public.wedding_checklist_categories as category
+    set display_order = ordered_categories.normalized_order
+    from ordered_categories
+    where ordered_categories.id = category.id;
+  end if;
+end;
+$$;
+
+do $$
+begin
+  if (
+    select coalesce(max(display_order), 0)
+    from public.wedding_checklist_responsibles
+  ) > (
+    select greatest(count(*) * 2, 1)
+    from public.wedding_checklist_responsibles
+  ) then
+    with ordered_responsibles as (
+      select
+        id,
+        row_number() over (order by display_order asc, name asc) as normalized_order
+      from public.wedding_checklist_responsibles
+    )
+    update public.wedding_checklist_responsibles as responsible
+    set display_order = ordered_responsibles.normalized_order
+    from ordered_responsibles
+    where ordered_responsibles.id = responsible.id;
+  end if;
+end;
+$$;
+
+insert into public.wedding_checklist_items
+  (category_id, title, description, period_key, priority, owner, display_order)
+select category.id, seed.title, seed.description, seed.period_key, seed.priority, seed.owner, seed.display_order
+from (
+  values
+    ('12_months_before', 'Convidados', 'Montar a lista inicial de convidados.', 'Definir lista preliminar de convidados', 'high', 'couple', 10),
+    ('12_months_before', 'Cerimônia', 'Reservar a igreja ou local da cerimônia.', 'Reservar local da cerimônia', 'high', 'couple', 20),
+    ('12_months_before', 'Recepção', 'Definir e reservar o espaço da recepção.', 'Reservar local da recepção', 'high', 'couple', 30),
+    ('11_months_before', 'Fornecedores', 'Pesquisar fotografia, filmagem, buffet, cerimonial e música.', 'Pesquisar fornecedores principais', 'high', 'couple', 10),
+    ('11_months_before', 'Financeiro', 'Criar uma estimativa inicial de orçamento.', 'Definir orçamento inicial', 'high', 'couple', 20),
+    ('10_months_before', 'Fornecedores', 'Fechar cerimonial ou assessoria do casamento.', 'Contratar cerimonial', 'high', 'couple', 10),
+    ('10_months_before', 'Papelaria e Convites', 'Definir identidade visual inicial do casamento.', 'Definir identidade visual', 'normal', 'couple', 20),
+    ('9_months_before', 'Pré-Wedding', 'Escolher estilo, local e data aproximada do ensaio.', 'Planejar ensaio Pré-Wedding', 'normal', 'couple', 10),
+    ('9_months_before', 'Save the Date', 'Planejar formato e envio do Save the Date.', 'Planejar Save the Date', 'normal', 'couple', 20),
+    ('8_months_before', 'Trajes', 'Pesquisar vestido, traje do noivo e referências.', 'Pesquisar trajes dos noivos', 'normal', 'couple', 10),
+    ('8_months_before', 'Caixinha dos Padrinhos', 'Definir padrinhos, madrinhas e estilo das caixinhas.', 'Planejar caixinhas dos padrinhos', 'normal', 'couple', 20),
+    ('7_months_before', 'Caixinha dos Pais', 'Definir lembrança ou caixinha especial para os pais.', 'Planejar caixinhas dos pais', 'normal', 'couple', 10),
+    ('7_months_before', 'Música', 'Escolher repertório da cerimônia e atrações da recepção.', 'Planejar músicas e atrações', 'normal', 'couple', 20),
+    ('6_months_before', 'Papelaria e Convites', 'Revisar texto, nomes e dados dos convites.', 'Preparar convites', 'high', 'couple', 10),
+    ('6_months_before', 'Presentes', 'Definir lista de presentes, cotas e formas de pagamento.', 'Organizar lista de presentes', 'normal', 'couple', 20),
+    ('5_months_before', 'Decoração', 'Fechar proposta de decoração da cerimônia e recepção.', 'Definir decoração', 'normal', 'couple', 10),
+    ('5_months_before', 'Beleza', 'Agendar testes de cabelo, maquiagem e cuidados.', 'Agendar testes de beleza', 'normal', 'bride', 20),
+    ('4_months_before', 'Documentação', 'Separar documentos necessários para casamento religioso/civil.', 'Revisar documentação', 'high', 'couple', 10),
+    ('4_months_before', 'Convidados', 'Conferir contatos e preparar envio dos convites.', 'Revisar contatos dos convidados', 'normal', 'couple', 20),
+    ('3_months_before', 'Papelaria e Convites', 'Enviar convites e acompanhar confirmações.', 'Enviar convites', 'high', 'couple', 10),
+    ('3_months_before', 'Fornecedores', 'Revisar contratos, pagamentos e pontos pendentes.', 'Revisar contratos de fornecedores', 'normal', 'couple', 20),
+    ('2_months_before', 'Convidados', 'Acompanhar RSVPs pendentes e ajustes da lista.', 'Acompanhar confirmações de presença', 'high', 'couple', 10),
+    ('2_months_before', 'Recepção', 'Alinhar cardápio, ilhas, atrações e programação.', 'Alinhar detalhes da recepção', 'normal', 'couple', 20),
+    ('1_month_before', 'Cerimônia', 'Confirmar roteiro, entradas, músicas e responsáveis.', 'Confirmar roteiro da cerimônia', 'high', 'couple', 10),
+    ('1_month_before', 'Recepção', 'Fechar cronograma final da festa.', 'Confirmar cronograma da recepção', 'high', 'couple', 20),
+    ('wedding_week', 'Beleza', 'Separar itens pessoais e confirmar horários do dia.', 'Organizar itens da semana do casamento', 'high', 'couple', 10),
+    ('wedding_week', 'Fornecedores', 'Confirmar horários e contatos finais com fornecedores.', 'Confirmar fornecedores na semana', 'high', 'planner', 20),
+    ('wedding_day', 'Cerimônia', 'Confirmar alianças, documentos e itens essenciais.', 'Conferir itens essenciais do dia', 'high', 'couple', 10),
+    ('after_wedding', 'Financeiro', 'Conferir pagamentos finais e pendências.', 'Fechar pagamentos pendentes', 'normal', 'couple', 10),
+    ('after_wedding', 'Outros', 'Enviar agradecimentos e organizar registros do casamento.', 'Organizar agradecimentos pós-casamento', 'low', 'couple', 20)
+) as seed(period_key, category_name, description, title, priority, owner, display_order)
+join public.wedding_checklist_categories as category
+  on category.name = seed.category_name
+on conflict (period_key, title) do nothing;
+
+update public.wedding_checklist_items as item
+set responsible_id = responsible.id
+from public.wedding_checklist_responsibles as responsible
+where item.responsible_id is null
+  and responsible.name = case item.owner
+    when 'bride' then 'Noiva'
+    when 'groom' then 'Noivo'
+    when 'planner' then 'Cerimonialista'
+    when 'family' then 'Família'
+    else 'Casal'
+  end;
+
+create or replace function public.admin_list_checklist_categories()
+returns table (
+  id uuid,
+  name text,
+  color text,
+  icon text,
+  display_order integer,
+  is_active boolean,
+  item_count bigint,
+  created_at timestamp with time zone,
+  updated_at timestamp with time zone
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.' using errcode = '42501';
+  end if;
+
+  return query
+  select
+    category.id,
+    category.name,
+    category.color,
+    category.icon,
+    category.display_order,
+    category.is_active,
+    count(item.id) as item_count,
+    category.created_at,
+    category.updated_at
+  from public.wedding_checklist_categories as category
+  left join public.wedding_checklist_items as item
+    on item.category_id = category.id
+  group by category.id
+  order by category.display_order asc, category.name asc;
+end;
+$$;
+
+create or replace function public.admin_list_checklist_responsibles()
+returns table (
+  id uuid,
+  name text,
+  responsible_type text,
+  display_order integer,
+  is_active boolean,
+  item_count bigint,
+  created_at timestamp with time zone,
+  updated_at timestamp with time zone
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.' using errcode = '42501';
+  end if;
+
+  return query
+  select
+    responsible.id,
+    responsible.name,
+    responsible.responsible_type,
+    responsible.display_order,
+    responsible.is_active,
+    count(item.id) as item_count,
+    responsible.created_at,
+    responsible.updated_at
+  from public.wedding_checklist_responsibles as responsible
+  left join public.wedding_checklist_items as item
+    on item.responsible_id = responsible.id
+  group by responsible.id
+  order by responsible.display_order asc, responsible.name asc;
+end;
+$$;
+
+drop function if exists public.admin_list_checklist_items();
+
+create or replace function public.admin_list_checklist_items()
+returns table (
+  id uuid,
+  category_id uuid,
+  category_name text,
+  category_color text,
+  category_icon text,
+  responsible_id uuid,
+  responsible_name text,
+  responsible_type text,
+  title text,
+  description text,
+  period_key text,
+  status text,
+  priority text,
+  owner text,
+  due_date date,
+  notes text,
+  display_order integer,
+  completed_at timestamp with time zone,
+  created_at timestamp with time zone,
+  updated_at timestamp with time zone
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.' using errcode = '42501';
+  end if;
+
+  return query
+  select
+    item.id,
+    item.category_id,
+    category.name,
+    category.color,
+    category.icon,
+    item.responsible_id,
+    coalesce(responsible.name, case item.owner
+      when 'bride' then 'Noiva'
+      when 'groom' then 'Noivo'
+      when 'planner' then 'Cerimonialista'
+      when 'family' then 'Família'
+      else 'Casal'
+    end),
+    coalesce(responsible.responsible_type, case item.owner
+      when 'planner' then 'planner'
+      when 'family' then 'family'
+      else 'group'
+    end),
+    item.title,
+    item.description,
+    item.period_key,
+    item.status,
+    item.priority,
+    item.owner,
+    item.due_date,
+    item.notes,
+    item.display_order,
+    item.completed_at,
+    item.created_at,
+    item.updated_at
+  from public.wedding_checklist_items as item
+  join public.wedding_checklist_categories as category
+    on category.id = item.category_id
+  left join public.wedding_checklist_responsibles as responsible
+    on responsible.id = item.responsible_id
+  order by item.period_key asc, item.display_order asc, item.title asc;
+end;
+$$;
+
+create or replace function public.admin_save_checklist_category(
+  target_category_id uuid,
+  submitted_name text,
+  submitted_color text default '#6f3fa7',
+  submitted_icon text default 'check-square',
+  submitted_display_order integer default 0,
+  submitted_is_active boolean default true
+)
+returns setof public.wedding_checklist_categories
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  saved_category public.wedding_checklist_categories%rowtype;
+  safe_name text := nullif(btrim(submitted_name), '');
+  safe_color text := coalesce(nullif(btrim(submitted_color), ''), '#6f3fa7');
+  safe_icon text := coalesce(nullif(btrim(submitted_icon), ''), 'check-square');
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.' using errcode = '42501';
+  end if;
+
+  if safe_name is null then
+    return;
+  end if;
+
+  if target_category_id is null then
+    insert into public.wedding_checklist_categories
+      (name, color, icon, display_order, is_active)
+    values
+      (left(safe_name, 120), safe_color, left(safe_icon, 60), coalesce(submitted_display_order, 0), coalesce(submitted_is_active, true))
+    returning * into saved_category;
+  else
+    update public.wedding_checklist_categories
+    set
+      name = left(safe_name, 120),
+      color = safe_color,
+      icon = left(safe_icon, 60),
+      display_order = coalesce(submitted_display_order, 0),
+      is_active = coalesce(submitted_is_active, true)
+    where id = target_category_id
+    returning * into saved_category;
+  end if;
+
+  return next saved_category;
+end;
+$$;
+
+create or replace function public.admin_save_checklist_responsible(
+  target_responsible_id uuid,
+  submitted_name text,
+  submitted_responsible_type text default 'person',
+  submitted_display_order integer default 0,
+  submitted_is_active boolean default true
+)
+returns setof public.wedding_checklist_responsibles
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  saved_responsible public.wedding_checklist_responsibles%rowtype;
+  safe_name text := nullif(btrim(submitted_name), '');
+  normalized_type text := coalesce(nullif(submitted_responsible_type, ''), 'person');
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.' using errcode = '42501';
+  end if;
+
+  if safe_name is null then
+    return;
+  end if;
+
+  if normalized_type not in ('person', 'group', 'family', 'planner', 'other') then
+    normalized_type := 'person';
+  end if;
+
+  if target_responsible_id is null then
+    insert into public.wedding_checklist_responsibles
+      (name, responsible_type, display_order, is_active)
+    values
+      (left(safe_name, 120), normalized_type, coalesce(submitted_display_order, 0), coalesce(submitted_is_active, true))
+    returning * into saved_responsible;
+  else
+    update public.wedding_checklist_responsibles
+    set
+      name = left(safe_name, 120),
+      responsible_type = normalized_type,
+      display_order = coalesce(submitted_display_order, 0),
+      is_active = coalesce(submitted_is_active, true)
+    where id = target_responsible_id
+    returning * into saved_responsible;
+  end if;
+
+  return next saved_responsible;
+end;
+$$;
+
+drop function if exists public.admin_save_checklist_item(
+  uuid,
+  uuid,
+  text,
+  text,
+  text,
+  text,
+  text,
+  text,
+  date,
+  text,
+  integer
+);
+
+create or replace function public.admin_save_checklist_item(
+  target_item_id uuid,
+  submitted_category_id uuid,
+  submitted_title text,
+  submitted_description text,
+  submitted_period_key text,
+  submitted_status text,
+  submitted_priority text,
+  submitted_responsible_id uuid,
+  submitted_due_date date,
+  submitted_notes text,
+  submitted_display_order integer
+)
+returns setof public.wedding_checklist_items
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  saved_item public.wedding_checklist_items%rowtype;
+  safe_title text := nullif(btrim(submitted_title), '');
+  normalized_status text := coalesce(nullif(submitted_status, ''), 'pending');
+  normalized_priority text := coalesce(nullif(submitted_priority, ''), 'normal');
+  legacy_owner text := 'couple';
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.' using errcode = '42501';
+  end if;
+
+  if safe_title is null
+    or not exists (
+      select 1
+      from public.wedding_checklist_categories
+      where id = submitted_category_id
+    )
+    or not exists (
+      select 1
+      from public.wedding_checklist_responsibles
+      where id = submitted_responsible_id
+    )
+  then
+    return;
+  end if;
+
+  if target_item_id is null then
+    insert into public.wedding_checklist_items
+      (category_id, responsible_id, title, description, period_key, status, priority, owner, due_date, notes, display_order, completed_at)
+    values
+      (
+        submitted_category_id,
+        submitted_responsible_id,
+        left(safe_title, 180),
+        nullif(left(coalesce(submitted_description, ''), 900), ''),
+        submitted_period_key,
+        normalized_status,
+        normalized_priority,
+        legacy_owner,
+        submitted_due_date,
+        nullif(left(coalesce(submitted_notes, ''), 1600), ''),
+        coalesce(submitted_display_order, 0),
+        case when normalized_status = 'completed' then now() else null end
+      )
+    returning * into saved_item;
+  else
+    update public.wedding_checklist_items
+    set
+      category_id = submitted_category_id,
+      responsible_id = submitted_responsible_id,
+      title = left(safe_title, 180),
+      description = nullif(left(coalesce(submitted_description, ''), 900), ''),
+      period_key = submitted_period_key,
+      status = normalized_status,
+      priority = normalized_priority,
+      owner = legacy_owner,
+      due_date = submitted_due_date,
+      notes = nullif(left(coalesce(submitted_notes, ''), 1600), ''),
+      display_order = coalesce(submitted_display_order, 0),
+      completed_at = case
+        when normalized_status = 'completed' and completed_at is null then now()
+        when normalized_status <> 'completed' then null
+        else completed_at
+      end
+    where id = target_item_id
+    returning * into saved_item;
+  end if;
+
+  return next saved_item;
+end;
+$$;
+
+create or replace function public.admin_set_checklist_item_status(
+  target_item_id uuid,
+  submitted_status text
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.' using errcode = '42501';
+  end if;
+
+  update public.wedding_checklist_items
+  set
+    status = submitted_status,
+    completed_at = case when submitted_status = 'completed' then now() else null end
+  where id = target_item_id;
+
+  return found;
+end;
+$$;
+
+create or replace function public.admin_reorder_checklist_items(
+  submitted_period_key text,
+  submitted_item_ids uuid[]
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.' using errcode = '42501';
+  end if;
+
+  if submitted_period_key is null then
+    return false;
+  end if;
+
+  if exists (
+    select 1
+    from unnest(submitted_item_ids) as submitted(item_id)
+    left join public.wedding_checklist_items as item
+      on item.id = submitted.item_id
+      and item.period_key = submitted_period_key
+    where item.id is null
+  ) then
+    return false;
+  end if;
+
+  with ordered_items as (
+    select
+      submitted.item_id,
+      submitted.item_order::integer * 10 as display_order
+    from unnest(submitted_item_ids) with ordinality as submitted(item_id, item_order)
+  )
+  update public.wedding_checklist_items as item
+  set display_order = ordered_items.display_order
+  from ordered_items
+  where item.id = ordered_items.item_id
+    and item.period_key = submitted_period_key;
+
+  return true;
+end;
+$$;
+
+create or replace function public.admin_delete_checklist_category(
+  target_category_id uuid
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.' using errcode = '42501';
+  end if;
+
+  if exists (
+    select 1
+    from public.wedding_checklist_items
+    where category_id = target_category_id
+  ) then
+    return false;
+  end if;
+
+  delete from public.wedding_checklist_categories
+  where id = target_category_id;
+
+  return found;
+end;
+$$;
+
+create or replace function public.admin_delete_checklist_responsible(
+  target_responsible_id uuid
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.' using errcode = '42501';
+  end if;
+
+  if exists (
+    select 1
+    from public.wedding_checklist_items
+    where responsible_id = target_responsible_id
+  ) then
+    return false;
+  end if;
+
+  delete from public.wedding_checklist_responsibles
+  where id = target_responsible_id;
+
+  return found;
+end;
+$$;
+
+create or replace function public.admin_delete_checklist_item(
+  target_item_id uuid
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.' using errcode = '42501';
+  end if;
+
+  delete from public.wedding_checklist_items
+  where id = target_item_id;
+
+  return found;
+end;
+$$;
+
+revoke all on function public.admin_list_checklist_categories() from public, anon;
+grant execute on function public.admin_list_checklist_categories() to authenticated;
+
+revoke all on function public.admin_list_checklist_responsibles() from public, anon;
+grant execute on function public.admin_list_checklist_responsibles() to authenticated;
+
+revoke all on function public.admin_list_checklist_items() from public, anon;
+grant execute on function public.admin_list_checklist_items() to authenticated;
+
+revoke all on function public.admin_save_checklist_category(uuid, text, text, text, integer, boolean) from public, anon;
+grant execute on function public.admin_save_checklist_category(uuid, text, text, text, integer, boolean) to authenticated;
+
+revoke all on function public.admin_save_checklist_responsible(uuid, text, text, integer, boolean) from public, anon;
+grant execute on function public.admin_save_checklist_responsible(uuid, text, text, integer, boolean) to authenticated;
+
+revoke all on function public.admin_save_checklist_item(uuid, uuid, text, text, text, text, text, uuid, date, text, integer) from public, anon;
+grant execute on function public.admin_save_checklist_item(uuid, uuid, text, text, text, text, text, uuid, date, text, integer) to authenticated;
+
+revoke all on function public.admin_set_checklist_item_status(uuid, text) from public, anon;
+grant execute on function public.admin_set_checklist_item_status(uuid, text) to authenticated;
+
+revoke all on function public.admin_reorder_checklist_items(text, uuid[]) from public, anon;
+grant execute on function public.admin_reorder_checklist_items(text, uuid[]) to authenticated;
+
+revoke all on function public.admin_delete_checklist_category(uuid) from public, anon;
+grant execute on function public.admin_delete_checklist_category(uuid) to authenticated;
+
+revoke all on function public.admin_delete_checklist_responsible(uuid) from public, anon;
+grant execute on function public.admin_delete_checklist_responsible(uuid) to authenticated;
+
+revoke all on function public.admin_delete_checklist_item(uuid) from public, anon;
+grant execute on function public.admin_delete_checklist_item(uuid) to authenticated;
 
 commit;

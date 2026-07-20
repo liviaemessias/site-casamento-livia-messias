@@ -24,6 +24,7 @@ const guestConfirmedFilter = document.getElementById("guestConfirmedFilter");
 const guestInviteSentFilter = document.getElementById("guestInviteSentFilter");
 const guestTypeFilter = document.getElementById("guestTypeFilter");
 const guestFilterCount = document.getElementById("guestFilterCount");
+const refreshGuestsButton = document.getElementById("refreshGuestsButton");
 const exportGuestsButton = document.getElementById("exportGuestsButton");
 const clearGuestFiltersButton = document.getElementById(
   "clearGuestFiltersButton",
@@ -73,6 +74,12 @@ const adminRSVPGuestCountInput = document.getElementById(
   "adminRSVPGuestCountInput",
 );
 const adminRSVPGuestFields = document.getElementById("adminRSVPGuestFields");
+const adminRSVPFoodRestrictionInput = document.getElementById(
+  "adminRSVPFoodRestrictionInput",
+);
+const adminRSVPFoodDetailsGroup = document.getElementById(
+  "adminRSVPFoodDetailsGroup",
+);
 const adminRSVPFoodInput = document.getElementById("adminRSVPFoodInput");
 const adminRSVPMessageInput = document.getElementById("adminRSVPMessageInput");
 const deleteAdminRSVPButton = document.getElementById("deleteAdminRSVPButton");
@@ -85,6 +92,28 @@ const guestDetailsContent = document.getElementById("guestDetailsContent");
 const { formatDate } = AdminCommon;
 const showAdminToast = AdminCommon.showToast;
 const { escapeAttribute, replaceSafeContent, safeText } = SecurityUtils;
+
+function hasDietaryRestriction(rsvp) {
+  if (typeof rsvp?.food_restriction === "boolean") {
+    return rsvp.food_restriction;
+  }
+
+  return Boolean(String(rsvp?.food || "").trim());
+}
+
+function updateAdminRSVPFoodVisibility() {
+  const hasRestriction = adminRSVPFoodRestrictionInput?.value === "Sim";
+
+  setElementVisibility(adminRSVPFoodDetailsGroup, hasRestriction);
+
+  if (adminRSVPFoodInput) {
+    adminRSVPFoodInput.required = hasRestriction;
+
+    if (!hasRestriction) {
+      adminRSVPFoodInput.value = "";
+    }
+  }
+}
 
 function getAdminPageParams() {
   return new URLSearchParams(window.location.search);
@@ -470,7 +499,7 @@ async function loadGuestsAdmin() {
 
   if (error) {
     console.error(error);
-    showAdminToast("⚠️ Erro ao carregar convidados.");
+    showAdminToast("⚠️ Erro ao carregar convidados");
     return;
   }
 
@@ -584,7 +613,7 @@ function applyGuestFilters() {
 
 function exportGuestsCSV() {
   if (!visibleGuests.length) {
-    showAdminToast("Nenhum convidado para exportar.");
+    showAdminToast("⚠️ Nenhum convidado para exportar");
     return;
   }
 
@@ -626,7 +655,7 @@ function exportGuestsCSV() {
 
   AdminExport.downloadCSVRows("convidados", rows);
 
-  showAdminToast("CSV de convidados exportado.");
+  showAdminToast("💜 CSV de convidados exportado!");
 }
 
 function getGuestSortValue(guest) {
@@ -904,7 +933,7 @@ function updateInvitationMessageCount() {
 
 function openInvitationMessageModal(guest) {
   if (!guest?.invite_code) {
-    showAdminToast("⚠️ Este convidado não possui um código de convite.");
+    showAdminToast("⚠️ Este convidado não possui um código de convite");
     return;
   }
 
@@ -937,7 +966,7 @@ async function copyInvitationMessage() {
 
     if (!document.execCommand("copy")) {
       console.error(error);
-      showAdminToast("⚠️ Não foi possível copiar a mensagem.");
+      showAdminToast("⚠️ Não foi possível copiar a mensagem");
       return;
     }
   }
@@ -965,8 +994,8 @@ window.toggleGuestActive = async function (guestId, nextActive) {
     console.error(error);
     showAdminToast(
       nextActive
-        ? "⚠️ Não foi possível reativar o convidado."
-        : "⚠️ Não foi possível desativar o convidado. Contas administrativas ativas são protegidas.",
+        ? "⚠️ Não foi possível reativar o convidado"
+        : "⚠️ Não foi possível desativar o convidado. Contas administrativas ativas são protegidas",
     );
     return;
   }
@@ -988,14 +1017,14 @@ window.toggleGuestInviteSent = async function (guestId, nextInviteSent) {
 
   if (error || data !== true) {
     console.error(error);
-    showAdminToast("⚠️ Não foi possível atualizar o envio do convite.");
+    showAdminToast("⚠️ Não foi possível atualizar o envio do convite");
     return;
   }
 
   showAdminToast(
     nextInviteSent
-      ? "💜 Convite marcado como enviado."
-      : "💜 Convite marcado como não enviado.",
+      ? "💜 Convite marcado como enviado!"
+      : "💜 Convite marcado como não enviado!",
   );
 
   await loadGuestsAdmin();
@@ -1007,7 +1036,7 @@ window.copyInviteCode = async function (code) {
     showAdminToast("💜 Código copiado com sucesso!");
   } catch (error) {
     console.error(error);
-    showAdminToast("⚠️ Erro ao copiar código.");
+    showAdminToast("⚠️ Erro ao copiar código");
   }
 };
 
@@ -1022,7 +1051,7 @@ function handleGuestAction(action, guestId, button) {
       action === "invitation-message") &&
     !guest
   ) {
-    showAdminToast("⚠️ Convidado não encontrado. Atualize a lista e tente novamente.");
+    showAdminToast("⚠️ Convidado não encontrado. Atualize a lista e tente novamente");
     return;
   }
 
@@ -1276,7 +1305,7 @@ window.openAdminRSVPModal = async function (selectedGuest) {
 
   if (error) {
     console.error(error);
-    showAdminToast("⚠️ Erro ao carregar RSVP.");
+    showAdminToast("⚠️ Erro ao carregar RSVP");
     return;
   }
 
@@ -1346,7 +1375,13 @@ window.openAdminRSVPModal = async function (selectedGuest) {
     updateAdminRSVPCoupleCompanionVisibility();
   }
 
+  if (adminRSVPFoodRestrictionInput) {
+    adminRSVPFoodRestrictionInput.value = hasDietaryRestriction(data)
+      ? "Sim"
+      : "Não";
+  }
   adminRSVPFoodInput.value = data?.food || "";
+  updateAdminRSVPFoodVisibility();
   adminRSVPMessageInput.value = data?.message || "";
   adminRSVPModal.classList.add("active");
 };
@@ -1401,8 +1436,8 @@ guestForm.addEventListener("submit", async (event) => {
     console.error(result.error);
     showAdminToast(
       editingGuest
-        ? "⚠️ Erro ao atualizar convidado."
-        : "⚠️ Erro ao criar convidado.",
+        ? "⚠️ Erro ao atualizar convidado"
+        : "⚠️ Erro ao criar convidado",
     );
     return;
   }
@@ -1459,7 +1494,11 @@ adminRSVPForm.addEventListener("submit", async (event) => {
     presence: finalPresence,
     email: adminRSVPEmailInput.value || "",
     phone: adminRSVPPhoneInput.value || "",
-    food: adminRSVPFoodInput.value || "",
+    food:
+      adminRSVPFoodRestrictionInput?.value === "Sim"
+        ? adminRSVPFoodInput.value || ""
+        : "",
+    food_restriction: adminRSVPFoodRestrictionInput?.value === "Sim",
     message: adminRSVPMessageInput.value || "",
     guest_data: {
       name: selectedRSVPGuest.name,
@@ -1477,6 +1516,7 @@ adminRSVPForm.addEventListener("submit", async (event) => {
     submitted_email: payload.email,
     submitted_phone: payload.phone,
     submitted_food: payload.food,
+    submitted_food_restriction: payload.food_restriction,
     submitted_message: payload.message,
     submitted_guest_data: payload.guest_data,
   });
@@ -1484,7 +1524,7 @@ adminRSVPForm.addEventListener("submit", async (event) => {
   if (result.error || result.data !== true) {
     console.error(result.error);
     showAdminToast(
-      "⚠️ Não foi possível salvar o RSVP. Revise os dados e tente novamente.",
+      "⚠️ Não foi possível salvar o RSVP. Revise os dados e tente novamente",
     );
     return;
   }
@@ -1516,7 +1556,7 @@ deleteAdminRSVPButton.addEventListener("click", async () => {
   if (error || data !== true) {
     console.error(error);
     showAdminToast(
-      "⚠️ Não foi possível remover o RSVP. Atualize a lista e tente novamente.",
+      "⚠️ Não foi possível remover o RSVP. Atualize a lista e tente novamente",
     );
     return;
   }
@@ -1551,6 +1591,7 @@ closeAdminRSVPModalButton.addEventListener("click", closeAdminRSVPModal);
 });
 
 clearGuestFiltersButton?.addEventListener("click", clearGuestFilters);
+refreshGuestsButton?.addEventListener("click", loadGuestsAdmin);
 exportGuestsButton?.addEventListener("click", exportGuestsCSV);
 
 guestsTableBody?.addEventListener("click", (event) => {
@@ -1623,6 +1664,11 @@ adminRSVPPresenceInput.addEventListener("change", () => {
     showAdminRSVPCompanionsIfAllowed();
   }
 });
+
+adminRSVPFoodRestrictionInput?.addEventListener(
+  "change",
+  updateAdminRSVPFoodVisibility,
+);
 
 if (adminRSVPPhoneInput) {
   maskPhoneInput(adminRSVPPhoneInput);

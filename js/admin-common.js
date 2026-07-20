@@ -5,6 +5,9 @@
     "admin-rsvps.html": "clipboard-check",
     "admin-guests.html": "users",
     "admin-messages.html": "message-square",
+    "admin-checklist.html": "list-checks",
+    "admin-schedule.html": "calendar-days",
+    "admin-vendors.html": "handshake",
     "admin-notifications.html": "mail-check",
     "admin-indicators.html": "chart-no-axes-combined",
     "admin-reports.html": "file-chart-column",
@@ -16,9 +19,12 @@
     "admin-rsvps.html",
     "admin-gifts.html",
     "admin-indicators.html",
-    "admin-reports.html",
     "admin-messages.html",
+    "admin-checklist.html",
+    "admin-schedule.html",
+    "admin-vendors.html",
     "admin-notifications.html",
+    "admin-reports.html",
     "admin-settings.html",
   ];
   const EVENT_DEFAULTS = window.WeddingEventConfig?.getDefaults() || {};
@@ -87,6 +93,10 @@
         data?.has_reported_gifts
           ? "Há presente ou cota com pagamento informado"
           : "",
+      );
+      setNavAlert(
+        "admin-checklist.html",
+        data?.has_overdue_checklist_tasks ? "Há tarefas atrasadas" : "",
       );
 
       if (window.lucide) {
@@ -231,6 +241,12 @@
     navigation.dataset.sidebarReady = "true";
     navigation.id = "adminSidebar";
 
+    const sidebarTop = document.createElement("div");
+    const sidebarLinks = document.createElement("div");
+    sidebarTop.className = "admin-sidebar-top";
+    sidebarLinks.className = "admin-sidebar-links";
+    navigation.append(sidebarTop, sidebarLinks);
+
     const brand = document.createElement("div");
     const monogram = document.createElement("span");
     const monogramL = document.createElement("span");
@@ -258,7 +274,7 @@
     monogram.append(monogramL, ampersand, monogramM);
     brandText.append(brandTitle, brandSubtitle);
     brand.append(monogram, brandText);
-    navigation.prepend(brand);
+    sidebarTop.appendChild(brand);
 
     countdown.className = "admin-sidebar-countdown";
     countdownIcon.className = "admin-sidebar-countdown-icon";
@@ -268,13 +284,16 @@
     countdownValue.dataset.adminCountdownValue = "";
     countdownText.append(countdownTitle, countdownValue);
     countdown.append(countdownIcon, countdownText);
-    brand.after(countdown);
+    sidebarTop.appendChild(countdown);
 
     [
       ["admin-notifications.html", "Notificações"],
       ["admin-indicators.html", "Indicadores"],
+    ["admin-messages.html", "Recados"],
+    ["admin-checklist.html", "Checklist"],
+    ["admin-schedule.html", "Programação"],
+      ["admin-vendors.html", "Fornecedores"],
       ["admin-reports.html", "Relatórios"],
-      ["admin-messages.html", "Recados"],
     ].forEach(([page, label]) => {
       if (navigation.querySelector(`[href="./${page}"]`)) {
         return;
@@ -289,7 +308,7 @@
         link.classList.add("active");
       }
 
-      navigation.appendChild(link);
+      sidebarLinks.appendChild(link);
     });
 
     const links = navigation.querySelectorAll(".admin-nav-link");
@@ -304,7 +323,7 @@
       const link = linksByPage.get(page);
 
       if (link) {
-        navigation.appendChild(link);
+        sidebarLinks.appendChild(link);
       }
     });
 

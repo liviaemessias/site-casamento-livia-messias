@@ -35,6 +35,7 @@ create table if not exists public.rsvps (
   guest_id uuid null,
   presence text null,
   food text null,
+  food_restriction boolean not null default false,
   message text null,
   guest_data jsonb null,
   email text null,

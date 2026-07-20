@@ -199,6 +199,26 @@ body {
   background: #5b2e90;
 }
 
+.home-info-cta {
+  padding: 5.5rem 0;
+  background: rgba(255, 255, 255, 0.38);
+}
+
+.home-info-cta-soft {
+  background: rgba(111, 63, 167, 0.035);
+}
+
+.home-info-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 2rem;
+}
+
+.home-info-grid .welcome-text {
+  max-width: 680px;
+}
+
 /* Countdown */
 .countdown-section {
   padding: 8rem 0;
@@ -727,6 +747,21 @@ body {
     gap: 2.5rem;
   }
 
+  .home-info-cta {
+    padding: 4rem 0;
+    text-align: center;
+  }
+
+  .home-info-grid {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    gap: 1.4rem;
+  }
+
+  .home-info-grid .welcome-text {
+    margin-inline: auto;
+  }
+
   .home-messages-carousel {
     grid-template-columns: 1fr;
     gap: 1rem;
@@ -875,6 +910,10 @@ body {
 }
 
 @media (max-width: 540px) {
+  .home-info-cta {
+    padding: 3.5rem 0;
+  }
+
   .home-photos-section {
     padding: 4.5rem 0;
   }
