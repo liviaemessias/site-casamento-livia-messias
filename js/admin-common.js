@@ -1,4 +1,5 @@
 (function () {
+  const BRAND_COLOR = "#5b1166";
   const ADMIN_NAV_ICONS = {
     "admin-dashboard.html": "layout-dashboard",
     "admin-gifts.html": "gift",
@@ -6,7 +7,13 @@
     "admin-guests.html": "users",
     "admin-messages.html": "message-square",
     "admin-checklist.html": "list-checks",
+    "admin-financial.html": "wallet",
+    "admin-financial-budget.html": "wallet",
+    "admin-financial-base.html": "wallet",
+    "admin-financial-expenses.html": "wallet",
+    "admin-financial-payments.html": "wallet",
     "admin-schedule.html": "calendar-days",
+    "admin-tables.html": "layout-grid",
     "admin-vendors.html": "handshake",
     "admin-notifications.html": "mail-check",
     "admin-indicators.html": "chart-no-axes-combined",
@@ -22,12 +29,25 @@
     "admin-messages.html",
     "admin-checklist.html",
     "admin-schedule.html",
+    "admin-tables.html",
     "admin-vendors.html",
+    "admin-financial.html",
+    "admin-financial-budget.html",
+    "admin-financial-expenses.html",
+    "admin-financial-payments.html",
+    "admin-financial-base.html",
     "admin-notifications.html",
     "admin-reports.html",
     "admin-settings.html",
   ];
   const EVENT_DEFAULTS = window.WeddingEventConfig?.getDefaults() || {};
+  const FINANCIAL_NAV_ITEMS = [
+    ["admin-financial.html", "Visão Geral"],
+    ["admin-financial-budget.html", "Orçamento Previsto"],
+    ["admin-financial-expenses.html", "Gastos Reais"],
+    ["admin-financial-payments.html", "Parcelas"],
+    ["admin-financial-base.html", "Cadastros Base"],
+  ];
   let adminCountdownTimer = null;
 
   function createIcon(name) {
@@ -49,24 +69,29 @@
   }
 
   function setNavAlert(page, label) {
-    const link = document.querySelector(`.admin-nav-link[href="./${page}"]`);
-    const existingAlert = link?.querySelector(".admin-nav-alert");
+    const links = document.querySelectorAll(
+      `.admin-nav-link[href="./${page}"], .admin-nav-sublink[href="./${page}"]`,
+    );
 
-    if (!link) {
+    if (!links.length) {
       return;
     }
 
-    if (existingAlert) {
-      existingAlert.remove();
-    }
+    links.forEach((link) => {
+      const existingAlert = link.querySelector(".admin-nav-alert");
 
-    if (!label) {
-      link.removeAttribute("data-has-alert");
-      return;
-    }
+      if (existingAlert) {
+        existingAlert.remove();
+      }
 
-    link.dataset.hasAlert = "true";
-    link.appendChild(createNavAlert(label));
+      if (!label) {
+        link.removeAttribute("data-has-alert");
+        return;
+      }
+
+      link.dataset.hasAlert = "true";
+      link.appendChild(createNavAlert(label));
+    });
   }
 
   async function updateAdminNavAlerts() {
@@ -97,6 +122,16 @@
       setNavAlert(
         "admin-checklist.html",
         data?.has_overdue_checklist_tasks ? "Há tarefas atrasadas" : "",
+      );
+      setNavAlert(
+        "admin-financial.html",
+        data?.has_due_financial_payments
+          ? "Há parcelas financeiras vencidas ou vencendo hoje"
+          : "",
+      );
+      setNavAlert(
+        "admin-financial-payments.html",
+        data?.has_due_financial_payments ? "Há parcelas vencidas ou vencendo hoje" : "",
       );
 
       if (window.lucide) {
@@ -194,18 +229,23 @@
   }
 
   function updateAdminBrand(settings) {
-    const monogram = document.querySelector(".admin-sidebar-monogram");
-    const brideInitial = document.querySelector("[data-admin-bride-initial]");
-    const groomInitial = document.querySelector("[data-admin-groom-initial]");
+    const brandMark = document.querySelector(".admin-sidebar-brand-mark");
+    const brandLogo = document.querySelector(".admin-sidebar-brand-logo");
+    const brandFallback = document.querySelector("[data-admin-brand-fallback]");
 
-    if (!monogram || !brideInitial || !groomInitial) {
+    if (!brandMark || !brandLogo || !brandFallback) {
       return;
     }
 
     const { brideName, groomName } = getCoupleSettings(settings);
-    brideInitial.textContent = getNameInitial(brideName, "L");
-    groomInitial.textContent = getNameInitial(groomName, "M");
-    monogram.setAttribute("aria-label", `${brideName} e ${groomName}`);
+    const coupleLabel = `${brideName} e ${groomName}`;
+
+    brandLogo.alt = coupleLabel;
+    brandMark.setAttribute("aria-label", coupleLabel);
+    brandFallback.textContent = `${getNameInitial(brideName, "L")}&${getNameInitial(
+      groomName,
+      "M",
+    )}`;
   }
 
   async function loadAdminBrandSettings() {
@@ -248,10 +288,9 @@
     navigation.append(sidebarTop, sidebarLinks);
 
     const brand = document.createElement("div");
-    const monogram = document.createElement("span");
-    const monogramL = document.createElement("span");
-    const ampersand = document.createElement("span");
-    const monogramM = document.createElement("span");
+    const brandMark = document.createElement("span");
+    const brandLogo = document.createElement("img");
+    const brandFallback = document.createElement("span");
     const brandText = document.createElement("span");
     const brandTitle = document.createElement("strong");
     const brandSubtitle = document.createElement("small");
@@ -262,18 +301,22 @@
     const countdownValue = document.createElement("span");
 
     brand.className = "admin-sidebar-brand";
-    monogram.className = "admin-sidebar-monogram";
-    monogramL.className = "admin-monogram-letter";
-    monogramL.dataset.adminBrideInitial = "";
-    ampersand.className = "admin-monogram-ampersand";
-    ampersand.textContent = "&";
-    monogramM.className = "admin-monogram-letter";
-    monogramM.dataset.adminGroomInitial = "";
+    brandMark.className = "admin-sidebar-brand-mark";
+    brandLogo.className = "admin-sidebar-brand-logo";
+    brandLogo.src = "./assets/images/brand/couple-logo-primary.svg";
+    brandLogo.alt = "Livia e Messias";
+    brandLogo.decoding = "async";
+    brandFallback.className = "admin-sidebar-brand-fallback";
+    brandFallback.dataset.adminBrandFallback = "";
+    brandFallback.textContent = "L&M";
     brandTitle.textContent = "Painel";
     brandSubtitle.textContent = "Administrativo";
-    monogram.append(monogramL, ampersand, monogramM);
+    brandLogo.addEventListener("error", () => {
+      brandMark.classList.add("has-logo-error");
+    });
+    brandMark.append(brandLogo, brandFallback);
     brandText.append(brandTitle, brandSubtitle);
-    brand.append(monogram, brandText);
+    brand.append(brandMark, brandText);
     sidebarTop.appendChild(brand);
 
     countdown.className = "admin-sidebar-countdown";
@@ -289,9 +332,11 @@
     [
       ["admin-notifications.html", "Notificações"],
       ["admin-indicators.html", "Indicadores"],
-    ["admin-messages.html", "Recados"],
-    ["admin-checklist.html", "Checklist"],
-    ["admin-schedule.html", "Programação"],
+      ["admin-messages.html", "Recados"],
+      ["admin-checklist.html", "Checklist"],
+      ["admin-financial.html", "Financeiro"],
+      ["admin-schedule.html", "Programação"],
+      ["admin-tables.html", "Mesas"],
       ["admin-vendors.html", "Fornecedores"],
       ["admin-reports.html", "Relatórios"],
     ].forEach(([page, label]) => {
@@ -304,7 +349,13 @@
       link.href = `./${page}`;
       link.textContent = label;
 
-      if (window.location.pathname.endsWith(page)) {
+      if (
+        window.location.pathname.endsWith(page) ||
+        (page === "admin-financial.html" &&
+          FINANCIAL_NAV_ITEMS.some(([itemPage]) =>
+            window.location.pathname.endsWith(itemPage),
+          ))
+      ) {
         link.classList.add("active");
       }
 
@@ -339,6 +390,55 @@
         document.body.classList.remove("admin-sidebar-open");
       });
     });
+
+    const financialLink = linksByPage.get("admin-financial.html");
+
+    if (financialLink && !navigation.querySelector(".admin-nav-submenu")) {
+      const submenu = document.createElement("div");
+      submenu.className = "admin-nav-submenu";
+      submenu.setAttribute("aria-label", "Submenu do Financeiro");
+
+      FINANCIAL_NAV_ITEMS.forEach(([page, label]) => {
+        const sublink = document.createElement("a");
+
+        sublink.className = "admin-nav-sublink";
+        sublink.href = `./${page}`;
+        sublink.textContent = label;
+
+        if (window.location.pathname.endsWith(page)) {
+          sublink.classList.add("active");
+        }
+
+        sublink.addEventListener("click", () => {
+          document.body.classList.remove("admin-sidebar-open");
+        });
+        submenu.appendChild(sublink);
+      });
+
+      financialLink.insertAdjacentElement("afterend", submenu);
+    }
+
+    const activeNavigationItem =
+      sidebarLinks.querySelector(".admin-nav-sublink.active") ||
+      sidebarLinks.querySelector(".admin-nav-link.active");
+
+    if (activeNavigationItem) {
+      window.requestAnimationFrame(() => {
+        const safeOffset = 12;
+        const itemTop = activeNavigationItem.offsetTop;
+        const itemHeight = activeNavigationItem.offsetHeight;
+        const targetTop = itemTop - sidebarLinks.clientHeight / 2 + itemHeight / 2;
+        const maxScrollTop = Math.max(
+          sidebarLinks.scrollHeight - sidebarLinks.clientHeight,
+          0,
+        );
+
+        sidebarLinks.scrollTo({
+          top: Math.min(Math.max(targetTop - safeOffset, 0), maxScrollTop),
+          behavior: "auto",
+        });
+      });
+    }
 
     const footer = document.createElement("div");
     footer.className = "admin-sidebar-footer";
@@ -469,6 +569,7 @@
   }
 
   window.AdminCommon = {
+    BRAND_COLOR,
     formatDate,
     setText,
     setupLogout,

@@ -112,6 +112,15 @@
             </select>
           </div>
 
+          <div class="admin-filter-field">
+            <label for="rsvpTableFilter">Mesa</label>
+            <select id="rsvpTableFilter">
+              <option value="">Todas</option>
+              <option value="assigned">Com mesa</option>
+              <option value="unassigned">Sem mesa</option>
+            </select>
+          </div>
+
           <div class="admin-filter-actions">
             <span id="rsvpFilterCount" class="admin-filter-count"></span>
 
@@ -217,35 +226,38 @@
 
           <div id="adminRSVPCoupleMembers" class="is-hidden"></div>
 
+          <div id="adminRSVPPrimaryFoodSection" class="admin-rsvp-primary-food-section">
+            <h4>Restrição alimentar do convidado principal</h4>
+            <div class="admin-form-group">
+              <label for="adminRSVPFoodRestrictionInput">
+                Possui Restrição Alimentar?
+              </label>
+              <select id="adminRSVPFoodRestrictionInput">
+                <option value="Não">Não</option>
+                <option value="Sim">Sim</option>
+              </select>
+            </div>
+
+            <div
+              id="adminRSVPFoodDetailsGroup"
+              class="admin-form-group is-hidden"
+              hidden
+            >
+              <label> Qual Restrição Alimentar? </label>
+              <input
+                type="text"
+                id="adminRSVPFoodInput"
+                placeholder="Ex.: intolerância à lactose ou alergia a frutos do mar"
+              />
+            </div>
+          </div>
+
           <div class="admin-form-group">
             <label> Quantidade de Acompanhantes </label>
             <select id="adminRSVPGuestCountInput"></select>
           </div>
 
           <div id="adminRSVPGuestFields"></div>
-
-          <div class="admin-form-group">
-            <label for="adminRSVPFoodRestrictionInput">
-              Possui Restrição Alimentar?
-            </label>
-            <select id="adminRSVPFoodRestrictionInput">
-              <option value="Não">Não</option>
-              <option value="Sim">Sim</option>
-            </select>
-          </div>
-
-          <div
-            id="adminRSVPFoodDetailsGroup"
-            class="admin-form-group is-hidden"
-            hidden
-          >
-            <label> Qual Restrição Alimentar? </label>
-            <input
-              type="text"
-              id="adminRSVPFoodInput"
-              placeholder="Ex.: intolerância à lactose ou alergia a frutos do mar"
-            />
-          </div>
 
           <div class="admin-form-group">
             <label> Mensagem </label>

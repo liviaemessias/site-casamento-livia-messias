@@ -37,10 +37,13 @@ create table public.guests (
   access_count integer null default 0,
   last_access timestamp with time zone null,
   invite_type text null default 'individual',
+  guest_side text not null default 'couple',
   couple_members jsonb null,
 
   constraint guests_pkey primary key (id),
-  constraint guests_invite_code_key unique (invite_code)
+  constraint guests_invite_code_key unique (invite_code),
+  constraint guests_guest_side_check
+    check (guest_side in ('bride', 'groom', 'couple'))
 );
 ```
 
@@ -56,6 +59,8 @@ Campos principais:
 - `access_count`: quantidade de acessos.
 - `last_access`: último acesso.
 - `invite_type`: `individual` ou `couple`.
+- `guest_side`: indica se o convite é da Noiva, do Noivo ou do Casal
+  (`bride`, `groom`, `couple`).
 - `couple_members`: membros do casal em JSON.
 
 ## Tabela `rsvps`
@@ -68,8 +73,6 @@ create table public.rsvps (
   created_at timestamp with time zone null default timezone('utc', now()),
   guest_id uuid null,
   presence text null,
-  food text null,
-  food_restriction boolean not null default false,
   message text null,
   guest_data jsonb null,
   email text null,
@@ -89,12 +92,13 @@ Campos principais:
 
 - `guest_id`: referência `guests.id`.
 - `presence`: `Sim` ou `Não`.
-- `food_restriction`: indica se o convidado declarou restrição alimentar.
-- `food`: detalhe da restrição alimentar quando `food_restriction = true`.
 - `message`: mensagem aos noivos.
 - `email`: e-mail informado.
 - `phone`: telefone informado.
-- `guest_data`: snapshot JSON completo do RSVP.
+- `guest_data`: snapshot JSON completo do RSVP. As restrições alimentares ficam
+  por pessoa neste JSON, em `guest_data.food`/`food_restriction` para convite
+  individual, `guest_data.members[]` para membros de casal e
+  `guest_data.companions[]` para acompanhantes.
 - `updated_at`: última alteração.
 
 ## Tabela `gifts`
@@ -467,14 +471,51 @@ mesmos filtros, para contabilizar o conjunto completo filtrado em vez de apenas
 a página atual. A busca cobre convidado, e-mail, tipo de evento, status,
 identificadores, dados do payload e erro/motivo resumido.
 Alertas compactos do menu administrativo usam `admin_get_nav_alerts()`, que
-retorna apenas indicadores booleanos para recados pendentes e presentes/cotas
-com pagamento informado.
+retorna apenas indicadores booleanos para recados pendentes, presentes/cotas
+com pagamento informado, tarefas do checklist atrasadas e parcelas financeiras
+vencidas ou com vencimento no dia atual.
 Preferências são lidas e atualizadas pelo painel por
 `admin_list_notification_preferences()` e
 `admin_update_notification_preference(...)`. Lembretes manuais de presentes e
 cotas são criados por `admin_send_gift_reservation_reminder(...)` e
 `admin_send_gift_contribution_reminder(...)`. Eventos do Mural de Recados são
 criados pelo helper interno `enqueue_wall_message_notification_event(...)`.
+
+## Tabelas De Mesas
+
+### `wedding_tables`
+
+Guarda as mesas da recepção.
+
+Campos principais:
+
+- `name`: nome ou número da mesa.
+- `capacity`: capacidade planejada.
+- `location`: localização opcional, como setor ou referência no salão.
+- `notes`: observações administrativas gerais da mesa.
+- `display_order`: ordem de exibição.
+- `is_active`: indica se a mesa está em uso no planejamento atual.
+
+### `wedding_table_assignments`
+
+Relaciona cada convite/convidado principal a uma mesa.
+
+Campos principais:
+
+- `table_id`: mesa atribuída.
+- `guest_id`: convite/convidado atribuído.
+- `notes`: observação administrativa específica do convidado naquela mesa.
+
+A constraint `wedding_table_assignments_guest_unique` garante que um convite
+fique em apenas uma mesa por vez. A ocupação planejada, confirmada e híbrida é
+calculada no painel usando convidados e RSVPs.
+
+Na interface administrativa, a observação geral da mesa e a observação do
+convidado na mesa são tratadas como informações distintas. A página de Mesas
+permite gerenciar a mesa e suas atribuições; o modal de detalhes do Convidado
+também permite definir, trocar ou remover a mesa do convite. O modal de
+detalhes do RSVP possui um atalho para abrir o convidado correspondente nesse
+contexto.
 
 ## Funções De Autorização
 
@@ -493,6 +534,9 @@ criados pelo helper interno `enqueue_wall_message_notification_event(...)`.
   sincronizado pelo trigger na mesma transação.
 - `admin_update_guest()` e `admin_set_guest_active()`: validam alterações do
   convite e sincronizam a ativação com `guest_access_sessions`.
+- `admin_assign_guest_to_table()`, `admin_remove_guest_from_table()` e
+  `admin_set_wedding_table_active()`: controlam atribuições de convidados às
+  mesas, remoções e ativação/desativação de mesas por administradores.
 - `admin_save_gift()` e `admin_delete_gift()`: validam e alteram o catálogo,
   calculam o valor das cotas e preservam a estrutura de presentes com
   reservas ou contribuições.
@@ -501,7 +545,9 @@ criados pelo helper interno `enqueue_wall_message_notification_event(...)`.
 - `save_current_rsvp()`: usa o convite da sessão como fonte oficial, valida
   membros, acompanhantes e idades e descarta campos adicionais enviados pelo
   cliente. Também cria um evento `rsvp_saved` para notificação por e-mail no
-  RSVP público.
+  RSVP público. A assinatura ainda aceita os parâmetros legados
+  `submitted_food` e `submitted_food_restriction` por compatibilidade, mas a
+  restrição alimentar canônica é persistida por pessoa em `guest_data`.
 - `reserve_gift()`, `reserve_gift_quotas()`, `report_gift_payment()` e
   `report_gift_contribution_payment()`: validam ações públicas de presentes e
   cotas e criam eventos de e-mail quando reserva ou pagamento são registrados.

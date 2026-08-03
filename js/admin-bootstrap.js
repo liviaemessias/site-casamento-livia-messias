@@ -30,6 +30,26 @@
       "js/admin-export.js",
       "js/admin-checklist.js",
     ],
+    "admin-financial.html": [
+      "js/security-utils.js",
+      "js/admin-financial.js",
+    ],
+    "admin-financial-budget.html": [
+      "js/security-utils.js",
+      "js/admin-financial.js",
+    ],
+    "admin-financial-base.html": [
+      "js/security-utils.js",
+      "js/admin-financial.js",
+    ],
+    "admin-financial-expenses.html": [
+      "js/security-utils.js",
+      "js/admin-financial.js",
+    ],
+    "admin-financial-payments.html": [
+      "js/security-utils.js",
+      "js/admin-financial.js",
+    ],
     "admin-schedule.html": [
       "js/security-utils.js",
       "js/admin-schedule.js",
@@ -37,6 +57,12 @@
     "admin-vendors.html": [
       "js/security-utils.js",
       "js/admin-vendors.js",
+    ],
+    "admin-tables.html": [
+      "js/security-utils.js",
+      "js/admin-export.js",
+      "js/buffet-metrics.js",
+      "js/admin-tables.js",
     ],
     "admin-notifications.html": [
       "js/security-utils.js",

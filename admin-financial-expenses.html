@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://unpkg.com https://challenges.cloudflare.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gastos Reais | Financeiro | Painel Admin | Livia &amp; Messias</title>
+    <link rel="stylesheet" href="./css/style.css" />
+    <link rel="stylesheet" href="./css/admin.css" />
+  </head>
+  <body class="admin-auth-pending">
+    <main class="admin-page admin-financial-page">
+      <section class="admin-header">
+        <div>
+          <p class="section-subtitle">Painel Administrativo</p>
+          <h1>Financeiro</h1>
+        </div>
+        <button id="logoutButton" class="admin-logout">Sair</button>
+      </section>
+
+      <nav class="admin-nav" aria-label="Navegação administrativa">
+        <a class="admin-nav-link" href="./admin-dashboard.html">Dashboard</a>
+        <a class="admin-nav-link" href="./admin-guests.html">Convidados</a>
+        <a class="admin-nav-link" href="./admin-rsvps.html">RSVP</a>
+        <a class="admin-nav-link" href="./admin-gifts.html">Presentes</a>
+        <a class="admin-nav-link" href="./admin-checklist.html">Checklist</a>
+        <a class="admin-nav-link active" href="./admin-financial.html">Financeiro</a>
+        <a class="admin-nav-link" href="./admin-schedule.html">Programação</a>
+        <a class="admin-nav-link" href="./admin-vendors.html">Fornecedores</a>
+        <a class="admin-nav-link" href="./admin-settings.html">Configurações</a>
+      </nav>
+
+      <section class="admin-section">
+        <div class="admin-section-header">
+          <div>
+            <p class="section-subtitle">Gestão financeira</p>
+            <h2>Gastos Reais</h2>
+          </div>
+
+          <div class="admin-section-actions">
+            <button id="refreshFinancialButton" class="admin-action-button icon-action">
+              <i data-lucide="refresh-cw" aria-hidden="true"></i>
+              Atualizar
+            </button>
+            <button id="newExpenseButton" class="admin-action-button icon-action success">
+              <i data-lucide="plus" aria-hidden="true"></i>
+              Gasto Real
+            </button>
+          </div>
+        </div>
+
+        <nav class="financial-module-tabs" aria-label="Navegação do módulo financeiro">
+          <a href="./admin-financial.html">Visão Geral</a>
+          <a href="./admin-financial-budget.html">Orçamento Previsto</a>
+          <a class="active" href="./admin-financial-expenses.html">Gastos Reais</a>
+          <a href="./admin-financial-payments.html">Parcelas</a>
+          <a href="./admin-financial-base.html">Cadastros Base</a>
+        </nav>
+
+        <div class="admin-segmented-control financial-context-tabs" aria-label="Contexto financeiro">
+          <button type="button" class="active" data-financial-context="wedding">Casamento</button>
+          <button type="button" data-financial-context="honeymoon">Lua de Mel</button>
+          <button type="button" data-financial-context="all">Todos</button>
+        </div>
+
+        <div id="financialLoadStatus" class="financial-load-status" role="status" aria-live="polite"></div>
+
+        <section class="admin-subsection-card financial-full-expenses-card" aria-label="Gestão de gastos reais">
+          <div class="admin-subsection-header">
+            <div>
+              <p class="section-subtitle">Realizado</p>
+              <h3>Todos os Gastos Reais</h3>
+            </div>
+            <small id="financialAllExpensesSummary">0 gastos encontrados</small>
+          </div>
+
+          <div class="admin-filters-grid financial-expenses-filters">
+            <div class="admin-filter-field">
+              <label for="financialExpenseSearchInput">Buscar</label>
+              <input id="financialExpenseSearchInput" type="search" placeholder="Nome, categoria, fornecedor..." />
+            </div>
+            <div class="admin-filter-field">
+              <label for="financialExpenseCategoryFilter">Categoria</label>
+              <select id="financialExpenseCategoryFilter"></select>
+            </div>
+            <div class="admin-filter-field">
+              <label for="financialExpenseTypeFilter">Tipo</label>
+              <select id="financialExpenseTypeFilter"></select>
+            </div>
+            <div class="admin-filter-field">
+              <label for="financialExpenseStatusFilter">Status</label>
+              <select id="financialExpenseStatusFilter"></select>
+            </div>
+            <div class="admin-filter-field">
+              <label for="financialExpensePayerFilter">Pagador</label>
+              <select id="financialExpensePayerFilter"></select>
+            </div>
+            <div class="admin-filter-field">
+              <label for="financialExpenseVendorFilter">Fornecedor</label>
+              <select id="financialExpenseVendorFilter"></select>
+            </div>
+            <div class="admin-filter-field">
+              <label for="financialExpenseBudgetLinkFilter">Vínculo previsto</label>
+              <select id="financialExpenseBudgetLinkFilter">
+                <option value="">Todos</option>
+                <option value="linked">Com item previsto</option>
+                <option value="unlinked">Sem item previsto</option>
+              </select>
+            </div>
+            <div class="admin-filter-field">
+              <label for="financialExpenseBudgetItemFilter">Item previsto</label>
+              <select id="financialExpenseBudgetItemFilter"></select>
+            </div>
+            <div class="admin-filter-actions">
+              <span id="financialExpenseFilterCount" class="admin-filter-count"></span>
+              <button
+                type="button"
+                id="clearFinancialExpenseFiltersButton"
+                class="admin-clear-filters"
+              >
+                Limpar Filtros
+              </button>
+            </div>
+          </div>
+
+          <div class="admin-table-wrapper">
+            <table class="admin-table financial-table financial-full-expenses-table">
+              <thead>
+                <tr>
+                  <th>
+                    <button class="admin-sort-button" data-financial-expense-sort="title">
+                      Gasto
+                    </button>
+                  </th>
+                  <th>
+                    <button class="admin-sort-button" data-financial-expense-sort="type">
+                      Tipo
+                    </button>
+                  </th>
+                  <th>
+                    <button class="admin-sort-button" data-financial-expense-sort="category">
+                      Categoria
+                    </button>
+                  </th>
+                  <th>
+                    <button class="admin-sort-button" data-financial-expense-sort="total">
+                      Total
+                    </button>
+                  </th>
+                  <th>
+                    <button class="admin-sort-button" data-financial-expense-sort="paid">
+                      Pago
+                    </button>
+                  </th>
+                  <th>
+                    <button class="admin-sort-button" data-financial-expense-sort="remaining">
+                      Em aberto
+                    </button>
+                  </th>
+                  <th>
+                    <button class="admin-sort-button" data-financial-expense-sort="status">
+                      Status
+                    </button>
+                  </th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="financialAllExpensesTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <div id="financialExpenseModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content">
+        <div class="admin-modal-header">
+          <div>
+            <p class="section-subtitle">Financeiro</p>
+            <h2 id="financialExpenseModalTitle">Novo Gasto Real</h2>
+          </div>
+          <button id="closeFinancialExpenseModalButton" type="button" class="admin-modal-close" aria-label="Fechar">×</button>
+        </div>
+
+        <form id="financialExpenseForm" class="admin-form">
+          <div class="admin-form-grid">
+            <div class="admin-form-group admin-form-group-wide">
+              <label for="financialExpenseTitleInput">Gasto</label>
+              <input id="financialExpenseTitleInput" type="text" maxlength="180" required />
+            </div>
+            <div class="admin-form-group">
+              <label for="financialExpenseContextInput">Contexto</label>
+              <select id="financialExpenseContextInput" required>
+                <option value="wedding">Casamento</option>
+                <option value="honeymoon">Lua de Mel</option>
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label for="financialExpenseCategoryInput">Categoria</label>
+              <select id="financialExpenseCategoryInput" required></select>
+            </div>
+            <div class="admin-form-group admin-form-group-wide">
+              <label for="financialExpenseBudgetItemInput">Item previsto vinculado</label>
+              <select id="financialExpenseBudgetItemInput"></select>
+              <small class="admin-field-hint">Opcional. Use para comparar o gasto real com o orçamento previsto.</small>
+            </div>
+            <div class="admin-form-group">
+              <label for="financialExpenseAmountInput">Valor Total</label>
+              <input id="financialExpenseAmountInput" type="text" inputmode="numeric" autocomplete="off" value="R$ 0,00" />
+            </div>
+            <div class="admin-form-group">
+              <label for="financialExpenseTypeInput">Tipo</label>
+              <select id="financialExpenseTypeInput">
+                <option value="supplier">Fornecedor</option>
+                <option value="one_off_purchase">Compra avulsa</option>
+                <option value="fee">Taxa</option>
+                <option value="reservation">Reserva</option>
+                <option value="service">Serviço</option>
+                <option value="product">Produto</option>
+                <option value="travel">Viagem</option>
+                <option value="lodging">Hospedagem</option>
+                <option value="transport">Transporte</option>
+                <option value="other">Outro</option>
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label for="financialExpensePaymentMethodInput">Pagamento</label>
+              <select id="financialExpensePaymentMethodInput">
+                <option value="custom">A definir/personalizado</option>
+                <option value="cash">À vista</option>
+                <option value="installments">Parcelado</option>
+                <option value="deposit_installments">Entrada + parcelas</option>
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label for="financialExpenseStatusInput">Status</label>
+              <select id="financialExpenseStatusInput">
+                <option value="planned">Planejado</option>
+                <option value="quoting">Cotando</option>
+                <option value="contracted">Contratado</option>
+                <option value="purchased">Comprado</option>
+                <option value="paid">Pago</option>
+                <option value="cancelled">Cancelado</option>
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label for="financialExpenseContractedAtInput">Data de contratação/compra</label>
+              <input id="financialExpenseContractedAtInput" type="date" />
+            </div>
+            <div class="admin-form-group">
+              <label for="financialExpensePayerInput">Pagador principal</label>
+              <select id="financialExpensePayerInput"></select>
+            </div>
+            <div class="admin-form-group">
+              <label for="financialExpenseVendorInput">Fornecedor vinculado</label>
+              <select id="financialExpenseVendorInput"></select>
+            </div>
+          </div>
+
+          <div class="admin-form-group">
+            <label for="financialExpenseDescriptionInput">Descrição</label>
+            <textarea id="financialExpenseDescriptionInput" maxlength="900" rows="3"></textarea>
+          </div>
+
+          <div class="admin-form-group">
+            <label for="financialExpenseReferenceUrlInput">Link ou referência</label>
+            <input id="financialExpenseReferenceUrlInput" type="url" maxlength="1000" />
+          </div>
+
+          <div class="admin-form-group">
+            <label for="financialExpenseNotesInput">Observações</label>
+            <textarea id="financialExpenseNotesInput" maxlength="1600" rows="4"></textarea>
+          </div>
+
+          <label class="admin-checkbox-label">
+            <input id="financialExpenseActiveInput" type="checkbox" checked />
+            Gasto ativo
+          </label>
+
+          <section id="financialExpensePaymentsSection" class="financial-expense-payments-section">
+            <div class="financial-expense-payments-header">
+              <div>
+                <p class="section-subtitle">Pagamentos</p>
+                <h3>Parcelas</h3>
+              </div>
+              <div class="financial-expense-payments-header-actions">
+                <small id="financialExpensePaymentsSummary">Total das parcelas: R$ 0,00</small>
+                <button id="openFinancialPaymentModalButton" type="button" class="financial-inline-action">
+                  <i data-lucide="plus" aria-hidden="true"></i>
+                  Nova Parcela
+                </button>
+              </div>
+            </div>
+
+            <p id="financialExpensePaymentsHint" class="admin-modal-helper">
+              Salve o gasto real primeiro para cadastrar parcelas.
+            </p>
+
+            <details id="financialPaymentGeneratorDisclosure" class="financial-payment-disclosure">
+              <summary class="financial-payment-disclosure-summary">
+                <span>
+                  <strong>Gerar parcelas automaticamente</strong>
+                  <small>Use como ponto de partida e ajuste manualmente depois.</small>
+                </span>
+                <i data-lucide="chevron-down" aria-hidden="true"></i>
+              </summary>
+              <div id="financialPaymentGenerator" class="financial-payment-generator">
+                <div class="admin-form-grid">
+                  <div id="financialPaymentEntryGroup" class="admin-form-group">
+                    <label for="financialPaymentEntryAmountInput">Valor da entrada</label>
+                    <input id="financialPaymentEntryAmountInput" type="text" inputmode="numeric" autocomplete="off" value="R$ 0,00" />
+                  </div>
+                  <div id="financialPaymentEntryDueDateGroup" class="admin-form-group">
+                    <label for="financialPaymentEntryDueDateInput">Vencimento da entrada</label>
+                    <input id="financialPaymentEntryDueDateInput" type="date" />
+                  </div>
+                  <div id="financialPaymentInstallmentsGroup" class="admin-form-group">
+                    <label for="financialPaymentInstallmentsCountInput">Quantidade de parcelas</label>
+                    <input id="financialPaymentInstallmentsCountInput" type="number" min="1" max="240" step="1" value="1" />
+                  </div>
+                  <div id="financialPaymentFirstDueDateGroup" class="admin-form-group">
+                    <label id="financialPaymentFirstDueDateLabel" for="financialPaymentFirstDueDateInput">Primeiro vencimento</label>
+                    <input id="financialPaymentFirstDueDateInput" type="date" />
+                  </div>
+                  <div id="financialPaymentDueIntervalGroup" class="admin-form-group">
+                    <label for="financialPaymentDueIntervalInput">Intervalo</label>
+                    <select id="financialPaymentDueIntervalInput">
+                      <option value="monthly">Mensal</option>
+                      <option value="weekly">Semanal</option>
+                      <option value="none">Mesmo vencimento</option>
+                    </select>
+                  </div>
+                  <label id="financialPaymentGeneratePaidGroup" class="admin-checkbox-label">
+                    <input id="financialPaymentGeneratePaidInput" type="checkbox" />
+                    Gerar pagamento à vista já como pago
+                  </label>
+                </div>
+                <button type="button" class="admin-action-button success is-full-width" id="generateFinancialPaymentsButton">Gerar Parcelas</button>
+              </div>
+            </details>
+
+            <div id="financialExpensePaymentsTableBody" class="financial-expense-payment-card-list" aria-live="polite"></div>
+          </section>
+
+          <div class="admin-modal-actions vendor-modal-actions financial-expense-actions">
+            <button type="submit" class="admin-save-button" id="saveFinancialExpenseButton">Salvar Gasto</button>
+            <button type="button" class="admin-action-button danger" id="deleteFinancialExpenseButton">Excluir Gasto</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="financialExpenseDetailsModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content admin-details-modal-content">
+        <div class="admin-modal-header">
+          <div>
+            <p class="section-subtitle">Gastos Reais</p>
+            <h2 id="financialExpenseDetailsTitle">Detalhes do Gasto Real</h2>
+          </div>
+          <button id="closeFinancialExpenseDetailsModalButton" type="button" class="admin-modal-close" aria-label="Fechar">×</button>
+        </div>
+
+        <div id="financialExpenseDetailsContent" class="admin-details-content"></div>
+
+        <section class="admin-details-section">
+          <span class="admin-details-label">Ações</span>
+          <div class="admin-detail-action-grid financial-expense-details-actions">
+            <button id="editFinancialExpenseDetailsButton" type="button" class="admin-detail-action-card">
+              <span class="admin-detail-action-icon">
+                <i data-lucide="edit" aria-hidden="true"></i>
+              </span>
+              <span class="admin-detail-action-text">
+                <strong>Editar gasto</strong>
+                <small>Abre o formulário completo do gasto real.</small>
+              </span>
+            </button>
+            <button id="deleteFinancialExpenseDetailsButton" type="button" class="admin-detail-action-card danger">
+              <span class="admin-detail-action-icon">
+                <i data-lucide="trash-2" aria-hidden="true"></i>
+              </span>
+              <span class="admin-detail-action-text">
+                <strong>Excluir gasto</strong>
+                <small>Remove este gasto real e suas parcelas.</small>
+              </span>
+            </button>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div id="financialPaymentModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content admin-details-modal-content">
+        <div class="admin-modal-header">
+          <div>
+            <p class="section-subtitle">Parcela</p>
+            <h2 id="financialPaymentModalTitle">Nova Parcela</h2>
+          </div>
+          <button id="closeFinancialPaymentModalButton" type="button" class="admin-modal-close" aria-label="Fechar">×</button>
+        </div>
+
+        <input id="financialPaymentIdInput" type="hidden" />
+        <div id="financialExpensePaymentEditor" class="financial-expense-payment-editor">
+          <div class="admin-form-grid">
+            <div class="admin-form-group">
+              <label for="financialPaymentInstallmentInput">Parcela Nº</label>
+              <input id="financialPaymentInstallmentInput" type="number" min="1" max="240" step="1" value="1" />
+            </div>
+            <div class="admin-form-group">
+              <label for="financialPaymentLabelInput">Descrição da parcela</label>
+              <input id="financialPaymentLabelInput" type="text" maxlength="120" />
+            </div>
+            <div class="admin-form-group">
+              <label for="financialPaymentAmountInput">Valor</label>
+              <input id="financialPaymentAmountInput" type="text" inputmode="numeric" autocomplete="off" value="R$ 0,00" />
+            </div>
+            <div class="admin-form-group">
+              <label for="financialPaymentDueDateInput">Vencimento</label>
+              <input id="financialPaymentDueDateInput" type="date" />
+            </div>
+            <div class="admin-form-group">
+              <label for="financialPaymentStatusInput">Status</label>
+              <select id="financialPaymentStatusInput">
+                <option value="unpaid">Não paga</option>
+                <option value="paid">Paga</option>
+                <option value="cancelled">Cancelada</option>
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label for="financialPaymentPaidAtInput">Data de pagamento</label>
+              <input id="financialPaymentPaidAtInput" type="date" />
+            </div>
+            <div class="admin-form-group admin-form-group-wide">
+              <label for="financialPaymentPayerInput">Pagador efetivo</label>
+              <select id="financialPaymentPayerInput"></select>
+            </div>
+          </div>
+
+          <div class="admin-form-group">
+            <label for="financialPaymentNotesInput">Observações da parcela</label>
+            <textarea id="financialPaymentNotesInput" maxlength="900" rows="3"></textarea>
+          </div>
+
+          <div class="financial-payment-actions">
+            <button type="button" class="admin-action-button success" id="saveFinancialPaymentButton">Salvar Parcela</button>
+            <button type="button" class="admin-action-button" id="cancelFinancialPaymentEditButton">Cancelar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="financialQuickPaymentModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content admin-details-modal-content">
+        <div class="admin-modal-header">
+          <div>
+            <p class="section-subtitle">Pagamento rápido</p>
+            <h2>Marcar Parcela como Paga</h2>
+          </div>
+          <button id="closeFinancialQuickPaymentModalButton" type="button" class="admin-modal-close" aria-label="Fechar">×</button>
+        </div>
+
+        <p id="financialQuickPaymentSummary" class="admin-modal-helper">
+          Confirme os dados do pagamento antes de marcar a parcela como paga.
+        </p>
+
+        <div class="admin-form-grid">
+          <div class="admin-form-group">
+            <label for="financialQuickPaymentPaidAtInput">Data de pagamento</label>
+            <input id="financialQuickPaymentPaidAtInput" type="date" />
+          </div>
+          <div class="admin-form-group">
+            <label for="financialQuickPaymentPayerInput">Pagador</label>
+            <select id="financialQuickPaymentPayerInput"></select>
+          </div>
+        </div>
+
+        <div class="admin-modal-actions vendor-modal-actions financial-quick-payment-actions">
+          <button id="confirmFinancialQuickPaymentButton" type="button" class="admin-save-button">Marcar como Paga</button>
+          <button id="cancelFinancialQuickPaymentButton" type="button" class="admin-action-button">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="adminToast" class="admin-toast"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="./js/supabase.js"></script>
+    <script src="./js/event-config.js"></script>
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+    <script src="./js/admin-common.js"></script>
+    <script src="./js/admin-bootstrap.js"></script>
+  </body>
+</html>

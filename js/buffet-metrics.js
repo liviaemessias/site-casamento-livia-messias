@@ -55,6 +55,31 @@
     return labels[category] || "-";
   }
 
+  function hasPersonDietaryRestriction(person) {
+    if (typeof person?.food_restriction === "boolean") {
+      return person.food_restriction;
+    }
+
+    return Boolean(String(person?.food || "").trim());
+  }
+
+  function normalizeDietaryRestrictionText(food, personName = "") {
+    const text = String(food || "").trim();
+    const name = String(personName || "").trim();
+
+    if (name && text.toLowerCase().startsWith(`${name.toLowerCase()}:`)) {
+      return text.slice(name.length + 1).trim();
+    }
+
+    return text;
+  }
+
+  function getPersonDietaryRestrictionDetails(person) {
+    return hasPersonDietaryRestriction(person)
+      ? normalizeDietaryRestrictionText(person?.food, person?.name)
+      : "";
+  }
+
   function getConfirmedPeople(guest, rsvp, payingAge) {
     if (!rsvp || rsvp.presence !== "Sim") {
       return [];
@@ -69,6 +94,8 @@
             age: "",
             category: "adult-paying",
             child: "Não",
+            food: getPersonDietaryRestrictionDetails(member),
+            food_restriction: hasPersonDietaryRestriction(member),
             name: member.name || "Sem nome",
             paying: true,
             type: "Membro do convite",
@@ -78,6 +105,11 @@
             age: "",
             category: "adult-paying",
             child: "Não",
+            food: getPersonDietaryRestrictionDetails(rsvp.guest_data) ||
+              getPersonDietaryRestrictionDetails(rsvp),
+            food_restriction:
+              hasPersonDietaryRestriction(rsvp.guest_data) ||
+              hasPersonDietaryRestriction(rsvp),
             name: guest?.name || rsvp.guest_data?.name || "Convidado",
             paying: true,
             type: "Convidado",
@@ -94,6 +126,8 @@
         age: companion.age || "",
         category,
         child: isChild ? "Sim" : "Não",
+        food: getPersonDietaryRestrictionDetails(companion),
+        food_restriction: hasPersonDietaryRestriction(companion),
         name: companion.name || "Sem nome",
         paying:
           category === "adult-paying" || category === "child-paying",
@@ -129,10 +163,15 @@
           metrics.unknownAgeChildren += 1;
         }
 
+        if (hasPersonDietaryRestriction(person)) {
+          metrics.dietaryRestrictionPeople += 1;
+        }
+
         return metrics;
       },
       {
         children: 0,
+        dietaryRestrictionPeople: 0,
         nonPayingChildren: 0,
         payingChildren: 0,
         payingPeople: 0,
@@ -165,6 +204,8 @@
     getCategoryLabel,
     getConfirmedPeople,
     getRSVPMetrics,
+    getPersonDietaryRestrictionDetails,
+    hasPersonDietaryRestriction,
     normalizePayingAge,
     parseAgeInMonths,
   };

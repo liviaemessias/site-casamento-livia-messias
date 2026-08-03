@@ -3,7 +3,7 @@ begin;
 create table if not exists public.wedding_checklist_categories (
   id uuid primary key default gen_random_uuid(),
   name text not null,
-  color text not null default '#6f3fa7',
+  color text not null default '#5b1166',
   icon text not null default 'check-square',
   display_order integer not null default 0,
   is_active boolean not null default true,
@@ -145,7 +145,7 @@ create trigger touch_wedding_checklist_items_updated_at
 insert into public.wedding_checklist_categories
   (name, color, icon, display_order)
 values
-  ('Cerimônia', '#6f3fa7', 'church', 1),
+  ('Cerimônia', '#5b1166', 'church', 1),
   ('Recepção', '#a6607c', 'party-popper', 2),
   ('Convidados', '#3f7f8f', 'users', 3),
   ('Fornecedores', '#7b6f3f', 'handshake', 4),
@@ -458,7 +458,7 @@ $$;
 create or replace function public.admin_save_checklist_category(
   target_category_id uuid,
   submitted_name text,
-  submitted_color text default '#6f3fa7',
+  submitted_color text default '#5b1166',
   submitted_icon text default 'check-square',
   submitted_display_order integer default 0,
   submitted_is_active boolean default true
@@ -471,7 +471,7 @@ as $$
 declare
   saved_category public.wedding_checklist_categories%rowtype;
   safe_name text := nullif(btrim(submitted_name), '');
-  safe_color text := coalesce(nullif(btrim(submitted_color), ''), '#6f3fa7');
+  safe_color text := coalesce(nullif(btrim(submitted_color), ''), '#5b1166');
   safe_icon text := coalesce(nullif(btrim(submitted_icon), ''), 'check-square');
 begin
   if not public.is_admin() then

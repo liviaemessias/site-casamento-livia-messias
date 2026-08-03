@@ -75,11 +75,13 @@ administrativos.
 1. O convidado acessa `rsvp.html`.
 2. O sistema preenche o nome do convite.
 3. O convidado escolhe `Sim` ou `Não`.
-4. Pode informar e-mail, telefone, se possui restrição alimentar e mensagem.
-   Quando marca `Sim` para restrição alimentar, o campo de detalhe é liberado.
+4. Pode informar e-mail, telefone, se o convidado principal possui restrição
+   alimentar e mensagem. Quando marca `Sim` para restrição alimentar, o campo
+   de detalhe é liberado.
 5. Se houver acompanhantes disponíveis, o sistema exibe a quantidade permitida.
-6. Para cada acompanhante, são informados nome, se é criança e, quando
-   aplicável, a idade que terá na data do casamento.
+6. Para cada acompanhante, são informados nome, se é criança, restrição
+   alimentar individual e, quando aplicável, a idade que terá na data do
+   casamento.
 7. A idade da criança é selecionada em uma lista padronizada de
    `Menos de 1 ano` até `12 anos`, evitando respostas livres inconsistentes.
 8. O RSVP é criado ou atualizado na tabela `rsvps`.
@@ -89,7 +91,8 @@ administrativos.
 ## Fluxo RSVP Casal
 
 1. O sistema lê `guests.couple_members`.
-2. Cada membro do casal responde individualmente.
+2. Cada membro do casal responde presença e restrição alimentar
+   individualmente.
 3. O RSVP geral fica como `Sim` se pelo menos um membro comparecer.
 4. Se todos responderem `Não`, o RSVP geral fica como `Não`.
 5. O dashboard considera membros confirmados, acompanhantes e total esperado.
@@ -265,10 +268,18 @@ Concentra as métricas e gráficos detalhados do casamento:
 - RSVP Sim.
 - RSVP Não.
 - Total esperado.
+- Convites por origem: Noiva, Noivo e Casal.
+- Convites individuais, convites de casal, convites enviados e convites não
+  enviados.
+- Mesas totais, ativas, com vagas, lotadas e acima da capacidade.
+- Convites com mesa, sem mesa, confirmados sem mesa e ausentes ainda
+  atribuídos a mesa.
 - Convidados pagantes conforme a idade mínima configurada.
 - Total de crianças, crianças pagantes, não pagantes e sem idade válida.
 - Gráfico de distribuição das pessoas confirmadas por categoria do buffet.
 - Gráfico de distribuição de RSVPs entre confirmados, não comparecerão e pendentes.
+- Gráfico de distribuição dos convidados por origem.
+- Gráfico de situação das mesas por ocupação híbrida e status ativo/inativo.
 - Métricas clicáveis para abrir Convidados, RSVP ou Presentes com filtros aplicados quando houver filtro equivalente.
 - Presentes reservados.
 - Pagamentos informados.
@@ -287,7 +298,61 @@ Arquivo:
 admin-reports.html
 ```
 
-Centraliza os relatórios exportáveis de presença/buffet, financeiro e pendências, com formatos CSV/XLSX e seleção de colunas.
+Centraliza os relatórios exportáveis de presença/buffet, Resumo Final do Buffet,
+financeiro, ações pendentes, mapa de mesas e lista para recepção, com formatos CSV/XLSX e seleção
+de colunas. A lista para recepção também possui PDF paginado, pode ser ordenada
+alfabeticamente ou agrupada por mesa e inclui somente pessoas confirmadas. O
+código de convite, as restrições alimentares e os dados financeiros não fazem
+parte dessa lista operacional. A categoria calculada pelo buffet pode ser
+incluída opcionalmente por pessoa, com os valores Pagante, Criança pagante,
+Criança não pagante ou Criança sem idade; a coluna permanece desmarcada por
+padrão para preservar uma lista de entrada mais enxuta.
+
+O Mapa de Mesas pode ser exportado em CSV e XLSX nos níveis resumido por convite
+ou detalhado por pessoa. O PDF possui uma estrutura operacional fixa, organizada
+em blocos por mesa, e respeita o modo Híbrido, Confirmado ou Planejado escolhido
+no modal. Cada bloco informa situação, capacidade, ocupação, vagas, localização,
+observações e pessoas consideradas. Convidados ainda não alocados aparecem ao
+final em um bloco Sem mesa. A seleção de colunas do modal afeta somente CSV e
+XLSX.
+
+O Relatório Final do Buffet é próprio para envio ao fornecedor e considera
+somente pessoas com presença confirmada. A exportação XLSX possui quatro abas:
+Resumo, Pessoas Confirmadas, Resumo por Mesa e Restrições Alimentares. O resumo
+inclui pessoas confirmadas, pagantes, adultos pagantes, total de crianças,
+crianças pagantes, não pagantes e sem idade, regra etária aplicada, quantidade
+de convites com restrição, RSVPs pendentes e confirmados sem mesa. A aba por
+mesa também apresenta localização, observações e os totais de cada categoria.
+
+Há dois PDFs: um resumo, com os totais no cabeçalho e a relação paginada de
+restrições, e outro completo, com todas as pessoas confirmadas ordenadas por
+mesa. A restrição alimentar é tratada por pessoa do convite. O dado persistido
+em `guest_data` guarda apenas a descrição da restrição; nomes são adicionados
+somente na apresentação quando o relatório precisa diferenciar múltiplas
+pessoas.
+
+O Relatório Consolidado de Ações Pendentes reúne:
+
+- convites ainda não enviados e RSVPs sem resposta;
+- convidados confirmados sem mesa;
+- mesas ativas acima da capacidade no modo híbrido;
+- mesas inativas que ainda possuem convidados;
+- convidados inativos ou com ausência confirmada que continuam em mesas;
+- crianças confirmadas sem idade válida para o cálculo do buffet;
+- reservas e pagamentos de presentes ou cotas que ainda exigem ação.
+
+Linhas idênticas são consolidadas para impedir duplicidade na exportação quando
+a origem dos dados apresenta registros repetidos.
+
+O Checklist Operacional Final pode reunir essas pendências automáticas e as
+tarefas não concluídas do Checklist do Casamento. Antes da exportação, é possível
+escolher entre tudo consolidado, somente pendências automáticas ou somente
+tarefas do checklist. A exportação está disponível em XLSX e PDF e apresenta
+origem, área, prioridade, responsável, status, prazo, período e ação sugerida.
+Tarefas atrasadas e ações de prioridade alta aparecem primeiro e recebem
+destaque visual. Tarefas já concluídas não entram no documento. A seleção de
+colunas de Ações Pendentes afeta apenas as exportações CSV e XLSX desse relatório,
+sem alterar as colunas operacionais do checklist final.
 
 ### Gestão De Presentes
 
@@ -344,10 +409,16 @@ Permite:
 - Editar convidados.
 - Ativar/desativar convidados.
 - Marcar convites como enviados ou não enviados.
+- Classificar cada convite como convidado da Noiva, do Noivo ou do Casal.
+- Definir, trocar ou remover a mesa do convite pelo modal de detalhes do
+  convidado.
+- Registrar observação específica do convidado na mesa ao definir ou trocar a
+  atribuição.
 - Copiar código de convite.
 - Preencher RSVP manual.
-- Exportar CSV dos convidados filtrados e ordenados, incluindo o status de envio do convite.
-- Filtrar por busca textual, status, RSVP, envio do convite e tipo de convite.
+- Exportar CSV dos convidados filtrados e ordenados, incluindo o status de envio do convite, convidado de e mesa.
+- Filtrar por busca textual, status, RSVP, envio do convite, tipo de convite,
+  convidado de e mesa, incluindo `Com mesa`, `Sem mesa` e mesa específica.
 - Ordenar por nome, tipo, acompanhantes, confirmado, convite enviado, status, código, último acesso e acessos.
 - Ver contador de resultados e limpar filtros.
 
@@ -364,11 +435,54 @@ Permite:
 - Visualizar confirmações.
 - Consultar acompanhantes.
 - Consultar restrições e mensagens.
+- Consultar a mesa atual do convite.
+- Acessar `Gerenciar Mesa`, que abre o detalhe do convidado correspondente para
+  definir, trocar ou remover mesa.
 - Remover RSVP.
 - Exportar CSV dos RSVPs filtrados e ordenados.
-- Filtrar por busca textual, presença, acompanhantes e categorias do buffet.
+- Filtrar por busca textual, presença, acompanhantes, categorias do buffet e
+  mesa, incluindo `Com mesa`, `Sem mesa` e mesa específica.
 - Ordenar por convidado, presença, quantidade de acompanhantes e data de atualização.
 - Ver contador de resultados e limpar filtros.
+
+### Gestão De Mesas
+
+Arquivo:
+
+```text
+admin-tables.html
+```
+
+Permite:
+
+- Criar, editar, detalhar, excluir e ordenar mesas da recepção.
+- Definir capacidade, localização, observações e status ativo/inativo.
+- Ativar ou desativar uma mesa pelo modal de detalhes, usando RPC dedicada.
+- Atribuir, trocar e remover convidados das mesas; a troca pode ser feita pelos
+  cards da página de Mesas, pelo modal de detalhes da mesa ou pelo detalhe do
+  convidado.
+- Exibir observações específicas do convidado na mesa por indicador discreto e
+  modal de leitura.
+- Alternar a visualização de ocupação entre Planejado, Confirmado e Híbrido.
+- Filtrar por busca, situação da mesa, incluindo `Ativas`, `Lotadas` e `Acima
+  da capacidade`, origem do convite e status do convidado.
+- Exportar CSV com mesa, capacidade, ocupações, convidados atribuídos,
+  presença no RSVP e observação do convidado na mesa.
+
+Regras de contagem:
+
+- Planejado: usa o tamanho máximo do convite, considerando casal/individual e
+  acompanhantes permitidos.
+- Confirmado: usa apenas pessoas confirmadas no RSVP.
+- Híbrido: usa Confirmado quando já existe RSVP e Planejado quando o convite
+  ainda não respondeu.
+- Convidados inativos permanecem visíveis se já estiverem atribuídos a uma mesa,
+  mas não entram na ocupação.
+- Convidados atribuídos a uma mesa que responderam RSVP como ausência ficam
+  sinalizados com `Não vai`; no modo Confirmado contam como zero.
+- O filtro `Lotadas` inclui mesas exatamente lotadas e mesas acima da
+  capacidade. O filtro `Acima da capacidade` restringe apenas as mesas
+  excedidas.
 
 ### Checklist Do Casamento
 

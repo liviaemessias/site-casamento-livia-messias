@@ -371,6 +371,15 @@ begin
       using errcode = '42501';
   end if;
 
+  if exists (
+    select 1
+    from public.financial_expenses
+    where vendor_id = target_vendor_id
+  ) then
+    raise exception 'Vendor is linked to financial expenses and cannot be deleted.'
+      using errcode = '23503';
+  end if;
+
   delete from public.wedding_vendors
   where id = target_vendor_id;
 

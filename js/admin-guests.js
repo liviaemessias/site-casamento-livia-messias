@@ -8,11 +8,15 @@ function setElementVisibility(element, visible) {
 
 let editingGuest = null;
 let invitationMessageGuest = null;
+let selectedTableGuest = null;
 let selectedRSVPGuest = null;
 let selectedExistingRSVP = null;
 let cachedAdminRSVPCompanions = [];
 let cachedGuests = [];
+let cachedGuestTables = [];
+let cachedGuestTableAssignments = [];
 let visibleGuests = [];
+let shouldOpenGuestFromUrl = true;
 let guestSortState = {
   key: "name",
   direction: "asc",
@@ -23,6 +27,8 @@ const guestStatusFilter = document.getElementById("guestStatusFilter");
 const guestConfirmedFilter = document.getElementById("guestConfirmedFilter");
 const guestInviteSentFilter = document.getElementById("guestInviteSentFilter");
 const guestTypeFilter = document.getElementById("guestTypeFilter");
+const guestSideFilter = document.getElementById("guestSideFilter");
+const guestTableFilter = document.getElementById("guestTableFilter");
 const guestFilterCount = document.getElementById("guestFilterCount");
 const refreshGuestsButton = document.getElementById("refreshGuestsButton");
 const exportGuestsButton = document.getElementById("exportGuestsButton");
@@ -36,6 +42,7 @@ const closeGuestModalButton = document.getElementById("closeGuestModalButton");
 const guestForm = document.getElementById("guestForm");
 const guestModalTitle = document.getElementById("guestModalTitle");
 const guestInviteTypeInput = document.getElementById("guestInviteTypeInput");
+const guestSideInput = document.getElementById("guestSideInput");
 const guestInviteSentInput = document.getElementById("guestInviteSentInput");
 const coupleFields = document.getElementById("coupleFields");
 const invitationMessageModal = document.getElementById(
@@ -74,6 +81,9 @@ const adminRSVPGuestCountInput = document.getElementById(
   "adminRSVPGuestCountInput",
 );
 const adminRSVPGuestFields = document.getElementById("adminRSVPGuestFields");
+const adminRSVPPrimaryFoodSection = document.getElementById(
+  "adminRSVPPrimaryFoodSection",
+);
 const adminRSVPFoodRestrictionInput = document.getElementById(
   "adminRSVPFoodRestrictionInput",
 );
@@ -89,16 +99,93 @@ const closeGuestDetailsModalButton = document.getElementById(
 );
 const guestDetailsTitle = document.getElementById("guestDetailsTitle");
 const guestDetailsContent = document.getElementById("guestDetailsContent");
+const guestTableModal = document.getElementById("guestTableModal");
+const closeGuestTableModalButton = document.getElementById(
+  "closeGuestTableModalButton",
+);
+const guestTableModalTitle = document.getElementById("guestTableModalTitle");
+const guestTableForm = document.getElementById("guestTableForm");
+const guestTableInput = document.getElementById("guestTableInput");
+const guestTableNoteInput = document.getElementById("guestTableNoteInput");
 const { formatDate } = AdminCommon;
 const showAdminToast = AdminCommon.showToast;
 const { escapeAttribute, replaceSafeContent, safeText } = SecurityUtils;
 
 function hasDietaryRestriction(rsvp) {
+  const people = [
+    rsvp?.guest_data,
+    ...(rsvp?.guest_data?.members || []),
+    ...(rsvp?.guest_data?.companions || []),
+  ];
+
+  if (people.some((person) => hasPersonDietaryRestriction(person))) {
+    return true;
+  }
+
   if (typeof rsvp?.food_restriction === "boolean") {
     return rsvp.food_restriction;
   }
 
   return Boolean(String(rsvp?.food || "").trim());
+}
+
+function hasPersonDietaryRestriction(person) {
+  if (typeof person?.food_restriction === "boolean") {
+    return person.food_restriction;
+  }
+
+  return Boolean(String(person?.food || "").trim());
+}
+
+function normalizeDietaryRestrictionText(food, personName = "") {
+  const text = String(food || "").trim();
+  const name = String(personName || "").trim();
+
+  if (name && text.toLowerCase().startsWith(`${name.toLowerCase()}:`)) {
+    return text.slice(name.length + 1).trim();
+  }
+
+  return text;
+}
+
+function getPersonDietaryRestrictionDetails(person) {
+  return hasPersonDietaryRestriction(person)
+    ? normalizeDietaryRestrictionText(person?.food, person?.name)
+    : "";
+}
+
+function normalizePersonDietaryRestriction(person) {
+  const hasRestriction = person?.food_restriction === "Sim" ||
+    person?.food_restriction === true;
+  const food = hasRestriction
+    ? normalizeDietaryRestrictionText(person?.food, person?.name)
+    : "";
+
+  return {
+    food,
+    food_restriction: Boolean(food),
+  };
+}
+
+function getPeopleWithDietaryRestriction({ companions = [], members = [], primary = null }) {
+  return [primary, ...members, ...companions]
+    .filter(Boolean)
+    .filter((person) => person.presence !== "Não")
+    .filter((person) => hasPersonDietaryRestriction(person))
+    .map((person) => ({
+      name: person.name || "Sem nome",
+      food: getPersonDietaryRestrictionDetails(person),
+    }));
+}
+
+function buildFoodSummary(people) {
+  return people
+    .map((person) =>
+      person.food
+        ? `${person.name}: ${person.food}`
+        : `${person.name}: Sim, sem detalhes informados`,
+    )
+    .join("; ");
 }
 
 function updateAdminRSVPFoodVisibility() {
@@ -111,6 +198,20 @@ function updateAdminRSVPFoodVisibility() {
 
     if (!hasRestriction) {
       adminRSVPFoodInput.value = "";
+    }
+  }
+}
+
+function updateAdminPersonFoodVisibility(select, detailsGroup, input) {
+  const hasRestriction = select?.value === "Sim";
+
+  setElementVisibility(detailsGroup, hasRestriction);
+
+  if (input) {
+    input.required = hasRestriction;
+
+    if (!hasRestriction) {
+      input.value = "";
     }
   }
 }
@@ -135,6 +236,8 @@ function applyGuestFiltersFromUrl() {
   setFilterValueFromParam(guestConfirmedFilter, params, "confirmed");
   setFilterValueFromParam(guestInviteSentFilter, params, "invite_sent");
   setFilterValueFromParam(guestTypeFilter, params, "type");
+  setFilterValueFromParam(guestSideFilter, params, "side");
+  setFilterValueFromParam(guestTableFilter, params, "table");
 }
 
 function normalizeText(value) {
@@ -193,6 +296,8 @@ function renderAdminIcon(name) {
       '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
     eye:
       '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+    layoutGrid:
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>',
     messenger:
       '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-8.7 8.5 9.3 9.3 0 0 1-2.6-.4L4 22l1.2-4.4A8.2 8.2 0 0 1 3 11.5 8.4 8.4 0 0 1 11.7 3 8.4 8.4 0 0 1 21 11.5z"/><path d="m7.8 13.2 2.6-2.8 2.4 2.2 3.4-3.7"/></svg>',
     message:
@@ -201,6 +306,8 @@ function renderAdminIcon(name) {
       '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v10"/><path d="M18.4 6.6a9 9 0 1 1-12.8 0"/></svg>',
     rsvp:
       '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z"/><path d="m4 7 8 6 8-6"/></svg>',
+    x:
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>',
   };
 
   return icons[name] || "";
@@ -262,6 +369,8 @@ function renderGuestCoupleMembers(guest) {
 function renderGuestInviteMeta(guest) {
   const items = [
     { label: "Código", value: guest.invite_code, isCode: true },
+    { label: "Convidado de", value: getGuestSideLabel(guest.guest_side) },
+    { label: "Mesa", value: getGuestTableLabel(guest) },
     { label: "Convite enviado", value: getInviteSentLabel(guest) },
     { label: "Acompanhantes", value: guest.max_guests || 0 },
     { label: "Último acesso", value: formatDate(guest.last_access) },
@@ -286,6 +395,50 @@ function renderGuestInviteMeta(guest) {
 
 function getInviteTypeLabel(type) {
   return type === "couple" ? "Casal" : "Individual";
+}
+
+function getGuestSideLabel(side) {
+  const labels = {
+    bride: "Noiva",
+    couple: "Casal",
+    groom: "Noivo",
+  };
+
+  return labels[side] || "Casal";
+}
+
+function getGuestSideClass(side) {
+  const classes = {
+    bride: "side-bride",
+    couple: "side-couple",
+    groom: "side-groom",
+  };
+
+  return classes[side] || "side-couple";
+}
+
+function getGuestTableAssignment(guestId) {
+  return cachedGuestTableAssignments.find(
+    (assignment) => assignment.guest_id === guestId,
+  );
+}
+
+function getGuestTable(guestId) {
+  const assignment = getGuestTableAssignment(guestId);
+
+  if (!assignment) {
+    return null;
+  }
+
+  return cachedGuestTables.find((tableItem) => tableItem.id === assignment.table_id);
+}
+
+function getGuestTableLabel(guest) {
+  return getGuestTable(guest.id)?.name || "Sem mesa";
+}
+
+function getGuestTableAssignmentNote(guest) {
+  return String(getGuestTableAssignment(guest.id)?.notes || "").trim();
 }
 
 function formatBoolean(value) {
@@ -449,6 +602,70 @@ function renderGuestDetailsActions(guest) {
   `;
 }
 
+function renderGuestTableDetails(guest) {
+  const tableItem = getGuestTable(guest.id);
+  const assignmentNote = getGuestTableAssignmentNote(guest);
+  const items = [
+    { label: "Mesa atual", value: tableItem?.name || "Sem mesa" },
+    {
+      label: "Observação do convidado na mesa",
+      value: assignmentNote || "-",
+    },
+  ];
+
+  return `
+    <div class="admin-details-meta-grid">
+      ${items
+        .map(
+          ({ label, value }) => `
+            <div class="admin-details-meta-item">
+              <span>${safeText(label)}</span>
+              <strong>${safeText(value)}</strong>
+            </div>
+          `,
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+function renderGuestTableActions(guest) {
+  const hasTable = Boolean(getGuestTableAssignment(guest.id));
+
+  return `
+    <div class="admin-detail-action-grid">
+      <button
+        class="admin-detail-action-card"
+        data-guest-detail-action="manage-table"
+        data-guest-id="${escapeAttribute(guest.id)}"
+      >
+        <span class="admin-detail-action-icon">${renderAdminIcon("layoutGrid")}</span>
+        <span>
+          <strong>${safeText(hasTable ? "Trocar Mesa" : "Definir Mesa")}</strong>
+          <small>${safeText(hasTable ? "Altera a mesa deste convite e sua observação." : "Define uma mesa para este convite.")}</small>
+        </span>
+      </button>
+      ${
+        hasTable
+          ? `
+            <button
+              class="admin-detail-action-card danger"
+              data-guest-detail-action="remove-table"
+              data-guest-id="${escapeAttribute(guest.id)}"
+            >
+              <span class="admin-detail-action-icon">${renderAdminIcon("x")}</span>
+              <span>
+                <strong>Remover da Mesa</strong>
+                <small>Remove a definição de mesa deste convite.</small>
+              </span>
+            </button>
+          `
+          : ""
+      }
+    </div>
+  `;
+}
+
 window.openGuestDetailsModal = function (guest) {
   guestDetailsTitle.textContent = guest.name || "Detalhes do Convidado";
 
@@ -477,6 +694,12 @@ window.openGuestDetailsModal = function (guest) {
     </section>
 
     <section class="admin-details-section">
+      <span class="admin-details-label">Mesa</span>
+      ${renderGuestTableDetails(guest)}
+      ${renderGuestTableActions(guest)}
+    </section>
+
+    <section class="admin-details-section">
       <span class="admin-details-label">Convite</span>
       ${renderGuestInviteMeta(guest)}
     </section>
@@ -491,11 +714,79 @@ window.closeGuestDetailsModal = function () {
   guestDetailsModal.classList.remove("active");
 };
 
+function populateGuestTableOptions(selectedTableId = "") {
+  guestTableInput.replaceChildren(new Option("Selecione", ""));
+
+  cachedGuestTables
+    .sort((first, second) => {
+      if (first.is_active !== second.is_active) {
+        return first.is_active ? -1 : 1;
+      }
+
+      return compareValues(first.display_order, second.display_order);
+    })
+    .forEach((tableItem) => {
+      const suffix = tableItem.is_active ? "" : " · Inativa";
+      guestTableInput.appendChild(
+        new Option(`${tableItem.name}${suffix}`, tableItem.id),
+      );
+    });
+
+  guestTableInput.value = selectedTableId || "";
+}
+
+function openGuestTableModal(guest) {
+  const assignment = getGuestTableAssignment(guest.id);
+
+  selectedTableGuest = guest;
+  guestTableModalTitle.textContent = assignment
+    ? `Trocar Mesa de ${guest.name}`
+    : `Definir Mesa de ${guest.name}`;
+  populateGuestTableOptions(assignment?.table_id || "");
+  guestTableNoteInput.value = String(assignment?.notes || "");
+  closeGuestDetailsModal();
+  guestTableModal.classList.add("active");
+}
+
+function closeGuestTableModal(reopenDetails = true) {
+  const guest = selectedTableGuest;
+  guestTableModal.classList.remove("active");
+  guestTableForm.reset();
+  selectedTableGuest = null;
+
+  if (reopenDetails && guest) {
+    openGuestDetailsModal(findCachedGuestById(guest.id) || guest);
+  }
+}
+
+function openGuestDetailsFromUrl() {
+  if (!shouldOpenGuestFromUrl) {
+    return;
+  }
+
+  shouldOpenGuestFromUrl = false;
+
+  const guestId = getAdminPageParams().get("guest");
+  const guest = guestId ? findCachedGuestById(guestId) : null;
+
+  if (guest) {
+    openGuestDetailsModal(guest);
+  }
+}
+
 async function loadGuestsAdmin() {
-  const { data, error } = await supabaseClient
-    .from("guests")
-    .select("*")
-    .order("name");
+  const [
+    guestsResult,
+    tablesResult,
+    assignmentsResult,
+  ] = await Promise.all([
+    supabaseClient.from("guests").select("*").order("name"),
+    supabaseClient.rpc("admin_list_wedding_tables"),
+    supabaseClient.rpc("admin_list_wedding_table_assignments"),
+  ]);
+
+  const error =
+    guestsResult.error || tablesResult.error || assignmentsResult.error;
 
   if (error) {
     console.error(error);
@@ -503,8 +794,41 @@ async function loadGuestsAdmin() {
     return;
   }
 
-  cachedGuests = data || [];
+  cachedGuests = guestsResult.data || [];
+  cachedGuestTables = tablesResult.data || [];
+  cachedGuestTableAssignments = assignmentsResult.data || [];
+  updateGuestTableFilter();
   applyGuestFilters();
+  openGuestDetailsFromUrl();
+}
+
+function updateGuestTableFilter() {
+  const currentValue = guestTableFilter?.value || "";
+
+  if (!guestTableFilter) {
+    return;
+  }
+
+  guestTableFilter.replaceChildren(
+    new Option("Todas", ""),
+    new Option("Com mesa", "assigned"),
+    new Option("Sem mesa", "unassigned"),
+  );
+
+  cachedGuestTables
+    .filter((tableItem) => tableItem.is_active)
+    .sort((first, second) => compareValues(first.display_order, second.display_order))
+    .forEach((tableItem) => {
+      guestTableFilter.appendChild(new Option(tableItem.name, tableItem.id));
+    });
+
+  if (
+    currentValue === "assigned" ||
+    currentValue === "unassigned" ||
+    cachedGuestTables.some((tableItem) => tableItem.id === currentValue)
+  ) {
+    guestTableFilter.value = currentValue;
+  }
 }
 
 function renderGuestsTable(guests) {
@@ -527,6 +851,16 @@ function renderGuestsTable(guests) {
             <strong class="guest-table-name">${safeText(guest.name)}</strong>
             <span class="admin-muted guest-table-type">
               ${safeText(getInviteTypeLabel(guest.invite_type))}
+            </span>
+            <span
+              class="guest-table-side ${safeText(getGuestSideClass(guest.guest_side))}"
+              title="Convidado de: ${safeText(getGuestSideLabel(guest.guest_side))}"
+            >
+              <span class="guest-table-side-dot" aria-hidden="true"></span>
+              ${safeText(getGuestSideLabel(guest.guest_side))}
+            </span>
+            <span class="admin-muted guest-table-meta">
+              ${safeText(getGuestTableLabel(guest))}
             </span>
           </td>
           <td>${guest.max_guests || 0}</td>
@@ -572,13 +906,18 @@ function applyGuestFilters() {
   const confirmed = guestConfirmedFilter?.value || "";
   const inviteSent = guestInviteSentFilter?.value || "";
   const type = guestTypeFilter?.value || "";
+  const side = guestSideFilter?.value || "";
+  const table = guestTableFilter?.value || "";
 
   const filteredGuests = cachedGuests.filter((guest) => {
+    const tableItem = getGuestTable(guest.id);
     const searchable = normalizeText(
       [
         guest.name,
         guest.invite_code,
         guest.invite_type,
+        getGuestSideLabel(guest.guest_side),
+        tableItem?.name,
         ...(guest.couple_members || []).map((member) => member.name),
       ].join(" "),
     );
@@ -593,13 +932,23 @@ function applyGuestFilters() {
       !inviteSent ||
       (inviteSent === "sent" ? guest.invite_sent : !guest.invite_sent);
     const matchesType = !type || guest.invite_type === type;
+    const matchesSide = !side || (guest.guest_side || "couple") === side;
+    const matchesTable =
+      !table ||
+      (table === "assigned"
+        ? Boolean(tableItem)
+        : table === "unassigned"
+          ? !tableItem
+          : tableItem?.id === table);
 
     return (
       matchesSearch &&
       matchesStatus &&
       matchesConfirmed &&
       matchesInviteSent &&
-      matchesType
+      matchesType &&
+      matchesSide &&
+      matchesTable
     );
   });
 
@@ -620,6 +969,8 @@ function exportGuestsCSV() {
   const columns = [
     { label: "Nome", value: "name" },
     { label: "Tipo", value: (guest) => getInviteTypeLabel(guest.invite_type) },
+    { label: "Convidado de", value: (guest) => getGuestSideLabel(guest.guest_side) },
+    { label: "Mesa", value: (guest) => getGuestTableLabel(guest) },
     { label: "Pessoas do casal", value: (guest) =>
       (guest.couple_members || []).map((member) => member.name).filter(Boolean),
     },
@@ -665,6 +1016,7 @@ function getGuestSortValue(guest) {
     companions: Number(guest.max_guests || 0),
     confirmed: guest.confirmed ? 1 : 0,
     inviteSent: guest.invite_sent ? 1 : 0,
+    side: getGuestSideLabel(guest.guest_side),
     lastAccess: guest.last_access ? new Date(guest.last_access).getTime() : 0,
     name: guest.name,
     status: guest.active ? 1 : 0,
@@ -732,6 +1084,8 @@ function clearGuestFilters() {
     guestConfirmedFilter,
     guestInviteSentFilter,
     guestTypeFilter,
+    guestSideFilter,
+    guestTableFilter,
   ].forEach((filter) => {
     if (filter) {
       filter.value = "";
@@ -747,6 +1101,7 @@ function openGuestModal() {
   guestForm.reset();
   setElementVisibility(coupleFields, false);
   document.getElementById("guestMaxGuestsInput").value = 0;
+  guestSideInput.value = "couple";
   guestInviteSentInput.checked = false;
   guestModal.classList.add("active");
 }
@@ -760,6 +1115,7 @@ window.openEditGuestModal = function (guest) {
   guestModalTitle.textContent = "Editar Convidado";
   document.getElementById("guestNameInput").value = guest.name || "";
   guestInviteTypeInput.value = guest.invite_type || "individual";
+  guestSideInput.value = guest.guest_side || "couple";
   document.getElementById("guestMaxGuestsInput").value = guest.max_guests || 0;
   guestInviteSentInput.checked = Boolean(guest.invite_sent);
   if (guest.invite_type === "couple") {
@@ -1030,6 +1386,59 @@ window.toggleGuestInviteSent = async function (guestId, nextInviteSent) {
   await loadGuestsAdmin();
 };
 
+async function saveGuestTable(event) {
+  event.preventDefault();
+
+  if (!selectedTableGuest || !guestTableInput.value) {
+    return;
+  }
+
+  const guestId = selectedTableGuest.id;
+  const previousTableId = getGuestTableAssignment(guestId)?.table_id || "";
+  const selectedTableId = guestTableInput.value;
+  const { error } = await supabaseClient.rpc("admin_assign_guest_to_table", {
+    submitted_notes: guestTableNoteInput.value,
+    target_guest_id: guestId,
+    target_table_id: selectedTableId,
+  });
+
+  if (error) {
+    console.error(error);
+    showAdminToast("⚠️ Não foi possível salvar a mesa do convidado");
+    return;
+  }
+
+  showAdminToast(
+    !previousTableId
+      ? "💜 Mesa do convidado definida!"
+      : previousTableId !== selectedTableId
+        ? "💜 Convidado trocado de mesa!"
+        : "💜 Observação do convidado na mesa atualizada!",
+  );
+  await loadGuestsAdmin();
+  closeGuestTableModal();
+}
+
+async function removeGuestFromTable(guest) {
+  if (!guest || !confirm(`Remover "${guest.name}" da mesa?`)) {
+    return;
+  }
+
+  const { error } = await supabaseClient.rpc("admin_remove_guest_from_table", {
+    target_guest_id: guest.id,
+  });
+
+  if (error) {
+    console.error(error);
+    showAdminToast("⚠️ Não foi possível remover o convidado da mesa");
+    return;
+  }
+
+  showAdminToast("💜 Convidado removido da mesa!");
+  await loadGuestsAdmin();
+  openGuestDetailsModal(findCachedGuestById(guest.id) || guest);
+}
+
 window.copyInviteCode = async function (code) {
   try {
     await navigator.clipboard.writeText(code);
@@ -1047,6 +1456,8 @@ function handleGuestAction(action, guestId, button) {
     (action === "details" ||
       action === "edit" ||
       action === "rsvp" ||
+      action === "manage-table" ||
+      action === "remove-table" ||
       action === "toggle-invite-sent" ||
       action === "invitation-message") &&
     !guest
@@ -1096,6 +1507,16 @@ function handleGuestAction(action, guestId, button) {
   if (action === "rsvp") {
     closeGuestDetailsModal();
     openAdminRSVPModal(guest);
+    return;
+  }
+
+  if (action === "manage-table") {
+    openGuestTableModal(guest);
+    return;
+  }
+
+  if (action === "remove-table") {
+    removeGuestFromTable(guest);
   }
 }
 
@@ -1121,6 +1542,19 @@ function getAdminRSVPCompanions() {
   const count = Number(adminRSVPGuestCountInput.value || 0);
 
   for (let i = 1; i <= count; i++) {
+    const dietaryRestriction = normalizePersonDietaryRestriction({
+      food:
+        document.querySelector(`.admin-rsvp-companion-food[data-index="${i}"]`)
+          ?.value || "",
+      food_restriction:
+        document.querySelector(
+          `.admin-rsvp-companion-food-restriction[data-index="${i}"]`,
+        )?.value || "Não",
+      name:
+        document.querySelector(`.admin-rsvp-companion-name[data-index="${i}"]`)
+          ?.value || "",
+    });
+
     companions.push({
       name:
         document.querySelector(`.admin-rsvp-companion-name[data-index="${i}"]`)
@@ -1131,6 +1565,7 @@ function getAdminRSVPCompanions() {
       age:
         document.querySelector(`.admin-rsvp-companion-age[data-index="${i}"]`)
           ?.value || "",
+      ...dietaryRestriction,
     });
   }
 
@@ -1148,6 +1583,64 @@ function createAdminFormGroup(labelText, field) {
   return group;
 }
 
+function createAdminFoodRestrictionFields({
+  detailsClassName = "",
+  foodClassName,
+  foodValue = "",
+  hasRestriction = false,
+  index,
+  restrictionClassName,
+}) {
+  const restrictionSelect = document.createElement("select");
+  const noOption = document.createElement("option");
+  const yesOption = document.createElement("option");
+  const foodInput = document.createElement("input");
+  const detailsGroup = document.createElement("div");
+
+  restrictionSelect.className = restrictionClassName;
+  restrictionSelect.dataset.index = index;
+  noOption.value = "Não";
+  noOption.textContent = "Não";
+  noOption.selected = !hasRestriction;
+  yesOption.value = "Sim";
+  yesOption.textContent = "Sim";
+  yesOption.selected = hasRestriction;
+  restrictionSelect.append(noOption, yesOption);
+
+  foodInput.type = "text";
+  foodInput.className = foodClassName;
+  foodInput.dataset.index = index;
+  foodInput.value = foodValue;
+  foodInput.placeholder =
+    "Ex.: intolerância à lactose ou alergia a frutos do mar";
+  foodInput.required = hasRestriction;
+
+  detailsGroup.className = [
+    "admin-form-group",
+    detailsClassName,
+    hasRestriction ? "" : "is-hidden",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  detailsGroup.hidden = !hasRestriction;
+  detailsGroup.dataset.index = index;
+  detailsGroup.append(
+    Object.assign(document.createElement("label"), {
+      textContent: "Qual restrição alimentar?",
+    }),
+    foodInput,
+  );
+
+  restrictionSelect.addEventListener("change", () => {
+    updateAdminPersonFoodVisibility(restrictionSelect, detailsGroup, foodInput);
+  });
+
+  return [
+    createAdminFormGroup("Possui restrição alimentar?", restrictionSelect),
+    detailsGroup,
+  ];
+}
+
 function createAdminRSVPCompanionField(index, companion = {}) {
   const wrapper = document.createElement("div");
   const title = document.createElement("h4");
@@ -1160,6 +1653,11 @@ function createAdminRSVPCompanionField(index, companion = {}) {
   const ageSelect = document.createElement("select");
   const help = document.createElement("small");
   const isChild = companion.is_child === "Sim";
+  const dietaryRestriction = normalizePersonDietaryRestriction({
+    food: companion.food,
+    food_restriction: companion.food_restriction,
+    name: companion.name,
+  });
 
   wrapper.className = "admin-rsvp-companion-card";
   title.textContent = `Acompanhante ${index}`;
@@ -1199,6 +1697,14 @@ function createAdminRSVPCompanionField(index, companion = {}) {
     createAdminFormGroup("Nome", nameInput),
     createAdminFormGroup("É criança?", childSelect),
     ageGroup,
+    ...createAdminFoodRestrictionFields({
+      detailsClassName: "admin-rsvp-companion-food-group",
+      foodClassName: "admin-rsvp-companion-food",
+      foodValue: dietaryRestriction.food,
+      hasRestriction: dietaryRestriction.food_restriction,
+      index,
+      restrictionClassName: "admin-rsvp-companion-food-restriction",
+    }),
   );
 
   return wrapper;
@@ -1318,6 +1824,7 @@ window.openAdminRSVPModal = async function (selectedGuest) {
   if (selectedGuest.invite_type === "couple") {
     setElementVisibility(adminRSVPPresenceGroup, false);
     setElementVisibility(adminRSVPCoupleMembers, true);
+    setElementVisibility(adminRSVPPrimaryFoodSection, false);
 
     const members = selectedGuest.couple_members || [];
     const existingMembers = data?.guest_data?.members || [];
@@ -1326,10 +1833,18 @@ window.openAdminRSVPModal = async function (selectedGuest) {
 
     members.forEach((member, index) => {
       const existingPresence = existingMembers[index]?.presence || "Sim";
+      const dietaryRestriction = normalizePersonDietaryRestriction({
+        food: existingMembers[index]?.food || member.food,
+        food_restriction:
+          existingMembers[index]?.food_restriction ?? member.food_restriction,
+        name: member.name,
+      });
+      const wrapper = document.createElement("div");
       const select = document.createElement("select");
       const yesOption = document.createElement("option");
       const noOption = document.createElement("option");
 
+      wrapper.className = "admin-rsvp-companion-card";
       select.className = "admin-rsvp-member-presence";
       select.dataset.index = index;
       yesOption.value = "Sim";
@@ -1339,9 +1854,21 @@ window.openAdminRSVPModal = async function (selectedGuest) {
       noOption.textContent = "Não";
       noOption.selected = existingPresence === "Não";
       select.append(yesOption, noOption);
-      adminRSVPCoupleMembers.appendChild(
-        createAdminFormGroup(member.name || "Sem nome", select),
+      wrapper.append(
+        Object.assign(document.createElement("h4"), {
+          textContent: member.name || "Sem nome",
+        }),
+        createAdminFormGroup("Presença", select),
+        ...createAdminFoodRestrictionFields({
+          detailsClassName: "admin-rsvp-member-food-group",
+          foodClassName: "admin-rsvp-member-food",
+          foodValue: dietaryRestriction.food,
+          hasRestriction: dietaryRestriction.food_restriction,
+          index,
+          restrictionClassName: "admin-rsvp-member-food-restriction",
+        }),
       );
+      adminRSVPCoupleMembers.appendChild(wrapper);
     });
 
     document
@@ -1355,6 +1882,7 @@ window.openAdminRSVPModal = async function (selectedGuest) {
   } else {
     setElementVisibility(adminRSVPPresenceGroup, true);
     setElementVisibility(adminRSVPCoupleMembers, false);
+    setElementVisibility(adminRSVPPrimaryFoodSection, true);
     adminRSVPPresenceInput.value = data?.presence || "Sim";
   }
 
@@ -1376,11 +1904,17 @@ window.openAdminRSVPModal = async function (selectedGuest) {
   }
 
   if (adminRSVPFoodRestrictionInput) {
-    adminRSVPFoodRestrictionInput.value = hasDietaryRestriction(data)
-      ? "Sim"
-      : "Não";
+    const primaryDietaryRestriction = normalizePersonDietaryRestriction({
+      food: data?.guest_data?.food || data?.food,
+      food_restriction:
+        data?.guest_data?.food_restriction ?? hasDietaryRestriction(data),
+      name: selectedGuest.name,
+    });
+
+    adminRSVPFoodRestrictionInput.value =
+      primaryDietaryRestriction.food_restriction ? "Sim" : "Não";
+    adminRSVPFoodInput.value = primaryDietaryRestriction.food;
   }
-  adminRSVPFoodInput.value = data?.food || "";
   updateAdminRSVPFoodVisibility();
   adminRSVPMessageInput.value = data?.message || "";
   adminRSVPModal.classList.add("active");
@@ -1410,6 +1944,7 @@ guestForm.addEventListener("submit", async (event) => {
   const payload = {
     name,
     invite_type: inviteType,
+    guest_side: guestSideInput.value || "couple",
     couple_members: coupleMembers,
     max_guests: maxGuests,
     invite_sent: guestInviteSentInput.checked,
@@ -1423,6 +1958,7 @@ guestForm.addEventListener("submit", async (event) => {
         p_couple_members: payload.couple_members,
         p_max_guests: payload.max_guests,
         p_invite_sent: payload.invite_sent,
+        p_guest_side: payload.guest_side,
       })
     : await supabaseClient.rpc("create_guest_with_invite_code", {
         p_name: payload.name,
@@ -1430,6 +1966,7 @@ guestForm.addEventListener("submit", async (event) => {
         p_couple_members: payload.couple_members,
         p_max_guests: payload.max_guests,
         p_invite_sent: payload.invite_sent,
+        p_guest_side: payload.guest_side,
       });
 
   if (result.error || result.data === false) {
@@ -1470,10 +2007,22 @@ adminRSVPForm.addEventListener("submit", async (event) => {
         document.querySelector(
           `.admin-rsvp-member-presence[data-index="${index}"]`,
         )?.value || "Não";
+      const dietaryRestriction = normalizePersonDietaryRestriction({
+        food:
+          document.querySelector(
+            `.admin-rsvp-member-food[data-index="${index}"]`,
+          )?.value || "",
+        food_restriction:
+          document.querySelector(
+            `.admin-rsvp-member-food-restriction[data-index="${index}"]`,
+          )?.value || "Não",
+        name: member.name,
+      });
 
       return {
         name: member.name,
         presence,
+        ...dietaryRestriction,
       };
     });
 
@@ -1490,21 +2039,40 @@ adminRSVPForm.addEventListener("submit", async (event) => {
     companions = [];
   }
 
+  const primaryDietaryRestriction = normalizePersonDietaryRestriction({
+    food: adminRSVPFoodInput.value || "",
+    food_restriction: adminRSVPFoodRestrictionInput?.value || "Não",
+    name: selectedRSVPGuest.name,
+  });
+  const peopleWithDietaryRestriction = getPeopleWithDietaryRestriction({
+    companions,
+    members,
+    primary: isCoupleInvite
+      ? null
+      : {
+          name: selectedRSVPGuest.name,
+          presence: finalPresence,
+          ...primaryDietaryRestriction,
+        },
+  });
+  const hasFoodRestriction = peopleWithDietaryRestriction.length > 0;
+
   const payload = {
     presence: finalPresence,
     email: adminRSVPEmailInput.value || "",
     phone: adminRSVPPhoneInput.value || "",
-    food:
-      adminRSVPFoodRestrictionInput?.value === "Sim"
-        ? adminRSVPFoodInput.value || ""
-        : "",
-    food_restriction: adminRSVPFoodRestrictionInput?.value === "Sim",
+    food: buildFoodSummary(peopleWithDietaryRestriction),
+    food_restriction: hasFoodRestriction,
     message: adminRSVPMessageInput.value || "",
     guest_data: {
       name: selectedRSVPGuest.name,
       email: adminRSVPEmailInput.value || "",
       phone: adminRSVPPhoneInput.value || "",
       guest_count: guestCount,
+      food: isCoupleInvite ? "" : primaryDietaryRestriction.food,
+      food_restriction: isCoupleInvite
+        ? false
+        : primaryDietaryRestriction.food_restriction,
       members,
       companions,
     },
@@ -1515,8 +2083,8 @@ adminRSVPForm.addEventListener("submit", async (event) => {
     submitted_presence: payload.presence,
     submitted_email: payload.email,
     submitted_phone: payload.phone,
-    submitted_food: payload.food,
-    submitted_food_restriction: payload.food_restriction,
+    submitted_food: payload.guest_data.food || "",
+    submitted_food_restriction: Boolean(payload.guest_data.food_restriction),
     submitted_message: payload.message,
     submitted_guest_data: payload.guest_data,
   });
@@ -1577,6 +2145,10 @@ invitationMessageInput.addEventListener("input", updateInvitationMessageCount);
 closeGuestDetailsModalButton.addEventListener("click", () => {
   closeGuestDetailsModal();
 });
+closeGuestTableModalButton.addEventListener("click", () => {
+  closeGuestTableModal();
+});
+guestTableForm.addEventListener("submit", saveGuestTable);
 closeAdminRSVPModalButton.addEventListener("click", closeAdminRSVPModal);
 
 [
@@ -1585,6 +2157,8 @@ closeAdminRSVPModalButton.addEventListener("click", closeAdminRSVPModal);
   guestConfirmedFilter,
   guestInviteSentFilter,
   guestTypeFilter,
+  guestSideFilter,
+  guestTableFilter,
 ].forEach((filter) => {
   filter?.addEventListener("input", applyGuestFilters);
   filter?.addEventListener("change", applyGuestFilters);
@@ -1643,6 +2217,12 @@ invitationMessageModal.addEventListener("click", (event) => {
 guestDetailsModal.addEventListener("click", (event) => {
   if (event.target === guestDetailsModal) {
     closeGuestDetailsModal();
+  }
+});
+
+guestTableModal.addEventListener("click", (event) => {
+  if (event.target === guestTableModal) {
+    closeGuestTableModal();
   }
 });
 

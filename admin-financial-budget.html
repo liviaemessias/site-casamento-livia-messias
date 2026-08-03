@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://unpkg.com https://challenges.cloudflare.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Orçamento Previsto | Financeiro | Painel Admin | Livia &amp; Messias</title>
+    <link rel="stylesheet" href="./css/style.css" />
+    <link rel="stylesheet" href="./css/admin.css" />
+  </head>
+  <body class="admin-auth-pending">
+    <main class="admin-page admin-financial-page">
+      <section class="admin-header">
+        <div>
+          <p class="section-subtitle">Painel Administrativo</p>
+          <h1>Financeiro</h1>
+        </div>
+        <button id="logoutButton" class="admin-logout">Sair</button>
+      </section>
+
+      <nav class="admin-nav" aria-label="Navegação administrativa">
+        <a class="admin-nav-link" href="./admin-dashboard.html">Dashboard</a>
+        <a class="admin-nav-link" href="./admin-guests.html">Convidados</a>
+        <a class="admin-nav-link" href="./admin-rsvps.html">RSVP</a>
+        <a class="admin-nav-link" href="./admin-gifts.html">Presentes</a>
+        <a class="admin-nav-link" href="./admin-checklist.html">Checklist</a>
+        <a class="admin-nav-link active" href="./admin-financial.html">Financeiro</a>
+        <a class="admin-nav-link" href="./admin-schedule.html">Programação</a>
+        <a class="admin-nav-link" href="./admin-vendors.html">Fornecedores</a>
+        <a class="admin-nav-link" href="./admin-settings.html">Configurações</a>
+      </nav>
+
+      <section class="admin-section">
+        <div class="admin-section-header">
+          <div>
+            <p class="section-subtitle">Planejamento financeiro</p>
+            <h2>Orçamento Previsto</h2>
+          </div>
+
+          <div class="admin-section-actions">
+            <button id="refreshFinancialButton" class="admin-action-button icon-action">
+              <i data-lucide="refresh-cw" aria-hidden="true"></i>
+              Atualizar
+            </button>
+            <button id="newBudgetItemButton" class="admin-action-button icon-action success">
+              <i data-lucide="plus" aria-hidden="true"></i>
+              Item Previsto
+            </button>
+          </div>
+        </div>
+
+        <nav class="financial-module-tabs" aria-label="Navegação do módulo financeiro">
+          <a href="./admin-financial.html">Visão Geral</a>
+          <a class="active" href="./admin-financial-budget.html">Orçamento Previsto</a>
+          <a href="./admin-financial-expenses.html">Gastos Reais</a>
+          <a href="./admin-financial-payments.html">Parcelas</a>
+          <a href="./admin-financial-base.html">Cadastros Base</a>
+        </nav>
+
+        <div class="admin-segmented-control financial-context-tabs" aria-label="Contexto financeiro">
+          <button type="button" class="active" data-financial-context="wedding">Casamento</button>
+          <button type="button" data-financial-context="honeymoon">Lua de Mel</button>
+          <button type="button" data-financial-context="all">Todos</button>
+        </div>
+
+        <div id="financialLoadStatus" class="financial-load-status" role="status" aria-live="polite"></div>
+
+        <section class="financial-budget-control-card" aria-label="Seleção de cenário do orçamento previsto">
+          <div>
+            <p class="section-subtitle">Cenário</p>
+            <h3>Escolha o cenário analisado</h3>
+            <small>Os cards e a tabela abaixo usam o cenário selecionado como referência.</small>
+          </div>
+          <div class="admin-filter-field financial-budget-scenario-filter">
+            <label for="financialBudgetScenarioFilter">Cenário do orçamento</label>
+            <select id="financialBudgetScenarioFilter"></select>
+          </div>
+        </section>
+
+        <section class="admin-grid dashboard-grid financial-budget-summary-grid" aria-label="Resumo do orçamento previsto">
+          <article class="admin-card financial-summary-card">
+            <div class="admin-card-header">
+              <span>Total Previsto</span>
+            </div>
+            <strong id="financialBudgetSummaryTotal">R$ 0,00</strong>
+            <small id="financialBudgetSummaryScope">Cenário: -</small>
+          </article>
+          <article class="admin-card financial-summary-card">
+            <div class="admin-card-header">
+              <span>Itens Ativos</span>
+            </div>
+            <strong id="financialBudgetSummaryItems">0</strong>
+            <small id="financialBudgetSummaryActiveItems">Total no cenário: 0</small>
+          </article>
+          <article class="admin-card financial-summary-card">
+            <div class="admin-card-header">
+              <span>Categorias</span>
+            </div>
+            <strong id="financialBudgetSummaryCategories">0</strong>
+            <small id="financialBudgetSummaryAverage">Média: R$ 0,00</small>
+          </article>
+          <article class="admin-card financial-summary-card">
+            <div class="admin-card-header">
+              <span>Maior Item</span>
+            </div>
+            <strong id="financialBudgetSummaryTopItem">-</strong>
+            <small id="financialBudgetSummaryTopValue">R$ 0,00</small>
+          </article>
+        </section>
+
+        <section class="admin-subsection-card">
+          <div class="admin-subsection-header">
+            <div>
+              <p class="section-subtitle">Planejamento</p>
+              <h3>Itens Previstos</h3>
+            </div>
+          </div>
+
+          <div class="admin-filters-grid financial-budget-filters">
+            <div class="admin-filter-field">
+              <label for="financialBudgetSearchInput">Buscar</label>
+              <input id="financialBudgetSearchInput" type="search" placeholder="Item, categoria, fornecedor..." />
+            </div>
+            <div class="admin-filter-field">
+              <label for="financialBudgetCategoryFilter">Categoria</label>
+              <select id="financialBudgetCategoryFilter"></select>
+            </div>
+            <div class="admin-filter-field">
+              <label for="financialBudgetStatusFilter">Status</label>
+              <select id="financialBudgetStatusFilter"></select>
+            </div>
+            <div class="admin-filter-field">
+              <label for="financialBudgetActiveFilter">Situação</label>
+              <select id="financialBudgetActiveFilter">
+                <option value="">Todos</option>
+                <option value="active">Ativos</option>
+                <option value="inactive">Inativos</option>
+              </select>
+            </div>
+            <div class="admin-filter-field">
+              <label for="financialBudgetBalanceFilter">Situação do orçamento</label>
+              <select id="financialBudgetBalanceFilter">
+                <option value="">Todos</option>
+                <option value="under">Com saldo</option>
+                <option value="over">Estourados</option>
+                <option value="even">No limite</option>
+                <option value="unlinked">Sem gasto vinculado</option>
+              </select>
+            </div>
+            <div class="admin-filter-actions">
+              <span id="financialBudgetFilterCount" class="admin-filter-count"></span>
+              <button
+                type="button"
+                id="clearFinancialBudgetFiltersButton"
+                class="admin-clear-filters"
+              >
+                Limpar Filtros
+              </button>
+            </div>
+          </div>
+
+          <div class="admin-table-wrapper">
+            <table class="admin-table financial-table" data-financial-budget-actions="true">
+              <thead>
+                <tr>
+                  <th>
+                    <button class="admin-sort-button" data-financial-budget-sort="title">
+                      Item
+                    </button>
+                  </th>
+                  <th>
+                    <button class="admin-sort-button" data-financial-budget-sort="context">
+                      Contexto
+                    </button>
+                  </th>
+                  <th>
+                    <button class="admin-sort-button" data-financial-budget-sort="scenario">
+                      Cenário
+                    </button>
+                  </th>
+                  <th>
+                    <button class="admin-sort-button" data-financial-budget-sort="amount">
+                      Valor
+                    </button>
+                  </th>
+                  <th>
+                    <button class="admin-sort-button" data-financial-budget-sort="realized">
+                      Realizado
+                    </button>
+                  </th>
+                  <th>
+                    <button class="admin-sort-button" data-financial-budget-sort="delta">
+                      Saldo / Estouro
+                    </button>
+                  </th>
+                  <th>
+                    <button class="admin-sort-button" data-financial-budget-sort="status">
+                      Status
+                    </button>
+                  </th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="financialBudgetTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <div id="financialBudgetItemModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content">
+        <div class="admin-modal-header">
+          <div>
+            <p class="section-subtitle">Financeiro</p>
+            <h2 id="financialBudgetItemModalTitle">Novo Item Previsto</h2>
+          </div>
+          <button id="closeFinancialBudgetItemModalButton" type="button" class="admin-modal-close" aria-label="Fechar">×</button>
+        </div>
+
+        <form id="financialBudgetItemForm" class="admin-form">
+          <div class="admin-form-grid">
+            <div class="admin-form-group admin-form-group-wide">
+              <label for="financialBudgetTitleInput">Item</label>
+              <input id="financialBudgetTitleInput" type="text" maxlength="180" required />
+            </div>
+            <div class="admin-form-group">
+              <label for="financialBudgetScenarioInput">Cenário</label>
+              <select id="financialBudgetScenarioInput" required></select>
+            </div>
+            <div class="admin-form-group">
+              <label for="financialBudgetCategoryInput">Categoria</label>
+              <select id="financialBudgetCategoryInput" required></select>
+            </div>
+            <div class="admin-form-group">
+              <label for="financialBudgetAmountInput">Valor Estimado</label>
+              <input id="financialBudgetAmountInput" type="text" inputmode="numeric" autocomplete="off" value="R$ 0,00" />
+            </div>
+            <div class="admin-form-group">
+              <label for="financialBudgetPriorityInput">Prioridade</label>
+              <select id="financialBudgetPriorityInput">
+                <option value="normal">Normal</option>
+                <option value="high">Alta</option>
+                <option value="low">Baixa</option>
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label for="financialBudgetStatusInput">Status</label>
+              <select id="financialBudgetStatusInput">
+                <option value="planned">Previsto</option>
+                <option value="researching">Em pesquisa</option>
+                <option value="approved">Aprovado</option>
+                <option value="replaced">Substituído</option>
+                <option value="discarded">Descartado</option>
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label for="financialBudgetOrderInput">Ordem</label>
+              <input id="financialBudgetOrderInput" type="number" step="1" />
+              <small class="admin-field-hint">Se deixar vazio, entra no final do cenário.</small>
+            </div>
+          </div>
+
+          <div class="admin-form-group">
+            <label for="financialBudgetVendorInput">Fornecedor previsto ou referência</label>
+            <input id="financialBudgetVendorInput" type="text" maxlength="180" />
+          </div>
+
+          <div class="admin-form-group">
+            <label for="financialBudgetNotesInput">Observações</label>
+            <textarea id="financialBudgetNotesInput" maxlength="900" rows="4"></textarea>
+          </div>
+
+          <label class="admin-checkbox-label">
+            <input id="financialBudgetActiveInput" type="checkbox" checked />
+            Item ativo
+          </label>
+
+          <div class="admin-modal-actions vendor-modal-actions financial-budget-item-actions">
+            <button type="submit" class="admin-save-button" id="saveFinancialBudgetItemButton">Salvar Item</button>
+            <button type="button" class="admin-action-button danger" id="deleteFinancialBudgetItemButton">Excluir Item</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="financialBudgetItemDetailsModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content admin-details-modal-content">
+        <div class="admin-modal-header">
+          <div>
+            <p class="section-subtitle">Orçamento Previsto</p>
+            <h2 id="financialBudgetItemDetailsTitle">Detalhes do Item Previsto</h2>
+          </div>
+          <button id="closeFinancialBudgetItemDetailsModalButton" type="button" class="admin-modal-close" aria-label="Fechar">×</button>
+        </div>
+
+        <div id="financialBudgetItemDetailsContent" class="admin-details-content"></div>
+
+        <section class="admin-details-section">
+          <span class="admin-details-label">Ações</span>
+          <div class="admin-detail-action-grid financial-budget-details-actions">
+            <button id="editFinancialBudgetItemDetailsButton" type="button" class="admin-detail-action-card">
+              <span class="admin-detail-action-icon">
+                <i data-lucide="edit" aria-hidden="true"></i>
+              </span>
+              <span class="admin-detail-action-text">
+                <strong>Editar item</strong>
+                <small>Abre o formulário completo do item previsto.</small>
+              </span>
+            </button>
+            <button id="deleteFinancialBudgetItemDetailsButton" type="button" class="admin-detail-action-card danger">
+              <span class="admin-detail-action-icon">
+                <i data-lucide="trash-2" aria-hidden="true"></i>
+              </span>
+              <span class="admin-detail-action-text">
+                <strong>Excluir item</strong>
+                <small>Remove este item do orçamento previsto.</small>
+              </span>
+            </button>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div id="adminToast" class="admin-toast"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="./js/supabase.js"></script>
+    <script src="./js/event-config.js"></script>
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+    <script src="./js/admin-common.js"></script>
+    <script src="./js/admin-bootstrap.js"></script>
+  </body>
+</html>

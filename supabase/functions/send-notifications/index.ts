@@ -3,6 +3,7 @@ import nodemailer from "nodemailer";
 
 const MAX_EVENTS_PER_RUN = 10;
 const MAX_ERROR_LENGTH = 1000;
+const EMAIL_BRAND_COLOR = "#5b1166";
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
@@ -184,6 +185,79 @@ function getDietaryRestrictionText(payload: Record<string, unknown>) {
   }
 
   return normalizeText(payload.food, "Sim, sem detalhes informados");
+}
+
+function hasPersonDietaryRestriction(person: Record<string, unknown>) {
+  if (typeof person.food_restriction === "boolean") {
+    return person.food_restriction;
+  }
+
+  const restriction = normalizeText(person.food_restriction).toLowerCase();
+
+  return restriction === "sim" || restriction === "true" ||
+    Boolean(normalizeText(person.food));
+}
+
+function removeDuplicatedPersonPrefix(food: unknown, personName: unknown) {
+  const text = normalizeText(food);
+  const name = normalizeText(personName);
+
+  if (!text || !name) {
+    return text;
+  }
+
+  const prefix = `${name}:`;
+
+  return text.toLowerCase().startsWith(prefix.toLowerCase())
+    ? normalizeText(text.slice(prefix.length))
+    : text;
+}
+
+function getPersonDietaryRestrictionDetails(person: Record<string, unknown>) {
+  if (!hasPersonDietaryRestriction(person)) {
+    return "";
+  }
+
+  return removeDuplicatedPersonPrefix(person.food, person.name) ||
+    "Sim, sem detalhes informados";
+}
+
+function getDietaryRestrictionLines(payload: Record<string, unknown>) {
+  const guestData = getGuestData(payload);
+  const people: Array<Record<string, unknown>> = [];
+  const isCouple = payload.invite_type === "couple";
+
+  if (isCouple) {
+    people.push(...asArray(guestData.members));
+  } else {
+    people.push({
+      food: guestData.food ?? payload.food,
+      food_restriction: guestData.food_restriction ?? payload.food_restriction,
+      name: guestData.name || payload.guest_name,
+      presence: payload.presence,
+    });
+  }
+
+  people.push(...asArray(guestData.companions));
+
+  const lines = people
+    .filter((person) => normalizeText(person.presence, "Sim") !== "Não")
+    .map((person) => {
+      const details = getPersonDietaryRestrictionDetails(person);
+
+      return details
+        ? `${normalizeText(person.name, "Sem nome")}: ${details}`
+        : "";
+    })
+    .filter(Boolean);
+
+  if (lines.length) {
+    return lines;
+  }
+
+  const legacyDietaryRestriction = getDietaryRestrictionText(payload);
+
+  return legacyDietaryRestriction === "Não" ? [] : [legacyDietaryRestriction];
 }
 
 function isValidEmail(value: unknown) {
@@ -491,6 +565,13 @@ function renderList(items: string[]) {
   `;
 }
 
+function renderDietaryRestrictions(items: string[]) {
+  return `
+    <h2 style="margin:0 0 8px;color:${EMAIL_BRAND_COLOR};font-size:16px;">Restrições alimentares</h2>
+    <div style="margin-bottom:18px;">${renderList(items)}</div>
+  `;
+}
+
 function getCompanionLines(payload: Record<string, unknown>) {
   const guestData = getGuestData(payload);
 
@@ -571,7 +652,7 @@ function renderEmailShell(title: string, body: string) {
   return `
     <div style="margin:0;padding:24px;background:#f7f2fb;font-family:Arial,sans-serif;color:#2f2933;">
       <div style="max-width:640px;margin:0 auto;background:#ffffff;border-radius:12px;padding:24px;border:1px solid #eadff3;">
-        <h1 style="margin:0 0 16px;color:#6f3fa7;font-size:24px;line-height:1.25;">${escapeHtml(title)}</h1>
+        <h1 style="margin:0 0 16px;color:${EMAIL_BRAND_COLOR};font-size:24px;line-height:1.25;">${escapeHtml(title)}</h1>
         ${body}
         <p style="margin:24px 0 0;color:#6b6473;font-size:13px;">Livia & Messias 💜❤️</p>
       </div>
@@ -587,14 +668,14 @@ function buildGuestEmail(event: NotificationEvent) {
   const presence = normalizeText(payload.presence, "Não informado");
   const companions = getCompanionLines(payload);
   const members = getMemberLines(payload);
+  const dietaryRestrictions = getDietaryRestrictionLines(payload);
   const memberResponses = payload.invite_type === "couple"
     ? `
-        <h2 style="margin:0 0 8px;color:#6f3fa7;font-size:16px;">Respostas do convite</h2>
+        <h2 style="margin:0 0 8px;color:${EMAIL_BRAND_COLOR};font-size:16px;">Respostas do convite</h2>
         <div style="margin-bottom:18px;">${renderList(members)}</div>
       `
     : "";
   const intro = getGuestRsvpIntro(payload);
-  const dietaryRestriction = getDietaryRestrictionText(payload);
 
   return {
     html: renderEmailShell(
@@ -604,10 +685,10 @@ function buildGuestEmail(event: NotificationEvent) {
         <p style="margin:0 0 18px;">${escapeHtml(intro)}</p>
         <table style="width:100%;border-collapse:collapse;margin:0 0 18px;background:#fbf8fd;border-radius:8px;">
           ${renderKeyValue("Presença", presence)}
-          ${renderKeyValue("Restrição alimentar", dietaryRestriction)}
         </table>
         ${memberResponses}
-        <h2 style="margin:0 0 8px;color:#6f3fa7;font-size:16px;">Acompanhantes</h2>
+        ${renderDietaryRestrictions(dietaryRestrictions)}
+        <h2 style="margin:0 0 8px;color:${EMAIL_BRAND_COLOR};font-size:16px;">Acompanhantes</h2>
         ${renderList(companions)}
       `,
     ),
@@ -622,7 +703,7 @@ function buildAdminEmail(event: NotificationEvent) {
   const title = `[Casamento] ${prefix} 💜 - ${guestName}`;
   const companions = getCompanionLines(payload);
   const members = getMemberLines(payload);
-  const dietaryRestriction = getDietaryRestrictionText(payload);
+  const dietaryRestrictions = getDietaryRestrictionLines(payload);
 
   return {
     html: renderEmailShell(
@@ -636,12 +717,12 @@ function buildAdminEmail(event: NotificationEvent) {
           ${renderKeyValue("Presença", payload.presence)}
           ${renderKeyValue("E-mail", payload.email)}
           ${renderKeyValue("Telefone", payload.phone)}
-          ${renderKeyValue("Restrição alimentar", dietaryRestriction)}
           ${renderKeyValue("Mensagem", payload.message)}
         </table>
-        <h2 style="margin:0 0 8px;color:#6f3fa7;font-size:16px;">Membros do convite</h2>
+        ${renderDietaryRestrictions(dietaryRestrictions)}
+        <h2 style="margin:0 0 8px;color:${EMAIL_BRAND_COLOR};font-size:16px;">Membros do convite</h2>
         <div style="margin-bottom:18px;">${renderList(members)}</div>
-        <h2 style="margin:0 0 8px;color:#6f3fa7;font-size:16px;">Acompanhantes</h2>
+        <h2 style="margin:0 0 8px;color:${EMAIL_BRAND_COLOR};font-size:16px;">Acompanhantes</h2>
         ${renderList(companions)}
       `,
     ),

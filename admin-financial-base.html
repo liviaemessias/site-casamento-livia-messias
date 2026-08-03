@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://unpkg.com https://challenges.cloudflare.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cadastros Base do Financeiro | Painel Admin | Livia &amp; Messias</title>
+    <link rel="stylesheet" href="./css/style.css" />
+    <link rel="stylesheet" href="./css/admin.css" />
+  </head>
+  <body class="admin-auth-pending">
+    <main class="admin-page admin-financial-page">
+      <section class="admin-header">
+        <div>
+          <p class="section-subtitle">Painel Administrativo</p>
+          <h1>Financeiro</h1>
+        </div>
+        <button id="logoutButton" class="admin-logout">Sair</button>
+      </section>
+
+      <nav class="admin-nav" aria-label="Navegação administrativa">
+        <a class="admin-nav-link" href="./admin-dashboard.html">Dashboard</a>
+        <a class="admin-nav-link" href="./admin-guests.html">Convidados</a>
+        <a class="admin-nav-link" href="./admin-rsvps.html">RSVP</a>
+        <a class="admin-nav-link" href="./admin-gifts.html">Presentes</a>
+        <a class="admin-nav-link" href="./admin-checklist.html">Checklist</a>
+        <a class="admin-nav-link active" href="./admin-financial.html">Financeiro</a>
+        <a class="admin-nav-link" href="./admin-schedule.html">Programação</a>
+        <a class="admin-nav-link" href="./admin-vendors.html">Fornecedores</a>
+        <a class="admin-nav-link" href="./admin-settings.html">Configurações</a>
+      </nav>
+
+      <section class="admin-section">
+        <div class="admin-section-header">
+          <div>
+            <p class="section-subtitle">Configuração do módulo</p>
+            <h2>Cadastros Base</h2>
+          </div>
+
+          <div class="admin-section-actions">
+            <button id="refreshFinancialButton" class="admin-action-button icon-action">
+              <i data-lucide="refresh-cw" aria-hidden="true"></i>
+              Atualizar
+            </button>
+          </div>
+        </div>
+
+        <nav class="financial-module-tabs" aria-label="Navegação do módulo financeiro">
+          <a href="./admin-financial.html">Visão Geral</a>
+          <a href="./admin-financial-budget.html">Orçamento Previsto</a>
+          <a href="./admin-financial-expenses.html">Gastos Reais</a>
+          <a href="./admin-financial-payments.html">Parcelas</a>
+          <a class="active" href="./admin-financial-base.html">Cadastros Base</a>
+        </nav>
+
+        <div class="admin-segmented-control financial-context-tabs" aria-label="Contexto financeiro">
+          <button type="button" class="active" data-financial-context="wedding">Casamento</button>
+          <button type="button" data-financial-context="honeymoon">Lua de Mel</button>
+          <button type="button" data-financial-context="all">Todos</button>
+        </div>
+
+        <div id="financialLoadStatus" class="financial-load-status" role="status" aria-live="polite"></div>
+
+        <section class="admin-subsection-card financial-base-card">
+          <div class="admin-subsection-header">
+            <div>
+              <p class="section-subtitle">Cadastros Base</p>
+              <h3>Cenários, Categorias e Pagadores</h3>
+            </div>
+            <button id="openFinancialOrderModalButton" type="button" class="admin-action-button icon-action">
+              <i data-lucide="list-ordered" aria-hidden="true"></i>
+              Organizar Ordem
+            </button>
+          </div>
+
+          <p class="admin-modal-helper">
+            Use esta área para gerenciar os cadastros que alimentam orçamento previsto,
+            gastos reais, parcelas e relatórios financeiros.
+          </p>
+
+          <div class="financial-base-grid">
+            <div>
+              <div class="financial-base-title-row">
+                <div>
+                  <h4>Cenários</h4>
+                  <span id="financialScenariosCount" class="financial-base-count">0 cenários</span>
+                </div>
+                <button id="openFinancialScenarioModalButton" type="button" class="financial-inline-action">
+                  <i data-lucide="plus" aria-hidden="true"></i>
+                  Novo Cenário
+                </button>
+              </div>
+              <div id="financialScenariosList" class="financial-chip-list"></div>
+            </div>
+            <div>
+              <div class="financial-base-title-row">
+                <div>
+                  <h4>Categorias</h4>
+                  <span id="financialCategoriesCount" class="financial-base-count">0 categorias</span>
+                </div>
+                <button id="openFinancialCategoryModalButton" type="button" class="financial-inline-action">
+                  <i data-lucide="plus" aria-hidden="true"></i>
+                  Nova Categoria
+                </button>
+              </div>
+              <div id="financialCategoriesList" class="financial-chip-list"></div>
+            </div>
+            <div>
+              <div class="financial-base-title-row">
+                <div>
+                  <h4>Pagadores</h4>
+                  <span id="financialPayersCount" class="financial-base-count">0 pagadores</span>
+                </div>
+                <button id="openFinancialPayerModalButton" type="button" class="financial-inline-action">
+                  <i data-lucide="plus" aria-hidden="true"></i>
+                  Novo Pagador
+                </button>
+              </div>
+              <div id="financialPayersList" class="financial-chip-list"></div>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <div id="financialOrderModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content admin-details-modal-content">
+        <button id="closeFinancialOrderModalButton" type="button" class="admin-modal-close" aria-label="Fechar organização">×</button>
+        <h2>Organizar Ordem</h2>
+        <p class="admin-modal-helper">
+          Use as setas para definir a ordem de exibição dos cadastros base do Financeiro.
+        </p>
+
+        <div class="admin-form-grid financial-order-controls">
+          <div class="admin-form-group">
+            <label for="financialOrderTypeInput">Cadastro</label>
+            <select id="financialOrderTypeInput">
+              <option value="scenarios">Cenários</option>
+              <option value="categories">Categorias</option>
+              <option value="payers">Pagadores</option>
+            </select>
+          </div>
+          <div id="financialOrderContextGroup" class="admin-form-group">
+            <label for="financialOrderContextInput">Contexto</label>
+            <select id="financialOrderContextInput"></select>
+          </div>
+        </div>
+
+        <div id="financialOrderList" class="vendor-order-list" aria-label="Ordem dos cadastros financeiros"></div>
+
+        <div class="admin-modal-actions vendor-modal-actions">
+          <button id="saveFinancialOrderButton" type="button" class="admin-save-button">
+            Salvar Ordem
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="financialScenarioModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content admin-details-modal-content">
+        <div class="admin-modal-header">
+          <div>
+            <p class="section-subtitle">Financeiro</p>
+            <h2 id="financialScenarioModalTitle">Novo Cenário</h2>
+          </div>
+          <button id="closeFinancialScenarioModalButton" type="button" class="admin-modal-close" aria-label="Fechar">×</button>
+        </div>
+
+        <form id="financialScenarioForm" class="admin-form checklist-category-form">
+          <div class="admin-form-grid">
+            <div class="admin-form-group">
+              <label for="financialScenarioNameInput">Nome</label>
+              <input id="financialScenarioNameInput" type="text" maxlength="120" required />
+            </div>
+            <div class="admin-form-group">
+              <label for="financialScenarioContextInput">Contexto</label>
+              <select id="financialScenarioContextInput" required>
+                <option value="wedding">Casamento</option>
+                <option value="honeymoon">Lua de Mel</option>
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label for="financialScenarioOrderInput">Ordem</label>
+              <input id="financialScenarioOrderInput" type="number" step="1" />
+              <small class="admin-field-hint">Se deixar vazio, entra no final do contexto.</small>
+            </div>
+          </div>
+
+          <div class="admin-form-group">
+            <label for="financialScenarioDescriptionInput">Descrição</label>
+            <textarea id="financialScenarioDescriptionInput" maxlength="500" rows="3"></textarea>
+          </div>
+
+          <label class="admin-checkbox-label">
+            <input id="financialScenarioReferenceInput" type="checkbox" />
+            Cenário de referência
+          </label>
+          <small class="admin-field-hint financial-checkbox-hint">
+            O cenário de referência alimenta os cards principais e substitui o cenário de referência atual do mesmo contexto.
+          </small>
+
+          <label class="admin-checkbox-label">
+            <input id="financialScenarioActiveInput" type="checkbox" checked />
+            Cenário ativo
+          </label>
+
+          <div class="admin-modal-actions vendor-modal-actions checklist-category-actions">
+            <button type="submit" class="admin-save-button" id="saveFinancialScenarioButton">Salvar Cenário</button>
+            <button type="button" class="admin-action-button" id="cancelFinancialScenarioEditButton">Cancelar Edição</button>
+          </div>
+        </form>
+
+        <div id="financialScenarioList" class="checklist-category-list financial-category-manager-list is-hidden"></div>
+      </div>
+    </div>
+
+    <div id="financialCategoryModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content admin-details-modal-content">
+        <div class="admin-modal-header">
+          <div>
+            <p class="section-subtitle">Financeiro</p>
+            <h2 id="financialCategoryModalTitle">Nova Categoria</h2>
+          </div>
+          <button id="closeFinancialCategoryModalButton" type="button" class="admin-modal-close" aria-label="Fechar">×</button>
+        </div>
+
+        <form id="financialCategoryForm" class="admin-form checklist-category-form">
+          <div class="admin-form-grid">
+            <div class="admin-form-group">
+              <label for="financialCategoryNameInput">Nome</label>
+              <input id="financialCategoryNameInput" type="text" maxlength="120" required />
+            </div>
+            <div class="admin-form-group">
+              <label for="financialCategoryContextInput">Contexto</label>
+              <select id="financialCategoryContextInput" required>
+                <option value="wedding">Casamento</option>
+                <option value="honeymoon">Lua de Mel</option>
+                <option value="both">Compartilhado</option>
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label for="financialCategoryColorInput">Cor</label>
+              <input id="financialCategoryColorInput" type="color" />
+            </div>
+            <div class="admin-form-group">
+              <label for="financialCategoryIconInput">Ícone</label>
+              <div class="checklist-icon-picker">
+                <select id="financialCategoryIconInput"></select>
+                <span
+                  id="financialCategoryIconPreview"
+                  class="checklist-icon-preview"
+                  aria-hidden="true"
+                ></span>
+              </div>
+            </div>
+            <div class="admin-form-group">
+              <label for="financialCategoryOrderInput">Ordem</label>
+              <input id="financialCategoryOrderInput" type="number" step="1" />
+              <small class="admin-field-hint">Se deixar vazio, entra no final.</small>
+            </div>
+          </div>
+
+          <label class="admin-checkbox-label">
+            <input id="financialCategoryActiveInput" type="checkbox" checked />
+            Categoria ativa
+          </label>
+
+          <div class="admin-modal-actions vendor-modal-actions checklist-category-actions">
+            <button type="submit" class="admin-save-button" id="saveFinancialCategoryButton">Salvar Categoria</button>
+            <button type="button" class="admin-action-button" id="cancelFinancialCategoryEditButton">Cancelar Edição</button>
+          </div>
+        </form>
+
+        <div id="financialCategoryList" class="checklist-category-list financial-category-manager-list is-hidden"></div>
+      </div>
+    </div>
+
+    <div id="financialPayerModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content admin-details-modal-content">
+        <div class="admin-modal-header">
+          <div>
+            <p class="section-subtitle">Financeiro</p>
+            <h2 id="financialPayerModalTitle">Novo Pagador</h2>
+          </div>
+          <button id="closeFinancialPayerModalButton" type="button" class="admin-modal-close" aria-label="Fechar">×</button>
+        </div>
+
+        <form id="financialPayerForm" class="admin-form checklist-category-form">
+          <div class="admin-form-grid">
+            <div class="admin-form-group">
+              <label for="financialPayerNameInput">Nome</label>
+              <input id="financialPayerNameInput" type="text" maxlength="120" required />
+            </div>
+            <div class="admin-form-group">
+              <label for="financialPayerColorInput">Cor</label>
+              <input id="financialPayerColorInput" type="color" />
+            </div>
+            <div class="admin-form-group">
+              <label for="financialPayerIconInput">Ícone</label>
+              <div class="checklist-icon-picker">
+                <select id="financialPayerIconInput"></select>
+                <span
+                  id="financialPayerIconPreview"
+                  class="checklist-icon-preview"
+                  aria-hidden="true"
+                ></span>
+              </div>
+            </div>
+            <div class="admin-form-group">
+              <label for="financialPayerOrderInput">Ordem</label>
+              <input id="financialPayerOrderInput" type="number" step="1" />
+              <small class="admin-field-hint">Se deixar vazio, entra no final.</small>
+            </div>
+          </div>
+
+          <div class="admin-form-group">
+            <label for="financialPayerDescriptionInput">Descrição</label>
+            <textarea id="financialPayerDescriptionInput" maxlength="500" rows="3"></textarea>
+          </div>
+
+          <label class="admin-checkbox-label">
+            <input id="financialPayerActiveInput" type="checkbox" checked />
+            Pagador ativo
+          </label>
+
+          <div class="admin-modal-actions vendor-modal-actions checklist-category-actions">
+            <button type="submit" class="admin-save-button" id="saveFinancialPayerButton">Salvar Pagador</button>
+            <button type="button" class="admin-action-button" id="cancelFinancialPayerEditButton">Cancelar Edição</button>
+          </div>
+        </form>
+
+        <div id="financialPayerList" class="checklist-category-list financial-category-manager-list is-hidden"></div>
+      </div>
+    </div>
+
+    <div id="financialScenarioDetailsModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content admin-details-modal-content">
+        <div class="admin-modal-header">
+          <div>
+            <p class="section-subtitle">Cenário</p>
+            <h2 id="financialScenarioDetailsTitle">Detalhes do Cenário</h2>
+          </div>
+          <button id="closeFinancialScenarioDetailsModalButton" type="button" class="admin-modal-close" aria-label="Fechar">×</button>
+        </div>
+        <div id="financialScenarioDetailsContent" class="admin-details-content"></div>
+        <section class="admin-details-section">
+          <span class="admin-details-label">Ações</span>
+          <div class="admin-detail-action-grid">
+            <button id="editFinancialScenarioDetailsButton" type="button" class="admin-detail-action-card">
+              <span class="admin-detail-action-icon"><i data-lucide="edit" aria-hidden="true"></i></span>
+              <span class="admin-detail-action-text"><strong>Editar cenário</strong><small>Abre o formulário completo.</small></span>
+            </button>
+            <button id="deleteFinancialScenarioDetailsButton" type="button" class="admin-detail-action-card danger">
+              <span class="admin-detail-action-icon"><i data-lucide="trash-2" aria-hidden="true"></i></span>
+              <span class="admin-detail-action-text"><strong>Excluir cenário</strong><small>Remove este cenário se não estiver em uso.</small></span>
+            </button>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div id="financialCategoryDetailsModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content admin-details-modal-content">
+        <div class="admin-modal-header">
+          <div>
+            <p class="section-subtitle">Categoria</p>
+            <h2 id="financialCategoryDetailsTitle">Detalhes da Categoria</h2>
+          </div>
+          <button id="closeFinancialCategoryDetailsModalButton" type="button" class="admin-modal-close" aria-label="Fechar">×</button>
+        </div>
+        <div id="financialCategoryDetailsContent" class="admin-details-content"></div>
+        <section class="admin-details-section">
+          <span class="admin-details-label">Ações</span>
+          <div class="admin-detail-action-grid">
+            <button id="editFinancialCategoryDetailsButton" type="button" class="admin-detail-action-card">
+              <span class="admin-detail-action-icon"><i data-lucide="edit" aria-hidden="true"></i></span>
+              <span class="admin-detail-action-text"><strong>Editar categoria</strong><small>Abre o formulário completo.</small></span>
+            </button>
+            <button id="deleteFinancialCategoryDetailsButton" type="button" class="admin-detail-action-card danger">
+              <span class="admin-detail-action-icon"><i data-lucide="trash-2" aria-hidden="true"></i></span>
+              <span class="admin-detail-action-text"><strong>Excluir categoria</strong><small>Remove esta categoria se não estiver em uso.</small></span>
+            </button>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div id="financialPayerDetailsModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content admin-details-modal-content">
+        <div class="admin-modal-header">
+          <div>
+            <p class="section-subtitle">Pagador</p>
+            <h2 id="financialPayerDetailsTitle">Detalhes do Pagador</h2>
+          </div>
+          <button id="closeFinancialPayerDetailsModalButton" type="button" class="admin-modal-close" aria-label="Fechar">×</button>
+        </div>
+        <div id="financialPayerDetailsContent" class="admin-details-content"></div>
+        <section class="admin-details-section">
+          <span class="admin-details-label">Ações</span>
+          <div class="admin-detail-action-grid">
+            <button id="editFinancialPayerDetailsButton" type="button" class="admin-detail-action-card">
+              <span class="admin-detail-action-icon"><i data-lucide="edit" aria-hidden="true"></i></span>
+              <span class="admin-detail-action-text"><strong>Editar pagador</strong><small>Abre o formulário completo.</small></span>
+            </button>
+            <button id="deleteFinancialPayerDetailsButton" type="button" class="admin-detail-action-card danger">
+              <span class="admin-detail-action-icon"><i data-lucide="trash-2" aria-hidden="true"></i></span>
+              <span class="admin-detail-action-text"><strong>Excluir pagador</strong><small>Remove este pagador se não estiver em uso.</small></span>
+            </button>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div id="adminToast" class="admin-toast"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="./js/supabase.js"></script>
+    <script src="./js/event-config.js"></script>
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+    <script src="./js/admin-common.js"></script>
+    <script src="./js/admin-bootstrap.js"></script>
+  </body>
+</html>

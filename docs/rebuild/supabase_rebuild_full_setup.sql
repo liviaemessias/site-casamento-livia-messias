@@ -43,10 +43,13 @@ create table if not exists public.guests (
   access_count integer null default 0,
   last_access timestamp with time zone null,
   invite_type text null default 'individual',
+  guest_side text not null default 'couple',
   couple_members jsonb null,
 
   constraint guests_pkey primary key (id),
-  constraint guests_invite_code_key unique (invite_code)
+  constraint guests_invite_code_key unique (invite_code),
+  constraint guests_guest_side_check
+    check (guest_side in ('bride', 'groom', 'couple'))
 );
 
 create table if not exists public.rsvps (
@@ -54,8 +57,6 @@ create table if not exists public.rsvps (
   created_at timestamp with time zone null default timezone('utc'::text, now()),
   guest_id uuid null,
   presence text null,
-  food text null,
-  food_restriction boolean not null default false,
   message text null,
   guest_data jsonb null,
   email text null,
@@ -284,6 +285,277 @@ values
   ('gift_contribution_reserved', 'gift_contribution', 'Cota reservada', 'Enviado quando o convidado reserva cotas de um presente.', true, false, true, true),
   ('gift_contribution_payment_reported', 'gift_contribution', 'Pagamento de cota informado', 'Enviado quando o convidado informa pagamento de cotas.', true, false, true, true),
   ('gift_contribution_confirmed', 'gift_contribution', 'Cota confirmada', 'Enviado quando o admin confirma uma contribuição por cotas.', true, false, true, true),
+  ('gift_contribution_released', 'gift_contribution', 'Cota liberada', 'Enviado quando o admin libera uma reserva de cotas.', true, false, true, true),
+  ('gift_contribution_reminder', 'gift_contribution', 'Lembrete de cota', 'Disparo manual para lembrar uma reserva de cota pendente.', false, true, true, true)
+on conflict (event_type) do update
+set
+  event_group = excluded.event_group,
+  label = excluded.label,
+  description = excluded.description,
+  updated_at = timezone('utc'::text, now());
+
+commit;
+-- ============================================================
+--
+-- Internal rebuild component.
+-- For a clean project setup, run docs/rebuild/supabase_rebuild_full_setup.sql
+-- instead of executing this file directly.
+
+begin;
+
+create extension if not exists pgcrypto;
+
+create table if not exists public.guests (
+  id uuid not null default gen_random_uuid(),
+  created_at timestamp with time zone null default timezone('utc'::text, now()),
+  name text not null,
+  invite_code text not null,
+  max_guests integer null default 0,
+  confirmed boolean null default false,
+  invite_sent boolean not null default false,
+  active boolean null default true,
+  access_count integer null default 0,
+  last_access timestamp with time zone null,
+  invite_type text null default 'individual',
+  couple_members jsonb null,
+
+  constraint guests_pkey primary key (id),
+  constraint guests_invite_code_key unique (invite_code)
+);
+
+create table if not exists public.rsvps (
+  id uuid not null default gen_random_uuid(),
+  created_at timestamp with time zone null default timezone('utc'::text, now()),
+  guest_id uuid null,
+  presence text null,
+  message text null,
+  guest_data jsonb null,
+  email text null,
+  phone text null,
+  updated_at timestamp with time zone null default timezone('utc'::text, now()),
+
+  constraint rsvps_pkey primary key (id),
+  constraint rsvps_guest_id_fkey
+    foreign key (guest_id)
+    references public.guests(id)
+    on delete cascade
+);
+
+create table if not exists public.gifts (
+  id uuid not null default gen_random_uuid(),
+  created_at timestamp with time zone null default timezone('utc'::text, now()),
+  category text not null,
+  name text not null,
+  description text null,
+  price numeric null,
+  image_url text null,
+  status text null default 'Dispon�vel',
+  reserved_at timestamp with time zone null,
+  reserved_name text null,
+  reservation_message text null,
+  reserved_guest_id uuid null,
+  payment_status text null default 'Pendente',
+  payment_reported_at timestamp with time zone null,
+  card_payment_url text null,
+  card_payment_provider text null,
+  card_payment_reference text null,
+  purchase_mode text null default 'money',
+  external_purchase_options jsonb null default '[]'::jsonb,
+  selected_purchase_method text null,
+  selected_purchase_details jsonb null,
+  gift_type text null default 'single',
+  quota_count integer null,
+  quota_value numeric null,
+
+  constraint gifts_pkey primary key (id),
+  constraint gifts_reserved_guest_id_fkey
+    foreign key (reserved_guest_id)
+    references public.guests(id)
+    on delete set null
+);
+
+create table if not exists public.gift_contributions (
+  id uuid not null default gen_random_uuid(),
+  created_at timestamp with time zone null default timezone('utc'::text, now()),
+  gift_id uuid not null,
+  guest_id uuid null,
+  contributor_name text null,
+  message text null,
+  quota_quantity integer not null default 1,
+  quota_value numeric not null,
+  total_value numeric not null,
+  payment_status text null default 'Pendente',
+  payment_method text null default 'pix',
+  payment_reported_at timestamp with time zone null,
+  pix_code text null,
+  pix_qr_code_url text null,
+
+  constraint gift_contributions_pkey primary key (id),
+  constraint gift_contributions_gift_id_fkey
+    foreign key (gift_id)
+    references public.gifts(id)
+    on delete cascade,
+  constraint gift_contributions_guest_id_fkey
+    foreign key (guest_id)
+    references public.guests(id)
+    on delete set null,
+  constraint gift_contributions_quota_quantity_check
+    check (quota_quantity > 0)
+);
+
+create table if not exists public.settings (
+  id uuid not null default gen_random_uuid(),
+  pix_key text null,
+  whatsapp_number text null,
+  merchant_name text null,
+  merchant_city text null,
+  buffet_paying_age integer not null default 7,
+  bride_name text not null default 'Livia',
+  groom_name text not null default 'Messias',
+  wedding_date timestamptz not null default '2027-04-23 18:30:00-03',
+  rsvp_deadline date not null default '2027-03-01',
+  ceremony_name text not null default 'Santu�rio de Nossa Senhora de F�tima',
+  ceremony_address text not null default 'Av. Treze de Maio, 200 - F�tima, Fortaleza - CE, 60040-530',
+  ceremony_time time not null default '18:30',
+  reception_name text not null default 'Martha''s Buffet Conceito',
+  reception_address text not null default 'Av. Bezerra de Menezes, 531 - Parquel�ndia, Fortaleza - CE, 60325-004',
+  reception_time time not null default '21:00',
+
+  constraint settings_pkey primary key (id),
+  constraint settings_buffet_paying_age_check
+    check (buffet_paying_age between 1 and 18)
+);
+
+create table if not exists public.notification_events (
+  id uuid not null default gen_random_uuid(),
+  created_at timestamp with time zone not null default timezone('utc'::text, now()),
+  event_type text not null,
+  aggregate_type text not null,
+  aggregate_id uuid not null,
+  aggregate_version timestamp with time zone null,
+  guest_id uuid null,
+  dedupe_key text not null,
+  payload jsonb not null default '{}'::jsonb,
+  origin text not null default 'automatic',
+  status text not null default 'pending',
+  attempts integer not null default 0,
+  next_attempt_at timestamp with time zone not null default timezone('utc'::text, now()),
+  claimed_at timestamp with time zone null,
+  processed_at timestamp with time zone null,
+  failed_at timestamp with time zone null,
+  last_error text null,
+
+  constraint notification_events_pkey primary key (id),
+  constraint notification_events_guest_id_fkey
+    foreign key (guest_id)
+    references public.guests(id)
+    on delete set null,
+  constraint notification_events_dedupe_key_key unique (dedupe_key),
+  constraint notification_events_origin_check
+    check (origin in ('automatic', 'manual')),
+  constraint notification_events_status_check
+    check (status in ('pending', 'processing', 'processed', 'failed'))
+);
+
+create table if not exists public.notification_deliveries (
+  id uuid not null default gen_random_uuid(),
+  created_at timestamp with time zone not null default timezone('utc'::text, now()),
+  event_id uuid not null,
+  recipient_type text not null,
+  recipient_email text null,
+  channel text not null default 'email',
+  dedupe_key text not null,
+  status text not null default 'pending',
+  attempts integer not null default 0,
+  claimed_at timestamp with time zone null,
+  sent_at timestamp with time zone null,
+  failed_at timestamp with time zone null,
+  skipped_at timestamp with time zone null,
+  last_error text null,
+
+  constraint notification_deliveries_pkey primary key (id),
+  constraint notification_deliveries_event_id_fkey
+    foreign key (event_id)
+    references public.notification_events(id)
+    on delete cascade,
+  constraint notification_deliveries_dedupe_key_key unique (dedupe_key),
+  constraint notification_deliveries_recipient_type_check
+    check (recipient_type in ('admin', 'guest')),
+  constraint notification_deliveries_channel_check
+    check (channel in ('email')),
+  constraint notification_deliveries_status_check
+    check (status in ('pending', 'processing', 'sent', 'failed', 'skipped'))
+);
+
+create table if not exists public.notification_preferences (
+  event_type text not null,
+  event_group text not null,
+  label text not null,
+  description text null,
+  automatic_enabled boolean not null default true,
+  manual_enabled boolean not null default false,
+  admin_enabled boolean not null default true,
+  guest_enabled boolean not null default true,
+  created_at timestamp with time zone not null default timezone('utc'::text, now()),
+  updated_at timestamp with time zone not null default timezone('utc'::text, now()),
+
+  constraint notification_preferences_pkey primary key (event_type),
+  constraint notification_preferences_event_type_check
+    check (event_type <> ''),
+  constraint notification_preferences_event_group_check
+    check (event_group in ('rsvp', 'gift', 'gift_contribution', 'manual'))
+);
+
+create index if not exists notification_events_pending_idx
+  on public.notification_events (status, next_attempt_at, created_at)
+  where status = 'pending';
+
+create index if not exists notification_events_guest_pending_idx
+  on public.notification_events (guest_id, status, next_attempt_at, created_at)
+  where status = 'pending';
+
+create index if not exists notification_deliveries_event_id_idx
+  on public.notification_deliveries (event_id);
+
+-- Do not expose the tables before the final RLS policies are installed.
+alter table public.guests enable row level security;
+alter table public.rsvps enable row level security;
+alter table public.gifts enable row level security;
+alter table public.gift_contributions enable row level security;
+alter table public.settings enable row level security;
+alter table public.notification_events enable row level security;
+alter table public.notification_deliveries enable row level security;
+alter table public.notification_preferences enable row level security;
+
+revoke all on table public.guests from anon, authenticated;
+revoke all on table public.rsvps from anon, authenticated;
+revoke all on table public.gifts from anon, authenticated;
+revoke all on table public.gift_contributions from anon, authenticated;
+revoke all on table public.settings from anon, authenticated;
+revoke all on table public.notification_events from anon, authenticated;
+revoke all on table public.notification_deliveries from anon, authenticated;
+revoke all on table public.notification_preferences from anon, authenticated;
+
+insert into public.notification_preferences (
+  event_type,
+  event_group,
+  label,
+  description,
+  automatic_enabled,
+  manual_enabled,
+  admin_enabled,
+  guest_enabled
+)
+values
+  ('rsvp_saved', 'rsvp', 'RSVP recebido/atualizado', 'Enviado quando o convidado salva ou atualiza o RSVP p�blico.', true, false, true, true),
+  ('gift_reserved', 'gift', 'Presente reservado', 'Enviado quando o convidado reserva um presente individual.', true, false, true, true),
+  ('gift_payment_reported', 'gift', 'Pagamento ou compra de presente informado', 'Enviado quando o convidado informa pagamento ou compra de presente individual.', true, false, true, true),
+  ('gift_purchase_confirmed', 'gift', 'Presente confirmado', 'Enviado quando o admin confirma o pagamento ou compra de presente individual.', true, false, true, true),
+  ('gift_reservation_released', 'gift', 'Presente liberado', 'Enviado quando o admin libera uma reserva de presente individual.', true, false, true, true),
+  ('gift_reservation_reminder', 'gift', 'Lembrete de presente', 'Disparo manual para lembrar uma reserva de presente individual pendente.', false, true, true, true),
+  ('gift_contribution_reserved', 'gift_contribution', 'Cota reservada', 'Enviado quando o convidado reserva cotas de um presente.', true, false, true, true),
+  ('gift_contribution_payment_reported', 'gift_contribution', 'Pagamento de cota informado', 'Enviado quando o convidado informa pagamento de cotas.', true, false, true, true),
+  ('gift_contribution_confirmed', 'gift_contribution', 'Cota confirmada', 'Enviado quando o admin confirma uma contribui��o por cotas.', true, false, true, true),
   ('gift_contribution_released', 'gift_contribution', 'Cota liberada', 'Enviado quando o admin libera uma reserva de cotas.', true, false, true, true),
   ('gift_contribution_reminder', 'gift_contribution', 'Lembrete de cota', 'Disparo manual para lembrar uma reserva de cota pendente.', false, true, true, true)
 on conflict (event_type) do update
@@ -1092,7 +1364,6 @@ begin
     presence,
     email,
     phone,
-    food,
     message,
     guest_data,
     updated_at
@@ -1102,7 +1373,6 @@ begin
     submitted_presence,
     left(coalesce(submitted_email, ''), 320),
     left(coalesce(submitted_phone, ''), 40),
-    left(coalesce(submitted_food, ''), 1000),
     left(coalesce(submitted_message, ''), 4000),
     safe_guest_data,
     timezone('utc'::text, now())
@@ -1112,7 +1382,6 @@ begin
     presence = excluded.presence,
     email = excluded.email,
     phone = excluded.phone,
-    food = excluded.food,
     message = excluded.message,
     guest_data = excluded.guest_data,
     updated_at = excluded.updated_at
@@ -1890,7 +2159,6 @@ begin
     presence,
     email,
     phone,
-    food,
     message,
     guest_data,
     updated_at
@@ -1900,7 +2168,6 @@ begin
     submitted_presence,
     left(coalesce(submitted_email, ''), 320),
     left(coalesce(submitted_phone, ''), 40),
-    left(coalesce(submitted_food, ''), 1000),
     left(coalesce(submitted_message, ''), 4000),
     safe_guest_data,
     timezone('utc'::text, now())
@@ -1910,7 +2177,6 @@ begin
     presence = excluded.presence,
     email = excluded.email,
     phone = excluded.phone,
-    food = excluded.food,
     message = excluded.message,
     guest_data = excluded.guest_data,
     updated_at = excluded.updated_at
@@ -1956,7 +2222,7 @@ begin
       'presence', saved_rsvp.presence,
       'email', saved_rsvp.email,
       'phone', saved_rsvp.phone,
-      'food', saved_rsvp.food,
+      'food', coalesce(saved_rsvp.guest_data ->> 'food', ''),
       'message', saved_rsvp.message,
       'guest_data', saved_rsvp.guest_data
     )
@@ -2208,12 +2474,22 @@ drop function if exists public.create_guest_with_invite_code(
   boolean
 );
 
+drop function if exists public.create_guest_with_invite_code(
+  text,
+  text,
+  jsonb,
+  integer,
+  boolean,
+  text
+);
+
 create or replace function public.create_guest_with_invite_code(
   p_name text,
   p_invite_type text default 'individual',
   p_couple_members jsonb default null,
   p_max_guests integer default 0,
-  p_invite_sent boolean default false
+  p_invite_sent boolean default false,
+  p_guest_side text default 'couple'
 )
 returns public.guests
 language plpgsql
@@ -2241,6 +2517,7 @@ begin
   p_invite_type := lower(nullif(btrim(p_invite_type), ''));
   p_max_guests := coalesce(p_max_guests, 0);
   p_invite_sent := coalesce(p_invite_sent, false);
+  p_guest_side := lower(coalesce(nullif(btrim(p_guest_side), ''), 'couple'));
 
   if p_name is null then
     raise exception 'Guest name is required.'
@@ -2256,6 +2533,11 @@ begin
 
   if p_max_guests < 0 then
     raise exception 'Maximum companions cannot be negative.'
+      using errcode = '22023';
+  end if;
+
+  if p_guest_side not in ('bride', 'groom', 'couple') then
+    raise exception 'Invalid guest side.'
       using errcode = '22023';
   end if;
 
@@ -2300,7 +2582,8 @@ begin
         active,
         access_count,
         invite_type,
-        couple_members
+        couple_members,
+        guest_side
       )
       values (
         p_name,
@@ -2311,7 +2594,8 @@ begin
         true,
         0,
         p_invite_type,
-        p_couple_members
+        p_couple_members,
+        p_guest_side
       )
       returning * into created_guest;
 
@@ -2333,7 +2617,8 @@ comment on function public.create_guest_with_invite_code(
   text,
   jsonb,
   integer,
-  boolean
+  boolean,
+  text
 ) is
   'Creates a guest as an authenticated administrator and generates a secure invitation code.';
 
@@ -2342,7 +2627,8 @@ revoke all on function public.create_guest_with_invite_code(
   text,
   jsonb,
   integer,
-  boolean
+  boolean,
+  text
 ) from public;
 
 revoke all on function public.create_guest_with_invite_code(
@@ -2350,7 +2636,8 @@ revoke all on function public.create_guest_with_invite_code(
   text,
   jsonb,
   integer,
-  boolean
+  boolean,
+  text
 ) from anon;
 
 grant execute on function public.create_guest_with_invite_code(
@@ -2358,7 +2645,8 @@ grant execute on function public.create_guest_with_invite_code(
   text,
   jsonb,
   integer,
-  boolean
+  boolean,
+  text
 ) to authenticated;
 
 -- New guests must be created through the RPC. Existing guests can still be
@@ -2788,7 +3076,6 @@ begin
     presence,
     email,
     phone,
-    food,
     message,
     guest_data,
     updated_at
@@ -2798,7 +3085,6 @@ begin
     submitted_presence,
     left(coalesce(submitted_email, ''), 320),
     left(coalesce(submitted_phone, ''), 40),
-    left(coalesce(submitted_food, ''), 1000),
     left(coalesce(submitted_message, ''), 4000),
     safe_guest_data,
     timezone('utc'::text, now())
@@ -2808,7 +3094,6 @@ begin
     presence = excluded.presence,
     email = excluded.email,
     phone = excluded.phone,
-    food = excluded.food,
     message = excluded.message,
     guest_data = excluded.guest_data,
     updated_at = excluded.updated_at;
@@ -2917,6 +3202,15 @@ drop function if exists public.admin_update_guest(
   integer,
   boolean
 );
+drop function if exists public.admin_update_guest(
+  uuid,
+  text,
+  text,
+  jsonb,
+  integer,
+  boolean,
+  text
+);
 drop function if exists public.admin_set_guest_invite_sent(uuid, boolean);
 
 create or replace function public.admin_update_guest(
@@ -2925,7 +3219,8 @@ create or replace function public.admin_update_guest(
   p_invite_type text,
   p_couple_members jsonb,
   p_max_guests integer,
-  p_invite_sent boolean
+  p_invite_sent boolean,
+  p_guest_side text default 'couple'
 )
 returns boolean
 language plpgsql
@@ -2949,10 +3244,12 @@ begin
   p_invite_type := lower(nullif(btrim(p_invite_type), ''));
   p_max_guests := coalesce(p_max_guests, 0);
   p_invite_sent := coalesce(p_invite_sent, false);
+  p_guest_side := lower(coalesce(nullif(btrim(p_guest_side), ''), 'couple'));
 
   if p_name is null
     or p_invite_type is null
     or p_invite_type not in ('individual', 'couple')
+    or p_guest_side not in ('bride', 'groom', 'couple')
     or p_max_guests < 0
   then
     return false;
@@ -2980,7 +3277,8 @@ begin
     invite_type = p_invite_type,
     couple_members = p_couple_members,
     max_guests = p_max_guests,
-    invite_sent = p_invite_sent
+    invite_sent = p_invite_sent,
+    guest_side = p_guest_side
   where id = target_guest_id;
 
   get diagnostics updated_count = row_count;
@@ -3088,7 +3386,8 @@ comment on function public.admin_update_guest(
   text,
   jsonb,
   integer,
-  boolean
+  boolean,
+  text
 ) is
   'Validates and updates a guest without exposing direct table writes.';
 
@@ -3103,7 +3402,8 @@ revoke all on function public.admin_update_guest(
   text,
   jsonb,
   integer,
-  boolean
+  boolean,
+  text
 ) from public, anon;
 revoke all on function public.admin_set_guest_active(uuid, boolean)
   from public, anon;
@@ -3116,7 +3416,8 @@ grant execute on function public.admin_update_guest(
   text,
   jsonb,
   integer,
-  boolean
+  boolean,
+  text
 ) to authenticated;
 grant execute on function public.admin_set_guest_active(uuid, boolean)
   to authenticated;
@@ -5226,7 +5527,7 @@ begin
       'presence', rsvp_record.presence,
       'email', rsvp_record.email,
       'phone', rsvp_record.phone,
-      'food', rsvp_record.food,
+      'food', coalesce(rsvp_record.guest_data ->> 'food', ''),
       'message', rsvp_record.message,
       'guest_data', rsvp_record.guest_data
     );
@@ -6721,7 +7022,8 @@ create or replace function public.admin_get_nav_alerts()
 returns table (
   has_pending_wall_messages boolean,
   has_reported_gifts boolean,
-  has_overdue_checklist_tasks boolean
+  has_overdue_checklist_tasks boolean,
+  has_due_financial_payments boolean
 )
 language plpgsql
 security definer
@@ -6761,7 +7063,19 @@ begin
       where checklist_item.status <> 'completed'
         and checklist_item.due_date < current_date
       limit 1
-    ) as has_overdue_checklist_tasks;
+    ) as has_overdue_checklist_tasks,
+    exists (
+      select 1
+      from public.financial_expense_payments as payment
+      join public.financial_expenses as expense
+        on expense.id = payment.expense_id
+      where payment.status = 'unpaid'
+        and payment.due_date is not null
+        and payment.due_date <= current_date
+        and expense.status <> 'cancelled'
+        and expense.is_active = true
+      limit 1
+    ) as has_due_financial_payments;
 end;
 $$;
 
@@ -7112,6 +7426,15 @@ begin
   if not public.is_admin() then
     raise exception 'Administrator access required.'
       using errcode = '42501';
+  end if;
+
+  if exists (
+    select 1
+    from public.financial_expenses
+    where vendor_id = target_vendor_id
+  ) then
+    raise exception 'Vendor is linked to financial expenses and cannot be deleted.'
+      using errcode = '23503';
   end if;
 
   delete from public.wedding_vendors
@@ -7855,24 +8178,147 @@ grant execute on function public.admin_delete_schedule_activity(uuid) to authent
 commit;
 
 -- ============================================================
--- Included migration: rsvp_food_restriction_choice.sql
+-- Included migration: rsvp_food_restriction_per_person.sql
 -- ============================================================
 
 -- ============================================================
--- RSVP dietary restriction explicit choice
+-- RSVP dietary restriction per person
 -- ============================================================
 --
--- Adds an explicit yes/no field for dietary restrictions and updates the
--- public/admin RSVP RPCs to keep the boolean and detail text consistent.
+-- Preserves dietary restriction details per confirmed invitation person inside
+-- guest_data and removes the legacy rsvps.food/rsvps.food_restriction columns.
+-- Existing individual invitation restrictions are moved to the primary guest.
+-- Existing couple invitation restrictions are moved to the first couple member.
 
 begin;
 
-alter table public.rsvps
-  add column if not exists food_restriction boolean not null default false;
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'rsvps'
+      and column_name = 'food'
+  ) then
+    alter table public.rsvps
+      add column if not exists food_restriction boolean not null default false;
 
-update public.rsvps
-set food_restriction = true
-where nullif(btrim(coalesce(food, '')), '') is not null;
+    execute $legacy_food_flag$
+      update public.rsvps
+      set food_restriction = true
+      where nullif(btrim(coalesce(food, '')), '') is not null;
+    $legacy_food_flag$;
+
+    execute $legacy_food_individual$
+      update public.rsvps as rsvp
+      set guest_data = jsonb_set(
+          jsonb_set(
+            coalesce(rsvp.guest_data, '{}'::jsonb),
+            '{food_restriction}',
+            to_jsonb(true),
+            true
+          ),
+          '{food}',
+          to_jsonb(
+            left(
+              case
+                when lower(btrim(coalesce(rsvp.food, ''))) like lower(guest.name) || ':%'
+                  then coalesce(nullif(btrim(substr(btrim(rsvp.food), char_length(guest.name) + 2)), ''), 'Sim, sem detalhes informados')
+                else coalesce(nullif(btrim(coalesce(rsvp.food, '')), ''), 'Sim, sem detalhes informados')
+              end,
+              1000
+            )
+          ),
+          true
+        )
+      from public.guests as guest
+      where guest.id = rsvp.guest_id
+        and coalesce(guest.invite_type, 'individual') <> 'couple'
+        and (
+          rsvp.food_restriction is true
+          or nullif(btrim(coalesce(rsvp.food, '')), '') is not null
+        );
+    $legacy_food_individual$;
+
+    execute $legacy_food_couple$
+      with couple_restrictions as (
+        select
+          rsvp.id,
+          jsonb_agg(
+            case
+              when member.position = 1 then
+                member.value || jsonb_build_object(
+                  'name', coalesce(member.value ->> 'name', guest_member.value ->> 'name', guest.name),
+                  'presence', coalesce(member.value ->> 'presence', rsvp.presence, 'Sim'),
+                  'food_restriction', true,
+                  'food', left(
+                    case
+                      when lower(btrim(coalesce(rsvp.food, ''))) like lower(
+                        coalesce(member.value ->> 'name', guest_member.value ->> 'name', guest.name)
+                      ) || ':%'
+                        then coalesce(
+                          nullif(
+                            btrim(
+                              substr(
+                                btrim(rsvp.food),
+                                char_length(coalesce(member.value ->> 'name', guest_member.value ->> 'name', guest.name)) + 2
+                              )
+                            ),
+                            ''
+                          ),
+                          'Sim, sem detalhes informados'
+                        )
+                      else coalesce(nullif(btrim(coalesce(rsvp.food, '')), ''), 'Sim, sem detalhes informados')
+                    end,
+                    1000
+                  )
+                )
+              else member.value
+            end
+            order by member.position
+          ) as members
+        from public.rsvps as rsvp
+        inner join public.guests as guest
+          on guest.id = rsvp.guest_id
+        cross join lateral jsonb_array_elements(
+          case
+            when jsonb_typeof(rsvp.guest_data -> 'members') = 'array'
+              and jsonb_array_length(rsvp.guest_data -> 'members') > 0
+              then rsvp.guest_data -> 'members'
+            when jsonb_typeof(guest.couple_members) = 'array'
+              then guest.couple_members
+            else jsonb_build_array(jsonb_build_object('name', guest.name, 'presence', rsvp.presence))
+          end
+        ) with ordinality as member(value, position)
+        left join lateral jsonb_array_elements(
+          case
+            when jsonb_typeof(guest.couple_members) = 'array'
+              then guest.couple_members
+            else '[]'::jsonb
+          end
+        ) with ordinality as guest_member(value, position)
+          on guest_member.position = member.position
+        where guest.invite_type = 'couple'
+          and (
+            rsvp.food_restriction is true
+            or nullif(btrim(coalesce(rsvp.food, '')), '') is not null
+          )
+        group by rsvp.id
+      )
+      update public.rsvps as rsvp
+      set guest_data = jsonb_set(
+          coalesce(rsvp.guest_data, '{}'::jsonb),
+          '{members}',
+          couple_restrictions.members,
+          true
+        )
+      from couple_restrictions
+      where couple_restrictions.id = rsvp.id;
+    $legacy_food_couple$;
+  end if;
+end;
+$$;
 
 drop function if exists public.save_current_rsvp(
   text,
@@ -7904,7 +8350,7 @@ declare
   safe_members jsonb := '[]'::jsonb;
   safe_companions jsonb := '[]'::jsonb;
   safe_food text := '';
-  safe_food_restriction boolean := coalesce(submitted_food_restriction, false);
+  safe_food_restriction boolean := false;
   requested_guest_count integer;
   companion_count integer;
   event_operation text;
@@ -7924,14 +8370,6 @@ begin
     return;
   end if;
 
-  if safe_food_restriction then
-    safe_food := left(btrim(coalesce(submitted_food, '')), 1000);
-
-    if safe_food = '' then
-      return;
-    end if;
-  end if;
-
   select *
   into guest_record
   from public.guests
@@ -7941,6 +8379,38 @@ begin
 
   if not found then
     return;
+  end if;
+
+  if guest_record.invite_type <> 'couple'
+    and submitted_presence = 'Sim'
+    and lower(coalesce(submitted_guest_data ->> 'food_restriction', 'false')) in ('true', 'sim')
+  then
+    safe_food := left(
+      btrim(
+        coalesce(
+          nullif(submitted_guest_data ->> 'food', ''),
+          ''
+        )
+      ),
+      1000
+    );
+
+    if safe_food = '' then
+      return;
+    end if;
+
+    if lower(safe_food) like lower(guest_record.name) || ':%' then
+      safe_food := left(
+        btrim(substr(safe_food, char_length(guest_record.name) + 2)),
+        1000
+      );
+    end if;
+
+    if safe_food = '' then
+      return;
+    end if;
+
+    safe_food_restriction := true;
   end if;
 
   select exists (
@@ -8008,6 +8478,14 @@ begin
           when companion ->> 'is_child' = 'Sim'
             then companion ->> 'age'
           else ''
+        end,
+        'food_restriction',
+          lower(coalesce(companion ->> 'food_restriction', 'false')) in ('true', 'sim')
+          and nullif(btrim(coalesce(companion ->> 'food', '')), '') is not null,
+        'food', case
+          when lower(coalesce(companion ->> 'food_restriction', 'false')) in ('true', 'sim')
+            then left(btrim(coalesce(companion ->> 'food', '')), 1000)
+          else ''
         end
       )
       order by position
@@ -8052,7 +8530,17 @@ begin
         jsonb_agg(
           jsonb_build_object(
             'name', expected.member ->> 'name',
-            'presence', submitted.member ->> 'presence'
+            'presence', submitted.member ->> 'presence',
+            'food_restriction',
+              submitted.member ->> 'presence' = 'Sim'
+              and lower(coalesce(submitted.member ->> 'food_restriction', 'false')) in ('true', 'sim')
+              and nullif(btrim(coalesce(submitted.member ->> 'food', '')), '') is not null,
+            'food', case
+              when submitted.member ->> 'presence' = 'Sim'
+                and lower(coalesce(submitted.member ->> 'food_restriction', 'false')) in ('true', 'sim')
+                then left(btrim(coalesce(submitted.member ->> 'food', '')), 1000)
+              else ''
+            end
           )
           order by expected.position
         ),
@@ -8089,6 +8577,17 @@ begin
     'email', left(coalesce(submitted_email, ''), 320),
     'phone', left(coalesce(submitted_phone, ''), 40),
     'guest_count', requested_guest_count,
+    'food_restriction',
+      guest_record.invite_type <> 'couple'
+      and submitted_presence = 'Sim'
+      and safe_food_restriction,
+    'food', case
+      when guest_record.invite_type <> 'couple'
+        and submitted_presence = 'Sim'
+        and safe_food_restriction
+        then safe_food
+      else ''
+    end,
     'members', safe_members,
     'companions', safe_companions
   );
@@ -8098,8 +8597,6 @@ begin
     presence,
     email,
     phone,
-    food,
-    food_restriction,
     message,
     guest_data,
     updated_at
@@ -8109,8 +8606,6 @@ begin
     submitted_presence,
     left(coalesce(submitted_email, ''), 320),
     left(coalesce(submitted_phone, ''), 40),
-    safe_food,
-    safe_food_restriction,
     left(coalesce(submitted_message, ''), 4000),
     safe_guest_data,
     timezone('utc'::text, now())
@@ -8120,8 +8615,6 @@ begin
     presence = excluded.presence,
     email = excluded.email,
     phone = excluded.phone,
-    food = excluded.food,
-    food_restriction = excluded.food_restriction,
     message = excluded.message,
     guest_data = excluded.guest_data,
     updated_at = excluded.updated_at
@@ -8167,8 +8660,8 @@ begin
       'presence', saved_rsvp.presence,
       'email', saved_rsvp.email,
       'phone', saved_rsvp.phone,
-      'food_restriction', saved_rsvp.food_restriction,
-      'food', saved_rsvp.food,
+      'food_restriction', safe_food_restriction,
+      'food', safe_food,
       'message', saved_rsvp.message,
       'guest_data', saved_rsvp.guest_data
     )
@@ -8240,7 +8733,7 @@ declare
   safe_members jsonb := '[]'::jsonb;
   safe_companions jsonb := '[]'::jsonb;
   safe_food text := '';
-  safe_food_restriction boolean := coalesce(submitted_food_restriction, false);
+  safe_food_restriction boolean := false;
   requested_guest_count integer;
   companion_count integer;
   submitted_member_count integer;
@@ -8264,14 +8757,6 @@ begin
     return false;
   end if;
 
-  if safe_food_restriction then
-    safe_food := left(btrim(coalesce(submitted_food, '')), 1000);
-
-    if safe_food = '' then
-      return false;
-    end if;
-  end if;
-
   select *
   into guest_record
   from public.guests
@@ -8280,6 +8765,38 @@ begin
 
   if not found then
     return false;
+  end if;
+
+  if guest_record.invite_type <> 'couple'
+    and submitted_presence = 'Sim'
+    and lower(coalesce(submitted_guest_data ->> 'food_restriction', 'false')) in ('true', 'sim')
+  then
+    safe_food := left(
+      btrim(
+        coalesce(
+          nullif(submitted_guest_data ->> 'food', ''),
+          ''
+        )
+      ),
+      1000
+    );
+
+    if safe_food = '' then
+      return false;
+    end if;
+
+    if lower(safe_food) like lower(guest_record.name) || ':%' then
+      safe_food := left(
+        btrim(substr(safe_food, char_length(guest_record.name) + 2)),
+        1000
+      );
+    end if;
+
+    if safe_food = '' then
+      return false;
+    end if;
+
+    safe_food_restriction := true;
   end if;
 
   begin
@@ -8340,6 +8857,14 @@ begin
           when companion ->> 'is_child' = 'Sim'
             then left(btrim(companion ->> 'age'), 40)
           else ''
+        end,
+        'food_restriction',
+          lower(coalesce(companion ->> 'food_restriction', 'false')) in ('true', 'sim')
+          and nullif(btrim(coalesce(companion ->> 'food', '')), '') is not null,
+        'food', case
+          when lower(coalesce(companion ->> 'food_restriction', 'false')) in ('true', 'sim')
+            then left(btrim(coalesce(companion ->> 'food', '')), 1000)
+          else ''
         end
       )
       order by position
@@ -8384,7 +8909,17 @@ begin
         jsonb_agg(
           jsonb_build_object(
             'name', expected.member ->> 'name',
-            'presence', submitted.member ->> 'presence'
+            'presence', submitted.member ->> 'presence',
+            'food_restriction',
+              submitted.member ->> 'presence' = 'Sim'
+              and lower(coalesce(submitted.member ->> 'food_restriction', 'false')) in ('true', 'sim')
+              and nullif(btrim(coalesce(submitted.member ->> 'food', '')), '') is not null,
+            'food', case
+              when submitted.member ->> 'presence' = 'Sim'
+                and lower(coalesce(submitted.member ->> 'food_restriction', 'false')) in ('true', 'sim')
+                then left(btrim(coalesce(submitted.member ->> 'food', '')), 1000)
+              else ''
+            end
           )
           order by expected.position
         ),
@@ -8421,6 +8956,17 @@ begin
     'email', left(coalesce(submitted_email, ''), 320),
     'phone', left(coalesce(submitted_phone, ''), 40),
     'guest_count', requested_guest_count,
+    'food_restriction',
+      guest_record.invite_type <> 'couple'
+      and submitted_presence = 'Sim'
+      and safe_food_restriction,
+    'food', case
+      when guest_record.invite_type <> 'couple'
+        and submitted_presence = 'Sim'
+        and safe_food_restriction
+        then safe_food
+      else ''
+    end,
     'members', safe_members,
     'companions', safe_companions
   );
@@ -8430,8 +8976,6 @@ begin
     presence,
     email,
     phone,
-    food,
-    food_restriction,
     message,
     guest_data,
     updated_at
@@ -8441,8 +8985,6 @@ begin
     submitted_presence,
     left(coalesce(submitted_email, ''), 320),
     left(coalesce(submitted_phone, ''), 40),
-    safe_food,
-    safe_food_restriction,
     left(coalesce(submitted_message, ''), 4000),
     safe_guest_data,
     timezone('utc'::text, now())
@@ -8452,8 +8994,6 @@ begin
     presence = excluded.presence,
     email = excluded.email,
     phone = excluded.phone,
-    food = excluded.food,
-    food_restriction = excluded.food_restriction,
     message = excluded.message,
     guest_data = excluded.guest_data,
     updated_at = excluded.updated_at;
@@ -8495,7 +9035,410 @@ grant execute on function public.admin_save_guest_rsvp(
   jsonb
 ) to authenticated;
 
+create or replace function public.rsvp_guest_data_food_summary(
+  rsvp_guest_data jsonb
+)
+returns text
+language sql
+immutable
+set search_path = ''
+as $$
+  with people as (
+    select rsvp_guest_data as person
+    where jsonb_typeof(coalesce(rsvp_guest_data, '{}'::jsonb)) = 'object'
+
+    union all
+
+    select member.value as person
+    from jsonb_array_elements(
+      case
+        when jsonb_typeof(rsvp_guest_data -> 'members') = 'array'
+          then rsvp_guest_data -> 'members'
+        else '[]'::jsonb
+      end
+    ) as member(value)
+
+    union all
+
+    select companion.value as person
+    from jsonb_array_elements(
+      case
+        when jsonb_typeof(rsvp_guest_data -> 'companions') = 'array'
+          then rsvp_guest_data -> 'companions'
+        else '[]'::jsonb
+      end
+    ) as companion(value)
+  ),
+  restricted_people as (
+    select
+      concat(
+        coalesce(nullif(btrim(person ->> 'name'), ''), 'Sem nome'),
+        ': ',
+        coalesce(
+          nullif(
+            case
+              when lower(btrim(coalesce(person ->> 'food', ''))) like lower(
+                coalesce(nullif(btrim(person ->> 'name'), ''), 'Sem nome')
+              ) || ':%'
+                then btrim(
+                  substr(
+                    btrim(person ->> 'food'),
+                    char_length(coalesce(nullif(btrim(person ->> 'name'), ''), 'Sem nome')) + 2
+                  )
+                )
+              else btrim(person ->> 'food')
+            end,
+            ''
+          ),
+          'Sim, sem detalhes informados'
+        )
+      ) as summary
+    from people
+    where coalesce(person ->> 'presence', 'Sim') <> 'Não'
+      and (
+        lower(coalesce(person ->> 'food_restriction', 'false')) in ('true', 'sim')
+        or nullif(btrim(coalesce(person ->> 'food', '')), '') is not null
+      )
+  )
+  select coalesce(string_agg(summary, '; ' order by summary), '')
+  from restricted_people;
+$$;
+
+comment on function public.rsvp_guest_data_food_summary(jsonb) is
+  'Builds a dietary restriction summary from RSVP guest_data people.';
+
+revoke all on function public.rsvp_guest_data_food_summary(jsonb)
+  from public, anon;
+grant execute on function public.rsvp_guest_data_food_summary(jsonb)
+  to authenticated;
+
+create or replace function public.admin_create_manual_notification_event(
+  target_event_type text,
+  target_aggregate_id uuid,
+  target_recipient_type text default null
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  event_id uuid;
+  event_time timestamp with time zone;
+  normalized_event_type text;
+  normalized_recipient_type text;
+  rsvp_record public.rsvps%rowtype;
+  guest_record public.guests%rowtype;
+  gift_record public.gifts%rowtype;
+  contribution_record public.gift_contributions%rowtype;
+  payload jsonb;
+  rsvp_food text;
+begin
+  if not exists (
+    select 1
+    from public.admin_users as administrator
+    where administrator.user_id = (select auth.uid())
+      and administrator.active is true
+  ) then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  normalized_event_type := nullif(btrim(target_event_type), '');
+  normalized_recipient_type := lower(nullif(btrim(target_recipient_type), ''));
+
+  if normalized_event_type is null or target_aggregate_id is null then
+    raise exception 'Notification event type and aggregate id are required.'
+      using errcode = '22023';
+  end if;
+
+  if normalized_recipient_type is not null
+    and normalized_recipient_type not in ('admin', 'guest')
+  then
+    raise exception 'Invalid notification recipient type.'
+      using errcode = '22023';
+  end if;
+
+  event_time := timezone('utc'::text, now());
+
+  if normalized_event_type = 'rsvp_saved' then
+    select *
+    into rsvp_record
+    from public.rsvps
+    where id = target_aggregate_id
+      and guest_id is not null;
+
+    if not found then
+      return null;
+    end if;
+
+    select *
+    into guest_record
+    from public.guests
+    where id = rsvp_record.guest_id
+      and active is true;
+
+    if not found then
+      return null;
+    end if;
+
+    rsvp_food := public.rsvp_guest_data_food_summary(rsvp_record.guest_data);
+
+    payload := jsonb_build_object(
+      'operation', case
+        when coalesce(rsvp_record.updated_at, rsvp_record.created_at)
+          > coalesce(rsvp_record.created_at, rsvp_record.updated_at)
+          then 'updated'
+        else 'created'
+      end,
+      'operation_label', case
+        when coalesce(rsvp_record.updated_at, rsvp_record.created_at)
+          > coalesce(rsvp_record.created_at, rsvp_record.updated_at)
+          then 'RSVP Atualizado'
+        else 'RSVP Recebido'
+      end,
+      'guest_name', guest_record.name,
+      'invite_type', guest_record.invite_type,
+      'couple_members', coalesce(guest_record.couple_members, '[]'::jsonb),
+      'rsvp_id', rsvp_record.id,
+      'rsvp_updated_at', rsvp_record.updated_at,
+      'presence', rsvp_record.presence,
+      'email', rsvp_record.email,
+      'phone', rsvp_record.phone,
+      'food_restriction', rsvp_food <> '',
+      'food', rsvp_food,
+      'message', rsvp_record.message,
+      'guest_data', rsvp_record.guest_data
+    );
+
+    insert into public.notification_events (
+      event_type,
+      aggregate_type,
+      aggregate_id,
+      aggregate_version,
+      origin,
+      guest_id,
+      dedupe_key,
+      payload
+    )
+    values (
+      normalized_event_type,
+      'rsvp',
+      rsvp_record.id,
+      event_time,
+      'manual',
+      rsvp_record.guest_id,
+      concat(
+        normalized_event_type,
+        ':manual:',
+        rsvp_record.id::text,
+        ':',
+        extract(epoch from event_time)::text,
+        ':',
+        gen_random_uuid()::text
+      ),
+      payload
+        || jsonb_build_object(
+          'notification_origin', 'manual',
+          'triggered_by', 'admin',
+          'triggered_by_user_id', (select auth.uid())
+        )
+        || case
+          when normalized_recipient_type is null then '{}'::jsonb
+          else jsonb_build_object('manual_recipient_type', normalized_recipient_type)
+        end
+    )
+    returning id into event_id;
+
+    return event_id;
+  end if;
+
+  if normalized_event_type in (
+    'gift_reserved',
+    'gift_payment_reported',
+    'gift_purchase_confirmed',
+    'gift_reservation_released'
+  ) then
+    select *
+    into gift_record
+    from public.gifts
+    where id = target_aggregate_id
+      and coalesce(gift_type, 'single') <> 'quota'
+      and reserved_guest_id is not null;
+
+    if not found then
+      return null;
+    end if;
+
+    if normalized_event_type = 'gift_payment_reported'
+      and coalesce(gift_record.payment_status, 'Pendente') not in ('Informado', 'Confirmado')
+    then
+      return null;
+    end if;
+
+    if normalized_event_type = 'gift_purchase_confirmed'
+      and (
+        gift_record.status <> 'Comprado'
+        and coalesce(gift_record.payment_status, 'Pendente') <> 'Confirmado'
+      )
+    then
+      return null;
+    end if;
+
+    if normalized_event_type = 'gift_reservation_released' then
+      return null;
+    end if;
+
+    perform public.enqueue_gift_notification_event(
+      normalized_event_type,
+      'gift',
+      gift_record.id,
+      event_time,
+      gift_record.reserved_guest_id,
+      jsonb_build_object(
+        'gift_id', gift_record.id,
+        'gift_name', gift_record.name,
+        'gift_category', gift_record.category,
+        'gift_type', coalesce(gift_record.gift_type, 'single'),
+        'price', gift_record.price,
+        'message', gift_record.reservation_message,
+        'payment_status', gift_record.payment_status,
+        'purchase_method', gift_record.selected_purchase_method,
+        'notification_origin', 'manual',
+        'triggered_by', 'admin',
+        'triggered_by_user_id', (select auth.uid())
+      )
+      || case
+        when normalized_recipient_type is null then '{}'::jsonb
+        else jsonb_build_object('manual_recipient_type', normalized_recipient_type)
+      end
+    );
+
+    update public.notification_events
+    set origin = 'manual'
+    where dedupe_key = concat(
+      normalized_event_type,
+      ':',
+      gift_record.id::text,
+      ':',
+      extract(epoch from event_time)::text
+    )
+    returning id into event_id;
+
+    return event_id;
+  end if;
+
+  if normalized_event_type in (
+    'gift_contribution_reserved',
+    'gift_contribution_payment_reported',
+    'gift_contribution_confirmed',
+    'gift_contribution_released'
+  ) then
+    select *
+    into contribution_record
+    from public.gift_contributions
+    where id = target_aggregate_id
+      and guest_id is not null;
+
+    if not found then
+      return null;
+    end if;
+
+    select *
+    into gift_record
+    from public.gifts
+    where id = contribution_record.gift_id
+      and gift_type = 'quota';
+
+    if not found then
+      return null;
+    end if;
+
+    if normalized_event_type = 'gift_contribution_payment_reported'
+      and coalesce(contribution_record.payment_status, 'Pendente') not in ('Informado', 'Confirmado')
+    then
+      return null;
+    end if;
+
+    if normalized_event_type = 'gift_contribution_confirmed'
+      and coalesce(contribution_record.payment_status, 'Pendente') <> 'Confirmado'
+    then
+      return null;
+    end if;
+
+    if normalized_event_type = 'gift_contribution_released' then
+      return null;
+    end if;
+
+    perform public.enqueue_gift_notification_event(
+      normalized_event_type,
+      'gift_contribution',
+      contribution_record.id,
+      event_time,
+      contribution_record.guest_id,
+      jsonb_build_object(
+        'gift_id', gift_record.id,
+        'gift_name', gift_record.name,
+        'gift_category', gift_record.category,
+        'gift_type', 'quota',
+        'price', gift_record.price,
+        'quota_quantity', contribution_record.quota_quantity,
+        'quota_value', contribution_record.quota_value,
+        'total_value', contribution_record.total_value,
+        'message', contribution_record.message,
+        'payment_status', contribution_record.payment_status,
+        'payment_method', contribution_record.payment_method,
+        'notification_origin', 'manual',
+        'triggered_by', 'admin',
+        'triggered_by_user_id', (select auth.uid())
+      )
+      || case
+        when normalized_recipient_type is null then '{}'::jsonb
+        else jsonb_build_object('manual_recipient_type', normalized_recipient_type)
+      end
+    );
+
+    update public.notification_events
+    set origin = 'manual'
+    where dedupe_key = concat(
+      normalized_event_type,
+      ':',
+      contribution_record.id::text,
+      ':',
+      extract(epoch from event_time)::text
+    )
+    returning id into event_id;
+
+    return event_id;
+  end if;
+
+  return null;
+end;
+$$;
+
+comment on function public.admin_create_manual_notification_event(
+  text,
+  uuid,
+  text
+) is
+  'Creates a manual notification event for a supported aggregate.';
+
+revoke all on function public.admin_create_manual_notification_event(
+  text,
+  uuid,
+  text
+) from public, anon;
+grant execute on function public.admin_create_manual_notification_event(
+  text,
+  uuid,
+  text
+) to authenticated;
+
 revoke insert, update, delete on table public.rsvps from authenticated;
+
+alter table public.rsvps
+  drop column if exists food,
+  drop column if exists food_restriction;
 
 commit;
 
@@ -8507,7 +9450,7 @@ begin;
 create table if not exists public.wedding_checklist_categories (
   id uuid primary key default gen_random_uuid(),
   name text not null,
-  color text not null default '#6f3fa7',
+  color text not null default '#5b1166',
   icon text not null default 'check-square',
   display_order integer not null default 0,
   is_active boolean not null default true,
@@ -8649,7 +9592,7 @@ create trigger touch_wedding_checklist_items_updated_at
 insert into public.wedding_checklist_categories
   (name, color, icon, display_order)
 values
-  ('Cerimônia', '#6f3fa7', 'church', 1),
+  ('Cerimônia', '#5b1166', 'church', 1),
   ('Recepção', '#a6607c', 'party-popper', 2),
   ('Convidados', '#3f7f8f', 'users', 3),
   ('Fornecedores', '#7b6f3f', 'handshake', 4),
@@ -8962,7 +9905,7 @@ $$;
 create or replace function public.admin_save_checklist_category(
   target_category_id uuid,
   submitted_name text,
-  submitted_color text default '#6f3fa7',
+  submitted_color text default '#5b1166',
   submitted_icon text default 'check-square',
   submitted_display_order integer default 0,
   submitted_is_active boolean default true
@@ -8975,7 +9918,7 @@ as $$
 declare
   saved_category public.wedding_checklist_categories%rowtype;
   safe_name text := nullif(btrim(submitted_name), '');
-  safe_color text := coalesce(nullif(btrim(submitted_color), ''), '#6f3fa7');
+  safe_color text := coalesce(nullif(btrim(submitted_color), ''), '#5b1166');
   safe_icon text := coalesce(nullif(btrim(submitted_icon), ''), 'check-square');
 begin
   if not public.is_admin() then
@@ -9339,5 +10282,2344 @@ grant execute on function public.admin_delete_checklist_responsible(uuid) to aut
 
 revoke all on function public.admin_delete_checklist_item(uuid) from public, anon;
 grant execute on function public.admin_delete_checklist_item(uuid) to authenticated;
+
+commit;
+
+
+-- ============================================================
+-- Source: docs\migrations\wedding_tables.sql
+-- ============================================================
+
+-- ============================================================
+-- Wedding table assignments
+-- ============================================================
+
+begin;
+
+create table if not exists public.wedding_tables (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  capacity integer not null default 8,
+  location text null,
+  notes text null,
+  display_order integer not null default 0,
+  is_active boolean not null default true,
+  created_at timestamp with time zone not null default now(),
+  updated_at timestamp with time zone not null default now(),
+  constraint wedding_tables_name_length_check
+    check (char_length(btrim(name)) between 1 and 120),
+  constraint wedding_tables_capacity_check
+    check (capacity >= 0 and capacity <= 100),
+  constraint wedding_tables_location_length_check
+    check (location is null or char_length(location) <= 160),
+  constraint wedding_tables_notes_length_check
+    check (notes is null or char_length(notes) <= 600)
+);
+
+create table if not exists public.wedding_table_assignments (
+  id uuid primary key default gen_random_uuid(),
+  table_id uuid not null references public.wedding_tables(id) on delete cascade,
+  guest_id uuid not null references public.guests(id) on delete cascade,
+  notes text null,
+  created_at timestamp with time zone not null default now(),
+  updated_at timestamp with time zone not null default now(),
+  constraint wedding_table_assignments_guest_unique unique (guest_id),
+  constraint wedding_table_assignments_notes_length_check
+    check (notes is null or char_length(notes) <= 400)
+);
+
+create index if not exists wedding_tables_admin_order_idx
+  on public.wedding_tables (is_active, display_order, name);
+
+create index if not exists wedding_table_assignments_table_idx
+  on public.wedding_table_assignments (table_id, guest_id);
+
+alter table public.wedding_tables enable row level security;
+alter table public.wedding_table_assignments enable row level security;
+
+revoke all on table public.wedding_tables from anon, authenticated;
+revoke all on table public.wedding_table_assignments from anon, authenticated;
+grant all on table public.wedding_tables to service_role;
+grant all on table public.wedding_table_assignments to service_role;
+
+create or replace function public.touch_wedding_table_updated_at()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+drop trigger if exists touch_wedding_table_updated_at
+  on public.wedding_tables;
+
+create trigger touch_wedding_table_updated_at
+  before update on public.wedding_tables
+  for each row
+  execute function public.touch_wedding_table_updated_at();
+
+drop trigger if exists touch_wedding_table_assignment_updated_at
+  on public.wedding_table_assignments;
+
+create trigger touch_wedding_table_assignment_updated_at
+  before update on public.wedding_table_assignments
+  for each row
+  execute function public.touch_wedding_table_updated_at();
+
+create or replace function public.admin_list_wedding_tables()
+returns table (
+  id uuid,
+  name text,
+  capacity integer,
+  location text,
+  notes text,
+  display_order integer,
+  is_active boolean,
+  created_at timestamp with time zone,
+  updated_at timestamp with time zone
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  return query
+  select
+    table_item.id,
+    table_item.name,
+    table_item.capacity,
+    table_item.location,
+    table_item.notes,
+    table_item.display_order,
+    table_item.is_active,
+    table_item.created_at,
+    table_item.updated_at
+  from public.wedding_tables as table_item
+  order by table_item.display_order asc, table_item.name asc;
+end;
+$$;
+
+create or replace function public.admin_list_wedding_table_assignments()
+returns table (
+  id uuid,
+  table_id uuid,
+  guest_id uuid,
+  notes text,
+  created_at timestamp with time zone,
+  updated_at timestamp with time zone
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  return query
+  select
+    assignment.id,
+    assignment.table_id,
+    assignment.guest_id,
+    assignment.notes,
+    assignment.created_at,
+    assignment.updated_at
+  from public.wedding_table_assignments as assignment
+  order by assignment.created_at asc;
+end;
+$$;
+
+create or replace function public.admin_save_wedding_table(
+  target_table_id uuid,
+  submitted_name text,
+  submitted_capacity integer default 8,
+  submitted_location text default null,
+  submitted_notes text default null,
+  submitted_display_order integer default 0,
+  submitted_is_active boolean default true
+)
+returns public.wedding_tables
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  saved_table public.wedding_tables%rowtype;
+  safe_name text := nullif(btrim(submitted_name), '');
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  if safe_name is null then
+    raise exception 'Table name is required.'
+      using errcode = '22023';
+  end if;
+
+  if coalesce(submitted_capacity, 0) < 0 then
+    raise exception 'Table capacity cannot be negative.'
+      using errcode = '22023';
+  end if;
+
+  if target_table_id is null then
+    insert into public.wedding_tables (
+      name,
+      capacity,
+      location,
+      notes,
+      display_order,
+      is_active
+    )
+    values (
+      safe_name,
+      coalesce(submitted_capacity, 8),
+      nullif(btrim(submitted_location), ''),
+      nullif(btrim(submitted_notes), ''),
+      coalesce(submitted_display_order, 0),
+      coalesce(submitted_is_active, true)
+    )
+    returning * into saved_table;
+  else
+    update public.wedding_tables
+    set
+      name = safe_name,
+      capacity = coalesce(submitted_capacity, 8),
+      location = nullif(btrim(submitted_location), ''),
+      notes = nullif(btrim(submitted_notes), ''),
+      display_order = coalesce(submitted_display_order, 0),
+      is_active = coalesce(submitted_is_active, true)
+    where id = target_table_id
+    returning * into saved_table;
+
+    if saved_table.id is null then
+      raise exception 'Wedding table not found.'
+        using errcode = 'P0002';
+    end if;
+  end if;
+
+  return saved_table;
+end;
+$$;
+
+create or replace function public.admin_assign_guest_to_table(
+  target_table_id uuid,
+  target_guest_id uuid,
+  submitted_notes text default null
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  if not exists (
+    select 1 from public.wedding_tables
+    where id = target_table_id
+  ) then
+    raise exception 'Wedding table not found.'
+      using errcode = 'P0002';
+  end if;
+
+  if not exists (
+    select 1 from public.guests
+    where id = target_guest_id
+  ) then
+    raise exception 'Guest not found.'
+      using errcode = 'P0002';
+  end if;
+
+  insert into public.wedding_table_assignments (
+    table_id,
+    guest_id,
+    notes
+  )
+  values (
+    target_table_id,
+    target_guest_id,
+    nullif(btrim(submitted_notes), '')
+  )
+  on conflict (guest_id) do update
+  set
+    table_id = excluded.table_id,
+    notes = excluded.notes;
+
+  return true;
+end;
+$$;
+
+create or replace function public.admin_remove_guest_from_table(target_guest_id uuid)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  delete from public.wedding_table_assignments
+  where guest_id = target_guest_id;
+
+  return true;
+end;
+$$;
+
+create or replace function public.admin_set_wedding_table_active(
+  target_table_id uuid,
+  submitted_is_active boolean
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  update public.wedding_tables
+  set is_active = coalesce(submitted_is_active, true)
+  where id = target_table_id;
+
+  if not found then
+    raise exception 'Wedding table not found.'
+      using errcode = 'P0002';
+  end if;
+
+  return true;
+end;
+$$;
+create or replace function public.admin_reorder_wedding_tables(submitted_table_ids uuid[])
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  submitted_count integer;
+  existing_count integer;
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  if submitted_table_ids is null or cardinality(submitted_table_ids) = 0 then
+    return true;
+  end if;
+
+  select count(*), count(distinct table_id)
+    into submitted_count, existing_count
+  from unnest(submitted_table_ids) as submitted(table_id);
+
+  if submitted_count <> existing_count then
+    raise exception 'Table order list contains duplicate tables.'
+      using errcode = '22023';
+  end if;
+
+  select count(*)
+    into existing_count
+  from public.wedding_tables
+  where id = any(submitted_table_ids);
+
+  if existing_count <> submitted_count then
+    raise exception 'Table order list contains unknown tables.'
+      using errcode = 'P0002';
+  end if;
+
+  with ordered_tables as (
+    select
+      table_id,
+      row_number() over (order by ordinality)::integer as next_display_order
+    from unnest(submitted_table_ids) with ordinality as ordered(table_id, ordinality)
+  )
+  update public.wedding_tables as table_item
+  set display_order = ordered_tables.next_display_order
+  from ordered_tables
+  where table_item.id = ordered_tables.table_id;
+
+  return true;
+end;
+$$;
+
+create or replace function public.admin_delete_wedding_table(target_table_id uuid)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  delete from public.wedding_tables
+  where id = target_table_id;
+
+  if not found then
+    raise exception 'Wedding table not found.'
+      using errcode = 'P0002';
+  end if;
+
+  return true;
+end;
+$$;
+
+comment on table public.wedding_tables is
+  'Wedding reception tables managed by administrators.';
+
+comment on table public.wedding_table_assignments is
+  'Administrative assignment of guest invitations to wedding tables.';
+
+revoke all on function public.touch_wedding_table_updated_at()
+  from public, anon, authenticated;
+
+revoke all on function public.admin_list_wedding_tables() from public, anon;
+grant execute on function public.admin_list_wedding_tables() to authenticated;
+
+revoke all on function public.admin_list_wedding_table_assignments() from public, anon;
+grant execute on function public.admin_list_wedding_table_assignments() to authenticated;
+
+revoke all on function public.admin_save_wedding_table(uuid, text, integer, text, text, integer, boolean)
+  from public, anon;
+grant execute on function public.admin_save_wedding_table(uuid, text, integer, text, text, integer, boolean)
+  to authenticated;
+
+revoke all on function public.admin_assign_guest_to_table(uuid, uuid, text)
+  from public, anon;
+grant execute on function public.admin_assign_guest_to_table(uuid, uuid, text)
+  to authenticated;
+
+revoke all on function public.admin_remove_guest_from_table(uuid) from public, anon;
+grant execute on function public.admin_remove_guest_from_table(uuid) to authenticated;
+
+revoke all on function public.admin_set_wedding_table_active(uuid, boolean)
+  from public, anon;
+grant execute on function public.admin_set_wedding_table_active(uuid, boolean)
+  to authenticated;
+revoke all on function public.admin_reorder_wedding_tables(uuid[]) from public, anon;
+grant execute on function public.admin_reorder_wedding_tables(uuid[]) to authenticated;
+
+revoke all on function public.admin_delete_wedding_table(uuid) from public, anon;
+grant execute on function public.admin_delete_wedding_table(uuid) to authenticated;
+
+commit;
+
+-- ============================================================
+-- Included migration: financial_management.sql
+-- ============================================================
+-- ============================================================
+-- Financial management
+-- ============================================================
+
+begin;
+
+create table if not exists public.financial_budget_scenarios (
+  id uuid primary key default gen_random_uuid(),
+  context text not null,
+  name text not null,
+  description text null,
+  is_reference boolean not null default false,
+  display_order integer not null default 0,
+  is_active boolean not null default true,
+  created_at timestamp with time zone not null default now(),
+  updated_at timestamp with time zone not null default now(),
+  constraint financial_budget_scenarios_context_check
+    check (context in ('wedding', 'honeymoon')),
+  constraint financial_budget_scenarios_name_length_check
+    check (char_length(btrim(name)) between 1 and 120),
+  constraint financial_budget_scenarios_description_length_check
+    check (description is null or char_length(description) <= 600),
+  constraint financial_budget_scenarios_context_name_key
+    unique (context, name)
+);
+
+create unique index if not exists financial_budget_scenarios_reference_idx
+  on public.financial_budget_scenarios (context)
+  where is_reference is true and is_active is true;
+
+create table if not exists public.financial_categories (
+  id uuid primary key default gen_random_uuid(),
+  context text not null,
+  name text not null,
+  color text not null default '#5b1166',
+  icon text not null default 'wallet',
+  display_order integer not null default 0,
+  is_active boolean not null default true,
+  created_at timestamp with time zone not null default now(),
+  updated_at timestamp with time zone not null default now(),
+  constraint financial_categories_context_check
+    check (context in ('wedding', 'honeymoon', 'both')),
+  constraint financial_categories_name_length_check
+    check (char_length(btrim(name)) between 1 and 120),
+  constraint financial_categories_color_check
+    check (color ~ '^#[0-9A-Fa-f]{6}$'),
+  constraint financial_categories_icon_length_check
+    check (char_length(btrim(icon)) between 1 and 60),
+  constraint financial_categories_context_name_key
+    unique (context, name)
+);
+
+create table if not exists public.financial_payers (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  description text null,
+  color text not null default '#5b1166',
+  icon text not null default 'user',
+  display_order integer not null default 0,
+  is_active boolean not null default true,
+  created_at timestamp with time zone not null default now(),
+  updated_at timestamp with time zone not null default now(),
+  constraint financial_payers_name_key unique (name),
+  constraint financial_payers_name_length_check
+    check (char_length(btrim(name)) between 1 and 120),
+  constraint financial_payers_description_length_check
+    check (description is null or char_length(description) <= 400),
+  constraint financial_payers_color_check
+    check (color ~ '^#[0-9A-Fa-f]{6}$'),
+  constraint financial_payers_icon_length_check
+    check (char_length(btrim(icon)) between 1 and 60)
+);
+
+create table if not exists public.financial_budget_items (
+  id uuid primary key default gen_random_uuid(),
+  scenario_id uuid not null references public.financial_budget_scenarios(id) on delete cascade,
+  category_id uuid not null references public.financial_categories(id) on delete restrict,
+  context text not null,
+  title text not null,
+  estimated_amount numeric(12, 2) not null default 0,
+  expected_vendor_name text null,
+  priority text not null default 'normal',
+  status text not null default 'planned',
+  notes text null,
+  display_order integer not null default 0,
+  is_active boolean not null default true,
+  created_at timestamp with time zone not null default now(),
+  updated_at timestamp with time zone not null default now(),
+  constraint financial_budget_items_context_check
+    check (context in ('wedding', 'honeymoon')),
+  constraint financial_budget_items_title_length_check
+    check (char_length(btrim(title)) between 1 and 180),
+  constraint financial_budget_items_estimated_amount_check
+    check (estimated_amount >= 0),
+  constraint financial_budget_items_expected_vendor_length_check
+    check (expected_vendor_name is null or char_length(expected_vendor_name) <= 180),
+  constraint financial_budget_items_priority_check
+    check (priority in ('low', 'normal', 'high')),
+  constraint financial_budget_items_status_check
+    check (status in ('planned', 'researching', 'approved', 'replaced', 'discarded')),
+  constraint financial_budget_items_notes_length_check
+    check (notes is null or char_length(notes) <= 1200)
+);
+
+create table if not exists public.financial_expenses (
+  id uuid primary key default gen_random_uuid(),
+  category_id uuid not null references public.financial_categories(id) on delete restrict,
+  budget_item_id uuid null references public.financial_budget_items(id) on delete set null,
+  vendor_id uuid null references public.wedding_vendors(id) on delete set null,
+  default_payer_id uuid null references public.financial_payers(id) on delete set null,
+  context text not null,
+  type text not null default 'supplier',
+  title text not null,
+  description text null,
+  total_amount numeric(12, 2) not null default 0,
+  payment_method text not null default 'custom',
+  status text not null default 'planned',
+  contracted_at date null,
+  reference_url text null,
+  notes text null,
+  is_active boolean not null default true,
+  created_at timestamp with time zone not null default now(),
+  updated_at timestamp with time zone not null default now(),
+  constraint financial_expenses_context_check
+    check (context in ('wedding', 'honeymoon')),
+  constraint financial_expenses_type_check
+    check (type in ('supplier', 'one_off_purchase', 'fee', 'reservation', 'service', 'product', 'travel', 'lodging', 'transport', 'other')),
+  constraint financial_expenses_title_length_check
+    check (char_length(btrim(title)) between 1 and 180),
+  constraint financial_expenses_description_length_check
+    check (description is null or char_length(description) <= 900),
+  constraint financial_expenses_total_amount_check
+    check (total_amount >= 0),
+  constraint financial_expenses_payment_method_check
+    check (payment_method in ('cash', 'installments', 'deposit_installments', 'custom')),
+  constraint financial_expenses_status_check
+    check (status in ('planned', 'quoting', 'contracted', 'purchased', 'paid', 'cancelled')),
+  constraint financial_expenses_reference_url_length_check
+    check (reference_url is null or char_length(reference_url) <= 1000),
+  constraint financial_expenses_notes_length_check
+    check (notes is null or char_length(notes) <= 1600)
+);
+
+create table if not exists public.financial_expense_payments (
+  id uuid primary key default gen_random_uuid(),
+  expense_id uuid not null references public.financial_expenses(id) on delete cascade,
+  payer_id uuid null references public.financial_payers(id) on delete set null,
+  installment_number integer not null default 1,
+  label text null,
+  amount numeric(12, 2) not null default 0,
+  due_date date null,
+  paid_at date null,
+  status text not null default 'unpaid',
+  notes text null,
+  created_at timestamp with time zone not null default now(),
+  updated_at timestamp with time zone not null default now(),
+  constraint financial_expense_payments_installment_number_check
+    check (installment_number >= 1 and installment_number <= 240),
+  constraint financial_expense_payments_label_length_check
+    check (label is null or char_length(label) <= 120),
+  constraint financial_expense_payments_amount_check
+    check (amount >= 0),
+  constraint financial_expense_payments_status_check
+    check (status in ('unpaid', 'paid', 'cancelled')),
+  constraint financial_expense_payments_paid_date_check
+    check (paid_at is null or status = 'paid'),
+  constraint financial_expense_payments_notes_length_check
+    check (notes is null or char_length(notes) <= 900)
+);
+
+create index if not exists financial_budget_scenarios_order_idx
+  on public.financial_budget_scenarios (context, is_active, is_reference desc, display_order, name);
+
+create index if not exists financial_categories_order_idx
+  on public.financial_categories (context, is_active, display_order, name);
+
+create index if not exists financial_payers_order_idx
+  on public.financial_payers (is_active, display_order, name);
+
+create index if not exists financial_budget_items_scenario_idx
+  on public.financial_budget_items (context, scenario_id, category_id, display_order, title);
+
+create index if not exists financial_expenses_context_idx
+  on public.financial_expenses (context, status, category_id, contracted_at);
+
+create index if not exists financial_expenses_budget_item_idx
+  on public.financial_expenses (budget_item_id);
+
+create index if not exists financial_expense_payments_due_idx
+  on public.financial_expense_payments (status, due_date, expense_id);
+
+alter table public.financial_budget_scenarios enable row level security;
+alter table public.financial_categories enable row level security;
+alter table public.financial_payers enable row level security;
+alter table public.financial_budget_items enable row level security;
+alter table public.financial_expenses enable row level security;
+alter table public.financial_expense_payments enable row level security;
+
+revoke all on table public.financial_budget_scenarios from anon, authenticated;
+revoke all on table public.financial_categories from anon, authenticated;
+revoke all on table public.financial_payers from anon, authenticated;
+revoke all on table public.financial_budget_items from anon, authenticated;
+revoke all on table public.financial_expenses from anon, authenticated;
+revoke all on table public.financial_expense_payments from anon, authenticated;
+
+grant all on table public.financial_budget_scenarios to service_role;
+grant all on table public.financial_categories to service_role;
+grant all on table public.financial_payers to service_role;
+grant all on table public.financial_budget_items to service_role;
+grant all on table public.financial_expenses to service_role;
+grant all on table public.financial_expense_payments to service_role;
+
+create or replace function public.touch_financial_management_updated_at()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  new.updated_at := now();
+  return new;
+end;
+$$;
+
+drop trigger if exists touch_financial_budget_scenarios_updated_at
+  on public.financial_budget_scenarios;
+create trigger touch_financial_budget_scenarios_updated_at
+  before update on public.financial_budget_scenarios
+  for each row
+  execute function public.touch_financial_management_updated_at();
+
+drop trigger if exists touch_financial_categories_updated_at
+  on public.financial_categories;
+create trigger touch_financial_categories_updated_at
+  before update on public.financial_categories
+  for each row
+  execute function public.touch_financial_management_updated_at();
+
+drop trigger if exists touch_financial_payers_updated_at
+  on public.financial_payers;
+create trigger touch_financial_payers_updated_at
+  before update on public.financial_payers
+  for each row
+  execute function public.touch_financial_management_updated_at();
+
+drop trigger if exists touch_financial_budget_items_updated_at
+  on public.financial_budget_items;
+create trigger touch_financial_budget_items_updated_at
+  before update on public.financial_budget_items
+  for each row
+  execute function public.touch_financial_management_updated_at();
+
+drop trigger if exists touch_financial_expenses_updated_at
+  on public.financial_expenses;
+create trigger touch_financial_expenses_updated_at
+  before update on public.financial_expenses
+  for each row
+  execute function public.touch_financial_management_updated_at();
+
+drop trigger if exists touch_financial_expense_payments_updated_at
+  on public.financial_expense_payments;
+create trigger touch_financial_expense_payments_updated_at
+  before update on public.financial_expense_payments
+  for each row
+  execute function public.touch_financial_management_updated_at();
+
+insert into public.financial_budget_scenarios
+  (context, name, description, is_reference, display_order)
+values
+  ('wedding', 'Planejado', 'Cenário principal de referência do casamento.', true, 1),
+  ('honeymoon', 'Planejado', 'Cenário principal de referência da lua de mel.', true, 1)
+on conflict (context, name) do update
+set is_reference = excluded.is_reference,
+    display_order = excluded.display_order,
+    is_active = true;
+
+insert into public.financial_categories
+  (context, name, color, icon, display_order)
+values
+  ('wedding', 'Buffet', '#8f5f3f', 'utensils', 10),
+  ('wedding', 'Cerimonial', '#5b1166', 'clipboard-check', 20),
+  ('wedding', 'Fotografia e Filmagem', '#3f7f8f', 'camera', 30),
+  ('wedding', 'Noiva', '#b45f8a', 'sparkles', 40),
+  ('wedding', 'Noivo', '#5f6f9f', 'shirt', 50),
+  ('wedding', 'Igreja e Civil', '#7b6f3f', 'church', 60),
+  ('wedding', 'Decoração', '#8a6bb4', 'flower-2', 70),
+  ('wedding', 'Papelaria e Convites', '#4f7a5a', 'mail', 80),
+  ('honeymoon', 'Passagens', '#3f7fa7', 'plane', 10),
+  ('honeymoon', 'Hospedagem', '#a6607c', 'hotel', 20),
+  ('honeymoon', 'Passeios', '#6b7f3f', 'map', 30),
+  ('honeymoon', 'Transporte', '#b47a3f', 'car', 40),
+  ('honeymoon', 'Documentação', '#8f5f3f', 'file-check', 50),
+  ('both', 'Presentes e Extras', '#b47a3f', 'gift', 900),
+  ('both', 'Outros', '#6b6473', 'more-horizontal', 999)
+on conflict (context, name) do nothing;
+
+insert into public.financial_payers
+  (name, description, color, icon, display_order)
+values
+  ('Noivo', 'Pagamentos feitos ou previstos pelo noivo.', '#5f6f9f', 'user', 10),
+  ('Noiva', 'Pagamentos feitos ou previstos pela noiva.', '#b45f8a', 'user', 20),
+  ('Ambos', 'Pagamentos divididos ou feitos pelo casal.', '#5b1166', 'users', 30),
+  ('Família da Noiva', 'Pagamentos feitos ou previstos pela família da noiva.', '#a6607c', 'home', 40),
+  ('Família do Noivo', 'Pagamentos feitos ou previstos pela família do noivo.', '#3f7f8f', 'home', 50),
+  ('A definir', 'Pagador ainda não definido.', '#6b6473', 'help-circle', 60),
+  ('Outro', 'Outro pagador.', '#7b6f3f', 'circle-dollar-sign', 70)
+on conflict (name) do nothing;
+
+create or replace function public.admin_list_financial_categories()
+returns table (
+  id uuid,
+  context text,
+  name text,
+  color text,
+  icon text,
+  display_order integer,
+  is_active boolean,
+  budget_item_count bigint,
+  expense_count bigint,
+  created_at timestamp with time zone,
+  updated_at timestamp with time zone
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.' using errcode = '42501';
+  end if;
+
+  return query
+  select
+    category.id,
+    category.context,
+    category.name,
+    category.color,
+    category.icon,
+    category.display_order,
+    category.is_active,
+    count(distinct budget_item.id) as budget_item_count,
+    count(distinct expense.id) as expense_count,
+    category.created_at,
+    category.updated_at
+  from public.financial_categories as category
+  left join public.financial_budget_items as budget_item
+    on budget_item.category_id = category.id
+  left join public.financial_expenses as expense
+    on expense.category_id = category.id
+  group by category.id
+  order by category.context asc, category.display_order asc, category.name asc;
+end;
+$$;
+
+create or replace function public.admin_save_financial_category(
+  target_category_id uuid,
+  submitted_context text,
+  submitted_name text,
+  submitted_color text default '#5b1166',
+  submitted_icon text default 'wallet',
+  submitted_display_order integer default 0,
+  submitted_is_active boolean default true
+)
+returns setof public.financial_categories
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  saved_category public.financial_categories%rowtype;
+  safe_context text := nullif(btrim(submitted_context), '');
+  safe_name text := nullif(btrim(submitted_name), '');
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.' using errcode = '42501';
+  end if;
+
+  if safe_context not in ('wedding', 'honeymoon', 'both') then
+    raise exception 'Invalid financial category context.' using errcode = '22023';
+  end if;
+
+  if safe_name is null then
+    raise exception 'Financial category name is required.' using errcode = '22023';
+  end if;
+
+  if target_category_id is null then
+    insert into public.financial_categories (
+      context,
+      name,
+      color,
+      icon,
+      display_order,
+      is_active
+    )
+    values (
+      safe_context,
+      safe_name,
+      coalesce(nullif(btrim(submitted_color), ''), '#5b1166'),
+      coalesce(nullif(btrim(submitted_icon), ''), 'wallet'),
+      coalesce(submitted_display_order, 0),
+      coalesce(submitted_is_active, true)
+    )
+    returning * into saved_category;
+  else
+    update public.financial_categories
+    set
+      context = safe_context,
+      name = safe_name,
+      color = coalesce(nullif(btrim(submitted_color), ''), '#5b1166'),
+      icon = coalesce(nullif(btrim(submitted_icon), ''), 'wallet'),
+      display_order = coalesce(submitted_display_order, 0),
+      is_active = coalesce(submitted_is_active, true)
+    where id = target_category_id
+    returning * into saved_category;
+
+    if saved_category.id is null then
+      raise exception 'Financial category not found.' using errcode = 'P0002';
+    end if;
+  end if;
+
+  return next saved_category;
+end;
+$$;
+
+create or replace function public.admin_delete_financial_category(target_category_id uuid)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.' using errcode = '42501';
+  end if;
+
+  delete from public.financial_categories
+  where id = target_category_id;
+
+  if not found then
+    raise exception 'Financial category not found.' using errcode = 'P0002';
+  end if;
+
+  return true;
+end;
+$$;
+
+create or replace function public.admin_reorder_financial_categories(
+  submitted_context text,
+  submitted_category_ids uuid[]
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  safe_context text := nullif(btrim(submitted_context), '');
+  submitted_count integer;
+  existing_count integer;
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.' using errcode = '42501';
+  end if;
+
+  if safe_context not in ('wedding', 'honeymoon', 'both') then
+    raise exception 'Invalid financial category context.' using errcode = '22023';
+  end if;
+
+  if submitted_category_ids is null or cardinality(submitted_category_ids) = 0 then
+    return true;
+  end if;
+
+  select count(*), count(distinct category_id)
+    into submitted_count, existing_count
+  from unnest(submitted_category_ids) as submitted(category_id);
+
+  if submitted_count <> existing_count then
+    raise exception 'Financial category order list contains duplicate categories.' using errcode = '22023';
+  end if;
+
+  select count(*)
+    into existing_count
+  from public.financial_categories
+  where context = safe_context
+    and id = any(submitted_category_ids);
+
+  if existing_count <> submitted_count then
+    raise exception 'Financial category order list contains unknown categories.' using errcode = 'P0002';
+  end if;
+
+  with ordered_categories as (
+    select
+      submitted.category_id,
+      (submitted.category_order::integer * 10) as display_order
+    from unnest(submitted_category_ids) with ordinality as submitted(category_id, category_order)
+  )
+  update public.financial_categories as category
+  set display_order = ordered_categories.display_order
+  from ordered_categories
+  where category.id = ordered_categories.category_id
+    and category.context = safe_context;
+
+  return true;
+end;
+$$;
+
+create or replace function public.admin_list_financial_payers()
+returns table (
+  id uuid,
+  name text,
+  description text,
+  color text,
+  icon text,
+  display_order integer,
+  is_active boolean,
+  expense_count bigint,
+  payment_count bigint,
+  created_at timestamp with time zone,
+  updated_at timestamp with time zone
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.' using errcode = '42501';
+  end if;
+
+  return query
+  select
+    payer.id,
+    payer.name,
+    payer.description,
+    payer.color,
+    payer.icon,
+    payer.display_order,
+    payer.is_active,
+    count(distinct expense.id) as expense_count,
+    count(distinct payment.id) as payment_count,
+    payer.created_at,
+    payer.updated_at
+  from public.financial_payers as payer
+  left join public.financial_expenses as expense
+    on expense.default_payer_id = payer.id
+  left join public.financial_expense_payments as payment
+    on payment.payer_id = payer.id
+  group by payer.id
+  order by payer.display_order asc, payer.name asc;
+end;
+$$;
+
+create or replace function public.admin_save_financial_payer(
+  target_payer_id uuid,
+  submitted_name text,
+  submitted_description text default null,
+  submitted_color text default '#5b1166',
+  submitted_icon text default 'user',
+  submitted_display_order integer default 0,
+  submitted_is_active boolean default true
+)
+returns setof public.financial_payers
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  saved_payer public.financial_payers%rowtype;
+  safe_name text := nullif(btrim(submitted_name), '');
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.' using errcode = '42501';
+  end if;
+
+  if safe_name is null then
+    raise exception 'Financial payer name is required.' using errcode = '22023';
+  end if;
+
+  if target_payer_id is null then
+    insert into public.financial_payers (
+      name,
+      description,
+      color,
+      icon,
+      display_order,
+      is_active
+    )
+    values (
+      safe_name,
+      nullif(btrim(submitted_description), ''),
+      coalesce(nullif(btrim(submitted_color), ''), '#5b1166'),
+      coalesce(nullif(btrim(submitted_icon), ''), 'user'),
+      coalesce(submitted_display_order, 0),
+      coalesce(submitted_is_active, true)
+    )
+    returning * into saved_payer;
+  else
+    update public.financial_payers
+    set
+      name = safe_name,
+      description = nullif(btrim(submitted_description), ''),
+      color = coalesce(nullif(btrim(submitted_color), ''), '#5b1166'),
+      icon = coalesce(nullif(btrim(submitted_icon), ''), 'user'),
+      display_order = coalesce(submitted_display_order, 0),
+      is_active = coalesce(submitted_is_active, true)
+    where id = target_payer_id
+    returning * into saved_payer;
+
+    if saved_payer.id is null then
+      raise exception 'Financial payer not found.' using errcode = 'P0002';
+    end if;
+  end if;
+
+  return next saved_payer;
+end;
+$$;
+
+create or replace function public.admin_delete_financial_payer(target_payer_id uuid)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.' using errcode = '42501';
+  end if;
+
+  delete from public.financial_payers
+  where id = target_payer_id;
+
+  if not found then
+    raise exception 'Financial payer not found.' using errcode = 'P0002';
+  end if;
+
+  return true;
+end;
+$$;
+
+create or replace function public.admin_reorder_financial_payers(
+  submitted_payer_ids uuid[]
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  submitted_count integer;
+  existing_count integer;
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.' using errcode = '42501';
+  end if;
+
+  if submitted_payer_ids is null or cardinality(submitted_payer_ids) = 0 then
+    return true;
+  end if;
+
+  select count(*), count(distinct payer_id)
+    into submitted_count, existing_count
+  from unnest(submitted_payer_ids) as submitted(payer_id);
+
+  if submitted_count <> existing_count then
+    raise exception 'Financial payer order list contains duplicate payers.' using errcode = '22023';
+  end if;
+
+  select count(*)
+    into existing_count
+  from public.financial_payers
+  where id = any(submitted_payer_ids);
+
+  if existing_count <> submitted_count then
+    raise exception 'Financial payer order list contains unknown payers.' using errcode = 'P0002';
+  end if;
+
+  with ordered_payers as (
+    select
+      submitted.payer_id,
+      (submitted.payer_order::integer * 10) as display_order
+    from unnest(submitted_payer_ids) with ordinality as submitted(payer_id, payer_order)
+  )
+  update public.financial_payers as payer
+  set display_order = ordered_payers.display_order
+  from ordered_payers
+  where payer.id = ordered_payers.payer_id;
+
+  return true;
+end;
+$$;
+
+create or replace function public.admin_list_financial_budget_scenarios()
+returns table (
+  id uuid,
+  context text,
+  name text,
+  description text,
+  is_reference boolean,
+  display_order integer,
+  is_active boolean,
+  item_count bigint,
+  total_estimated numeric,
+  created_at timestamp with time zone,
+  updated_at timestamp with time zone
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.' using errcode = '42501';
+  end if;
+
+  return query
+  select
+    scenario.id,
+    scenario.context,
+    scenario.name,
+    scenario.description,
+    scenario.is_reference,
+    scenario.display_order,
+    scenario.is_active,
+    count(item.id) as item_count,
+    coalesce(sum(item.estimated_amount) filter (where item.is_active is true), 0)::numeric as total_estimated,
+    scenario.created_at,
+    scenario.updated_at
+  from public.financial_budget_scenarios as scenario
+  left join public.financial_budget_items as item
+    on item.scenario_id = scenario.id
+  group by scenario.id
+  order by scenario.context asc, scenario.is_reference desc, scenario.display_order asc, scenario.name asc;
+end;
+$$;
+
+create or replace function public.admin_save_financial_budget_scenario(
+  target_scenario_id uuid,
+  submitted_context text,
+  submitted_name text,
+  submitted_description text default null,
+  submitted_is_reference boolean default false,
+  submitted_display_order integer default 0,
+  submitted_is_active boolean default true
+)
+returns setof public.financial_budget_scenarios
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  saved_scenario public.financial_budget_scenarios%rowtype;
+  previous_context text;
+  safe_context text := nullif(btrim(submitted_context), '');
+  safe_name text := nullif(btrim(submitted_name), '');
+  next_is_reference boolean := coalesce(submitted_is_reference, false);
+  next_is_active boolean := coalesce(submitted_is_active, true);
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.' using errcode = '42501';
+  end if;
+
+  if safe_context not in ('wedding', 'honeymoon') then
+    raise exception 'Invalid financial budget scenario context.' using errcode = '22023';
+  end if;
+
+  if safe_name is null then
+    raise exception 'Financial budget scenario name is required.' using errcode = '22023';
+  end if;
+
+  if not next_is_active and next_is_reference then
+    raise exception 'A reference financial budget scenario must be active.' using errcode = '22023';
+  end if;
+
+  if target_scenario_id is not null then
+    select context into previous_context
+    from public.financial_budget_scenarios
+    where id = target_scenario_id;
+
+    if previous_context is null then
+      raise exception 'Financial budget scenario not found.' using errcode = 'P0002';
+    end if;
+  end if;
+
+  if next_is_reference and next_is_active then
+    update public.financial_budget_scenarios
+    set is_reference = false
+    where context = safe_context
+      and (target_scenario_id is null or id <> target_scenario_id);
+  end if;
+
+  if target_scenario_id is null then
+    insert into public.financial_budget_scenarios (
+      context,
+      name,
+      description,
+      is_reference,
+      display_order,
+      is_active
+    )
+    values (
+      safe_context,
+      safe_name,
+      nullif(btrim(submitted_description), ''),
+      next_is_reference,
+      coalesce(submitted_display_order, 0),
+      next_is_active
+    )
+    returning * into saved_scenario;
+  else
+    update public.financial_budget_scenarios
+    set
+      context = safe_context,
+      name = safe_name,
+      description = nullif(btrim(submitted_description), ''),
+      is_reference = next_is_reference,
+      display_order = coalesce(submitted_display_order, 0),
+      is_active = next_is_active
+    where id = target_scenario_id
+    returning * into saved_scenario;
+
+    if saved_scenario.id is null then
+      raise exception 'Financial budget scenario not found.' using errcode = 'P0002';
+    end if;
+  end if;
+
+  if not exists (
+    select 1
+    from public.financial_budget_scenarios
+    where context = safe_context
+      and is_reference is true
+      and is_active is true
+  ) then
+    raise exception 'Each financial context must have one active reference scenario.' using errcode = '23514';
+  end if;
+
+  if previous_context is not null
+    and previous_context <> safe_context
+    and not exists (
+      select 1
+      from public.financial_budget_scenarios
+      where context = previous_context
+        and is_reference is true
+        and is_active is true
+    )
+  then
+    raise exception 'Each financial context must have one active reference scenario.' using errcode = '23514';
+  end if;
+
+  return next saved_scenario;
+end;
+$$;
+
+create or replace function public.admin_delete_financial_budget_scenario(target_scenario_id uuid)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  scenario_context text;
+  scenario_is_reference boolean;
+  scenario_is_active boolean;
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.' using errcode = '42501';
+  end if;
+
+  select context, is_reference, is_active
+  into scenario_context, scenario_is_reference, scenario_is_active
+  from public.financial_budget_scenarios
+  where id = target_scenario_id;
+
+  if scenario_context is null then
+    raise exception 'Financial budget scenario not found.' using errcode = 'P0002';
+  end if;
+
+  if scenario_is_reference is true
+    and scenario_is_active is true
+    and not exists (
+      select 1
+      from public.financial_budget_scenarios
+      where context = scenario_context
+        and id <> target_scenario_id
+        and is_reference is true
+        and is_active is true
+    )
+  then
+    raise exception 'Each financial context must have one active reference scenario.' using errcode = '23514';
+  end if;
+
+  delete from public.financial_budget_scenarios
+  where id = target_scenario_id;
+
+  if not found then
+    raise exception 'Financial budget scenario not found.' using errcode = 'P0002';
+  end if;
+
+  return true;
+end;
+$$;
+
+create or replace function public.admin_reorder_financial_budget_scenarios(
+  submitted_context text,
+  submitted_scenario_ids uuid[]
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  safe_context text := nullif(btrim(submitted_context), '');
+  submitted_count integer;
+  existing_count integer;
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.' using errcode = '42501';
+  end if;
+
+  if safe_context not in ('wedding', 'honeymoon') then
+    raise exception 'Invalid financial budget scenario context.' using errcode = '22023';
+  end if;
+
+  if submitted_scenario_ids is null or cardinality(submitted_scenario_ids) = 0 then
+    return true;
+  end if;
+
+  select count(*), count(distinct scenario_id)
+    into submitted_count, existing_count
+  from unnest(submitted_scenario_ids) as submitted(scenario_id);
+
+  if submitted_count <> existing_count then
+    raise exception 'Financial scenario order list contains duplicate scenarios.' using errcode = '22023';
+  end if;
+
+  select count(*)
+    into existing_count
+  from public.financial_budget_scenarios
+  where context = safe_context
+    and id = any(submitted_scenario_ids);
+
+  if existing_count <> submitted_count then
+    raise exception 'Financial scenario order list contains unknown scenarios.' using errcode = 'P0002';
+  end if;
+
+  with ordered_scenarios as (
+    select
+      submitted.scenario_id,
+      (submitted.scenario_order::integer * 10) as display_order
+    from unnest(submitted_scenario_ids) with ordinality as submitted(scenario_id, scenario_order)
+  )
+  update public.financial_budget_scenarios as scenario
+  set display_order = ordered_scenarios.display_order
+  from ordered_scenarios
+  where scenario.id = ordered_scenarios.scenario_id
+    and scenario.context = safe_context;
+
+  return true;
+end;
+$$;
+
+drop function if exists public.admin_list_financial_budget_items();
+
+create or replace function public.admin_list_financial_budget_items()
+returns table (
+  id uuid,
+  scenario_id uuid,
+  scenario_name text,
+  scenario_is_reference boolean,
+  category_id uuid,
+  category_name text,
+  context text,
+  title text,
+  estimated_amount numeric,
+  expected_vendor_name text,
+  priority text,
+  status text,
+  notes text,
+  display_order integer,
+  is_active boolean,
+  created_at timestamp with time zone,
+  updated_at timestamp with time zone,
+  linked_expense_count bigint,
+  linked_expense_total numeric,
+  linked_paid_total numeric,
+  linked_remaining_total numeric,
+  linked_delta numeric
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.' using errcode = '42501';
+  end if;
+
+  return query
+  select
+    item.id,
+    item.scenario_id,
+    scenario.name,
+    scenario.is_reference,
+    item.category_id,
+    category.name,
+    item.context,
+    item.title,
+    item.estimated_amount,
+    item.expected_vendor_name,
+    item.priority,
+    item.status,
+    item.notes,
+    item.display_order,
+    item.is_active,
+    item.created_at,
+    item.updated_at,
+    coalesce(linked_expenses.linked_expense_count, 0)::bigint,
+    coalesce(linked_expenses.linked_expense_total, 0)::numeric,
+    coalesce(linked_payments.linked_paid_total, 0)::numeric,
+    greatest(
+      coalesce(linked_expenses.linked_expense_total, 0) - coalesce(linked_payments.linked_paid_total, 0),
+      0
+    )::numeric,
+    (
+      coalesce(linked_expenses.linked_expense_total, 0) - item.estimated_amount
+    )::numeric
+  from public.financial_budget_items as item
+  join public.financial_budget_scenarios as scenario
+    on scenario.id = item.scenario_id
+  join public.financial_categories as category
+    on category.id = item.category_id
+  left join lateral (
+    select
+      count(*)::bigint as linked_expense_count,
+      coalesce(sum(expense.total_amount), 0)::numeric as linked_expense_total
+    from public.financial_expenses as expense
+    where expense.budget_item_id = item.id
+      and expense.is_active is true
+      and expense.status <> 'cancelled'
+  ) as linked_expenses on true
+  left join lateral (
+    select
+      coalesce(sum(payment.amount), 0)::numeric as linked_paid_total
+    from public.financial_expenses as expense
+    join public.financial_expense_payments as payment
+      on payment.expense_id = expense.id
+    where expense.budget_item_id = item.id
+      and expense.is_active is true
+      and expense.status <> 'cancelled'
+      and payment.status = 'paid'
+  ) as linked_payments on true
+  order by item.context asc, scenario.display_order asc, category.display_order asc, item.display_order asc, item.title asc;
+end;
+$$;
+
+create or replace function public.admin_save_financial_budget_item(
+  target_item_id uuid,
+  submitted_scenario_id uuid,
+  submitted_category_id uuid,
+  submitted_title text,
+  submitted_estimated_amount numeric default 0,
+  submitted_expected_vendor_name text default null,
+  submitted_priority text default 'normal',
+  submitted_status text default 'planned',
+  submitted_notes text default null,
+  submitted_display_order integer default 0,
+  submitted_is_active boolean default true
+)
+returns setof public.financial_budget_items
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  saved_item public.financial_budget_items%rowtype;
+  scenario_record public.financial_budget_scenarios%rowtype;
+  category_record public.financial_categories%rowtype;
+  safe_title text := nullif(btrim(submitted_title), '');
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.' using errcode = '42501';
+  end if;
+
+  if safe_title is null then
+    raise exception 'Financial budget item title is required.' using errcode = '22023';
+  end if;
+
+  select * into scenario_record
+  from public.financial_budget_scenarios
+  where id = submitted_scenario_id;
+
+  if not found then
+    raise exception 'Financial budget scenario not found.' using errcode = 'P0002';
+  end if;
+
+  select * into category_record
+  from public.financial_categories
+  where id = submitted_category_id;
+
+  if not found then
+    raise exception 'Financial category not found.' using errcode = 'P0002';
+  end if;
+
+  if category_record.context not in (scenario_record.context, 'both') then
+    raise exception 'Financial category does not match the scenario context.' using errcode = '22023';
+  end if;
+
+  if target_item_id is null then
+    insert into public.financial_budget_items (
+      scenario_id,
+      category_id,
+      context,
+      title,
+      estimated_amount,
+      expected_vendor_name,
+      priority,
+      status,
+      notes,
+      display_order,
+      is_active
+    )
+    values (
+      scenario_record.id,
+      category_record.id,
+      scenario_record.context,
+      safe_title,
+      coalesce(submitted_estimated_amount, 0),
+      nullif(btrim(submitted_expected_vendor_name), ''),
+      coalesce(nullif(btrim(submitted_priority), ''), 'normal'),
+      coalesce(nullif(btrim(submitted_status), ''), 'planned'),
+      nullif(btrim(submitted_notes), ''),
+      coalesce(submitted_display_order, 0),
+      coalesce(submitted_is_active, true)
+    )
+    returning * into saved_item;
+  else
+    update public.financial_budget_items
+    set
+      scenario_id = scenario_record.id,
+      category_id = category_record.id,
+      context = scenario_record.context,
+      title = safe_title,
+      estimated_amount = coalesce(submitted_estimated_amount, 0),
+      expected_vendor_name = nullif(btrim(submitted_expected_vendor_name), ''),
+      priority = coalesce(nullif(btrim(submitted_priority), ''), 'normal'),
+      status = coalesce(nullif(btrim(submitted_status), ''), 'planned'),
+      notes = nullif(btrim(submitted_notes), ''),
+      display_order = coalesce(submitted_display_order, 0),
+      is_active = coalesce(submitted_is_active, true)
+    where id = target_item_id
+    returning * into saved_item;
+
+    if saved_item.id is null then
+      raise exception 'Financial budget item not found.' using errcode = 'P0002';
+    end if;
+  end if;
+
+  return next saved_item;
+end;
+$$;
+
+create or replace function public.admin_delete_financial_budget_item(target_item_id uuid)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.' using errcode = '42501';
+  end if;
+
+  delete from public.financial_budget_items
+  where id = target_item_id;
+
+  if not found then
+    raise exception 'Financial budget item not found.' using errcode = 'P0002';
+  end if;
+
+  return true;
+end;
+$$;
+
+drop function if exists public.admin_list_financial_expenses();
+
+create or replace function public.admin_list_financial_expenses()
+returns table (
+  id uuid,
+  category_id uuid,
+  category_name text,
+  budget_item_id uuid,
+  budget_item_title text,
+  budget_item_estimated_amount numeric,
+  vendor_id uuid,
+  vendor_name text,
+  default_payer_id uuid,
+  default_payer_name text,
+  context text,
+  type text,
+  title text,
+  description text,
+  total_amount numeric,
+  paid_amount numeric,
+  remaining_amount numeric,
+  payment_method text,
+  status text,
+  contracted_at date,
+  reference_url text,
+  notes text,
+  is_active boolean,
+  created_at timestamp with time zone,
+  updated_at timestamp with time zone
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.' using errcode = '42501';
+  end if;
+
+  return query
+  select
+    expense.id,
+    expense.category_id,
+    category.name,
+    expense.budget_item_id,
+    budget_item.title,
+    budget_item.estimated_amount,
+    expense.vendor_id,
+    vendor.name,
+    expense.default_payer_id,
+    payer.name,
+    expense.context,
+    expense.type,
+    expense.title,
+    expense.description,
+    expense.total_amount,
+    coalesce(sum(payment.amount) filter (where payment.status = 'paid'), 0)::numeric as paid_amount,
+    greatest(
+      expense.total_amount - coalesce(sum(payment.amount) filter (where payment.status = 'paid'), 0),
+      0
+    )::numeric as remaining_amount,
+    expense.payment_method,
+    expense.status,
+    expense.contracted_at,
+    expense.reference_url,
+    expense.notes,
+    expense.is_active,
+    expense.created_at,
+    expense.updated_at
+  from public.financial_expenses as expense
+  join public.financial_categories as category
+    on category.id = expense.category_id
+  left join public.financial_budget_items as budget_item
+    on budget_item.id = expense.budget_item_id
+  left join public.wedding_vendors as vendor
+    on vendor.id = expense.vendor_id
+  left join public.financial_payers as payer
+    on payer.id = expense.default_payer_id
+  left join public.financial_expense_payments as payment
+    on payment.expense_id = expense.id
+  group by expense.id, category.name, budget_item.title, budget_item.estimated_amount, vendor.name, payer.name
+  order by expense.context asc, expense.contracted_at nulls last, category.name asc, expense.title asc;
+end;
+$$;
+
+drop function if exists public.admin_save_financial_expense(
+  uuid, uuid, text, uuid, uuid, text, text, text, numeric, text, text, date, text, text, boolean
+);
+
+create or replace function public.admin_save_financial_expense(
+  target_expense_id uuid,
+  submitted_category_id uuid,
+  submitted_budget_item_id uuid default null,
+  submitted_context text default null,
+  submitted_vendor_id uuid default null,
+  submitted_default_payer_id uuid default null,
+  submitted_type text default 'supplier',
+  submitted_title text default null,
+  submitted_description text default null,
+  submitted_total_amount numeric default 0,
+  submitted_payment_method text default 'custom',
+  submitted_status text default 'planned',
+  submitted_contracted_at date default null,
+  submitted_reference_url text default null,
+  submitted_notes text default null,
+  submitted_is_active boolean default true
+)
+returns setof public.financial_expenses
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  saved_expense public.financial_expenses%rowtype;
+  category_record public.financial_categories%rowtype;
+  budget_item_record public.financial_budget_items%rowtype;
+  safe_context text := nullif(btrim(submitted_context), '');
+  safe_title text := nullif(btrim(submitted_title), '');
+  safe_type text := coalesce(nullif(btrim(submitted_type), ''), 'supplier');
+  safe_payment_method text := coalesce(nullif(btrim(submitted_payment_method), ''), 'custom');
+  safe_status text := coalesce(nullif(btrim(submitted_status), ''), 'planned');
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.' using errcode = '42501';
+  end if;
+
+  if safe_title is null then
+    raise exception 'Financial expense title is required.' using errcode = '22023';
+  end if;
+
+  select * into category_record
+  from public.financial_categories
+  where id = submitted_category_id;
+
+  if not found then
+    raise exception 'Financial category not found.' using errcode = 'P0002';
+  end if;
+
+  safe_context := coalesce(safe_context, nullif(category_record.context, 'both'));
+
+  if safe_context not in ('wedding', 'honeymoon') then
+    raise exception 'Financial expense context is required for shared categories.' using errcode = '22023';
+  end if;
+
+  if category_record.context <> 'both'
+    and category_record.context <> safe_context
+  then
+    raise exception 'Financial category does not match the expense context.' using errcode = '22023';
+  end if;
+
+  if submitted_vendor_id is not null
+    and not exists (select 1 from public.wedding_vendors where id = submitted_vendor_id)
+  then
+    raise exception 'Wedding vendor not found.' using errcode = 'P0002';
+  end if;
+
+  if submitted_default_payer_id is not null
+    and not exists (select 1 from public.financial_payers where id = submitted_default_payer_id)
+  then
+    raise exception 'Financial payer not found.' using errcode = 'P0002';
+  end if;
+
+  if submitted_budget_item_id is not null then
+    select * into budget_item_record
+    from public.financial_budget_items
+    where id = submitted_budget_item_id;
+
+    if not found then
+      raise exception 'Financial budget item not found.' using errcode = 'P0002';
+    end if;
+
+    if budget_item_record.context <> safe_context then
+      raise exception 'Financial budget item does not match the expense context.' using errcode = '22023';
+    end if;
+  end if;
+
+  if target_expense_id is null then
+    insert into public.financial_expenses (
+      category_id,
+      budget_item_id,
+      context,
+      vendor_id,
+      default_payer_id,
+      type,
+      title,
+      description,
+      total_amount,
+      payment_method,
+      status,
+      contracted_at,
+      reference_url,
+      notes,
+      is_active
+    )
+    values (
+      category_record.id,
+      submitted_budget_item_id,
+      safe_context,
+      submitted_vendor_id,
+      submitted_default_payer_id,
+      safe_type,
+      safe_title,
+      nullif(btrim(submitted_description), ''),
+      coalesce(submitted_total_amount, 0),
+      safe_payment_method,
+      safe_status,
+      submitted_contracted_at,
+      nullif(btrim(submitted_reference_url), ''),
+      nullif(btrim(submitted_notes), ''),
+      coalesce(submitted_is_active, true)
+    )
+    returning * into saved_expense;
+  else
+    update public.financial_expenses
+    set
+      category_id = category_record.id,
+      budget_item_id = submitted_budget_item_id,
+      context = safe_context,
+      vendor_id = submitted_vendor_id,
+      default_payer_id = submitted_default_payer_id,
+      type = safe_type,
+      title = safe_title,
+      description = nullif(btrim(submitted_description), ''),
+      total_amount = coalesce(submitted_total_amount, 0),
+      payment_method = safe_payment_method,
+      status = safe_status,
+      contracted_at = submitted_contracted_at,
+      reference_url = nullif(btrim(submitted_reference_url), ''),
+      notes = nullif(btrim(submitted_notes), ''),
+      is_active = coalesce(submitted_is_active, true)
+    where id = target_expense_id
+    returning * into saved_expense;
+
+    if saved_expense.id is null then
+      raise exception 'Financial expense not found.' using errcode = 'P0002';
+    end if;
+  end if;
+
+  return next saved_expense;
+end;
+$$;
+
+create or replace function public.admin_delete_financial_expense(target_expense_id uuid)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.' using errcode = '42501';
+  end if;
+
+  delete from public.financial_expenses
+  where id = target_expense_id;
+
+  if not found then
+    raise exception 'Financial expense not found.' using errcode = 'P0002';
+  end if;
+
+  return true;
+end;
+$$;
+
+create or replace function public.admin_list_financial_expense_payments()
+returns table (
+  id uuid,
+  expense_id uuid,
+  expense_title text,
+  context text,
+  category_id uuid,
+  category_name text,
+  payer_id uuid,
+  payer_name text,
+  installment_number integer,
+  label text,
+  amount numeric,
+  due_date date,
+  paid_at date,
+  status text,
+  display_status text,
+  notes text,
+  created_at timestamp with time zone,
+  updated_at timestamp with time zone
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.' using errcode = '42501';
+  end if;
+
+  return query
+  select
+    payment.id,
+    payment.expense_id,
+    expense.title,
+    expense.context,
+    expense.category_id,
+    category.name,
+    payment.payer_id,
+    payer.name,
+    payment.installment_number,
+    payment.label,
+    payment.amount,
+    payment.due_date,
+    payment.paid_at,
+    payment.status,
+    case
+      when payment.status = 'unpaid'
+        and payment.due_date is not null
+        and payment.due_date < current_date
+        then 'overdue'
+      else payment.status
+    end as display_status,
+    payment.notes,
+    payment.created_at,
+    payment.updated_at
+  from public.financial_expense_payments as payment
+  join public.financial_expenses as expense
+    on expense.id = payment.expense_id
+  join public.financial_categories as category
+    on category.id = expense.category_id
+  left join public.financial_payers as payer
+    on payer.id = payment.payer_id
+  order by payment.due_date nulls last, expense.title asc, payment.installment_number asc;
+end;
+$$;
+
+create or replace function public.admin_save_financial_expense_payment(
+  target_payment_id uuid,
+  submitted_expense_id uuid,
+  submitted_payer_id uuid default null,
+  submitted_installment_number integer default 1,
+  submitted_label text default null,
+  submitted_amount numeric default 0,
+  submitted_due_date date default null,
+  submitted_paid_at date default null,
+  submitted_status text default 'unpaid',
+  submitted_notes text default null
+)
+returns setof public.financial_expense_payments
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  saved_payment public.financial_expense_payments%rowtype;
+  safe_status text := coalesce(nullif(btrim(submitted_status), ''), 'unpaid');
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.' using errcode = '42501';
+  end if;
+
+  if not exists (select 1 from public.financial_expenses where id = submitted_expense_id) then
+    raise exception 'Financial expense not found.' using errcode = 'P0002';
+  end if;
+
+  if submitted_payer_id is not null
+    and not exists (select 1 from public.financial_payers where id = submitted_payer_id)
+  then
+    raise exception 'Financial payer not found.' using errcode = 'P0002';
+  end if;
+
+  if target_payment_id is null then
+    insert into public.financial_expense_payments (
+      expense_id,
+      payer_id,
+      installment_number,
+      label,
+      amount,
+      due_date,
+      paid_at,
+      status,
+      notes
+    )
+    values (
+      submitted_expense_id,
+      submitted_payer_id,
+      coalesce(submitted_installment_number, 1),
+      nullif(btrim(submitted_label), ''),
+      coalesce(submitted_amount, 0),
+      submitted_due_date,
+      submitted_paid_at,
+      safe_status,
+      nullif(btrim(submitted_notes), '')
+    )
+    returning * into saved_payment;
+  else
+    update public.financial_expense_payments
+    set
+      expense_id = submitted_expense_id,
+      payer_id = submitted_payer_id,
+      installment_number = coalesce(submitted_installment_number, 1),
+      label = nullif(btrim(submitted_label), ''),
+      amount = coalesce(submitted_amount, 0),
+      due_date = submitted_due_date,
+      paid_at = submitted_paid_at,
+      status = safe_status,
+      notes = nullif(btrim(submitted_notes), '')
+    where id = target_payment_id
+    returning * into saved_payment;
+
+    if saved_payment.id is null then
+      raise exception 'Financial payment not found.' using errcode = 'P0002';
+    end if;
+  end if;
+
+  return next saved_payment;
+end;
+$$;
+
+create or replace function public.admin_delete_financial_expense_payment(target_payment_id uuid)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.' using errcode = '42501';
+  end if;
+
+  delete from public.financial_expense_payments
+  where id = target_payment_id;
+
+  if not found then
+    raise exception 'Financial payment not found.' using errcode = 'P0002';
+  end if;
+
+  return true;
+end;
+$$;
+
+create or replace function public.admin_get_financial_summary(
+  target_context text default 'all'
+)
+returns table (
+  context text,
+  reference_scenario_id uuid,
+  reference_scenario_name text,
+  reference_budget_amount numeric,
+  total_contracted numeric,
+  total_paid numeric,
+  total_remaining numeric,
+  committed_delta numeric,
+  committed_percent numeric,
+  overdue_payment_count bigint,
+  next_due_date date,
+  due_this_month_amount numeric
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_admin() then
+    raise exception 'Administrator access required.' using errcode = '42501';
+  end if;
+
+  if coalesce(target_context, 'all') not in ('all', 'wedding', 'honeymoon') then
+    raise exception 'Invalid financial summary context.' using errcode = '22023';
+  end if;
+
+  return query
+  with selected_contexts as (
+    select unnest(
+      case
+        when coalesce(target_context, 'all') = 'wedding' then array['wedding']
+        when coalesce(target_context, 'all') = 'honeymoon' then array['honeymoon']
+        else array['wedding', 'honeymoon']
+      end
+    ) as context
+  ),
+  reference_scenarios as (
+    select distinct on (scenario.context)
+      scenario.context,
+      scenario.id,
+      scenario.name
+    from public.financial_budget_scenarios as scenario
+    join selected_contexts
+      on selected_contexts.context = scenario.context
+    where scenario.is_active is true
+    order by
+      scenario.context,
+      scenario.is_reference desc,
+      (scenario.name = 'Planejado') desc,
+      scenario.display_order asc,
+      scenario.name asc
+  ),
+  context_summary as (
+    select
+      selected_contexts.context,
+      reference_scenarios.id as reference_scenario_id,
+      reference_scenarios.name as reference_scenario_name,
+      coalesce(sum(budget_item.estimated_amount) filter (
+        where budget_item.id is not null and budget_item.is_active is true
+      ), 0)::numeric as reference_budget_amount,
+      coalesce((
+        select sum(expense.total_amount)
+        from public.financial_expenses as expense
+        where expense.context = selected_contexts.context
+          and expense.is_active is true
+          and expense.status <> 'cancelled'
+      ), 0)::numeric as total_contracted,
+      coalesce((
+        select sum(payment.amount)
+        from public.financial_expense_payments as payment
+        join public.financial_expenses as expense
+          on expense.id = payment.expense_id
+        where expense.context = selected_contexts.context
+          and expense.is_active is true
+          and expense.status <> 'cancelled'
+          and payment.status = 'paid'
+      ), 0)::numeric as total_paid,
+      coalesce((
+        select count(*)
+        from public.financial_expense_payments as payment
+        join public.financial_expenses as expense
+          on expense.id = payment.expense_id
+        where expense.context = selected_contexts.context
+          and expense.is_active is true
+          and expense.status <> 'cancelled'
+          and payment.status = 'unpaid'
+          and payment.due_date is not null
+          and payment.due_date < current_date
+      ), 0)::bigint as overdue_payment_count,
+      (
+        select min(payment.due_date)
+        from public.financial_expense_payments as payment
+        join public.financial_expenses as expense
+          on expense.id = payment.expense_id
+        where expense.context = selected_contexts.context
+          and expense.is_active is true
+          and expense.status <> 'cancelled'
+          and payment.status = 'unpaid'
+          and payment.due_date is not null
+      ) as next_due_date,
+      coalesce((
+        select sum(payment.amount)
+        from public.financial_expense_payments as payment
+        join public.financial_expenses as expense
+          on expense.id = payment.expense_id
+        where expense.context = selected_contexts.context
+          and expense.is_active is true
+          and expense.status <> 'cancelled'
+          and payment.status = 'unpaid'
+          and payment.due_date >= date_trunc('month', current_date)::date
+          and payment.due_date < (date_trunc('month', current_date) + interval '1 month')::date
+      ), 0)::numeric as due_this_month_amount
+    from selected_contexts
+    left join reference_scenarios
+      on reference_scenarios.context = selected_contexts.context
+    left join public.financial_budget_items as budget_item
+      on budget_item.scenario_id = reference_scenarios.id
+    group by selected_contexts.context, reference_scenarios.id, reference_scenarios.name
+  ),
+  with_calculations as (
+    select
+      context_summary.context,
+      context_summary.reference_scenario_id,
+      context_summary.reference_scenario_name,
+      context_summary.reference_budget_amount,
+      context_summary.total_contracted,
+      context_summary.total_paid,
+      greatest(context_summary.total_contracted - context_summary.total_paid, 0)::numeric as total_remaining,
+      (context_summary.total_contracted - context_summary.reference_budget_amount)::numeric as committed_delta,
+      case
+        when context_summary.reference_budget_amount > 0
+          then round((context_summary.total_contracted / context_summary.reference_budget_amount) * 100, 2)
+        else null
+      end as committed_percent,
+      context_summary.overdue_payment_count,
+      context_summary.next_due_date,
+      context_summary.due_this_month_amount
+    from context_summary
+  )
+  select * from with_calculations
+  union all
+  select
+    'all' as context,
+    null::uuid as reference_scenario_id,
+    'Referências consolidadas' as reference_scenario_name,
+    sum(with_calculations.reference_budget_amount)::numeric as reference_budget_amount,
+    sum(with_calculations.total_contracted)::numeric as total_contracted,
+    sum(with_calculations.total_paid)::numeric as total_paid,
+    sum(with_calculations.total_remaining)::numeric as total_remaining,
+    sum(with_calculations.committed_delta)::numeric as committed_delta,
+    case
+      when sum(with_calculations.reference_budget_amount) > 0
+        then round((sum(with_calculations.total_contracted) / sum(with_calculations.reference_budget_amount)) * 100, 2)
+      else null
+    end as committed_percent,
+    sum(with_calculations.overdue_payment_count)::bigint as overdue_payment_count,
+    min(with_calculations.next_due_date) as next_due_date,
+    sum(with_calculations.due_this_month_amount)::numeric as due_this_month_amount
+  from with_calculations
+  where coalesce(target_context, 'all') = 'all'
+  having coalesce(target_context, 'all') = 'all';
+end;
+$$;
+
+comment on table public.financial_budget_scenarios is
+  'Financial budget scenarios for wedding and honeymoon contexts.';
+
+comment on table public.financial_categories is
+  'Editable financial categories shared by budget items and real expenses.';
+
+comment on table public.financial_payers is
+  'Editable payer list used as default payer on expenses and effective payer on installments.';
+
+comment on table public.financial_budget_items is
+  'Estimated budget items linked to a financial budget scenario.';
+
+comment on table public.financial_expenses is
+  'Real contracted expenses and purchases for wedding or honeymoon financial control.';
+
+comment on table public.financial_expense_payments is
+  'Installments and payments linked to real financial expenses.';
+
+revoke all on function public.touch_financial_management_updated_at()
+  from public, anon, authenticated;
+
+revoke all on function public.admin_list_financial_categories() from public, anon;
+grant execute on function public.admin_list_financial_categories() to authenticated;
+
+revoke all on function public.admin_save_financial_category(uuid, text, text, text, text, integer, boolean)
+  from public, anon;
+grant execute on function public.admin_save_financial_category(uuid, text, text, text, text, integer, boolean)
+  to authenticated;
+
+revoke all on function public.admin_delete_financial_category(uuid) from public, anon;
+grant execute on function public.admin_delete_financial_category(uuid) to authenticated;
+
+revoke all on function public.admin_reorder_financial_categories(text, uuid[])
+  from public, anon;
+grant execute on function public.admin_reorder_financial_categories(text, uuid[])
+  to authenticated;
+
+revoke all on function public.admin_list_financial_payers() from public, anon;
+grant execute on function public.admin_list_financial_payers() to authenticated;
+
+revoke all on function public.admin_save_financial_payer(uuid, text, text, text, text, integer, boolean)
+  from public, anon;
+grant execute on function public.admin_save_financial_payer(uuid, text, text, text, text, integer, boolean)
+  to authenticated;
+
+revoke all on function public.admin_delete_financial_payer(uuid) from public, anon;
+grant execute on function public.admin_delete_financial_payer(uuid) to authenticated;
+
+revoke all on function public.admin_reorder_financial_payers(uuid[])
+  from public, anon;
+grant execute on function public.admin_reorder_financial_payers(uuid[])
+  to authenticated;
+
+revoke all on function public.admin_list_financial_budget_scenarios() from public, anon;
+grant execute on function public.admin_list_financial_budget_scenarios() to authenticated;
+
+revoke all on function public.admin_save_financial_budget_scenario(uuid, text, text, text, boolean, integer, boolean)
+  from public, anon;
+grant execute on function public.admin_save_financial_budget_scenario(uuid, text, text, text, boolean, integer, boolean)
+  to authenticated;
+
+revoke all on function public.admin_delete_financial_budget_scenario(uuid) from public, anon;
+grant execute on function public.admin_delete_financial_budget_scenario(uuid) to authenticated;
+
+revoke all on function public.admin_reorder_financial_budget_scenarios(text, uuid[])
+  from public, anon;
+grant execute on function public.admin_reorder_financial_budget_scenarios(text, uuid[])
+  to authenticated;
+
+revoke all on function public.admin_list_financial_budget_items() from public, anon;
+grant execute on function public.admin_list_financial_budget_items() to authenticated;
+
+revoke all on function public.admin_save_financial_budget_item(uuid, uuid, uuid, text, numeric, text, text, text, text, integer, boolean)
+  from public, anon;
+grant execute on function public.admin_save_financial_budget_item(uuid, uuid, uuid, text, numeric, text, text, text, text, integer, boolean)
+  to authenticated;
+
+revoke all on function public.admin_delete_financial_budget_item(uuid) from public, anon;
+grant execute on function public.admin_delete_financial_budget_item(uuid) to authenticated;
+
+revoke all on function public.admin_list_financial_expenses() from public, anon;
+grant execute on function public.admin_list_financial_expenses() to authenticated;
+
+revoke all on function public.admin_save_financial_expense(uuid, uuid, uuid, text, uuid, uuid, text, text, text, numeric, text, text, date, text, text, boolean)
+  from public, anon;
+grant execute on function public.admin_save_financial_expense(uuid, uuid, uuid, text, uuid, uuid, text, text, text, numeric, text, text, date, text, text, boolean)
+  to authenticated;
+
+revoke all on function public.admin_delete_financial_expense(uuid) from public, anon;
+grant execute on function public.admin_delete_financial_expense(uuid) to authenticated;
+
+revoke all on function public.admin_list_financial_expense_payments() from public, anon;
+grant execute on function public.admin_list_financial_expense_payments() to authenticated;
+
+revoke all on function public.admin_save_financial_expense_payment(uuid, uuid, uuid, integer, text, numeric, date, date, text, text)
+  from public, anon;
+grant execute on function public.admin_save_financial_expense_payment(uuid, uuid, uuid, integer, text, numeric, date, date, text, text)
+  to authenticated;
+
+revoke all on function public.admin_delete_financial_expense_payment(uuid) from public, anon;
+grant execute on function public.admin_delete_financial_expense_payment(uuid) to authenticated;
+
+revoke all on function public.admin_get_financial_summary(text) from public, anon;
+grant execute on function public.admin_get_financial_summary(text) to authenticated;
 
 commit;

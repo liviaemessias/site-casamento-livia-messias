@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
     <link
-      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600&family=Parisienne&display=swap"
       rel="stylesheet"
     />
 
@@ -25,19 +25,27 @@
     <!-- Navbar -->
     <header class="navbar" id="navbar">
       <div class="container nav-content">
-        <a href="index.html" class="logo" data-wedding-names> Livia & Messias </a>
+        <a href="index.html" class="logo" data-wedding-names>Livia & Messias</a>
 
         <nav>
           <ul class="nav-links" id="navLinks">
             <li><a href="index.html">Início</a></li>
             <li><a href="login.html?redirect=rsvp">RSVP</a></li>
             <li><a href="login.html?redirect=gifts">Presentes</a></li>
-            <li><a href="login.html?redirect=schedule">Programação</a></li>
-            <li><a href="photos.html">Pré-Wedding</a></li>
-            <li><a href="messages.html">Recados</a></li>
-            <li><a href="vendors.html">Fornecedores</a></li>
-            <li><a href="#timeline">Nossa Jornada</a></li>
+            <li><a href="our-story.html" class="active">Nossa História</a></li>
+            <li><a href="#timeline">Jornada</a></li>
             <li><a href="#proposal">Pedido</a></li>
+            <li class="nav-dropdown">
+              <button type="button" class="nav-dropdown-toggle" aria-expanded="false">
+                Mais
+              </button>
+              <ul class="nav-dropdown-menu">
+                <li><a href="login.html?redirect=schedule">Programação</a></li>
+                <li><a href="photos.html">Pré-Wedding</a></li>
+                <li><a href="messages.html">Recados</a></li>
+                <li><a href="vendors.html">Fornecedores</a></li>
+              </ul>
+            </li>
           </ul>
         </nav>
 
@@ -52,12 +60,12 @@
       <div class="story-content fade-up">
         <p class="hero-subtitle">Nossa História</p>
 
-        <h1>Toda grande história de amor começa de forma inesperada.</h1>
+        <h1>O começo de nós dois</h1>
 
         <p class="hero-text">
           Entre encontros, conversas, sonhos e orações, Deus escreveu cada
           capítulo da nossa história até chegarmos ao momento mais especial das
-          nossas vidas.
+          nossas vidas
         </p>
 
         <a href="#timeline" class="hero-button"> Conheça Nossa Jornada </a>
@@ -105,13 +113,13 @@
               <p>
                 Quem diria que no meio de um momento tão difícil, durante a pandemia, no fim de 2021, iríamos nos conhecer.
                 A live de Los Hermanos e uma simples mensagem, que mudaram nossas vidas.
-                Desde nossa primeira troca de mensagens, 
+                Desde nossa primeira troca de mensagens,
                 nunca mais deixamos de nos falar. Ali percebemos que tínhamos bastante coisas em comum.
-                E a cada conversa, a conexão entre nós só crescia.      
+                E a cada conversa, a conexão entre nós só crescia.
               </p>
             </div>
           </div>
-          
+
           <!-- Item 2 -->
           <div class="timeline-item right reveal">
             <div class="timeline-content">
@@ -141,7 +149,7 @@
               <h3>Um show inesquecível</h3>
 
               <p>
-                Após meses de conversas, surgiu a oportunidade de nos encontrarmos pessoalmente. 
+                Após meses de conversas, surgiu a oportunidade de nos encontrarmos pessoalmente.
                 O Show do Rodrigo Amarante, um dos integrante dos Los Hermanos, foi anunciado. A oportunidade perfeita que
                 achei (noivo) para nos encontrarmos. Depois de um pouco de insistência, ela aceitou os ingressos como presente de aniversário,
                 e finalmente nos encontramos pessoalmente, em um fatídico dia 23 de setembro de 2022.
@@ -149,8 +157,8 @@
               </p>
             </div>
           </div>
-          
-          <!-- Item 3 -->           
+
+          <!-- Item 3 -->
           <div class="timeline-item left reveal">
             <div class="timeline-content">
               <div class="polaroid rotate-left">
@@ -194,11 +202,11 @@
               <h3>Encontros que aproximaram nossos corações</h3>
 
               <p>
-                Após o show, a conexão entre nós só se fortaleceu. Passamos a nos encontrar com mais frequência, 
-                especialmente entre os fins de estágio no IJF, que eu aproveitava cada segundo que podia, 
+                Após o show, a conexão entre nós só se fortaleceu. Passamos a nos encontrar com mais frequência,
+                especialmente entre os fins de estágio no IJF, que eu aproveitava cada segundo que podia,
                 até deixá-la na parada de ônibus, para que pudesse voltar para casa. E também nas missas,
-                enquanto ela servia na música e eu ficava ao seu lado. 
-                A cada encontro, a amizade entre nós crescia, e o sentimento de algo maior começava a florescer.            
+                enquanto ela servia na música e eu ficava ao seu lado.
+                A cada encontro, a amizade entre nós crescia, e o sentimento de algo maior começava a florescer.
               </p>
             </div>
           </div>
@@ -248,15 +256,17 @@
 
               <p>
                 Após meses de encontros, conversas e momentos especiais, somente a amizade
-                já não era mais suficiente. E o primeiro passo para algo maior foi dado. Com o pedido de namoro, 
+                já não era mais suficiente. E o primeiro passo para algo maior foi dado. Com o pedido de namoro,
                 ela disse sim.
                 Nosso dia 23 de abril de 2023, que ficou para sempre marcado em nossas memórias como o início oficial da nossa jornada juntos.
               </p>
-              <br/>
-              <p>
-                (Noivo falando: É válido mencionar que pedi permissão aos pais dela antes e tive a 
-                ajuda de pessoas importantes)
-              </p>
+              <aside class="groom-note">
+                <span>Nota do noivo</span>
+                <p>
+                  É válido mencionar que pedi permissão aos pais dela antes e
+                  tive a ajuda de pessoas importantes.
+                </p>
+              </aside>
             </div>
           </div>
 
@@ -314,12 +324,12 @@
               <h3>Nossas Memórias</h3>
 
               <p>
-                Vivemos momentos inesquecíveis juntos, passeios, jantares, viagens, até os momentos mais simples do dia a dia.                
+                Vivemos momentos inesquecíveis juntos, passeios, jantares, viagens, até os momentos mais simples do dia a dia.
                 Muitas risadas, receitas, filmes, séries, músicas, jogatinas, e tantas outras coisas que compartilhamos.
-                Conquistas, momentos de tristeza, superações e tudo mais que a vida nos trouxe.                
+                Conquistas, momentos de tristeza, superações e tudo mais que a vida nos trouxe.
               </p>
             </div>
-          </div> 
+          </div>
 
           <!-- Item 6 -->
           <div class="timeline-item right reveal">
@@ -376,11 +386,11 @@
 
               <p>
                 Nós dois nos apoiando, nos amando e crescendo juntos, principalmente na fé.
-                Cada um desses momentos se tornou uma memória preciosa que guardamos com carinho em nossos corações. 
+                Cada um desses momentos se tornou uma memória preciosa que guardamos com carinho em nossos corações.
                 E cada memória só fortaleceu o amor que sentimos um pelo outro, nos preparando para o próximo passo da nossa jornada juntos.
               </p>
             </div>
-          </div>          
+          </div>
 
           <!-- Item 7 -->
           <div class="timeline-item left reveal" id="proposal">
@@ -443,12 +453,14 @@
                 e nós dois sabíamos que queríamos passar o resto de nossas vidas juntos, com a benção de Deus e de Nossa Senhora.
                 Com muita emoção e felicidade, começamos oficialmente nossa caminhada rumo ao altar.
               </p>
-              <br/>
-              <p>
-                (Noivo falando: Também pedi à mão dela aos pais antes do pedido, e da mesma forma, 
-                tive a ajuda de pessoas importantes, direta e indiretamente,
-                para tornar esse momento ainda mais especial)
-              </p>
+              <aside class="groom-note">
+                <span>Nota do noivo</span>
+                <p>
+                  Também pedi a mão dela aos pais antes do pedido e, da mesma
+                  forma, tive a ajuda de pessoas importantes, direta e
+                  indiretamente, para tornar esse momento ainda mais especial.
+                </p>
+              </aside>
             </div>
           </div>
         </div>
@@ -473,6 +485,14 @@
 
     <!-- Footer -->
     <footer class="footer">
+      <a href="index.html" class="footer-couple-logo-link" aria-label="Voltar para o início">
+        <img
+          src="./assets/images/brand/couple-logo-primary.svg"
+          alt=""
+          class="footer-couple-logo"
+          aria-hidden="true"
+        />
+      </a>
       <h3 data-wedding-names>Livia & Messias</h3>
 
       <p data-wedding-date-location>23 de Abril de 2027 • Fortaleza, Ceará</p>

@@ -109,6 +109,25 @@
             </select>
           </div>
 
+          <div class="admin-filter-field">
+            <label for="guestSideFilter">Convidado de</label>
+            <select id="guestSideFilter">
+              <option value="">Todos</option>
+              <option value="couple">Casal</option>
+              <option value="bride">Noiva</option>
+              <option value="groom">Noivo</option>
+            </select>
+          </div>
+
+          <div class="admin-filter-field">
+            <label for="guestTableFilter">Mesa</label>
+            <select id="guestTableFilter">
+              <option value="">Todas</option>
+              <option value="assigned">Com mesa</option>
+              <option value="unassigned">Sem mesa</option>
+            </select>
+          </div>
+
           <div class="admin-filter-actions">
             <span id="guestFilterCount" class="admin-filter-count"></span>
 
@@ -203,6 +222,16 @@
             </select>
           </div>
 
+          <div class="admin-form-group">
+            <label>Convidado de</label>
+
+            <select id="guestSideInput">
+              <option value="couple">Casal</option>
+              <option value="bride">Noiva</option>
+              <option value="groom">Noivo</option>
+            </select>
+          </div>
+
           <div id="coupleFields" class="is-hidden">
             <div class="admin-form-group">
               <label>Nome da Pessoa 1</label>
@@ -283,6 +312,35 @@
       </div>
     </div>
 
+    <div class="admin-modal" id="guestTableModal">
+      <div class="admin-modal-content">
+        <button
+          type="button"
+          class="admin-modal-close"
+          id="closeGuestTableModalButton"
+          aria-label="Fechar mesa do convidado"
+        >
+          &times;
+        </button>
+
+        <h2 id="guestTableModalTitle">Gerenciar Mesa</h2>
+
+        <form id="guestTableForm" class="admin-form">
+          <div class="admin-form-group">
+            <label for="guestTableInput">Mesa</label>
+            <select id="guestTableInput" required></select>
+          </div>
+
+          <div class="admin-form-group">
+            <label for="guestTableNoteInput">Observação do convidado na mesa</label>
+            <textarea id="guestTableNoteInput" maxlength="400" rows="3"></textarea>
+          </div>
+
+          <button type="submit" class="admin-save-button">Salvar Mesa</button>
+        </form>
+      </div>
+    </div>
+
     <div id="adminToast" class="admin-toast"></div>
 
     <div class="admin-modal" id="adminRSVPModal">
@@ -323,35 +381,38 @@
 
           <div id="adminRSVPCoupleMembers" class="is-hidden"></div>
 
+          <div id="adminRSVPPrimaryFoodSection" class="admin-rsvp-primary-food-section">
+            <h4>Restrição alimentar do convidado principal</h4>
+            <div class="admin-form-group">
+              <label for="adminRSVPFoodRestrictionInput">
+                Possui Restrição Alimentar?
+              </label>
+              <select id="adminRSVPFoodRestrictionInput">
+                <option value="Não">Não</option>
+                <option value="Sim">Sim</option>
+              </select>
+            </div>
+
+            <div
+              id="adminRSVPFoodDetailsGroup"
+              class="admin-form-group is-hidden"
+              hidden
+            >
+              <label> Qual Restrição Alimentar? </label>
+              <input
+                type="text"
+                id="adminRSVPFoodInput"
+                placeholder="Ex.: intolerância à lactose ou alergia a frutos do mar"
+              />
+            </div>
+          </div>
+
           <div class="admin-form-group">
             <label> Quantidade de Acompanhantes </label>
             <select id="adminRSVPGuestCountInput"></select>
           </div>
 
           <div id="adminRSVPGuestFields"></div>
-
-          <div class="admin-form-group">
-            <label for="adminRSVPFoodRestrictionInput">
-              Possui Restrição Alimentar?
-            </label>
-            <select id="adminRSVPFoodRestrictionInput">
-              <option value="Não">Não</option>
-              <option value="Sim">Sim</option>
-            </select>
-          </div>
-
-          <div
-            id="adminRSVPFoodDetailsGroup"
-            class="admin-form-group is-hidden"
-            hidden
-          >
-            <label> Qual Restrição Alimentar? </label>
-            <input
-              type="text"
-              id="adminRSVPFoodInput"
-              placeholder="Ex.: intolerância à lactose ou alergia a frutos do mar"
-            />
-          </div>
 
           <div class="admin-form-group">
             <label> Mensagem </label>

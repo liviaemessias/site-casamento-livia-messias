@@ -767,7 +767,12 @@ async function deleteVendor(vendorId) {
 
   if (error) {
     console.error(error);
-    showAdminToast("⚠️ Não foi possível excluir o fornecedor");
+    const message = String(error.message || "");
+    showAdminToast(
+      message.includes("financial expenses")
+        ? "⚠️ Fornecedor vinculado a gasto real. Oculte ou remova o vínculo antes de excluir."
+        : "⚠️ Não foi possível excluir o fornecedor",
+    );
     return;
   }
 

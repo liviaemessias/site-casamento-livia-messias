@@ -20,6 +20,15 @@ drop function if exists public.admin_update_guest(
   integer,
   boolean
 );
+drop function if exists public.admin_update_guest(
+  uuid,
+  text,
+  text,
+  jsonb,
+  integer,
+  boolean,
+  text
+);
 drop function if exists public.admin_set_guest_invite_sent(uuid, boolean);
 
 create or replace function public.admin_update_guest(
@@ -28,7 +37,8 @@ create or replace function public.admin_update_guest(
   p_invite_type text,
   p_couple_members jsonb,
   p_max_guests integer,
-  p_invite_sent boolean
+  p_invite_sent boolean,
+  p_guest_side text default 'couple'
 )
 returns boolean
 language plpgsql
@@ -52,10 +62,12 @@ begin
   p_invite_type := lower(nullif(btrim(p_invite_type), ''));
   p_max_guests := coalesce(p_max_guests, 0);
   p_invite_sent := coalesce(p_invite_sent, false);
+  p_guest_side := lower(coalesce(nullif(btrim(p_guest_side), ''), 'couple'));
 
   if p_name is null
     or p_invite_type is null
     or p_invite_type not in ('individual', 'couple')
+    or p_guest_side not in ('bride', 'groom', 'couple')
     or p_max_guests < 0
   then
     return false;
@@ -83,7 +95,8 @@ begin
     invite_type = p_invite_type,
     couple_members = p_couple_members,
     max_guests = p_max_guests,
-    invite_sent = p_invite_sent
+    invite_sent = p_invite_sent,
+    guest_side = p_guest_side
   where id = target_guest_id;
 
   get diagnostics updated_count = row_count;
@@ -191,7 +204,8 @@ comment on function public.admin_update_guest(
   text,
   jsonb,
   integer,
-  boolean
+  boolean,
+  text
 ) is
   'Validates and updates a guest without exposing direct table writes.';
 
@@ -206,7 +220,8 @@ revoke all on function public.admin_update_guest(
   text,
   jsonb,
   integer,
-  boolean
+  boolean,
+  text
 ) from public, anon;
 revoke all on function public.admin_set_guest_active(uuid, boolean)
   from public, anon;
@@ -219,7 +234,8 @@ grant execute on function public.admin_update_guest(
   text,
   jsonb,
   integer,
-  boolean
+  boolean,
+  text
 ) to authenticated;
 grant execute on function public.admin_set_guest_active(uuid, boolean)
   to authenticated;

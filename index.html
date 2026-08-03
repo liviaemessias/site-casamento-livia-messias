@@ -4,10 +4,10 @@
     <meta charset="UTF-8" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://unpkg.com https://challenges.cloudflare.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Livia &amp; Messias — 23.04.2027</title>
+    <title>Livia &amp; Messias • 23.04.2027</title>
     <meta
       name="description"
-      content="Celebre conosco o nosso casamento — 23 de abril de 2027. Confira os detalhes do grande dia!"
+      content="Celebre conosco o nosso casamento • 23 de abril de 2027. Confira os detalhes do grande dia!"
     />
     <link
       rel="canonical"
@@ -17,10 +17,10 @@
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="pt_BR" />
     <meta property="og:site_name" content="Livia &amp; Messias" />
-    <meta property="og:title" content="Livia &amp; Messias — 23.04.2027" />
+    <meta property="og:title" content="Livia &amp; Messias • 23.04.2027" />
     <meta
       property="og:description"
-      content="Celebre conosco o nosso casamento — 23 de abril de 2027. Confira os detalhes do grande dia!"
+      content="Celebre conosco o nosso casamento • 23 de abril de 2027. Confira os detalhes do grande dia!"
     />
     <meta
       property="og:url"
@@ -36,10 +36,10 @@
     <meta property="og:image:alt" content="Livia e Messias" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Livia &amp; Messias — 23.04.2027" />
+    <meta name="twitter:title" content="Livia &amp; Messias • 23.04.2027" />
     <meta
       name="twitter:description"
-      content="Celebre conosco o nosso casamento — 23 de abril de 2027. Confira os detalhes do grande dia!"
+      content="Celebre conosco o nosso casamento • 23 de abril de 2027. Confira os detalhes do grande dia!"
     />
     <meta
       name="twitter:image"
@@ -49,7 +49,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600&family=Parisienne&display=swap"
       rel="stylesheet"
     />
 
@@ -69,11 +69,18 @@
             <li><a href="#reception">Recepção</a></li>
             <li><a href="login.html?redirect=rsvp">RSVP</a></li>
             <li><a href="login.html?redirect=gifts">Presentes</a></li>
-            <li><a href="login.html?redirect=schedule">Programação</a></li>
             <li><a href="our-story.html">Nossa História</a></li>
-            <li><a href="photos.html">Pré-Wedding</a></li>
-            <li><a href="messages.html">Recados</a></li>
-            <li><a href="vendors.html">Fornecedores</a></li>
+            <li class="nav-dropdown">
+              <button type="button" class="nav-dropdown-toggle" aria-expanded="false">
+                Mais
+              </button>
+              <ul class="nav-dropdown-menu">
+                <li><a href="login.html?redirect=schedule">Programação</a></li>
+                <li><a href="photos.html">Pré-Wedding</a></li>
+                <li><a href="messages.html">Recados</a></li>
+                <li><a href="vendors.html">Fornecedores</a></li>
+              </ul>
+            </li>
           </ul>
         </nav>
 
@@ -86,13 +93,23 @@
       <div class="hero-overlay"></div>
 
       <div class="hero-content fade-up">
-        <p class="hero-subtitle">Estamos nos casando</p>
+        <img
+          src="./assets/images/brand/couple-logo-light.svg"
+          alt=""
+          class="hero-couple-logo"
+          aria-hidden="true"
+        />
 
-        <h1 data-wedding-names>Livia & Messias</h1>
+        <p class="hero-subtitle">Vamos nos casar</p>
+
+        <h1 class="hero-couple-names" aria-label="Livia e Messias">
+          <span data-bride-name>Livia</span>
+          <span class="hero-couple-ampersand" aria-hidden="true">&amp;</span>
+          <span data-groom-name>Messias</span>
+        </h1>
 
         <p class="hero-text">
-          Um novo capítulo da nossa história começa diante de Deus, cercado
-          pelas pessoas que mais amamos.
+          Com Deus e Nossa Senhora guiando nossos passos, começamos o nosso para sempre
         </p>
 
         <div class="hero-date" data-wedding-date>23 de Abril de 2027</div>
@@ -154,6 +171,8 @@
           inesquecível, e somos profundamente gratos por fazer parte da nossa
           história.
         </p>
+
+        <span class="welcome-ornament" aria-hidden="true">❦</span>
       </div>
     </section>
 
@@ -261,7 +280,7 @@
         <p class="welcome-text">
           Celebrar esse dia ao seu lado já é o que mais desejamos. Mas, se
           quiser nos presentear nessa nova etapa, preparamos uma lista com
-          opções escolhidas com carinho.
+          opções escolhidas com carinho
         </p>
 
         <a href="login.html?redirect=gifts" class="hero-button">
@@ -278,7 +297,7 @@
           <h2 class="section-title">Programação do Casamento</h2>
 
           <p class="welcome-text">
-            Preparamos alguns momentos especiais para celebrar esse dia com vocês.
+            Preparamos alguns momentos especiais para celebrar esse dia com vocês
           </p>
         </div>
 
@@ -296,7 +315,7 @@
           <h2 class="section-title">Nosso Pré-Wedding</h2>
 
           <p class="welcome-text">
-            Um pedacinho do nosso pré-wedding para vocês.
+            Um pedacinho do nosso pré-wedding para vocês
           </p>
 
           <a href="photos.html" class="hero-button"> Ver Fotos </a>
@@ -318,7 +337,7 @@
           <h2 class="section-title">Mensagens que guardamos com carinho</h2>
 
           <p class="welcome-text">
-            Alguns recados especiais que já chegaram para nós.
+            Alguns recados especiais que já chegaram para nós
           </p>
         </div>
 
@@ -362,7 +381,7 @@
           <h2 class="section-title">Nossos Fornecedores</h2>
 
           <p class="welcome-text">
-            Algumas pessoas e equipes estão nos ajudando a fazer esse dia acontecer.
+            Algumas pessoas e equipes estão nos ajudando a fazer esse dia acontecer
           </p>
         </div>
 
@@ -372,6 +391,15 @@
 
     <!-- Footer -->
     <footer class="footer">
+      <a href="index.html" class="footer-couple-logo-link" aria-label="Voltar para o início">
+        <img
+          src="./assets/images/brand/couple-logo-primary.svg"
+          alt=""
+          class="footer-couple-logo"
+          aria-hidden="true"
+        />
+      </a>
+
       <h3 data-wedding-names>Livia & Messias</h3>
 
       <p data-wedding-date-location>23 de Abril de 2027 • Fortaleza, Ceará</p>

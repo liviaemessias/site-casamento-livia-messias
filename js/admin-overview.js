@@ -1,6 +1,7 @@
 AdminCommon.setupLogout();
 
 const { setText } = AdminCommon;
+const BRAND_COLOR = AdminCommon.BRAND_COLOR;
 
 function formatCurrency(value) {
   return Number(value || 0).toLocaleString("pt-BR", {
@@ -125,7 +126,7 @@ function updateAttendanceDonut({ yes, no, pending }) {
 
   const context = canvas.getContext("2d");
   const segments = [
-    { value: yes, color: "#6f3fa7" },
+    { value: yes, color: BRAND_COLOR },
     { value: no, color: "#b76b7c" },
     { value: pending, color: "#ded7e5" },
   ];

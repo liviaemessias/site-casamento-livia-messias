@@ -14,14 +14,14 @@ begin;
 do $$
 begin
   if to_regprocedure(
-    'public.create_guest_with_invite_code(text,text,jsonb,integer,boolean)'
+    'public.create_guest_with_invite_code(text,text,jsonb,integer,boolean,text)'
   ) is null then
     raise exception
       'Run the updated security_invite_code_generation.sql first.';
   end if;
 
   if to_regprocedure(
-    'public.admin_update_guest(uuid,text,text,jsonb,integer,boolean)'
+    'public.admin_update_guest(uuid,text,text,jsonb,integer,boolean,text)'
   ) is null then
     raise exception
       'Run the updated security_admin_guest_operations.sql first.';
@@ -36,6 +36,14 @@ drop function if exists public.create_guest_with_invite_code(
   integer,
   boolean
 );
+drop function if exists public.create_guest_with_invite_code(
+  text,
+  text,
+  jsonb,
+  integer,
+  boolean,
+  text
+);
 
 drop function if exists public.admin_update_guest(
   uuid,
@@ -44,6 +52,15 @@ drop function if exists public.admin_update_guest(
   jsonb,
   integer,
   boolean
+);
+drop function if exists public.admin_update_guest(
+  uuid,
+  text,
+  text,
+  jsonb,
+  integer,
+  boolean,
+  text
 );
 
 alter table public.guests

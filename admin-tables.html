@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://unpkg.com https://challenges.cloudflare.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mesas | Painel Admin | Livia &amp; Messias</title>
+    <link rel="stylesheet" href="./css/style.css" />
+    <link rel="stylesheet" href="./css/admin.css" />
+  </head>
+  <body class="admin-auth-pending">
+    <main class="admin-page admin-tables-page">
+      <section class="admin-header">
+        <div>
+          <p class="section-subtitle">Painel Administrativo</p>
+          <h1>Mesas</h1>
+        </div>
+        <button id="logoutButton" class="admin-logout">Sair</button>
+      </section>
+
+      <nav class="admin-nav" aria-label="Navegação administrativa">
+        <a class="admin-nav-link" href="./admin-dashboard.html">Dashboard</a>
+        <a class="admin-nav-link" href="./admin-guests.html">Convidados</a>
+        <a class="admin-nav-link" href="./admin-rsvps.html">RSVP</a>
+        <a class="admin-nav-link" href="./admin-gifts.html">Presentes</a>
+        <a class="admin-nav-link active" href="./admin-tables.html">Mesas</a>
+        <a class="admin-nav-link" href="./admin-settings.html">Configurações</a>
+      </nav>
+
+      <section class="admin-section">
+        <div class="admin-section-header">
+          <div>
+            <p class="section-subtitle">Recepção</p>
+            <h2>Definição de Mesas</h2>
+          </div>
+
+          <div class="admin-section-actions">
+            <button id="refreshTablesButton" class="admin-action-button icon-action">
+              <i data-lucide="refresh-cw" aria-hidden="true"></i>
+              Atualizar
+            </button>
+            <button id="exportTablesButton" class="admin-action-button icon-action">
+              <i data-lucide="download" aria-hidden="true"></i>
+              Exportar CSV
+            </button>
+            <button id="openTableOrderModalButton" class="admin-action-button icon-action">
+              <i data-lucide="list-ordered" aria-hidden="true"></i>
+              Organizar Ordem
+            </button>
+            <button id="openTableModalButton" class="admin-action-button icon-action success">
+              <i data-lucide="plus" aria-hidden="true"></i>
+              Nova Mesa
+            </button>
+          </div>
+        </div>
+
+        <div class="admin-segmented-control table-view-mode" aria-label="Modo de ocupação">
+          <button type="button" class="active" data-table-view-mode="hybrid">Híbrido</button>
+          <button type="button" data-table-view-mode="confirmed">Confirmado</button>
+          <button type="button" data-table-view-mode="planned">Planejado</button>
+        </div>
+
+        <section class="admin-grid dashboard-grid table-summary-grid" aria-label="Resumo das mesas">
+          <article class="admin-card admin-card-link table-summary-card" data-table-summary="all" role="button" tabindex="0">
+            <div class="admin-card-header">
+              <span>Mesas</span>
+              <button type="button" class="metric-help" aria-label="Ajuda sobre mesas" data-tooltip="Total de mesas cadastradas.">?</button>
+            </div>
+            <strong id="tableTotalCount">0</strong>
+          </article>
+          <article class="admin-card admin-card-link table-summary-card" data-table-summary="available" role="button" tabindex="0">
+            <div class="admin-card-header">
+              <span>Com Vagas</span>
+              <button type="button" class="metric-help" aria-label="Ajuda sobre vagas" data-tooltip="Mesas ativas abaixo da capacidade no modo selecionado.">?</button>
+            </div>
+            <strong id="tableAvailableCount">0</strong>
+          </article>
+          <article class="admin-card admin-card-link table-summary-card" data-table-summary="full" role="button" tabindex="0">
+            <div class="admin-card-header">
+              <span>Lotadas</span>
+              <button type="button" class="metric-help" aria-label="Ajuda sobre lotadas" data-tooltip="Mesas com ocupação igual ou acima da capacidade no modo selecionado.">?</button>
+            </div>
+            <strong id="tableFullCount">0</strong>
+          </article>
+          <article class="admin-card admin-card-link table-summary-card" data-table-summary="unassigned" role="button" tabindex="0">
+            <div class="admin-card-header">
+              <span>Sem Mesa</span>
+              <button type="button" class="metric-help" aria-label="Ajuda sobre sem mesa" data-tooltip="Convites ativos ainda sem mesa definida.">?</button>
+            </div>
+            <strong id="tableUnassignedCount">0</strong>
+          </article>
+        </section>
+
+        <div class="admin-filters" aria-label="Filtros de mesas">
+          <div class="admin-filter-field">
+            <label for="tableSearchInput">Buscar</label>
+            <input id="tableSearchInput" type="search" placeholder="Mesa, local, observação ou convidado" />
+          </div>
+
+          <div class="admin-filter-field">
+            <label for="tableStatusFilter">Situação</label>
+            <select id="tableStatusFilter">
+              <option value="">Todas</option>
+              <option value="active">Ativas</option>
+              <option value="available">Com vagas</option>
+              <option value="full">Lotadas</option>
+              <option value="over">Acima da capacidade</option>
+              <option value="inactive">Inativas</option>
+            </select>
+          </div>
+
+          <div class="admin-filter-field">
+            <label for="tableGuestSideFilter">Convidado de</label>
+            <select id="tableGuestSideFilter">
+              <option value="">Todos</option>
+              <option value="couple">Casal</option>
+              <option value="bride">Noiva</option>
+              <option value="groom">Noivo</option>
+            </select>
+          </div>
+
+          <div class="admin-filter-field">
+            <label for="tableGuestStatusFilter">Convidados</label>
+            <select id="tableGuestStatusFilter">
+              <option value="">Todos</option>
+              <option value="active">Ativos</option>
+              <option value="inactive">Inativos</option>
+            </select>
+          </div>
+
+          <div class="admin-filter-actions">
+            <span id="tableFilterCount" class="admin-filter-count"></span>
+            <button id="clearTableFiltersButton" type="button" class="admin-clear-filters">
+              Limpar Filtros
+            </button>
+          </div>
+        </div>
+
+        <div id="tablesGrid" class="wedding-tables-grid"></div>
+      </section>
+    </main>
+
+    <div id="tableModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content">
+        <div class="admin-modal-header">
+          <div>
+            <p class="section-subtitle">Mesa</p>
+            <h2 id="tableModalTitle">Nova Mesa</h2>
+          </div>
+          <button id="closeTableModalButton" type="button" class="admin-modal-close" aria-label="Fechar">×</button>
+        </div>
+
+        <form id="tableForm" class="admin-form">
+          <div class="admin-form-grid">
+            <div class="admin-form-group">
+              <label for="tableNameInput">Nome</label>
+              <input id="tableNameInput" type="text" maxlength="120" required />
+            </div>
+            <div class="admin-form-group">
+              <label for="tableCapacityInput">Capacidade</label>
+              <input id="tableCapacityInput" type="number" min="0" max="100" step="1" value="8" />
+            </div>
+            <div class="admin-form-group">
+              <label for="tableOrderInput">Ordem</label>
+              <input id="tableOrderInput" type="number" step="1" />
+              <small class="admin-field-hint">Se deixar vazio, entra no final.</small>
+            </div>
+            <label class="admin-checkbox-label table-active-checkbox-label">
+              <input id="tableActiveInput" type="checkbox" checked />
+              Mesa ativa
+            </label>
+          </div>
+
+          <div class="admin-form-group">
+            <label for="tableLocationInput">Localização</label>
+            <input id="tableLocationInput" type="text" maxlength="160" />
+          </div>
+
+          <div class="admin-form-group">
+            <label for="tableNotesInput">Observações</label>
+            <textarea id="tableNotesInput" maxlength="600" rows="4"></textarea>
+          </div>
+
+          <div class="admin-modal-actions vendor-modal-actions">
+            <button type="submit" class="admin-save-button">Salvar Mesa</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="tableDetailsModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content admin-details-modal-content">
+        <button id="closeTableDetailsModalButton" type="button" class="admin-modal-close" aria-label="Fechar detalhes">×</button>
+        <h2 id="tableDetailsTitle">Detalhes da Mesa</h2>
+        <div id="tableDetailsContent" class="admin-details-content"></div>
+      </div>
+    </div>
+
+    <div id="tableAssignmentNoteModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content admin-details-modal-content">
+        <button id="closeTableAssignmentNoteModalButton" type="button" class="admin-modal-close" aria-label="Fechar observação">×</button>
+        <h2>Observação do Convidado na Mesa</h2>
+        <div id="tableAssignmentNoteContent" class="admin-details-content"></div>
+      </div>
+    </div>
+
+    <div id="assignGuestModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content">
+        <div class="admin-modal-header">
+          <div>
+            <p class="section-subtitle">Convidados</p>
+            <h2 id="assignGuestModalTitle">Adicionar Convidado</h2>
+          </div>
+          <button id="closeAssignGuestModalButton" type="button" class="admin-modal-close" aria-label="Fechar">×</button>
+        </div>
+
+        <form id="assignGuestForm" class="admin-form">
+          <div class="admin-form-group">
+            <label for="assignGuestInput">Convidado</label>
+            <select id="assignGuestInput" required></select>
+          </div>
+
+          <div class="admin-form-group">
+            <label for="assignGuestNotesInput">Observação</label>
+            <textarea id="assignGuestNotesInput" maxlength="400" rows="3"></textarea>
+          </div>
+
+          <div class="admin-modal-actions vendor-modal-actions">
+            <button type="submit" class="admin-save-button">Adicionar à Mesa</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="transferGuestModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content">
+        <div class="admin-modal-header">
+          <div>
+            <p class="section-subtitle">Mesas</p>
+            <h2 id="transferGuestModalTitle">Trocar Mesa</h2>
+          </div>
+          <button id="closeTransferGuestModalButton" type="button" class="admin-modal-close" aria-label="Fechar troca de mesa">×</button>
+        </div>
+
+        <form id="transferGuestForm" class="admin-form">
+          <div class="admin-form-group">
+            <label for="transferGuestTableInput">Nova mesa</label>
+            <select id="transferGuestTableInput" required></select>
+          </div>
+
+          <div class="admin-form-group">
+            <label for="transferGuestNotesInput">Observação do convidado na mesa</label>
+            <textarea id="transferGuestNotesInput" maxlength="400" rows="3"></textarea>
+          </div>
+
+          <div class="admin-modal-actions vendor-modal-actions">
+            <button type="submit" class="admin-save-button">Salvar Troca</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="tableOrderModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content admin-details-modal-content">
+        <button id="closeTableOrderModalButton" type="button" class="admin-modal-close" aria-label="Fechar organização">×</button>
+        <h2>Organizar Ordem</h2>
+        <p class="admin-modal-helper">Arraste as mesas ou use as setas para definir a ordem.</p>
+        <div id="tableOrderList" class="vendor-order-list" aria-label="Ordem das mesas"></div>
+        <div class="admin-modal-actions vendor-modal-actions">
+          <button id="saveTableOrderButton" type="button" class="admin-save-button">Salvar Ordem</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="adminToast" class="admin-toast"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/event-config.js"></script>
+    <script src="js/event-settings.js"></script>
+    <script src="js/admin-common.js"></script>
+    <script src="js/admin-bootstrap.js"></script>
+  </body>
+</html>

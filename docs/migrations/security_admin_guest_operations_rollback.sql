@@ -18,6 +18,15 @@ drop function if exists public.admin_update_guest(
   integer,
   boolean
 );
+drop function if exists public.admin_update_guest(
+  uuid,
+  text,
+  text,
+  jsonb,
+  integer,
+  boolean,
+  text
+);
 drop function if exists public.admin_set_guest_active(uuid, boolean);
 drop function if exists public.admin_set_guest_invite_sent(uuid, boolean);
 

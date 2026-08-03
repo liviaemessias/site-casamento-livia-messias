@@ -8,7 +8,22 @@ async function loadReports() {
     card.disabled = true;
   });
 
-  const [guestsResult, rsvpsResult, giftsResult, contributionsResult, settingsResult] =
+  const [
+    guestsResult,
+    rsvpsResult,
+    giftsResult,
+    contributionsResult,
+    settingsResult,
+    tablesResult,
+    assignmentsResult,
+    checklistItemsResult,
+    financialScenariosResult,
+    financialCategoriesResult,
+    financialPayersResult,
+    financialBudgetItemsResult,
+    financialExpensesResult,
+    financialPaymentsResult,
+  ] =
     await Promise.all([
       supabaseClient.from("guests").select("*"),
       supabaseClient.from("rsvps").select("*"),
@@ -21,6 +36,15 @@ async function loadReports() {
       supabaseClient
         .rpc("get_public_settings")
         .maybeSingle(),
+      supabaseClient.rpc("admin_list_wedding_tables"),
+      supabaseClient.rpc("admin_list_wedding_table_assignments"),
+      supabaseClient.rpc("admin_list_checklist_items"),
+      supabaseClient.rpc("admin_list_financial_budget_scenarios"),
+      supabaseClient.rpc("admin_list_financial_categories"),
+      supabaseClient.rpc("admin_list_financial_payers"),
+      supabaseClient.rpc("admin_list_financial_budget_items"),
+      supabaseClient.rpc("admin_list_financial_expenses"),
+      supabaseClient.rpc("admin_list_financial_expense_payments"),
     ]);
 
   const error =
@@ -28,7 +52,16 @@ async function loadReports() {
     rsvpsResult.error ||
     giftsResult.error ||
     contributionsResult.error ||
-    settingsResult.error;
+    settingsResult.error ||
+    tablesResult.error ||
+    assignmentsResult.error ||
+    checklistItemsResult.error ||
+    financialScenariosResult.error ||
+    financialCategoriesResult.error ||
+    financialPayersResult.error ||
+    financialBudgetItemsResult.error ||
+    financialExpensesResult.error ||
+    financialPaymentsResult.error;
 
   if (error) {
     console.error(error);
@@ -46,12 +79,23 @@ async function loadReports() {
   );
 
   AdminDashboardReports.setData({
+    allGuests: guestsResult.data || [],
+    allRSVPs: rsvpsResult.data || [],
     activeGuests,
     activeRSVPs,
     contributions: contributionsResult.data || [],
+    tableAssignments: assignmentsResult.data || [],
+    tables: tablesResult.data || [],
     buffetPayingAge: BuffetMetrics.normalizePayingAge(
       settingsResult.data?.buffet_paying_age,
     ),
+    checklistItems: checklistItemsResult.data || [],
+    financialBudgetItems: financialBudgetItemsResult.data || [],
+    financialCategories: financialCategoriesResult.data || [],
+    financialExpenses: financialExpensesResult.data || [],
+    financialPayments: financialPaymentsResult.data || [],
+    financialPayers: financialPayersResult.data || [],
+    financialScenarios: financialScenariosResult.data || [],
     gifts: giftsResult.data || [],
   });
 

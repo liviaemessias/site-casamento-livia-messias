@@ -1,6 +1,9 @@
 (function () {
   const scheduleTimeline = document.getElementById("scheduleTimeline");
   const scheduleEmptyState = document.getElementById("scheduleEmptyState");
+  const scheduleHeroDescription = document.getElementById(
+    "scheduleHeroDescription",
+  );
   const toast = document.getElementById("toast");
   const toastMessage = document.getElementById("toastMessage");
 
@@ -11,6 +14,20 @@
     other: "Outro",
     service: "Serviço",
   };
+
+  function isCoupleInvite(guest) {
+    return guest?.invite_type === "couple";
+  }
+
+  function updateHeroDescription(guest) {
+    if (!scheduleHeroDescription) {
+      return;
+    }
+
+    scheduleHeroDescription.textContent = isCoupleInvite(guest)
+      ? "Vejam os principais momentos que preparamos para celebrar esse dia com vocês"
+      : "Veja os principais momentos que preparamos para celebrar esse dia com você";
+  }
 
   function showToast(message) {
     if (!toast || !toastMessage) {
@@ -176,6 +193,7 @@
 
     window.currentGuest = guest;
     window.PublicCommon?.showGuestName(guest);
+    updateHeroDescription(guest);
     document.body.classList.remove("guest-auth-pending");
     return guest;
   }

@@ -230,6 +230,367 @@
       </section>
 
       <section class="metrics-section dashboard-summary">
+        <div class="metrics-header">
+          <h2>Resumo dos Convidados</h2>
+        </div>
+
+        <div class="admin-grid dashboard-grid">
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Da Noiva</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre convidados da Noiva"
+                data-tooltip="Convites ativos classificados como convidados da Noiva."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalBrideGuests">0</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Do Noivo</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre convidados do Noivo"
+                data-tooltip="Convites ativos classificados como convidados do Noivo."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalGroomGuests">0</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Do Casal</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre convidados do Casal"
+                data-tooltip="Convites ativos classificados como convidados do Casal."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalCoupleSideGuests">0</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Individuais</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre convites individuais"
+                data-tooltip="Convites ativos do tipo individual."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalIndividualInvites">0</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Casais</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre convites de casal"
+                data-tooltip="Convites ativos do tipo casal."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalCoupleInvites">0</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Convites Enviados</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre convites enviados"
+                data-tooltip="Convites ativos marcados como enviados."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalInviteSentGuests">0</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Não Enviados</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre convites não enviados"
+                data-tooltip="Convites ativos ainda não marcados como enviados."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalInvitePendingGuests">0</strong>
+          </div>
+        </div>
+
+        <div class="dashboard-chart-card" aria-labelledby="guestSideChartTitle">
+          <div class="dashboard-chart-header">
+            <div>
+              <h3 id="guestSideChartTitle">Distribuição dos Convidados</h3>
+              <p>Convites ativos agrupados por Noiva, Noivo e Casal.</p>
+            </div>
+
+            <span id="guestSideChartTotal">0 convites</span>
+          </div>
+
+          <div
+            class="dashboard-stacked-bar"
+            id="guestSideStackedBar"
+            role="img"
+            aria-label="Distribuição dos convidados por origem"
+          >
+            <span class="chart-segment guest-bride" id="guestBrideSegment"></span>
+            <span class="chart-segment guest-groom" id="guestGroomSegment"></span>
+            <span class="chart-segment guest-couple" id="guestCoupleSegment"></span>
+          </div>
+
+          <div class="dashboard-chart-legend">
+            <div class="chart-legend-item">
+              <span class="chart-dot guest-bride"></span>
+              <div>
+                <strong>Noiva</strong>
+                <small id="guestBrideLegend">0 · 0%</small>
+              </div>
+            </div>
+
+            <div class="chart-legend-item">
+              <span class="chart-dot guest-groom"></span>
+              <div>
+                <strong>Noivo</strong>
+                <small id="guestGroomLegend">0 · 0%</small>
+              </div>
+            </div>
+
+            <div class="chart-legend-item">
+              <span class="chart-dot guest-couple"></span>
+              <div>
+                <strong>Casal</strong>
+                <small id="guestCoupleLegend">0 · 0%</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="metrics-section dashboard-summary">
+        <div class="metrics-header">
+          <h2>Resumo das Mesas</h2>
+        </div>
+
+        <div class="admin-grid dashboard-grid">
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Mesas</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre mesas"
+                data-tooltip="Total de mesas cadastradas na recepção."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalTables">0</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Mesas Ativas</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre mesas ativas"
+                data-tooltip="Mesas ativas no planejamento atual."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalActiveTables">0</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Com Vagas</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre mesas com vagas"
+                data-tooltip="Mesas ativas abaixo da capacidade no modo híbrido."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalAvailableTables">0</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Lotadas</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre mesas lotadas"
+                data-tooltip="Mesas ativas com ocupação igual ou acima da capacidade no modo híbrido."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalFullTables">0</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Acima da Capacidade</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre mesas acima da capacidade"
+                data-tooltip="Mesas ativas com ocupação acima da capacidade no modo híbrido."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalOverTables">0</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Com Mesa</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre convites com mesa"
+                data-tooltip="Convites ativos que já possuem mesa atribuída."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalGuestsWithTable">0</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Sem Mesa</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre convites sem mesa"
+                data-tooltip="Convites ativos que ainda não possuem mesa atribuída."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalGuestsWithoutTable">0</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Confirmados sem Mesa</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre confirmados sem mesa"
+                data-tooltip="RSVPs ativos com presença confirmada e ainda sem mesa definida."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalConfirmedWithoutTable">0</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Não Vão em Mesa</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre ausentes em mesa"
+                data-tooltip="Convidados atribuídos a mesas que responderam RSVP como ausência."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalDeclinedWithTable">0</strong>
+          </div>
+        </div>
+
+        <div class="dashboard-chart-card" aria-labelledby="tableChartTitle">
+          <div class="dashboard-chart-header">
+            <div>
+              <h3 id="tableChartTitle">Situação das Mesas</h3>
+              <p>Mesas agrupadas pela ocupação híbrida e pelo status ativo/inativo.</p>
+            </div>
+
+            <span id="tableChartTotal">0 mesas</span>
+          </div>
+
+          <div
+            class="dashboard-stacked-bar"
+            id="tableStackedBar"
+            role="img"
+            aria-label="Situação das mesas"
+          >
+            <span class="chart-segment table-available" id="tableAvailableSegment"></span>
+            <span class="chart-segment table-full" id="tableFullSegment"></span>
+            <span class="chart-segment table-over" id="tableOverSegment"></span>
+            <span class="chart-segment table-inactive" id="tableInactiveSegment"></span>
+          </div>
+
+          <div class="dashboard-chart-legend">
+            <div class="chart-legend-item">
+              <span class="chart-dot table-available"></span>
+              <div>
+                <strong>Com Vagas</strong>
+                <small id="tableAvailableLegend">0 · 0%</small>
+              </div>
+            </div>
+
+            <div class="chart-legend-item">
+              <span class="chart-dot table-full"></span>
+              <div>
+                <strong>Lotadas</strong>
+                <small id="tableFullLegend">0 · 0%</small>
+              </div>
+            </div>
+
+            <div class="chart-legend-item">
+              <span class="chart-dot table-over"></span>
+              <div>
+                <strong>Acima da Capacidade</strong>
+                <small id="tableOverLegend">0 · 0%</small>
+              </div>
+            </div>
+
+            <div class="chart-legend-item">
+              <span class="chart-dot table-inactive"></span>
+              <div>
+                <strong>Inativas</strong>
+                <small id="tableInactiveLegend">0 · 0%</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="metrics-section dashboard-summary">
         <div class="metrics-header dashboard-metrics-header">
           <h2>Resumo do Buffet</h2>
           <p id="buffetPayingRule">Pagantes a partir de 7 anos.</p>
@@ -309,6 +670,21 @@
               </button>
             </div>
             <strong id="totalUnknownAgeChildren">0</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Pessoas com Restrição</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre pessoas com restrição alimentar"
+                data-tooltip="Pessoas confirmadas que tiveram uma restrição alimentar informada individualmente."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalDietaryRestrictionPeople">0</strong>
           </div>
         </div>
 
@@ -572,7 +948,7 @@
 
       <section class="metrics-section dashboard-summary">
         <div class="metrics-header">
-          <h2>Resumo Financeiro</h2>
+          <h2>Valores dos Presentes</h2>
         </div>
 
         <div class="admin-grid dashboard-grid">
@@ -670,7 +1046,7 @@
         <div class="dashboard-chart-card" aria-labelledby="financialChartTitle">
           <div class="dashboard-chart-header">
             <div>
-              <h3 id="financialChartTitle">Distribuição dos Valores</h3>
+              <h3 id="financialChartTitle">Distribuição dos Valores dos Presentes</h3>
               <p>Comparativo visual entre valores disponíveis, pendentes, informados e confirmados.</p>
             </div>
 

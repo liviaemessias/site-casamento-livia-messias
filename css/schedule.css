@@ -15,7 +15,7 @@
   inset: 0;
   content: "";
   background:
-    linear-gradient(to bottom, rgba(0, 0, 0, 0.38), rgba(70, 20, 120, 0.48)),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.38), rgba(var(--color-primary-rgb), 0.48)),
     url("../assets/images/schedule/schedule-hero.jpg") center 50% / cover;
 }
 
@@ -28,14 +28,15 @@
 
 .schedule-hero h1 {
   margin-bottom: 1.4rem;
-  font-family: var(--font-heading);
-  font-size: 5.4rem;
-  line-height: 0.98;
+  font-family: var(--font-romantic);
+  font-size: clamp(4.1rem, 8vw, 5.8rem);
+  font-weight: 400;
+  line-height: 0.9;
 }
 
-.schedule-hero p {
+.schedule-hero p:not(.section-subtitle) {
   color: var(--color-hero-text);
-  font-size: 1.12rem;
+  font-size: 1.1rem;
   line-height: 2;
 }
 
@@ -58,42 +59,104 @@
   grid-template-columns: minmax(220px, 0.34fr) minmax(0, 1fr);
   gap: 1.4rem;
   padding: 1.1rem;
-  border: 1px solid rgba(111, 63, 167, 0.14);
+  border: 1px solid rgba(var(--color-primary-rgb), 0.14);
   border-radius: var(--radius-xl);
   background: rgba(255, 255, 255, 0.86);
   box-shadow: var(--shadow-card);
+  transition:
+    border-color 0.3s ease,
+    box-shadow 0.3s ease,
+    transform 0.3s ease;
+}
+
+.schedule-section-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(var(--color-primary-rgb), 0.18);
+  box-shadow: 0 20px 52px rgba(35, 24, 42, 0.12);
 }
 
 .schedule-section-header {
+  position: relative;
   display: grid;
   align-content: start;
-  gap: 0.55rem;
-  padding: 1rem;
-  border: 1px solid rgba(111, 63, 167, 0.16);
-  border-left: 5px solid var(--color-primary);
+  gap: 0.68rem;
+  overflow: hidden;
+  padding: 1.05rem;
+  border: 1px solid rgba(var(--color-primary-rgb), 0.09);
   border-radius: var(--radius-md);
-  background: #f3edf8;
+  backdrop-filter: blur(12px);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.78), rgba(250, 247, 251, 0.5)),
+    radial-gradient(circle at 90% 8%, rgba(var(--color-primary-rgb), 0.075), transparent 42%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.78),
+    0 12px 30px rgba(var(--color-primary-rgb), 0.045);
+}
+
+.schedule-section-header::before {
+  position: absolute;
+  inset: 0.55rem 0.9rem auto;
+  height: 1px;
+  content: "";
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(var(--color-primary-rgb), 0.18),
+    transparent
+  );
+  pointer-events: none;
+}
+
+.schedule-section-header::after {
+  position: absolute;
+  right: -18%;
+  bottom: -32%;
+  width: 62%;
+  height: 62%;
+  border-radius: 999px;
+  content: "";
+  background: rgba(255, 255, 255, 0.34);
+  filter: blur(24px);
+  pointer-events: none;
 }
 
 .schedule-section-header h2 {
+  position: relative;
+  z-index: 1;
   margin: 0;
   color: var(--color-primary);
   font-family: var(--font-heading);
-  font-size: 3rem;
+  font-size: clamp(2.55rem, 4vw, 3rem);
+  line-height: 0.95;
 }
 
 .schedule-location {
+  position: relative;
+  z-index: 1;
   margin: 0;
-  color: var(--color-text);
+  color: var(--color-text-heading);
   font-size: 0.95rem;
   font-weight: 700;
+  line-height: 1.45;
 }
 
 .schedule-address,
 .schedule-description {
+  position: relative;
+  z-index: 1;
   margin: 0;
   color: var(--color-text-muted);
   line-height: 1.65;
+}
+
+.schedule-address {
+  font-size: 0.9rem;
+}
+
+.schedule-description {
+  margin-top: 0.1rem;
+  padding-top: 0.68rem;
+  border-top: 1px solid rgba(var(--color-primary-rgb), 0.09);
 }
 
 .schedule-activities {
@@ -113,9 +176,9 @@
   content: "";
   background: linear-gradient(
     to bottom,
-    rgba(111, 63, 167, 0.12),
-    rgba(111, 63, 167, 0.24),
-    rgba(111, 63, 167, 0.12)
+    rgba(var(--color-primary-rgb), 0.12),
+    rgba(var(--color-primary-rgb), 0.24),
+    rgba(var(--color-primary-rgb), 0.12)
   );
 }
 
@@ -140,7 +203,7 @@
   border-radius: var(--radius-pill);
   content: "";
   background: var(--color-primary);
-  box-shadow: 0 0 0 1px rgba(111, 63, 167, 0.22);
+  box-shadow: 0 0 0 1px rgba(var(--color-primary-rgb), 0.22);
 }
 
 .schedule-activity-time {
@@ -161,9 +224,21 @@
 .schedule-activity-content {
   min-width: 0;
   padding: 0.75rem 0.9rem;
-  border: 1px solid rgba(111, 63, 167, 0.08);
+  border: 1px solid rgba(var(--color-primary-rgb), 0.08);
   border-radius: var(--radius-md);
   background: rgba(255, 255, 255, 0.72);
+  transition:
+    border-color 0.25s ease,
+    background-color 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
+}
+
+.schedule-activity:hover .schedule-activity-content {
+  transform: translateX(2px);
+  border-color: rgba(var(--color-primary-rgb), 0.14);
+  background-color: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 12px 28px rgba(var(--color-primary-rgb), 0.06);
 }
 
 .schedule-activity-content h3 {
@@ -178,7 +253,7 @@
   margin-bottom: 0.5rem;
   padding: 0.22rem 0.5rem;
   border-radius: var(--radius-pill);
-  background: rgba(111, 63, 167, 0.075);
+  background: rgba(var(--color-primary-rgb), 0.075);
   color: var(--color-primary);
   font-size: 0.68rem;
   font-weight: 800;
@@ -220,9 +295,9 @@
     padding: 7.25rem 1rem 4rem;
   }
 
-  .schedule-hero p {
-    font-size: 1rem;
-    line-height: 1.75;
+  .schedule-hero p:not(.section-subtitle) {
+    font-size: 0.95rem;
+    line-height: 1.6rem;
   }
 
   .schedule-section {
@@ -234,7 +309,7 @@
   }
 
   .schedule-hero h1 {
-    font-size: 3.3rem;
+    font-size: clamp(3.2rem, 14vw, 4.3rem);
   }
 
   .schedule-section-header h2,
@@ -250,10 +325,13 @@
     background: rgba(255, 255, 255, 0.9);
   }
 
+  .schedule-section-card:hover {
+    transform: none;
+  }
+
   .schedule-section-header {
-    gap: 0.4rem;
+    gap: 0.52rem;
     padding: 0.8rem;
-    border-left-width: 4px;
   }
 
   .schedule-location {
@@ -304,6 +382,10 @@
     padding: 0.72rem 0.8rem;
   }
 
+  .schedule-activity:hover .schedule-activity-content {
+    transform: none;
+  }
+
   .schedule-activity-content h3 {
     margin-bottom: 0.3rem;
     font-size: 0.98rem;
@@ -321,10 +403,6 @@
 }
 
 @media (max-width: 420px) {
-  .schedule-hero h1 {
-    font-size: 2.85rem;
-  }
-
   .schedule-section {
     padding: 2.6rem 0;
   }
@@ -337,5 +415,17 @@
   .schedule-section-header h2,
   .schedule-empty-state h2 {
     font-size: 2rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .schedule-section-card,
+  .schedule-activity-content {
+    transition: none;
+  }
+
+  .schedule-section-card:hover,
+  .schedule-activity:hover .schedule-activity-content {
+    transform: none;
   }
 }

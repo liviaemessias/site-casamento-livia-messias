@@ -221,8 +221,6 @@ physical
   "presence": "Sim",
   "email": "messias@email.com",
   "phone": "(85) 99999-9999",
-  "food_restriction": true,
-  "food": "Vegetariano",
   "message": "Estamos ansiosos!",
   "updated_at": "2026-06-13T18:00:00Z",
   "guest_data": {
@@ -230,17 +228,32 @@ physical
     "email": "messias@email.com",
     "phone": "(85) 99999-9999",
     "guest_count": 1,
+    "food_restriction": true,
+    "food": "Vegetariano",
     "members": [],
     "companions": [
       {
         "name": "Pedro",
         "is_child": "Não",
-        "age": ""
+        "age": "",
+        "food_restriction": false,
+        "food": ""
       }
     ]
   }
 }
 ```
+
+Observações:
+
+- `rsvps.food` e `rsvps.food_restriction` não fazem mais parte do modelo atual.
+- A restrição alimentar é sempre da pessoa, não do convite inteiro.
+- O campo `food` deve guardar apenas a descrição da restrição, sem prefixar o
+  nome da pessoa. Quando uma tela ou relatório precisa diferenciar várias
+  pessoas, o nome é adicionado somente na apresentação.
+- Em convites de casal, as restrições ficam em `guest_data.members[]`.
+- Em convites individuais, a restrição do convidado principal fica diretamente
+  em `guest_data.food` e `guest_data.food_restriction`.
 
 ## Payload De Reserva De Presente
 

@@ -14,7 +14,19 @@ Use estes arquivos quando a intenção for montar o ambiente do zero:
 
 `supabase_rebuild_full_setup.sql` é a fonte principal para projeto novo. Ele
 consolida schema, tabelas auxiliares, RPCs, triggers, grants, RLS, notificações,
-preferencias e reenvios manuais.
+preferências, reenvios manuais e a fundação do módulo `Financeiro`. O modelo
+atual de RSVP não usa mais `rsvps.food` nem `rsvps.food_restriction`;
+restrições alimentares ficam por pessoa dentro de `rsvps.guest_data`.
+
+O módulo `Financeiro` já é criado com:
+
+- contextos para `Casamento` e `Lua de Mel`;
+- cenários de orçamento, incluindo `Planejado` como referência inicial;
+- categorias e pagadores editáveis com seed inicial;
+- itens de orçamento previsto;
+- gastos reais com vínculo opcional aos itens previstos;
+- parcelas e pagamentos;
+- RPCs administrativas e verificações de RLS/grants.
 
 Depois de executar o setup consolidado, siga o runbook para configurar Auth,
 secrets, Edge Functions, frontend e testes funcionais.

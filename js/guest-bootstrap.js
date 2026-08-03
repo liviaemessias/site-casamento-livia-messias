@@ -23,6 +23,9 @@
   }
 
   async function startGuestPage() {
+    window.PublicCommon?.setupNavbar();
+    window.PublicCommon?.setupLogout();
+
     const guest = await GuestAuth.requireGuestPage();
 
     if (!guest) {

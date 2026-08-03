@@ -44,6 +44,7 @@ const RESPONSIBLE_TYPE_LABELS = {
   person: "Pessoa",
   planner: "Cerimonial",
 };
+const DEFAULT_BRAND_COLOR = AdminCommon.BRAND_COLOR;
 const CATEGORY_ICON_OPTIONS = [
   ["church", "Cerimônia"],
   ["party-popper", "Recepção"],
@@ -179,7 +180,7 @@ function populateCategoryIconSelect() {
 function updateCategoryIconPreview() {
   const color = isSafeHexColor(categoryColorInput.value)
     ? categoryColorInput.value
-    : "#6f3fa7";
+    : DEFAULT_BRAND_COLOR;
 
   categoryIconPreview.replaceChildren(createIconElement(categoryIconInput.value || "check-square"));
   categoryIconPreview.style.backgroundColor = color;
@@ -221,8 +222,24 @@ function formatDate(value) {
   return value ? AdminCommon.formatDate(value) : "-";
 }
 
+function formatDateOnly(value) {
+  const rawValue = String(value || "");
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(rawValue)) {
+    return formatDate(value);
+  }
+
+  const [year, month, day] = rawValue.split("-");
+  return `${day}/${month}/${year}`;
+}
+
 function getTodayKey() {
-  return new Date().toISOString().slice(0, 10);
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
 }
 
 function isOverdue(item) {
@@ -531,12 +548,12 @@ function renderChecklistCard(item) {
         <div>
           <h4>${safeText(item.title)}</h4>
           <div class="checklist-task-meta">
-            <span class="checklist-category-chip" data-category-color="${escapeAttribute(item.category_color || "#6f3fa7")}">
+            <span class="checklist-category-chip" data-category-color="${escapeAttribute(item.category_color || DEFAULT_BRAND_COLOR)}">
               ${renderIcon(item.category_icon || "tag")}
               ${safeText(item.category_name)}
             </span>
             <span>${safeText(getResponsibleName(item))}</span>
-            <span>${safeText(item.due_date ? formatDate(item.due_date) : "Sem prazo")}</span>
+            <span>${safeText(item.due_date ? formatDateOnly(item.due_date) : "Sem prazo")}</span>
           </div>
         </div>
       </div>
@@ -669,12 +686,20 @@ function closeItemModal() {
 function resetCategoryForm() {
   selectedCategoryId = null;
   checklistCategoryForm.reset();
-  categoryColorInput.value = "#6f3fa7";
+  categoryColorInput.value = DEFAULT_BRAND_COLOR;
   categoryIconInput.value = "check-square";
   categoryOrderInput.value = getNextCategoryOrder();
   updateCategoryIconPreview();
   categoryActiveInput.checked = true;
   cancelCategoryEditButton.classList.add("is-hidden");
+}
+
+function scrollToChecklistManagerForm(form, firstInput) {
+  form?.scrollIntoView({
+    behavior: "smooth",
+    block: "start",
+  });
+  firstInput?.focus({ preventScroll: true });
 }
 
 function renderCategoryList() {
@@ -683,7 +708,9 @@ function renderCategoryList() {
     cachedCategories.map(
       (category) => `
         <article class="checklist-category-item">
-          <span class="checklist-category-swatch" data-category-color="${escapeAttribute(category.color)}"></span>
+          <span class="checklist-category-swatch checklist-responsible-icon" data-category-color="${escapeAttribute(category.color)}">
+            ${renderIcon(category.icon || "check-square")}
+          </span>
           <div>
             <strong>${safeText(category.name)}</strong>
             <small>${safeText(category.item_count || 0)} tarefa${Number(category.item_count || 0) === 1 ? "" : "s"} · ${category.is_active ? "Ativa" : "Inativa"}</small>
@@ -786,7 +813,7 @@ function openDetailsModal(item) {
         <div class="admin-details-meta-item"><span>Status</span><strong>${safeText(isOverdue(item) ? "Atrasada" : STATUS_LABELS[item.status])}</strong></div>
         <div class="admin-details-meta-item"><span>Prioridade</span><strong>${safeText(PRIORITY_LABELS[item.priority] || "Normal")}</strong></div>
         <div class="admin-details-meta-item"><span>Responsável</span><strong>${safeText(getResponsibleName(item))}</strong></div>
-        <div class="admin-details-meta-item"><span>Prazo</span><strong>${safeText(item.due_date ? formatDate(item.due_date) : "Sem prazo")}</strong></div>
+        <div class="admin-details-meta-item"><span>Prazo</span><strong>${safeText(item.due_date ? formatDateOnly(item.due_date) : "Sem prazo")}</strong></div>
       </div>
     </section>
     <section class="admin-details-section">
@@ -911,7 +938,7 @@ async function saveCategory(event) {
   const orderValue = getSubmittedCategoryOrder();
 
   const { data, error } = await supabaseClient.rpc("admin_save_checklist_category", {
-    submitted_color: categoryColorInput.value || "#6f3fa7",
+    submitted_color: categoryColorInput.value || DEFAULT_BRAND_COLOR,
     submitted_display_order: orderValue,
     submitted_icon: categoryIconInput.value || "check-square",
     submitted_is_active: categoryActiveInput.checked,
@@ -1044,7 +1071,7 @@ function exportChecklistCSV() {
     { label: "Responsável", value: getResponsibleName },
     { label: "Status", value: getChecklistExportStatus },
     { label: "Prioridade", value: (item) => PRIORITY_LABELS[item.priority] || "Normal" },
-    { label: "Prazo", value: (item) => formatDate(item.due_date) },
+    { label: "Prazo", value: (item) => formatDateOnly(item.due_date) },
     { label: "Atrasada", value: (item) => (isOverdue(item) ? "Sim" : "Não") },
     { label: "Ordem", value: (item) => Number(item.display_order || 0) },
     { label: "Descrição", value: "description" },
@@ -1304,12 +1331,13 @@ checklistCategoryList?.addEventListener("click", (event) => {
   if (button.dataset.categoryAction === "edit" && category) {
     selectedCategoryId = category.id;
     categoryNameInput.value = category.name || "";
-    categoryColorInput.value = category.color || "#6f3fa7";
+    categoryColorInput.value = category.color || DEFAULT_BRAND_COLOR;
     categoryIconInput.value = category.icon || "check-square";
     updateCategoryIconPreview();
     categoryOrderInput.value = getCategoryInputOrder(category);
     categoryActiveInput.checked = Boolean(category.is_active);
     cancelCategoryEditButton.classList.remove("is-hidden");
+    scrollToChecklistManagerForm(checklistCategoryForm, categoryNameInput);
   }
 
   if (button.dataset.categoryAction === "delete") {
@@ -1333,6 +1361,7 @@ checklistResponsibleList?.addEventListener("click", (event) => {
     responsibleOrderInput.value = getResponsibleInputOrder(responsible);
     responsibleActiveInput.checked = Boolean(responsible.is_active);
     cancelResponsibleEditButton.classList.remove("is-hidden");
+    scrollToChecklistManagerForm(checklistResponsibleForm, responsibleNameInput);
   }
 
   if (button.dataset.responsibleAction === "delete") {

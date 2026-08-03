@@ -47,6 +47,29 @@
   display: none;
 }
 
+.footer-couple-logo-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.15rem;
+  border-radius: 999px;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.footer-couple-logo-link .footer-couple-logo {
+  margin: 0;
+}
+
+.footer-couple-logo-link:hover {
+  opacity: 0.86;
+  transform: translateY(-1px);
+}
+
+.footer-couple-logo-link:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 0.35rem;
+}
+
 @keyframes referenceRailFadeIn {
   to {
     opacity: 0.13;
@@ -98,5 +121,9 @@
   .mobile-reference-accent img {
     animation: none;
     opacity: 0.18;
+  }
+
+  .footer-couple-logo-link {
+    transition: none;
   }
 }

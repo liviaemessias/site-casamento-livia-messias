@@ -182,27 +182,31 @@ verify_jwt = true
 8. Verifique os assuntos `RSVP Atualizado 💜`.
 9. Teste RSVP individual e de casal com presença `Sim` e `Não`, confirmando
    que a mensagem do convidado muda conforme presença confirmada ou ausência.
-10. Teste um RSVP sem e-mail e confirme que o admin recebe, enquanto o delivery do convidado fica `skipped`.
-11. Reserve um presente individual e confirme os e-mails de `Presente Reservado`.
-12. Informe o pagamento/compra do presente e confirme `Pagamento Informado`.
-13. Confirme o presente no admin e confira `Presente Confirmado`.
-14. Libere uma reserva pelo admin e confira `Presente Liberado`.
-15. Repita o fluxo com cotas: `Cota Reservada`, `Pagamento Informado`,
+10. Teste restrição alimentar por pessoa em convite individual, casal e
+    acompanhante. Confirme que o e-mail/notificação apresenta o nome apenas no
+    resumo exibido, e que o texto persistido em `guest_data.food` não contém o
+    prefixo do nome.
+11. Teste um RSVP sem e-mail e confirme que o admin recebe, enquanto o delivery do convidado fica `skipped`.
+12. Reserve um presente individual e confirme os e-mails de `Presente Reservado`.
+13. Informe o pagamento/compra do presente e confirme `Pagamento Informado`.
+14. Confirme o presente no admin e confira `Presente Confirmado`.
+15. Libere uma reserva pelo admin e confira `Presente Liberado`.
+16. Repita o fluxo com cotas: `Cota Reservada`, `Pagamento Informado`,
     `Cota Confirmada` e `Cota Liberada`.
-16. Para um convidado sem e-mail válido no RSVP, confirme que o admin recebe e
+17. Para um convidado sem e-mail válido no RSVP, confirme que o admin recebe e
     o delivery do convidado fica `skipped`.
-17. No histórico de Notificações, abra uma entrega em `Detalhes` e use
+18. No histórico de Notificações, abra uma entrega em `Detalhes` e use
     `Reenviar`; confirme que uma nova entrega manual é registrada.
-18. No painel de RSVP, use `Reenviar Confirmação` para um RSVP com e-mail.
-19. No painel de Presentes, use os botões de reenvio dos detalhes de presente
+19. No painel de RSVP, use `Reenviar Confirmação` para um RSVP com e-mail.
+20. No painel de Presentes, use os botões de reenvio dos detalhes de presente
     individual e contribuição por cota.
-20. Envie ou edite um recado em `messages.html` e confirme que o admin recebe
+21. Envie ou edite um recado em `messages.html` e confirme que o admin recebe
     `[Casamento] Novo Recado 💜`.
-21. Aprove o recado no admin e confirme que o convidado recebe
+22. Aprove o recado no admin e confirme que o convidado recebe
     `Recado Aprovado 💜`.
-22. Responda o recado no admin e confirme que o convidado recebe
+23. Responda o recado no admin e confirme que o convidado recebe
     `Recado Respondido 💜`.
-23. Repita aprovação ou resposta para convidado sem e-mail no RSVP e confirme
+24. Repita aprovação ou resposta para convidado sem e-mail no RSVP e confirme
     que a entrega do convidado fica `skipped`.
 
 ## Consultas Úteis

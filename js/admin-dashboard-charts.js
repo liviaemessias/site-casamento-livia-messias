@@ -203,10 +203,78 @@
     });
   }
 
+  function updateGuestSideChart(guestSideMetrics) {
+    renderStackedChart({
+      total: guestSideMetrics.total,
+      totalLabel: `${guestSideMetrics.total} convite${
+        guestSideMetrics.total === 1 ? "" : "s"
+      }`,
+      totalElementId: "guestSideChartTotal",
+      barId: "guestSideStackedBar",
+      segments: [
+        {
+          label: "Noiva",
+          value: guestSideMetrics.bride,
+          segmentId: "guestBrideSegment",
+          legendId: "guestBrideLegend",
+        },
+        {
+          label: "Noivo",
+          value: guestSideMetrics.groom,
+          segmentId: "guestGroomSegment",
+          legendId: "guestGroomLegend",
+        },
+        {
+          label: "Casal",
+          value: guestSideMetrics.couple,
+          segmentId: "guestCoupleSegment",
+          legendId: "guestCoupleLegend",
+        },
+      ],
+    });
+  }
+
+  function updateTableChart(tableMetrics) {
+    renderStackedChart({
+      total: tableMetrics.total,
+      totalLabel: `${tableMetrics.total} mesa${tableMetrics.total === 1 ? "" : "s"}`,
+      totalElementId: "tableChartTotal",
+      barId: "tableStackedBar",
+      segments: [
+        {
+          label: "Com vagas",
+          value: tableMetrics.available,
+          segmentId: "tableAvailableSegment",
+          legendId: "tableAvailableLegend",
+        },
+        {
+          label: "Lotadas",
+          value: tableMetrics.full,
+          segmentId: "tableFullSegment",
+          legendId: "tableFullLegend",
+        },
+        {
+          label: "Acima da capacidade",
+          value: tableMetrics.over,
+          segmentId: "tableOverSegment",
+          legendId: "tableOverLegend",
+        },
+        {
+          label: "Inativas",
+          value: tableMetrics.inactive,
+          segmentId: "tableInactiveSegment",
+          legendId: "tableInactiveLegend",
+        },
+      ],
+    });
+  }
+
   window.AdminDashboardCharts = {
     updateAttendanceChart,
     updateBuffetChart,
     updateFinancialChart,
+    updateGuestSideChart,
     updateGiftChart,
+    updateTableChart,
   };
 })();

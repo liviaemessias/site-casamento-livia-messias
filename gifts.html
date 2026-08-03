@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600&family=Parisienne&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./css/style.css" />
@@ -30,19 +30,18 @@
             <a href="./gifts.html" class="active"> Presentes </a>
           </li>
           <li>
-            <a href="./schedule.html"> Programação </a>
-          </li>
-          <li>
             <a href="./our-story.html"> Nossa História </a>
           </li>
-          <li>
-            <a href="./photos.html"> Pré-Wedding </a>
-          </li>
-          <li>
-            <a href="./messages.html"> Recados </a>
-          </li>
-          <li>
-            <a href="./vendors.html"> Fornecedores </a>
+          <li class="nav-dropdown">
+            <button type="button" class="nav-dropdown-toggle" aria-expanded="false">
+              Mais
+            </button>
+            <ul class="nav-dropdown-menu">
+              <li><a href="./schedule.html">Programação</a></li>
+              <li><a href="./photos.html">Pré-Wedding</a></li>
+              <li><a href="./messages.html">Recados</a></li>
+              <li><a href="./vendors.html">Fornecedores</a></li>
+            </ul>
           </li>
           <li class="guest-info"><span id="guestNameDisplay"></span></li>
           <li><button id="logoutButton" class="logout-button">Sair</button></li>
@@ -54,17 +53,78 @@
       <div class="container small-container">
         <p class="section-subtitle">Lista de Presentes</p>
         <h1 id="giftsHeroTitle" class="section-title">
-          Compartilhe esse momento conosco 💜
+          Compartilhe esse momento conosco <span class="hero-title-heart">💜</span>
         </h1>
         <p id="giftsHeroDescription" class="gifts-description">
           Sua presença é o nosso maior presente. Mas, caso deseje nos
-          presentear, preparamos algumas opções com muito carinho.
+          presentear, preparamos algumas opções com muito carinho
         </p>
       </div>
     </section>
     <section class="gifts-section">
       <div class="container">
         <div id="giftsPendingSection" class="gifts-pending-section"></div>
+        <div class="gifts-filter-panel" id="giftsFilterPanel">
+          <button
+            type="button"
+            class="gifts-filter-toggle"
+            id="giftsFilterToggle"
+            aria-expanded="false"
+            aria-controls="giftsFilterContent"
+          >
+            <span class="gifts-filter-toggle-copy">
+              <span>Filtrar presentes</span>
+              <small id="giftsFilterSummary">Todos os presentes</small>
+            </span>
+          </button>
+
+          <div class="gifts-filter-content" id="giftsFilterContent" hidden>
+            <div class="gifts-filter-grid">
+              <label>
+                <span>Disponibilidade</span>
+                <select id="giftAvailabilityFilter">
+                  <option value="all">Todos</option>
+                  <option value="available">Disponíveis ou com cotas livres</option>
+                  <option value="mine">Reservados/comprados por mim</option>
+                  <option value="reserved">Reservados ou comprados</option>
+                </select>
+              </label>
+
+              <label>
+                <span>Categoria</span>
+                <select id="giftCategoryFilter">
+                  <option value="all">Todas as categorias</option>
+                </select>
+              </label>
+
+              <label>
+                <span>Tipo</span>
+                <select id="giftTypeFilter">
+                  <option value="all">Todos</option>
+                  <option value="single">Presentes individuais</option>
+                  <option value="quota">Presentes por cotas</option>
+                </select>
+              </label>
+
+              <label>
+                <span>Ordenar por</span>
+                <select id="giftSortFilter">
+                  <option value="category">Categorias</option>
+                  <option value="price_asc">Menor valor</option>
+                  <option value="price_desc">Maior valor</option>
+                  <option value="name_asc">Nome A-Z</option>
+                </select>
+              </label>
+            </div>
+
+            <div class="gifts-filter-footer">
+              <span id="giftsFilterCount">0 presentes</span>
+              <button type="button" id="clearGiftFilters">
+                Limpar filtros
+              </button>
+            </div>
+          </div>
+        </div>
         <div id="giftsGrid" class="gifts-grid"></div>
       </div>
     </section>
@@ -170,7 +230,7 @@
 
         <h2 id="purchaseMethodModalTitle">Como deseja presentear?</h2>
 
-        <p class="modal-description">
+        <p id="purchaseMethodModalDescription" class="modal-description">
           Escolha uma das formas disponíveis para este presente.
         </p>
 
@@ -203,12 +263,17 @@
               <div class="pix-key-container">
                 <label class="pix-label"> PIX Copia e Cola </label>
 
-                <div class="pix-key-box" id="pixKey"></div>
+                <button
+                  type="button"
+                  id="copyPixButton"
+                  class="pix-key-box"
+                  aria-label="Copiar código PIX"
+                  title="Copiar código PIX"
+                >
+                  <span id="pixKey"></span>
+                  <span class="pix-copy-icon" aria-hidden="true">⧉</span>
+                </button>
               </div>
-
-              <button type="button" id="copyPixButton" class="pix-button">
-                Copiar código PIX
-              </button>
             </div>
 
             <div id="cardPaymentBlock">
@@ -293,6 +358,31 @@
         </div>
       </div>
     </div>
+
+    <footer class="footer">
+      <a href="./index.html" class="footer-couple-logo-link" aria-label="Voltar para o início">
+        <img
+          src="./assets/images/brand/couple-logo-primary.svg"
+          alt=""
+          class="footer-couple-logo"
+          aria-hidden="true"
+        />
+      </a>
+      <h3 data-wedding-names>Livia & Messias</h3>
+      <p data-wedding-date-location>23 de Abril de 2027 • Fortaleza, Ceará</p>
+      <span> Feito com amor para celebrar nosso grande dia. </span>
+
+      <p class="site-credit">
+        Desenvolvido por
+        <a
+          href="https://github.com/messiasfl10/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Messias D. P. de M. Filho
+        </a>
+      </p>
+    </footer>
 
     <div id="giftEmailHint" class="gift-email-hint" hidden></div>
     <div id="toast" class="toast"></div>

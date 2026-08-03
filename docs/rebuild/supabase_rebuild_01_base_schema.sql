@@ -23,10 +23,13 @@ create table if not exists public.guests (
   access_count integer null default 0,
   last_access timestamp with time zone null,
   invite_type text null default 'individual',
+  guest_side text not null default 'couple',
   couple_members jsonb null,
 
   constraint guests_pkey primary key (id),
-  constraint guests_invite_code_key unique (invite_code)
+  constraint guests_invite_code_key unique (invite_code),
+  constraint guests_guest_side_check
+    check (guest_side in ('bride', 'groom', 'couple'))
 );
 
 create table if not exists public.rsvps (
@@ -34,8 +37,6 @@ create table if not exists public.rsvps (
   created_at timestamp with time zone null default timezone('utc'::text, now()),
   guest_id uuid null,
   presence text null,
-  food text null,
-  food_restriction boolean not null default false,
   message text null,
   guest_data jsonb null,
   email text null,

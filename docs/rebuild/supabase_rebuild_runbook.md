@@ -21,7 +21,12 @@ Para uma reconstrução limpa, use poucos arquivos:
 
 O arquivo `docs/rebuild/supabase_rebuild_full_setup.sql` é a fonte principal para um
 projeto novo. Ele consolida schema, tabelas auxiliares, funções, RPCs, grants,
-triggers e RLS final.
+triggers e RLS final. A tabela `rsvps` já é criada no modelo atual, sem
+`rsvps.food` e sem `rsvps.food_restriction`; restrições alimentares ficam por
+pessoa em `rsvps.guest_data`. O setup também inclui a fundação do módulo
+`Financeiro`, com contextos de `Casamento` e `Lua de Mel`, cenários de
+orçamento, categorias, pagadores, gastos reais, parcelas/pagamentos, RPCs
+administrativas e seeds iniciais.
 
 O arquivo `docs/rebuild/supabase_rebuild_01_base_schema.sql` é apenas um bloco
 interno usado para compor o setup consolidado. Não use esse arquivo sozinho como
@@ -126,6 +131,9 @@ Esse script cria e protege:
 - outbox de notificações por e-mail;
 - preferências, lembretes e reenvios manuais de notificações;
 - notificações automáticas do Mural de Recados;
+- fundação do módulo Financeiro, incluindo cenários, categorias, pagadores,
+  orçamento previsto, gastos com vínculo opcional aos itens previstos e
+  parcelas;
 - RLS final.
 
 Se for restaurar dados exportados, faça isso depois do setup usando o SQL
@@ -169,7 +177,8 @@ insert into public.guests (
   confirmed,
   invite_sent,
   active,
-  invite_type
+  invite_type,
+  guest_side
 )
 values (
   'Administrador',
@@ -178,7 +187,8 @@ values (
   false,
   true,
   true,
-  'individual'
+  'individual',
+  'couple'
 )
 returning id, invite_code;
 ```
@@ -329,44 +339,52 @@ Valide, nesta ordem:
 2. carregamento do dashboard e das tabelas administrativas;
 3. criação e edição de convidados, confirmando que o código possui oito
    caracteres e foi retornado pelo Supabase;
-4. filtro, coluna, checkbox e ação rápida de convite enviado/não enviado;
-5. exportação de convidados e relatórios com a coluna de convite enviado;
-6. geração da mensagem personalizada do convite;
-7. login de convidado com código válido;
-8. rejeição de código inválido;
-9. RSVP individual;
-10. RSVP de casal;
-11. restrição alimentar com escolha `Sim`/`Não`, campo de detalhe liberado
-    somente para `Sim` e filtro administrativo correspondente;
-12. idade de criança com opções de `Menos de 1 ano` até `12 anos`;
-13. carregamento da lista de presentes;
-14. reserva de presente individual;
-15. seleção da forma de presentear;
-16. informação de pagamento;
-17. reserva e pagamento de cotas;
-18. liberação administrativa de presentes e cotas;
-19. logout e novo login;
-20. isolamento entre dois convidados diferentes;
-21. bloqueio das páginas administrativas para convidados;
-22. preview do link público com título, descrição e imagem.
-23. e-mail de RSVP Recebido para admin e convidado.
-24. e-mail de RSVP Atualizado para admin e convidado.
-25. e-mails de presente reservado, pagamento informado, presente confirmado e presente liberado.
-26. e-mails de cota reservada, pagamento informado, cota confirmada e cota liberada.
-27. RSVP sem e-mail válido, confirmando entrega para admin e delivery `guest` como `skipped`.
-28. página `admin-notifications.html`, busca, filtros, origem automática/manual, motivos de auditoria, detalhes das entregas de e-mail de RSVP, presentes, cotas, lembretes, reenvios manuais e recados.
-29. página `messages.html`, envio/edição de recado por convidado logado e listagem pública apenas de recados aprovados.
-30. página `admin-messages.html`, filtros, aprovação, ocultação, resposta dos noivos, remoção de resposta e exclusão de recados.
-31. página `vendors.html`, estado vazio e listagem pública de fornecedores visíveis.
-32. página `admin-vendors.html`, cadastro, edição, filtros, visibilidade, destaque, organização de ordem e exclusão de fornecedores.
-33. página `schedule.html`, redirecionamento para login quando não houver convidado logado, estado vazio e listagem protegida de etapas e atividades visíveis.
-34. página `admin-schedule.html`, cadastro, edição, filtros, ordenação, visibilidade, organização de ordem e exclusão de etapas e atividades.
-35. página `admin-checklist.html`, cards por período, filtros, categorias,
+4. filtros, colunas, checkbox e ação rápida de convite enviado/não enviado;
+5. criação/edição de convidados com `Convidado de` como Noiva, Noivo ou Casal;
+6. exportação de convidados e relatórios com as colunas de convite enviado e
+   convidado de;
+7. geração da mensagem personalizada do convite;
+8. login de convidado com código válido;
+9. rejeição de código inválido;
+10. RSVP individual;
+11. RSVP de casal;
+12. restrição alimentar por pessoa do convite, com escolha `Sim`/`Não`, campo
+    de detalhe liberado somente para `Sim`, sem salvar o nome da pessoa dentro
+    do texto da restrição, e filtro administrativo correspondente;
+13. idade de criança com opções de `Menos de 1 ano` até `12 anos`;
+14. carregamento da lista de presentes;
+15. reserva de presente individual;
+16. seleção da forma de presentear;
+17. informação de pagamento;
+18. reserva e pagamento de cotas;
+19. liberação administrativa de presentes e cotas;
+20. logout e novo login;
+21. isolamento entre dois convidados diferentes;
+22. bloqueio das páginas administrativas para convidados;
+23. preview do link público com título, descrição e imagem.
+24. e-mail de RSVP Recebido para admin e convidado.
+25. e-mail de RSVP Atualizado para admin e convidado.
+26. e-mails de presente reservado, pagamento informado, presente confirmado e presente liberado.
+27. e-mails de cota reservada, pagamento informado, cota confirmada e cota liberada.
+28. RSVP sem e-mail válido, confirmando entrega para admin e delivery `guest` como `skipped`.
+29. página `admin-notifications.html`, busca, filtros, origem automática/manual, motivos de auditoria, detalhes das entregas de e-mail de RSVP, presentes, cotas, lembretes, reenvios manuais e recados.
+30. página `messages.html`, envio/edição de recado por convidado logado e listagem pública apenas de recados aprovados.
+31. página `admin-messages.html`, filtros, aprovação, ocultação, resposta dos noivos, remoção de resposta e exclusão de recados.
+32. página `vendors.html`, estado vazio e listagem pública de fornecedores visíveis.
+33. página `admin-vendors.html`, cadastro, edição, filtros, visibilidade, destaque, organização de ordem e exclusão de fornecedores.
+34. página `schedule.html`, redirecionamento para login quando não houver convidado logado, estado vazio e listagem protegida de etapas e atividades visíveis.
+35. página `admin-schedule.html`, cadastro, edição, filtros, ordenação, visibilidade, organização de ordem e exclusão de etapas e atividades.
+36. página `admin-tables.html`, cadastro, edição, filtros, modos Planejado,
+    Confirmado e Híbrido, atribuição de convidados e exportação CSV.
+37. página `admin-checklist.html`, cards por período, filtros, categorias,
     responsáveis, organização manual da ordem, criação/edição/exclusão de
     tarefas, marcação de conclusão e alerta de tarefas atrasadas no menu.
-36. e-mail para admin quando um convidado envia ou edita um recado.
-37. e-mail para convidado quando o recado é aprovado ou respondido, incluindo
+38. e-mail para admin quando um convidado envia ou edita um recado.
+39. e-mail para convidado quando o recado é aprovado ou respondido, incluindo
     o caso sem e-mail válido no RSVP como entrega `skipped`.
+40. dados base do módulo Financeiro, confirmando via Admin ou SQL que existem
+    cenários `Planejado` para `Casamento` e `Lua de Mel`, categorias iniciais,
+    pagadores iniciais e acesso somente por RPC administrativa.
 
 Nos logs da `claim-invite`, confirme que não existem erros de grants, RLS ou
 acesso às tabelas internas.

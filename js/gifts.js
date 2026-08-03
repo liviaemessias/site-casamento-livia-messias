@@ -4,28 +4,50 @@ PublicCommon.setupLogout();
 PublicCommon.showGuestName(guest);
 updateGuestSpecificCopy();
 
-function updateGuestSpecificCopy() {
-  if (guest?.invite_type !== "couple") {
+function renderGiftsHeroTitle(title, text) {
+  if (!title) {
     return;
   }
 
+  const heart = document.createElement("span");
+  heart.className = "hero-title-heart";
+  heart.textContent = "💜";
+
+  title.replaceChildren(document.createTextNode(`${text} `), heart);
+}
+
+function updateGuestSpecificCopy() {
   const title = document.getElementById("giftsHeroTitle");
+
+  if (guest?.invite_type !== "couple") {
+    renderGiftsHeroTitle(title, "Compartilhe esse momento conosco");
+    return;
+  }
+
   const description = document.getElementById("giftsHeroDescription");
   const purchaseMethodModalTitle = document.getElementById(
     "purchaseMethodModalTitle",
   );
+  const purchaseMethodModalDescription = document.getElementById(
+    "purchaseMethodModalDescription",
+  );
 
   if (title) {
-    title.textContent = "Compartilhem esse momento conosco 💜";
+    renderGiftsHeroTitle(title, "Compartilhem esse momento conosco");
   }
 
   if (description) {
     description.textContent =
-      "A presença de vocês é o nosso maior presente. Mas, caso desejem nos presentear, preparamos algumas opções com muito carinho.";
+      "A presença de vocês é o nosso maior presente. Mas, caso desejem nos presentear, preparamos algumas opções com muito carinho";
   }
 
   if (purchaseMethodModalTitle) {
     purchaseMethodModalTitle.textContent = "Como desejam presentear?";
+  }
+
+  if (purchaseMethodModalDescription) {
+    purchaseMethodModalDescription.textContent =
+      "Escolham uma das formas disponíveis para este presente.";
   }
 }
 
@@ -47,6 +69,16 @@ function setElementVisibility(element, visible) {
 const giftsGrid = document.getElementById("giftsGrid");
 const giftEmailHint = document.getElementById("giftEmailHint");
 const giftsPendingSection = document.getElementById("giftsPendingSection");
+const giftsFilterPanel = document.getElementById("giftsFilterPanel");
+const giftsFilterToggle = document.getElementById("giftsFilterToggle");
+const giftsFilterContent = document.getElementById("giftsFilterContent");
+const giftsFilterSummary = document.getElementById("giftsFilterSummary");
+const giftsFilterCount = document.getElementById("giftsFilterCount");
+const giftAvailabilityFilter = document.getElementById("giftAvailabilityFilter");
+const giftCategoryFilter = document.getElementById("giftCategoryFilter");
+const giftTypeFilter = document.getElementById("giftTypeFilter");
+const giftSortFilter = document.getElementById("giftSortFilter");
+const clearGiftFilters = document.getElementById("clearGiftFilters");
 const reserveModal = document.getElementById("reserveModal");
 const pixModal = document.getElementById("pixModal");
 const purchaseMethodModal = document.getElementById("purchaseMethodModal");
@@ -104,6 +136,12 @@ const quotaAvailabilityText = document.getElementById("quotaAvailabilityText");
 const quotaTotalText = document.getElementById("quotaTotalText");
 const decreaseQuotaButton = document.getElementById("decreaseQuotaButton");
 const increaseQuotaButton = document.getElementById("increaseQuotaButton");
+const giftFilters = {
+  availability: "all",
+  category: "all",
+  type: "all",
+  sort: "category",
+};
 
 document
   .getElementById("closePurchaseMethodModal")
@@ -122,6 +160,45 @@ increaseQuotaButton?.addEventListener("click", () => {
 });
 
 quotaQuantityInput?.addEventListener("input", updateQuotaSelectionSummary);
+
+giftsFilterToggle?.addEventListener("click", () => {
+  const expanded = giftsFilterToggle.getAttribute("aria-expanded") === "true";
+
+  giftsFilterToggle.setAttribute("aria-expanded", String(!expanded));
+  giftsFilterContent.hidden = expanded;
+  giftsFilterPanel?.classList.toggle("active", !expanded);
+});
+
+function handleGiftFilterChange() {
+  giftFilters.availability = giftAvailabilityFilter?.value || "all";
+  giftFilters.category = giftCategoryFilter?.value || "all";
+  giftFilters.type = giftTypeFilter?.value || "all";
+  giftFilters.sort = giftSortFilter?.value || "category";
+  renderGifts(cachedGiftCatalog);
+}
+
+[
+  giftAvailabilityFilter,
+  giftCategoryFilter,
+  giftTypeFilter,
+  giftSortFilter,
+].forEach((filter) => {
+  filter?.addEventListener("change", handleGiftFilterChange);
+});
+
+clearGiftFilters?.addEventListener("click", () => {
+  giftFilters.availability = "all";
+  giftFilters.category = "all";
+  giftFilters.type = "all";
+  giftFilters.sort = "category";
+
+  if (giftAvailabilityFilter) giftAvailabilityFilter.value = "all";
+  if (giftCategoryFilter) giftCategoryFilter.value = "all";
+  if (giftTypeFilter) giftTypeFilter.value = "all";
+  if (giftSortFilter) giftSortFilter.value = "category";
+
+  renderGifts(cachedGiftCatalog);
+});
 
 /* Toast */
 function showToast(message, duration = 3000) {
@@ -417,6 +494,189 @@ function getAvailableQuotaCount(gift) {
   );
 }
 
+function isGiftAvailableForGuest(gift) {
+  if (isQuotaGift(gift)) {
+    return getAvailableQuotaCount(gift) > 0;
+  }
+
+  return gift.status === "Disponível";
+}
+
+function isGiftReservedOrBoughtByCurrentGuest(gift) {
+  if (isQuotaGift(gift)) {
+    return Boolean(gift.own_contributions?.length);
+  }
+
+  return gift.reserved_guest_id === guest.id;
+}
+
+function getGiftComparableValue(gift) {
+  const value = isQuotaGift(gift) ? getQuotaValue(gift) : Number(gift.price || 0);
+
+  return value > 0 ? value : null;
+}
+
+function normalizeGiftCategory(gift) {
+  return gift.category || "Outros";
+}
+
+function getFilteredGifts(gifts) {
+  const filtered = gifts.filter((gift) => {
+    if (
+      giftFilters.availability === "available" &&
+      !isGiftAvailableForGuest(gift)
+    ) {
+      return false;
+    }
+
+    if (
+      giftFilters.availability === "reserved" &&
+      isGiftAvailableForGuest(gift)
+    ) {
+      return false;
+    }
+
+    if (
+      giftFilters.availability === "mine" &&
+      !isGiftReservedOrBoughtByCurrentGuest(gift)
+    ) {
+      return false;
+    }
+
+    if (
+      giftFilters.category !== "all" &&
+      normalizeGiftCategory(gift) !== giftFilters.category
+    ) {
+      return false;
+    }
+
+    if (
+      giftFilters.type !== "all" &&
+      (isQuotaGift(gift) ? "quota" : "single") !== giftFilters.type
+    ) {
+      return false;
+    }
+
+    return true;
+  });
+
+  return [...filtered].sort((a, b) => {
+    if (giftFilters.sort === "price_asc") {
+      const aValue = getGiftComparableValue(a);
+      const bValue = getGiftComparableValue(b);
+
+      if (aValue === null && bValue === null) {
+        return (a.name || "").localeCompare(b.name || "", "pt-BR");
+      }
+
+      if (aValue === null) return 1;
+      if (bValue === null) return -1;
+
+      return aValue - bValue;
+    }
+
+    if (giftFilters.sort === "price_desc") {
+      const aValue = getGiftComparableValue(a);
+      const bValue = getGiftComparableValue(b);
+
+      if (aValue === null && bValue === null) {
+        return (a.name || "").localeCompare(b.name || "", "pt-BR");
+      }
+
+      if (aValue === null) return 1;
+      if (bValue === null) return -1;
+
+      return bValue - aValue;
+    }
+
+    if (giftFilters.sort === "name_asc") {
+      return (a.name || "").localeCompare(b.name || "", "pt-BR");
+    }
+
+    const categoryComparison = normalizeGiftCategory(a).localeCompare(
+      normalizeGiftCategory(b),
+      "pt-BR",
+    );
+
+    return categoryComparison || (a.name || "").localeCompare(b.name || "", "pt-BR");
+  });
+}
+
+function updateGiftCategoryFilterOptions(gifts) {
+  if (!giftCategoryFilter) {
+    return;
+  }
+
+  const categories = [...new Set(gifts.map(normalizeGiftCategory))].sort(
+    (a, b) => a.localeCompare(b, "pt-BR"),
+  );
+  const currentValue = giftCategoryFilter.value || "all";
+
+  giftCategoryFilter.replaceChildren();
+
+  const allOption = document.createElement("option");
+  allOption.value = "all";
+  allOption.textContent = "Todas as categorias";
+  giftCategoryFilter.appendChild(allOption);
+
+  categories.forEach((category) => {
+    const option = document.createElement("option");
+    option.value = category;
+    option.textContent = category;
+    giftCategoryFilter.appendChild(option);
+  });
+
+  giftCategoryFilter.value = categories.includes(currentValue)
+    ? currentValue
+    : "all";
+  giftFilters.category = giftCategoryFilter.value;
+}
+
+function getGiftFilterSummary() {
+  const labels = [];
+
+  if (giftFilters.availability === "available") {
+    labels.push("Disponíveis");
+  } else if (giftFilters.availability === "mine") {
+    labels.push("Reservados/comprados por mim");
+  } else if (giftFilters.availability === "reserved") {
+    labels.push("Reservados/comprados");
+  }
+
+  if (giftFilters.category !== "all") {
+    labels.push(giftFilters.category);
+  }
+
+  if (giftFilters.type === "single") {
+    labels.push("Individuais");
+  } else if (giftFilters.type === "quota") {
+    labels.push("Cotas");
+  }
+
+  if (giftFilters.sort === "price_asc") {
+    labels.push("Menor valor");
+  } else if (giftFilters.sort === "price_desc") {
+    labels.push("Maior valor");
+  } else if (giftFilters.sort === "name_asc") {
+    labels.push("A-Z");
+  }
+
+  return labels.length ? labels.join(" · ") : "Todos os presentes";
+}
+
+function updateGiftFilterSummary(total, filteredTotal) {
+  if (giftsFilterSummary) {
+    giftsFilterSummary.textContent = getGiftFilterSummary();
+  }
+
+  if (giftsFilterCount) {
+    giftsFilterCount.textContent =
+      filteredTotal === total
+        ? `${total} ${total === 1 ? "presente" : "presentes"}`
+        : `${filteredTotal} de ${total} presentes`;
+  }
+}
+
 function isQuotaGiftFullyConfirmed(gift) {
   const total = Number(gift.quota_count || 0);
 
@@ -465,7 +725,7 @@ function getGiftPaymentModalCopy(method) {
 
   return {
     description: descriptions[method] || descriptions.default,
-    footer: method === "online" || method === "physical"
+    footer: isPurchaseMethod(method)
       ? purchaseFooter
       : paymentFooter,
     thanks: isCouple
@@ -474,12 +734,22 @@ function getGiftPaymentModalCopy(method) {
   };
 }
 
+function isPurchaseMethod(method) {
+  return method === "online" || method === "physical";
+}
+
+function isGiftPurchase(gift) {
+  return isPurchaseMethod(gift?.selected_purchase_method);
+}
+
 function getGiftCompletedActionLabel(gift) {
-  const isPurchase =
-    gift.selected_purchase_method === "online" ||
-    gift.selected_purchase_method === "physical";
+  const isPurchase = isGiftPurchase(gift);
 
   return getCompletedActionLabel(isPurchase ? "a compra" : "o pagamento");
+}
+
+function getGiftPaymentInformedLabel(gift) {
+  return isGiftPurchase(gift) ? "Compra informada" : "Pagamento informado";
 }
 
 function getOwnBoughtGiftLabel() {
@@ -564,7 +834,7 @@ function renderOwnQuotaContributions(gift) {
       const quantity = Number(contribution.quota_quantity || 0);
 
       return `
-        <div class="gift-status own-reservation ${isConfirmed ? "confirmed" : ""}">
+        <div class="gift-status own-reservation gift-status-bottom ${isConfirmed ? "confirmed" : ""}">
           ${
             isConfirmed
               ? getOwnQuotaConfirmationLabel(quantity)
@@ -790,10 +1060,177 @@ function canCurrentGuestContributeToQuotaGift(gift) {
   );
 }
 
+function renderGiftCards(gifts) {
+  return gifts
+    .map((gift) => {
+      const isReservedByCurrentGuest = gift.reserved_guest_id === guest.id;
+      const giftPrice = renderGiftPrice(gift);
+
+      return `
+        <div class="gift-card ${getGiftCardClass(gift)}">
+          ${
+            gift.image_url && gift.image_url.trim() !== ""
+              ? `
+                <img
+                  src="${escapeAttribute(getSafeUrl(gift.image_url))}"
+                  class="gift-image"
+                  alt="${escapeAttribute(gift.name || "Presente")}"
+                />
+              `
+              : ""
+          }
+
+          <h3>
+            ${safeText(gift.name)}
+          </h3>
+
+          <p>
+            ${safeText(gift.description, "")}
+          </p>
+
+          ${
+            giftPrice
+              ? `
+                <div class="gift-price">
+                  ${giftPrice}
+                </div>
+              `
+              : ""
+          }
+
+          ${renderQuotaInfo(gift)}
+
+          ${
+            isQuotaGift(gift)
+              ? `
+                ${renderOwnQuotaContributions(gift)}
+                ${
+                  canCurrentGuestContributeToQuotaGift(gift)
+                    ? `
+                      <button
+                        class="gift-button"
+                        data-gift-action="reserve"
+                        data-gift-id="${escapeAttribute(gift.id)}"
+                      >
+                        Contribuir com cotas
+                      </button>
+                    `
+                    : gift.own_contributions?.length
+                      ? ""
+                    : `
+                      ${
+                        isQuotaGiftFullyConfirmed(gift)
+                          ? `
+                            <div class="gift-status own-reservation gift-status-bottom">
+                              Presente comprado 💜
+                            </div>
+                          `
+                          : `
+                            <button class="gift-button disabled quota-unavailable-button" disabled>
+                              Todas as cotas foram reservadas
+                            </button>
+                          `
+                      }
+                    `
+                }
+              `
+              : gift.status === "Disponível"
+                ? `
+                  <button
+                    class="gift-button"
+                    data-gift-action="reserve"
+                    data-gift-id="${escapeAttribute(gift.id)}"
+                  >
+                    Presentear
+                  </button>
+                `
+                : gift.status === "Reservado" && isReservedByCurrentGuest
+                  ? `
+                    <div class="gift-status own-reservation">
+                      Reservado por ${getGuestPronoun()} 💜
+                    </div>
+
+                    ${
+                      gift.selected_purchase_method
+                        ? `
+                          <div class="gift-method">
+                            Forma escolhida
+                            <strong>
+                              ${getSelectedPurchaseMethodLabel(gift)}
+                            </strong>
+                          </div>
+                        `
+                        : ""
+                    }
+
+                    ${
+                      gift.payment_status === "Informado"
+                        ? `
+                          <div class="payment-informed">
+                            <strong>💜 ${getGiftPaymentInformedLabel(gift)}</strong>
+                            <span>Aguardando confirmação dos noivos</span>
+                          </div>
+                        `
+                        : `
+                          ${
+                            gift.selected_purchase_method
+                              ? `
+                                <button
+                                  class="gift-button payment-button payment-confirm-button"
+                                  data-gift-action="confirm-gift-payment"
+                                  data-gift-id="${escapeAttribute(gift.id)}"
+                                >
+                                  ${getGiftCompletedActionLabel(gift)}
+                                </button>
+                              `
+                              : ""
+                          }
+
+                          <button
+                            class="gift-button secondary payment-button"
+                            data-gift-action="open-purchase-method"
+                            data-gift-id="${escapeAttribute(gift.id)}"
+                          >
+                            Ver / alterar forma de presentear
+                          </button>
+                        `
+                    }
+                  `
+                  : gift.status === "Comprado" && isReservedByCurrentGuest
+                    ? `
+                      <div class="gift-status own-reservation gift-status-bottom">
+                        ${getOwnBoughtGiftLabel()}
+                      </div>
+                    `
+                    : `
+                      ${
+                        gift.status === "Comprado"
+                          ? `
+                            <div class="gift-status own-reservation gift-status-bottom">
+                              Presente comprado 💜
+                            </div>
+                          `
+                          : `
+                            <div class="gift-status own-reservation gift-status-bottom">
+                              Reservado temporariamente 💜
+                            </div>
+                          `
+                      }
+                    `
+          }
+        </div>
+      `;
+    })
+    .join("");
+}
+
 function renderGifts(gifts) {
+  const filteredGifts = getFilteredGifts(gifts);
   const grouped = {};
 
   renderPendingGifts(gifts);
+  updateGiftCategoryFilterOptions(gifts);
+  updateGiftFilterSummary(gifts.length, filteredGifts.length);
 
   if (!gifts.length) {
     const emptyState = document.createElement("div");
@@ -812,8 +1249,42 @@ function renderGifts(gifts) {
     return;
   }
 
-  gifts.forEach((gift) => {
-    const category = gift.category || "Outros";
+  if (!filteredGifts.length) {
+    const emptyState = document.createElement("div");
+    const title = document.createElement("h2");
+    const message = document.createElement("p");
+
+    emptyState.className = "gifts-empty-state";
+    title.textContent = "Nenhum presente encontrado";
+    message.textContent =
+      guest?.invite_type === "couple"
+        ? "Tentem ajustar os filtros para ver outras opções da lista."
+        : "Tente ajustar os filtros para ver outras opções da lista.";
+
+    emptyState.append(title, message);
+    giftsGrid.replaceChildren(emptyState);
+    return;
+  }
+
+  if (giftFilters.sort !== "category") {
+    replaceSafeContent(giftsGrid, `
+      <div class="gift-category-section">
+        <div class="gift-category-header">
+          <h2 class="section-title">
+            Presentes encontrados
+          </h2>
+        </div>
+
+        <div class="gifts-grid">
+          ${renderGiftCards(filteredGifts)}
+        </div>
+      </div>
+    `);
+    return;
+  }
+
+  filteredGifts.forEach((gift) => {
+    const category = normalizeGiftCategory(gift);
 
     if (!grouped[category]) {
       grouped[category] = [];
@@ -833,168 +1304,7 @@ function renderGifts(gifts) {
         </div>
 
         <div class="gifts-grid">
-          ${grouped[category]
-            .map((gift) => {
-              const isReservedByCurrentGuest =
-                gift.reserved_guest_id === guest.id;
-              const giftPrice = renderGiftPrice(gift);
-
-              return `
-                <div class="gift-card ${getGiftCardClass(gift)}">
-                  ${
-                    gift.image_url && gift.image_url.trim() !== ""
-                      ? `
-                        <img
-                          src="${escapeAttribute(getSafeUrl(gift.image_url))}"
-                          class="gift-image"
-                          alt="${escapeAttribute(gift.name || "Presente")}"
-                        />
-                      `
-                      : ""
-                  }
-
-                  <h3>
-                    ${safeText(gift.name)}
-                  </h3>
-
-                  <p>
-                    ${safeText(gift.description, "")}
-                  </p>
-
-                  ${
-                    giftPrice
-                      ? `
-                        <div class="gift-price">
-                          ${giftPrice}
-                        </div>
-                      `
-                      : ""
-                  }
-
-                  ${renderQuotaInfo(gift)}
-
-                  ${
-                    isQuotaGift(gift)
-                      ? `
-                        ${renderOwnQuotaContributions(gift)}
-                        ${
-                          canCurrentGuestContributeToQuotaGift(gift)
-                            ? `
-                              <button
-                                class="gift-button"
-                                data-gift-action="reserve"
-                                data-gift-id="${escapeAttribute(gift.id)}"
-                              >
-                                Contribuir com cotas
-                              </button>
-                            `
-                            : gift.own_contributions?.length
-                              ? ""
-                            : `
-                              ${
-                                isQuotaGiftFullyConfirmed(gift)
-                                  ? `
-                                    <div class="gift-status own-reservation">
-                                      Presente comprado 💜
-                                    </div>
-                                  `
-                                  : `
-                                    <button class="gift-button disabled quota-unavailable-button" disabled>
-                                      Todas as cotas foram reservadas
-                                    </button>
-                                  `
-                              }
-                            `
-                        }
-                      `
-                      : gift.status === "Disponível"
-                      ? `
-                        <button
-                          class="gift-button"
-                          data-gift-action="reserve"
-                          data-gift-id="${escapeAttribute(gift.id)}"
-                        >
-                          Presentear
-                        </button>
-                      `
-                      : gift.status === "Reservado" && isReservedByCurrentGuest
-                        ? `
-                          <div class="gift-status own-reservation">
-                            Reservado por ${getGuestPronoun()} 💜
-                          </div>
-
-                          ${
-                            gift.selected_purchase_method
-                              ? `
-                                <div class="gift-method">
-                                  Forma escolhida
-                                  <strong>
-                                    ${getSelectedPurchaseMethodLabel(gift)}
-                                  </strong>
-                                </div>
-                              `
-                              : ""
-                          }
-
-                          ${
-                            gift.payment_status === "Informado"
-                              ? `
-      <div class="payment-informed">
-        <strong>💜 Pagamento/Compra informada</strong>
-        <span>Aguardando confirmação dos noivos</span>
-      </div>
-    `
-                              : `
-      ${
-        gift.selected_purchase_method
-          ? `
-            <button
-              class="gift-button payment-button payment-confirm-button"
-              data-gift-action="confirm-gift-payment"
-              data-gift-id="${escapeAttribute(gift.id)}"
-            >
-              ${getGiftCompletedActionLabel(gift)}
-            </button>
-          `
-          : ""
-      }
-
-      <button
-        class="gift-button secondary payment-button"
-        data-gift-action="open-purchase-method"
-        data-gift-id="${escapeAttribute(gift.id)}"
-      >
-        Ver / alterar forma de presentear
-      </button>
-    `
-                          }
-                        `
-                        : gift.status === "Comprado" && isReservedByCurrentGuest
-                          ? `
-    <div class="gift-status own-reservation">
-      ${getOwnBoughtGiftLabel()}
-    </div>
-  `
-                          : `
-    ${
-      gift.status === "Comprado"
-        ? `
-          <div class="gift-status own-reservation">
-            Presente comprado 💜
-          </div>
-        `
-        : `
-          <div class="gift-status own-reservation">
-            Reservado temporariamente 💜
-          </div>
-        `
-    }
-  `
-                  }
-                </div>
-              `;
-            })
-            .join("")}
+          ${renderGiftCards(grouped[category])}
         </div>
       </div>
     `,
@@ -1327,7 +1637,9 @@ function openPurchaseMethodModal(gift) {
       "online",
       "🛒",
       "Comprar Online",
-      "Veja lojas e links disponíveis",
+      guest.invite_type === "couple"
+        ? "Vejam lojas e links disponíveis"
+        : "Veja lojas e links disponíveis",
     );
   }
 
@@ -1336,7 +1648,9 @@ function openPurchaseMethodModal(gift) {
       "physical",
       "🏬",
       "Loja Física",
-      "Veja informações de compra presencial",
+      guest.invite_type === "couple"
+        ? "Vejam informações de compra presencial"
+        : "Veja informações de compra presencial",
     );
   }
 
@@ -1701,7 +2015,9 @@ async function createQuotaContribution(reservationData) {
   if (!data) {
     await handleReservationAvailabilityChange(
       selectedGift.id,
-      "⚠️ A quantidade de cotas disponível mudou. A lista foi atualizada para você tentar novamente.",
+      guest.invite_type === "couple"
+        ? "⚠️ A quantidade de cotas disponível mudou. A lista foi atualizada para vocês tentarem novamente."
+        : "⚠️ A quantidade de cotas disponível mudou. A lista foi atualizada para você tentar novamente.",
     );
     return null;
   }
@@ -1855,19 +2171,26 @@ async function reportContributionPayment(gift, contribution) {
 
 window.markPaymentAsDone = async function (gift) {
   if (!gift?.selected_purchase_method) {
-    showToast("⚠️ Escolha primeiro como deseja presentear.");
+    showToast(
+      guest.invite_type === "couple"
+        ? "⚠️ Escolham primeiro como desejam presentear."
+        : "⚠️ Escolha primeiro como deseja presentear.",
+    );
     return false;
   }
 
+  const isPurchase = isGiftPurchase(gift);
+  const action = isPurchase ? "compra" : "pagamento";
+  const informedAction = isPurchase ? "Compra informada" : "Pagamento informado";
   const { data, error } = await GuestData.reportGiftPayment(gift);
 
   if (error || (GuestAuth.isSecureMode() && data !== true)) {
     console.error(error);
-    showToast("Erro ao informar pagamento.");
+    showToast(`Erro ao informar ${action}.`);
     return false;
   }
 
-  showToast("💜 Pagamento informado com sucesso!");
+  showToast(`💜 ${informedAction} com sucesso!`);
   GuestData.notifyPendingNotifications?.(
     "gift_payment_reported",
     gift.id,
@@ -1882,10 +2205,7 @@ function closePaymentConfirmationModal() {
 }
 
 window.requestPaymentConfirmation = function (gift, contribution = null) {
-  const isPurchase =
-    !contribution &&
-    (gift.selected_purchase_method === "online" ||
-      gift.selected_purchase_method === "physical");
+  const isPurchase = !contribution && isGiftPurchase(gift);
   const action = isPurchase ? "compra" : "pagamento";
   const actionWithArticle = isPurchase ? "a compra" : "o pagamento";
   const subject = guest.invite_type === "couple" ? "vocês" : "você";

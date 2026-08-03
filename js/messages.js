@@ -2,6 +2,9 @@
   const MAX_MESSAGE_LENGTH = 800;
   const messagesGrid = document.getElementById("messagesGrid");
   const messagesEmptyState = document.getElementById("messagesEmptyState");
+  const messagesHeroDescription = document.getElementById(
+    "messagesHeroDescription",
+  );
   const guestMessagePanel = document.getElementById("guestMessagePanel");
   const guestMessageForm = document.getElementById("guestMessageForm");
   const guestMessageTitle = document.getElementById("guestMessageTitle");
@@ -27,6 +30,16 @@
 
   function isCoupleInvite() {
     return currentGuest?.invite_type === "couple";
+  }
+
+  function updateHeroDescription() {
+    if (!messagesHeroDescription) {
+      return;
+    }
+
+    messagesHeroDescription.textContent = isCoupleInvite()
+      ? "Deixem uma mensagem carinhosa para os noivos e vejam os recados já aprovados"
+      : "Deixe uma mensagem carinhosa para os noivos e veja os recados já aprovados";
   }
 
   function setFeedback(message, type = "info") {
@@ -248,6 +261,7 @@
     }
 
     const isLogged = Boolean(currentGuest);
+    updateHeroDescription();
     guestMessagePanel.hidden = !isLogged;
     guestLoginPrompt.hidden = isLogged;
 

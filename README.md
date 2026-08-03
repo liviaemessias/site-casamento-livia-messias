@@ -2,7 +2,7 @@
 
 Site de casamento personalizado para centralizar informações do evento, RSVP, lista de presentes e administração dos noivos.
 
-Versão atual: **4.0**.
+Versão atual: **4.3**.
 
 ## Desenvolvimento
 
@@ -14,12 +14,16 @@ GitHub: [messiasfl10](https://github.com/messiasfl10/)
 
 - Acesso por código de convite.
 - Controle administrativo de convites enviados ou ainda pendentes de envio.
+- Classificação administrativa de convidados como convidados da Noiva, do Noivo
+  ou do Casal.
 - Notificações transacionais por e-mail para RSVP público, reservas,
   pagamentos, confirmações/liberações de presentes e cotas e Mural de
   Recados.
 - Reenvio manual e auditável de confirmações e avisos já existentes.
-- RSVP individual e para convites de casal.
-- Cadastro de acompanhantes, crianças e restrições alimentares.
+- RSVP individual e para convites de casal, com restrição alimentar por pessoa
+  do convite.
+- Cadastro de acompanhantes e crianças, com restrição alimentar individual para
+  convidado principal, membros do casal e acompanhantes.
 - Idade das crianças padronizada até 12 anos, conforme a data do casamento.
 - Regra configurável de idade mínima pagante para o buffet.
 - Lista de presentes com reserva.
@@ -32,12 +36,23 @@ GitHub: [messiasfl10](https://github.com/messiasfl10/)
 - Confirmação antes de reservar presentes ou informar pagamentos e compras.
 - Painel administrativo repaginado com navegação lateral responsiva e páginas especializadas.
 - Dashboard operacional com indicadores clicáveis, resumos visuais de RSVP e presentes e atalhos para as principais pendências.
-- Página de Indicadores com métricas e gráficos detalhados de presença, buffet, presentes e valores financeiros.
+- Página de Indicadores com métricas e gráficos detalhados de presença,
+  convidados, mesas, buffet, presentes e valores dos presentes.
+- Módulo Financeiro administrativo para orçamento previsto, gastos reais,
+  parcelas, cenários, categorias, pagadores, contextos de casamento/lua de mel,
+  vínculo entre gasto e item previsto, alertas de vencimento e relatórios.
+- Experiência pública refinada com identidade visual do casal, logo em pontos
+  estratégicos, tom roxo principal atualizado, tipografia romântica nos heros,
+  menu desktop agrupado e melhorias responsivas nas páginas públicas.
 - Filtros, ordenação, contadores de resultado e limpeza de filtros no admin.
-- Alertas compactos no menu administrativo para recados pendentes e presentes
-  ou cotas com pagamento informado.
-- Exportação CSV de convidados, RSVPs e presentes respeitando filtros e ordenação atuais, incluindo convite enviado e totais planejados de convidados e acompanhantes.
-- Página de Relatórios com exportações CSV/XLSX, seleção de colunas, convite enviado e opções resumidas ou detalhadas para a lista de confirmados.
+- Alertas compactos no menu administrativo para recados pendentes, presentes
+  ou cotas com pagamento informado, tarefas atrasadas e parcelas financeiras
+  vencidas ou vencendo no dia atual.
+- Exportação CSV de convidados, RSVPs e presentes respeitando filtros e ordenação atuais, incluindo convite enviado, convidado de e totais planejados de convidados e acompanhantes.
+- Página de Relatórios com exportações CSV/XLSX/PDF, seleção de colunas,
+  convite enviado, convidado de, mesa, observação do convidado na mesa,
+  restrições alimentares por pessoa e opções resumidas ou detalhadas conforme o
+  relatório.
 - Mural de Recados com página pública, prévia na página inicial, moderação
   administrativa, respostas dos noivos e notificações por e-mail.
 - Página pública de Fornecedores, com cards visíveis para convidados e estado
@@ -52,7 +67,12 @@ GitHub: [messiasfl10](https://github.com/messiasfl10/)
   categorias e responsáveis editáveis, ações rápidas por período, organização
   manual da ordem, exportação CSV, status, prioridade, alerta de tarefas
   atrasadas e seed inicial.
+- Definição administrativa de Mesas, com ocupação Planejada, Confirmada e
+  Híbrida, atribuição de convidados, gestão pelo detalhe do convidado, atalho
+  via RSVP, filtros, métricas e exportação CSV.
 - Referências visuais personalizadas nos logins e nas páginas públicas, adaptadas para desktop e mobile.
+- Footer público padronizado com logo do casal e atalho para voltar à página
+  inicial.
 - Textos de saudação, reserva e pagamento adaptados para convites individuais e de casal.
 - Login administrativo com e-mail e senha pelo Supabase Auth.
 - Geração segura dos códigos de convite no Supabase, restrita a administradores.
@@ -85,11 +105,11 @@ GitHub: [messiasfl10](https://github.com/messiasfl10/)
 
 ### Públicas
 
-- `index.html`: página inicial, informações do casamento, contagem regressiva, metadados e acesso à lista de presentes.
-- `our-story.html`: linha do tempo da história do casal.
+- `index.html`: página inicial, informações do casamento, contagem regressiva, metadados, identidade visual do casal e acesso à lista de presentes.
+- `our-story.html`: linha do tempo da história do casal, notas pessoais e seção da jornada.
 - `login.html`: entrada por código de convite.
 - `rsvp.html`: confirmação de presença.
-- `gifts.html`: lista de presentes e fluxo de reserva/pagamento.
+- `gifts.html`: lista de presentes, filtros públicos e fluxo de reserva/pagamento.
 - `photos.html`: galeria do Pré-Wedding.
 - `messages.html`: Mural de Recados.
 - `vendors.html`: fornecedores do casamento.
@@ -102,12 +122,20 @@ O antigo painel único foi dividido em páginas dedicadas:
 - `admin-login.html`: acesso administrativo com e-mail e senha pelo Supabase Auth.
 - `admin-dashboard.html`: resumo geral do casamento.
 - `admin-indicators.html`: métricas e gráficos detalhados do casamento.
-- `admin-reports.html`: relatórios consolidados e exportações CSV/XLSX.
+- `admin-reports.html`: relatórios consolidados e exportações CSV/XLSX/PDF.
+- `admin-notifications.html`: histórico auditável de notificações e reenvios.
 - `admin-gifts.html`: gestão de presentes.
 - `admin-guests.html`: gestão de convidados e RSVP manual.
 - `admin-rsvps.html`: consulta e remoção de confirmações.
 - `admin-messages.html`: moderação e resposta dos recados.
 - `admin-checklist.html`: organização interna do checklist do casamento.
+- `admin-tables.html`: gestão do mapa de mesas e alocação de convidados.
+- `admin-financial.html`: visão geral financeira com orçamento, gastos recentes
+  e próximas parcelas.
+- `admin-financial-budget.html`: gestão dos itens de orçamento previsto.
+- `admin-financial-expenses.html`: gestão dos gastos reais e parcelas por gasto.
+- `admin-financial-payments.html`: consulta e gestão completa das parcelas.
+- `admin-financial-base.html`: cadastros base de cenários, categorias e pagadores.
 - `admin-vendors.html`: cadastro e gestão dos fornecedores exibidos no site.
 - `admin-schedule.html`: cadastro e gestão das etapas e atividades da programação do casamento.
 - `admin-settings.html`: configuração dos dados do casamento, PIX, WhatsApp e idade mínima pagante do buffet.
@@ -125,17 +153,28 @@ datas e atualização de textos simples.
 - `js/guest-auth.js`: sessão, login por convite e logout dos convidados.
 - `js/guest-data.js`: operações de RSVP e presentes em modo legado ou por RPCs.
 - `js/guest-bootstrap.js`: validação do convidado antes de carregar páginas protegidas.
+- `js/login.js`: fluxo do login público por código de convite.
 - `js/admin-login.js`: login administrativo com e-mail e senha.
 - `js/admin-bootstrap.js`: proteção e carregamento das páginas administrativas.
-- `js/public-common.js`: comportamento comum das páginas públicas autenticadas, como navbar, logout e saudação do convidado.
+- `js/public-common.js`: comportamento comum das páginas públicas autenticadas,
+  como navbar, dropdown do menu público, logout e saudação do convidado.
 - `js/captcha-config.js`: ativação e Site Key pública do Cloudflare Turnstile.
 - `js/turnstile-captcha.js`: carregamento, token, expiração e reset do CAPTCHA compartilhado pelos logins.
 - `js/reference-decorations.js`: referências visuais aleatórias dos logins, laterais desktop e divisores mobile.
 - `js/photo-gallery-data.js`: lista compartilhada das fotos exibidas na seção e na página de Pré-Wedding.
+- `js/script.js`: comportamento específico da página inicial, incluindo navbar,
+  menu público, contagem regressiva e interações da Home.
 - `js/home-photos.js`: renderização da prévia do Pré-Wedding na página inicial.
+- `js/home-messages.js`: renderização da prévia do Mural de Recados na página
+  inicial.
 - `js/photos.js`: renderização da galeria completa e do lightbox da página de Pré-Wedding.
+- `js/story.js`: interações da página Nossa História, incluindo navbar,
+  carrosséis, timeline e animações.
 - `js/child-age-options.js`: opções padronizadas para informar a idade das crianças na data do casamento.
-- `js/event-settings.js`: carrega e aplica nomes, datas e locais do casamento nas páginas públicas.
+- `js/event-config.js`: valores públicos padrão de nomes, datas, locais,
+  imagens sociais e descrição do evento.
+- `js/event-settings.js`: carrega e aplica nomes, datas, locais e metadados da
+  página inicial nas páginas públicas.
 - `js/security-utils.js`: valida textos e URLs e sanitiza conteúdo HTML dinâmico antes da renderização.
 - `js/admin-common.js`: comportamento comum das páginas administrativas.
 - `js/pix.js`: geração pura do payload PIX, CRC16 e URL do QR-Code.
@@ -146,18 +185,24 @@ datas e atualização de textos simples.
 - `js/admin-overview.js`: visão resumida e acionável do Dashboard inicial.
 - `js/admin-dashboard-reports.js`: geração dos relatórios consolidados exportáveis.
 - `js/admin-reports.js`: carregamento dos dados da página de relatórios.
+- `js/admin-financial.js`: módulo Financeiro administrativo, incluindo visão
+  geral, orçamento previsto, gastos reais, parcelas e cadastros base.
 - `js/buffet-metrics.js`: classificação compartilhada de adultos, crianças pagantes, não pagantes e sem idade válida.
 - `js/admin-export.js`: geração e download de CSV/XLSX nas páginas administrativas.
 - `js/admin-gifts.js`: CRUD, filtros, ordenação, cotas e administração de presentes.
 - `js/admin-guests.js`: CRUD, filtros, ordenação de convidados e RSVP manual.
 - `js/admin-rsvps.js`: listagem, filtros, ordenação e remoção de RSVPs.
 - `js/admin-messages.js`: moderação, aprovação, ocultação e respostas do Mural de Recados.
+- `js/admin-notifications.js`: histórico auditável de notificações, filtros,
+  métricas e reenvios manuais.
 - `js/messages.js`: página pública do Mural de Recados, envio do convidado e listagem aprovada.
 - `js/admin-vendors.js`: cadastro, edição, filtros e visibilidade dos fornecedores.
 - `js/vendors.js`: página pública de Fornecedores e estado vazio.
 - `js/admin-schedule.js`: cadastro, edição, filtros, visibilidade e ordenação da programação.
 - `js/schedule.js`: página protegida da programação para convidados logados.
 - `js/admin-checklist.js`: checklist administrativo em cards por período, com categorias, responsáveis, ordenação, CSV e modais de tarefas.
+- `js/admin-tables.js`: mapa de mesas, métricas, filtros, alocação,
+  transferência e remoção de convidados em mesas.
 - `js/admin-settings.js`: edição dos dados do casamento, PIX, WhatsApp e regra do buffet.
 
 ## Organização Dos CSSs
@@ -172,6 +217,8 @@ datas e atualização de textos simples.
 - `css/messages.css`: página pública do Mural de Recados.
 - `css/vendors.css`: página pública de Fornecedores.
 - `css/schedule.css`: página protegida da Programação.
+- `css/reference-rails.css`: referências visuais laterais/ornamentais,
+  divisores mobile e ajustes compartilhados dos rodapés públicos.
 - `css/admin.css`: todas as páginas administrativas.
 
 Os CSSs foram padronizados para usar tokens globais sempre que possível. Os HTMLs também evitam estilos inline; classes utilitárias como `is-hidden` são usadas para estados iniciais simples.
@@ -186,6 +233,8 @@ As imagens do site ficam organizadas por contexto em `assets/images/`:
 - `vendors/`: imagem de referência da página pública de Fornecedores.
 - `schedule/`: imagem de referência da página protegida de Programação.
 - `login-references/`: referências visuais usadas nos logins e nas decorações das páginas públicas.
+- `brand/`: variações SVG da logo do casal usadas em heros, logins, rodapés e
+  marca administrativa.
 
 ## Assets Do Pré-Wedding
 
@@ -252,21 +301,27 @@ Ele não representa o fluxo ativo da versão 3.3.
 O RSVP permite:
 
 - Confirmar presença com `Sim` ou `Não`.
-- Informar e-mail, telefone, se possui restrição alimentar e mensagem.
-  Quando houver restrição, o campo de detalhe é liberado.
+- Informar e-mail, telefone, restrição alimentar por pessoa do convite e
+  mensagem. Quando houver restrição, o campo de detalhe é liberado somente para
+  aquela pessoa.
 - Adicionar acompanhantes dentro do limite do convite.
 - Confirmar membros de convite de casal individualmente.
 
-Os dados completos ficam em `rsvps.guest_data`, permitindo preservar membros do casal e acompanhantes em JSON.
+Os dados completos ficam em `rsvps.guest_data`, permitindo preservar membros do
+casal, acompanhantes e restrições alimentares individuais em JSON. O texto da
+restrição guarda apenas a descrição; nomes são adicionados somente em telas,
+relatórios e notificações quando é necessário diferenciar as pessoas.
 
 Quando o RSVP público é salvo ou atualizado, a RPC cria um evento
 `rsvp_saved` em `notification_events`. O frontend chama a Edge Function
 `send-notifications` em segundo plano, sem bloquear a confirmação do convidado.
 O admin recebe e-mail sempre; o convidado recebe somente quando informou um
 e-mail válido no RSVP. RSVPs manuais feitos no painel administrativo não
-disparam e-mail automaticamente. As mensagens do convidado variam conforme
-RSVP recebido ou atualizado, presença confirmada ou ausência, com concordância
-para convite individual e de casal.
+disparam e-mail automaticamente, mas podem ser reenviados manualmente. As
+mensagens do convidado variam conforme RSVP recebido ou atualizado, presença
+confirmada ou ausência, com concordância para convite individual e de casal. Os
+e-mails de RSVP listam restrições alimentares por pessoa quando houver convidado
+principal, membro do casal ou acompanhante com restrição.
 
 ## Fluxo De Presentes
 
@@ -316,31 +371,83 @@ pessoas confirmadas, capacidade planejada, convidados pagantes, RSVPs
 pendentes, presentes informados e reservados e valor confirmado. Também resume
 visualmente a distribuição dos RSVPs e a situação da lista de presentes.
 
-A página de Indicadores concentra a análise detalhada em quatro áreas:
+A página de Indicadores concentra a análise detalhada em áreas operacionais:
 
 - Presença: convites, pessoas planejadas, acompanhantes e respostas ao RSVP.
 - Buffet: adultos e crianças pagantes, não pagantes ou sem idade válida.
 - Presentes: itens disponíveis, parcialmente reservados, reservados e confirmados.
-- Financeiro: valores totais, disponíveis, reservados, informados, confirmados e pendentes.
+- Valores dos Presentes: totais, disponíveis, reservados, informados,
+  confirmados e pendentes.
 
-A página de Relatórios reúne exportações de presença e buffet, financeiro e
-ações pendentes. Os arquivos podem ser gerados em CSV ou XLSX, com seleção de
-colunas e modos resumido por convite ou detalhado por pessoa, quando aplicável.
+O módulo Financeiro concentra a gestão de orçamento previsto, gastos reais e
+parcelas em páginas próprias. Ele permite trabalhar com os contextos Casamento,
+Lua de Mel e Todos, cenários de orçamento por contexto, cenário de referência,
+categorias, pagadores, vínculo opcional com fornecedores e vínculo entre gastos
+reais e itens previstos. A Visão Geral destaca total previsto, contratado, pago,
+em aberto, falta/estouro do orçamento, próximas parcelas e gastos recentes.
+Parcelas vencidas ou vencendo no dia atual aparecem como alerta no menu e com
+destaque visual na tabela de próximas parcelas.
+
+A página de Relatórios reúne exportações de presença e buffet, Resumo Final do
+Buffet, presentes e cotas, Financeiro, ações pendentes, mapa de mesas e lista
+para recepção. Os arquivos tabulares
+podem ser gerados em CSV ou XLSX, com seleção de colunas e modos resumido por
+convite ou detalhado por pessoa, quando aplicável. A lista para recepção também
+pode ser gerada em PDF paginado, em ordem alfabética ou por mesa, com campo para
+marcar a chegada, destaque para pessoas confirmadas sem mesa e categoria do
+buffet e restrição alimentar opcionais por pessoa. O Relatório Final do Buffet
+considera somente pessoas confirmadas e possui XLSX com abas de resumo, pessoas
+confirmadas, resumo por mesa e restrições alimentares. Também oferece um PDF
+resumido e outro completo, com todos os confirmados ordenados por mesa, ambos
+prontos para envio ao fornecedor. O
+Checklist Operacional Final consolida as pendências automáticas e as tarefas não
+concluídas do Checklist do Casamento em XLSX e PDF, com prioridades, prazos,
+responsáveis e destaque para ações atrasadas.
+
+Os relatórios financeiros da v4.2 incluem Orçamento Previsto, Gastos Reais e
+Parcelas em CSV, XLSX e PDF. O relatório de Orçamento Previsto permite filtrar
+ativos/inativos, contexto, cenário, categoria, status e situação do orçamento.
+Gastos Reais pode incluir parcelas abaixo de cada gasto, e Parcelas funciona
+como agenda financeira com vencimentos, pagadores e status.
+
+O Mapa de Mesas também possui um PDF operacional nos modos Híbrido, Confirmado
+e Planejado, com blocos por mesa, capacidade, ocupação, vagas, localização,
+observações e pessoas. Pessoas consideradas pelo modo escolhido que ainda não
+foram alocadas aparecem em um bloco destacado de Sem mesa. Nas exportações CSV
+e XLSX do Mapa de Mesas, as colunas de pessoa, criança, idade, categoria do
+buffet, restrição alimentar e pagante são próprias das opções detalhadas por
+pessoa; os resumos por convite mantêm apenas informações do convite e da mesa.
 
 As páginas de gestão possuem filtros e ordenação local nas tabelas principais.
-Em convidados, o admin também controla se cada convite já foi enviado, com
-filtro dedicado, coluna na tabela, checkbox no cadastro/edição e ação rápida
-nos detalhes.
+Em convidados, o admin também controla se cada convite já foi enviado e se o
+convite é da Noiva, do Noivo ou do Casal, com filtros dedicados, colunas na
+tabela, campos no cadastro/edição e ações rápidas nos detalhes.
 
 Filtros disponíveis:
 
 - Presentes: busca por presente, categoria ou convidado; status; pagamento; forma de presentear.
 - Presentes por cotas: filtros específicos para cotas disponíveis, parcialmente reservadas, totalmente reservadas, parcialmente confirmadas e totalmente confirmadas.
-- Convidados: busca por nome ou código; status; RSVP; envio do convite; tipo de convite.
-- RSVP: busca por convidado, acompanhante ou mensagem; presença; acompanhantes; categorias do buffet.
+- Convidados: busca por nome ou código; status; RSVP; envio do convite; tipo de convite; convidado de; mesa, com opções de com mesa, sem mesa e mesa específica.
+- RSVP: busca por convidado, acompanhante ou mensagem; presença; acompanhantes; categorias do buffet; mesa, com opções de com mesa, sem mesa e mesa específica.
 - Recados: busca por convidado, recado ou resposta; status; tipo de convite;
   resposta; ordenação por data, pendência ou convidado.
 - Notificações: busca server-side por convidado, e-mail, presente/cota, identificadores ou motivo; status; tipo; destinatário; origem automática/manual; período; métricas calculadas sobre todo o conjunto filtrado; ordenação por data, tipo, convidado, destinatário, e-mail e status.
+- Fornecedores: busca, categoria, visibilidade, destaque, ordenação e gestão
+  de ordem manual.
+- Programação: busca, tipo/etapa, visibilidade, ordenação e organização manual
+  de etapas e atividades.
+- Checklist: busca, período, categoria, responsável, status, prioridade,
+  atraso e organização manual por período.
+- Mesas: busca, capacidade/ocupação, tipo de ocupação, convidados com ou sem
+  mesa e atalhos de atribuição a partir de RSVP/convidados.
+- Financeiro - Orçamento Previsto: contexto, cenário, categoria, status,
+  ativos/inativos e situação do orçamento.
+- Financeiro - Gastos Reais: contexto, categoria, pagador, status, tipo de
+  pagamento, fornecedor e item previsto vinculado.
+- Financeiro - Parcelas: contexto, status, pagador, gasto, vencimento de/até e
+  ordenação por vencimento, valor ou status.
+- Financeiro - Cadastros Base: contexto e listagem completa de cenários,
+  categorias e pagadores, com detalhes, criação, edição, exclusão e ordenação.
 
 Cada tela filtrável exibe contador de resultados e botão para limpar filtros.
 
@@ -408,7 +515,14 @@ PixPayment.getQrCodeUrl(payload);
 
 - `docs/operations/captcha_turnstile_setup.md`: ativação, testes e rollback do Cloudflare Turnstile nos logins.
 - `docs/operations/smtp_email_notifications_setup.md`: configuração SMTP, Gmail, Outlook/Hotmail, deploy e testes das notificações por e-mail.
-- `docs/releases/release_v4.0.md`: notas da versão 4.0, com páginas públicas e administração de Fornecedores e Programação, além de ajustes na experiência pública de Presentes.
+- `docs/releases/release_v4.3.md`: notas da versão 4.3, com melhorias visuais
+  da experiência pública, identidade do casal, menu público, páginas públicas,
+  logins e pequenos refinamentos administrativos.
+- `docs/releases/release_v4.2.md`: notas da versão 4.2, com módulo
+  Financeiro, orçamento previsto, gastos reais, parcelas, cadastros base,
+  alertas, relatórios e rebuild atualizado.
+- `docs/releases/release_v4.1.md`: notas da versão 4.1, com restrição alimentar por pessoa do convite, e-mails e relatórios adaptados.
+- `docs/releases/release_v4.0.md`: notas da versão 4.0, com páginas públicas e administração de Fornecedores, Programação, Checklist e Mesas, além de relatórios operacionais e ajustes na experiência pública de Presentes.
 - `docs/releases/release_v3.7.md`: notas da versão 3.7, com página/seção de Pré-Wedding, galeria responsiva, Mural de Recados e e-mails do mural.
 - `docs/releases/release_v3.6.md`: notas da versão 3.6, com reenvios manuais auditáveis.
 - `docs/releases/release_v3.5.md`: notas da versão 3.5, com preferências de notificação, auditoria, filtros, busca e lembretes manuais de presentes/cotas.
@@ -426,8 +540,47 @@ PixPayment.getQrCodeUrl(payload);
 - `docs/rebuild/supabase_rebuild_verify_final.sql`: verificação final da reconstrução, das permissões, da RLS e das configurações públicas.
 - `docs/rebuild/supabase_rebuild_environment_inventory.md`: inventário das configurações não secretas que devem ser reproduzidas.
 - `docs/migrations/README.md`: índice dos scripts incrementais, verificações, rollbacks e arquivos legados.
+- `docs/planning/release_v4.2_financial_management_plan.md`: planejamento do
+  módulo Financeiro, com contextos, cenários, categorias, pagadores, orçamento,
+  gastos reais, parcelas e relatórios.
+- `docs/migrations/rsvp_food_restriction_per_person.sql` e
+  `docs/migrations/rsvp_food_restriction_per_person_verify.sql`: migração e
+  verificação da restrição alimentar por pessoa do convite.
+- `docs/migrations/rsvp_food_restriction_choice.sql` e
+  `docs/migrations/rsvp_food_restriction_choice_verify.sql`: ajustes de escolha
+  e compatibilidade do fluxo de restrição alimentar.
+- `docs/migrations/financial_management.sql` e
+  `docs/migrations/financial_management_verify.sql`: criação e verificação do
+  módulo Financeiro.
+- `docs/migrations/financial_summary_rpc_fix.sql` e
+  `docs/migrations/financial_summary_rpc_fix_verify.sql`: ajuste incremental
+  da RPC de resumo financeiro.
+- `docs/migrations/financial_budget_scenario_reference_guard.sql` e
+  `docs/migrations/financial_budget_scenario_reference_guard_verify.sql`:
+  garantia de cenário de referência por contexto.
+- `docs/migrations/financial_base_ordering.sql` e
+  `docs/migrations/financial_base_ordering_verify.sql`: ordenação de cenários,
+  categorias e pagadores financeiros.
+- `docs/migrations/financial_budget_shared_categories_fix.sql` e
+  `docs/migrations/financial_budget_shared_categories_fix_verify.sql`: correção
+  de categorias compartilhadas no orçamento previsto.
+- `docs/migrations/financial_expense_budget_item_link.sql`: vínculo entre
+  gastos reais e itens do orçamento previsto.
+- `docs/migrations/vendor_financial_delete_guard.sql` e
+  `docs/migrations/vendor_financial_delete_guard_verify.sql`: proteção contra
+  exclusão de fornecedor vinculado a gastos financeiros.
+- `docs/migrations/admin_nav_financial_overdue_payments.sql` e
+  `docs/migrations/admin_nav_financial_overdue_payments_verify.sql`: alertas do
+  menu administrativo para parcelas vencidas ou vencendo no dia.
 - `docs/migrations/guest_invite_sent_migration.sql`: migração incremental para adicionar o controle de convite enviado aos convidados.
 - `docs/migrations/guest_invite_sent_verify.sql`: verificação incremental do campo de convite enviado.
+- `docs/migrations/guest_side_migration.sql`: migração incremental para classificar convidados como convidados da Noiva, do Noivo ou do Casal.
+- `docs/migrations/guest_side_verify.sql`: verificação incremental do campo `guest_side` e sua constraint.
+- `docs/migrations/wedding_event_settings_migration.sql` e
+  `docs/migrations/wedding_event_settings_verify.sql`: migração e verificação
+  das configurações globais do casamento expostas ao site público.
+- `docs/migrations/buffet_paying_age_migration.sql`: ajuste da idade mínima
+  pagante do buffet nas configurações.
 - `docs/migrations/email_notifications_schema.sql`: migração incremental das tabelas de outbox de notificações.
 - `docs/migrations/email_notifications_schema_verify.sql`: verificação incremental das tabelas e grants de notificações.
 - `docs/migrations/security_admin_notification_operations.sql`: RPC administrativa para auditar notificações sem expor as tabelas diretamente.
@@ -454,6 +607,8 @@ PixPayment.getQrCodeUrl(payload);
 - `docs/migrations/wedding_schedule_verify.sql`: verificação incremental das tabelas, RLS e permissões da Programação.
 - `docs/migrations/wedding_checklist.sql`: migração incremental das tabelas, seeds e RPCs do Checklist.
 - `docs/migrations/wedding_checklist_verify.sql`: verificação incremental das tabelas, RLS, seeds e RPCs do Checklist.
+- `docs/migrations/wedding_tables.sql`: migração incremental das tabelas e RPCs administrativas de Mesas.
+- `docs/migrations/wedding_tables_verify.sql`: verificação incremental das tabelas, RLS e permissões de Mesas.
 - `docs/migrations/wall_messages.sql`: migração incremental do Mural de Recados, com envio do convidado, listagem pública aprovada e moderação administrativa.
 - `docs/migrations/wall_messages_verify.sql`: verificação incremental da tabela, RLS, grants e RPCs do Mural de Recados.
 - `docs/migrations/wall_message_email_notifications.sql`: migração incremental dos eventos de e-mail do Mural de Recados.
@@ -502,8 +657,11 @@ Concluído:
 - Filtros administrativos com ordenação, contadores e limpeza.
 - Alertas compactos no menu administrativo para indicar recados pendentes e
   presentes/cotas com pagamento informado.
-- Exportação CSV de convidados, RSVPs e presentes respeitando filtros e ordenação atuais, incluindo convite enviado.
-- Página de Relatórios Consolidados de presença/buffet, financeiro e pendências, com CSV/XLSX, seleção de colunas, convite enviado, categorias de pagamento e regra aplicada.
+- Exportação CSV de convidados, RSVPs e presentes respeitando filtros e ordenação atuais, incluindo convite enviado e convidado de.
+- Página de Relatórios Consolidados de presença/buffet, Relatório Final do Buffet, financeiro, ações pendentes, mapa de mesas, lista para recepção e Checklist Operacional Final, com CSV/XLSX, seleção de colunas e PDFs operacionais. O relatório do buffet usa somente confirmados, consolida totais por categoria, pessoas, mesas e restrições alimentares e sinaliza RSVPs pendentes e confirmados sem mesa; as ações pendentes auditam convites e RSVPs, confirmados sem mesa, capacidade e uso das mesas, crianças sem idade, reservas e pagamentos; no checklist final, é possível gerar tudo consolidado, somente essas pendências automáticas ou somente as tarefas não concluídas do Checklist do Casamento.
+- Módulo Financeiro administrativo com Visão Geral, Orçamento Previsto, Gastos
+  Reais, Parcelas, Cadastros Base, vínculos entre gasto e item previsto,
+  alertas de parcelas vencidas/vencendo no dia e relatórios CSV/XLSX/PDF.
 - Login e proteção das páginas administrativas com Supabase Auth.
 - Criação administrativa de convidados com código de convite gerado no banco.
 - Controle de convites enviados no cadastro de convidados, detalhes, filtros e exportações.
@@ -530,6 +688,11 @@ Concluído:
 - Helpers comuns para admin e páginas públicas.
 - Referências visuais responsivas nas páginas públicas.
 - Tokens globais de CSS.
+- Identidade visual pública da v4.3, com logo do casal, heros com tipografia
+  romântica, roxo principal atualizado, menu público agrupado no desktop,
+  rodapés públicos com logo clicável e refinamentos mobile/desktop em Home,
+  RSVP, Presentes, Nossa História, Pré-Wedding, Recados, Programação e
+  Fornecedores.
 
 Em aberto:
 
@@ -541,5 +704,3 @@ Em aberto:
 - Indicadores financeiros avançados por período ou forma de pagamento.
 - Adicionar ou substituir as fotos oficiais do Pré-Wedding após o ensaio.
 - Código de Vestimenta.
-- Gerenciamento de Previsão/Controle de Gastos.
-- Gerar Relatórios em PDF, complementando XLS.

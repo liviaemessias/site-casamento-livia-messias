@@ -13,6 +13,22 @@ const dashboardMetricLinks = {
   totalPlannedGuests: "./admin-guests.html?status=active",
   totalPlannedCompanions: "./admin-guests.html?status=active",
   totalPlannedPeople: "./admin-guests.html?status=active",
+  totalBrideGuests: "./admin-guests.html?side=bride",
+  totalGroomGuests: "./admin-guests.html?side=groom",
+  totalCoupleSideGuests: "./admin-guests.html?side=couple",
+  totalIndividualInvites: "./admin-guests.html?type=individual",
+  totalCoupleInvites: "./admin-guests.html?type=couple",
+  totalInviteSentGuests: "./admin-guests.html?invite_sent=sent",
+  totalInvitePendingGuests: "./admin-guests.html?invite_sent=not_sent",
+  totalTables: "./admin-tables.html",
+  totalActiveTables: "./admin-tables.html?status=active",
+  totalAvailableTables: "./admin-tables.html?status=available",
+  totalFullTables: "./admin-tables.html?status=full",
+  totalOverTables: "./admin-tables.html?status=over",
+  totalGuestsWithTable: "./admin-guests.html?table=assigned",
+  totalGuestsWithoutTable: "./admin-guests.html?table=unassigned",
+  totalConfirmedWithoutTable: "./admin-rsvps.html?presence=Sim&table=unassigned",
+  totalDeclinedWithTable: "./admin-rsvps.html?presence=N%C3%A3o&table=assigned",
   totalPayingGuests: "./admin-rsvps.html?presence=Sim&buffet=paying",
   totalChildren: "./admin-rsvps.html?presence=Sim&buffet=children",
   totalPayingChildren: "./admin-rsvps.html?presence=Sim&buffet=child-paying",
@@ -20,6 +36,7 @@ const dashboardMetricLinks = {
     "./admin-rsvps.html?presence=Sim&buffet=child-non-paying",
   totalUnknownAgeChildren:
     "./admin-rsvps.html?presence=Sim&buffet=child-unknown",
+  totalDietaryRestrictionPeople: "./admin-rsvps.html?presence=Sim&restriction=with",
   totalGifts: "./admin-gifts.html",
   totalAvailableGifts: "./admin-gifts.html?status=Dispon%C3%ADvel",
   totalPartialGifts: "./admin-gifts.html?status=Parcial",
@@ -236,6 +253,131 @@ function getFinancialMetrics(gifts, contributions) {
   return metrics;
 }
 
+function getGuestSideMetrics(activeGuests) {
+  return activeGuests.reduce(
+    (metrics, guest) => {
+      const side = guest.guest_side || "couple";
+      metrics[side] = (metrics[side] || 0) + 1;
+      metrics.total += 1;
+      return metrics;
+    },
+    {
+      bride: 0,
+      couple: 0,
+      groom: 0,
+      total: 0,
+    },
+  );
+}
+
+function getConfirmedGuestCount(guest, rsvp, buffetPayingAge) {
+  return BuffetMetrics.getConfirmedPeople(guest, rsvp, buffetPayingAge).length;
+}
+
+function getPlannedGuestCount(guest) {
+  if (!guest?.active) {
+    return 0;
+  }
+
+  const invitePeople =
+    guest.invite_type === "couple"
+      ? Math.max((guest.couple_members || []).length, 2)
+      : 1;
+
+  return invitePeople + Number(guest.max_guests || 0);
+}
+
+function getHybridGuestCount(guest, rsvp, buffetPayingAge) {
+  return rsvp
+    ? getConfirmedGuestCount(guest, rsvp, buffetPayingAge)
+    : getPlannedGuestCount(guest);
+}
+
+function getTableMetrics({
+  activeGuests,
+  activeRSVPs,
+  assignments,
+  buffetPayingAge,
+  tables,
+}) {
+  const guestMap = new Map(activeGuests.map((guest) => [guest.id, guest]));
+  const rsvpMap = new Map(activeRSVPs.map((rsvp) => [rsvp.guest_id, rsvp]));
+  const assignmentGuestIds = new Set(assignments.map((assignment) => assignment.guest_id));
+  const assignmentsByTable = assignments.reduce((map, assignment) => {
+    if (!map.has(assignment.table_id)) {
+      map.set(assignment.table_id, []);
+    }
+
+    map.get(assignment.table_id).push(assignment);
+    return map;
+  }, new Map());
+
+  const metrics = {
+    active: 0,
+    available: 0,
+    declinedWithTable: 0,
+    full: 0,
+    guestsWithTable: 0,
+    guestsWithoutTable: 0,
+    inactive: 0,
+    over: 0,
+    confirmedWithoutTable: 0,
+    total: tables.length,
+  };
+
+  activeGuests.forEach((guest) => {
+    const hasTable = assignmentGuestIds.has(guest.id);
+    const rsvp = rsvpMap.get(guest.id);
+
+    if (hasTable) {
+      metrics.guestsWithTable += 1;
+    } else {
+      metrics.guestsWithoutTable += 1;
+    }
+
+    if (!hasTable && rsvp?.presence === "Sim") {
+      metrics.confirmedWithoutTable += 1;
+    }
+
+    if (hasTable && rsvp?.presence === "Não") {
+      metrics.declinedWithTable += 1;
+    }
+  });
+
+  tables.forEach((tableItem) => {
+    if (!tableItem.is_active) {
+      metrics.inactive += 1;
+      return;
+    }
+
+    metrics.active += 1;
+
+    const occupancy = (assignmentsByTable.get(tableItem.id) || []).reduce(
+      (total, assignment) => {
+        const guest = guestMap.get(assignment.guest_id);
+
+        if (!guest) {
+          return total;
+        }
+
+        return total + getHybridGuestCount(guest, rsvpMap.get(guest.id), buffetPayingAge);
+      },
+      0,
+    );
+    const capacity = Number(tableItem.capacity || 0);
+
+    if (capacity > 0 && occupancy > capacity) {
+      metrics.over += 1;
+    } else if (capacity > 0 && occupancy >= capacity) {
+      metrics.full += 1;
+    } else {
+      metrics.available += 1;
+    }
+  });
+
+  return metrics;
+}
+
 function setupDashboardMetricNavigation() {
   Object.entries(dashboardMetricLinks).forEach(([metricId, href]) => {
     const metric = document.getElementById(metricId);
@@ -296,19 +438,29 @@ async function loadDashboard() {
     .rpc("get_public_settings")
     .maybeSingle();
 
+  const { data: tables, error: tablesError } = await supabaseClient
+    .rpc("admin_list_wedding_tables");
+
+  const { data: tableAssignments, error: tableAssignmentsError } =
+    await supabaseClient.rpc("admin_list_wedding_table_assignments");
+
   if (
     guestsError ||
     rsvpsError ||
     giftsError ||
     contributionsError ||
-    settingsError
+    settingsError ||
+    tablesError ||
+    tableAssignmentsError
   ) {
     console.error(
       guestsError ||
         rsvpsError ||
         giftsError ||
         contributionsError ||
-        settingsError,
+        settingsError ||
+        tablesError ||
+        tableAssignmentsError,
     );
     showAdminToast("⚠️ Erro ao carregar dashboard");
     return;
@@ -386,6 +538,14 @@ async function loadDashboard() {
     gifts || [],
     contributions || [],
   );
+  const guestSideMetrics = getGuestSideMetrics(activeGuests);
+  const tableMetrics = getTableMetrics({
+    activeGuests,
+    activeRSVPs,
+    assignments: tableAssignments || [],
+    buffetPayingAge,
+    tables: tables || [],
+  });
 
   setText("totalGuests", activeGuests.length);
   setText(
@@ -399,11 +559,44 @@ async function loadDashboard() {
   setText("totalPlannedGuests", plannedGuestMetrics.guests);
   setText("totalPlannedCompanions", plannedGuestMetrics.companions);
   setText("totalPlannedPeople", plannedGuestMetrics.total);
+  setText("totalBrideGuests", guestSideMetrics.bride);
+  setText("totalGroomGuests", guestSideMetrics.groom);
+  setText("totalCoupleSideGuests", guestSideMetrics.couple);
+  setText(
+    "totalIndividualInvites",
+    activeGuests.filter((guest) => guest.invite_type === "individual").length,
+  );
+  setText(
+    "totalCoupleInvites",
+    activeGuests.filter((guest) => guest.invite_type === "couple").length,
+  );
+  setText(
+    "totalInviteSentGuests",
+    activeGuests.filter((guest) => guest.invite_sent).length,
+  );
+  setText(
+    "totalInvitePendingGuests",
+    activeGuests.filter((guest) => !guest.invite_sent).length,
+  );
+  AdminDashboardCharts.updateGuestSideChart(guestSideMetrics);
+
+  setText("totalTables", tableMetrics.total);
+  setText("totalActiveTables", tableMetrics.active);
+  setText("totalAvailableTables", tableMetrics.available);
+  setText("totalFullTables", tableMetrics.full + tableMetrics.over);
+  setText("totalOverTables", tableMetrics.over);
+  setText("totalGuestsWithTable", tableMetrics.guestsWithTable);
+  setText("totalGuestsWithoutTable", tableMetrics.guestsWithoutTable);
+  setText("totalConfirmedWithoutTable", tableMetrics.confirmedWithoutTable);
+  setText("totalDeclinedWithTable", tableMetrics.declinedWithTable);
+  AdminDashboardCharts.updateTableChart(tableMetrics);
+
   setText("totalPayingGuests", buffetMetrics.payingPeople);
   setText("totalChildren", buffetMetrics.children);
   setText("totalPayingChildren", buffetMetrics.payingChildren);
   setText("totalNonPayingChildren", buffetMetrics.nonPayingChildren);
   setText("totalUnknownAgeChildren", buffetMetrics.unknownAgeChildren);
+  setText("totalDietaryRestrictionPeople", buffetMetrics.dietaryRestrictionPeople);
   setText(
     "buffetPayingRule",
     `Pagantes a partir de ${buffetPayingAge} ${

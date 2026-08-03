@@ -24,12 +24,22 @@ drop function if exists public.create_guest_with_invite_code(
   boolean
 );
 
+drop function if exists public.create_guest_with_invite_code(
+  text,
+  text,
+  jsonb,
+  integer,
+  boolean,
+  text
+);
+
 create or replace function public.create_guest_with_invite_code(
   p_name text,
   p_invite_type text default 'individual',
   p_couple_members jsonb default null,
   p_max_guests integer default 0,
-  p_invite_sent boolean default false
+  p_invite_sent boolean default false,
+  p_guest_side text default 'couple'
 )
 returns public.guests
 language plpgsql
@@ -57,6 +67,7 @@ begin
   p_invite_type := lower(nullif(btrim(p_invite_type), ''));
   p_max_guests := coalesce(p_max_guests, 0);
   p_invite_sent := coalesce(p_invite_sent, false);
+  p_guest_side := lower(coalesce(nullif(btrim(p_guest_side), ''), 'couple'));
 
   if p_name is null then
     raise exception 'Guest name is required.'
@@ -72,6 +83,11 @@ begin
 
   if p_max_guests < 0 then
     raise exception 'Maximum companions cannot be negative.'
+      using errcode = '22023';
+  end if;
+
+  if p_guest_side not in ('bride', 'groom', 'couple') then
+    raise exception 'Invalid guest side.'
       using errcode = '22023';
   end if;
 
@@ -116,7 +132,8 @@ begin
         active,
         access_count,
         invite_type,
-        couple_members
+        couple_members,
+        guest_side
       )
       values (
         p_name,
@@ -127,7 +144,8 @@ begin
         true,
         0,
         p_invite_type,
-        p_couple_members
+        p_couple_members,
+        p_guest_side
       )
       returning * into created_guest;
 
@@ -149,7 +167,8 @@ comment on function public.create_guest_with_invite_code(
   text,
   jsonb,
   integer,
-  boolean
+  boolean,
+  text
 ) is
   'Creates a guest as an authenticated administrator and generates a secure invitation code.';
 
@@ -158,7 +177,8 @@ revoke all on function public.create_guest_with_invite_code(
   text,
   jsonb,
   integer,
-  boolean
+  boolean,
+  text
 ) from public;
 
 revoke all on function public.create_guest_with_invite_code(
@@ -166,7 +186,8 @@ revoke all on function public.create_guest_with_invite_code(
   text,
   jsonb,
   integer,
-  boolean
+  boolean,
+  text
 ) from anon;
 
 grant execute on function public.create_guest_with_invite_code(
@@ -174,7 +195,8 @@ grant execute on function public.create_guest_with_invite_code(
   text,
   jsonb,
   integer,
-  boolean
+  boolean,
+  text
 ) to authenticated;
 
 -- New guests must be created through the RPC. Existing guests can still be

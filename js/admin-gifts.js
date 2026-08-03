@@ -262,6 +262,39 @@ function formatCurrency(value) {
   });
 }
 
+function getCurrencyDigits(value) {
+  return String(value || "").replace(/\D/g, "");
+}
+
+function formatCurrencyInputValue(value) {
+  const digits = getCurrencyDigits(value);
+  const cents = digits ? Number(digits) : 0;
+
+  return formatCurrency(cents / 100);
+}
+
+function formatCurrencyInputFromNumber(value) {
+  return formatCurrency(Number(value || 0));
+}
+
+function parseCurrencyInputValue(value) {
+  const digits = getCurrencyDigits(value);
+
+  if (!digits) {
+    return 0;
+  }
+
+  return Number((Number(digits) / 100).toFixed(2));
+}
+
+function applyCurrencyInputMask(input) {
+  if (!input) {
+    return;
+  }
+
+  input.value = formatCurrencyInputValue(input.value);
+}
+
 function getGiftGuestMap() {
   return cachedGiftGuests.reduce((map, guest) => {
     map[guest.id] = guest.name;
@@ -762,6 +795,53 @@ function renderGiftDetailActionCard({
   `;
 }
 
+function renderGiftDetailsInfo(gift) {
+  const quotaCount = Number(gift.quota_count || 0);
+  const reservedCount = Number(gift.quota_reserved_count || 0);
+  const confirmedCount = Number(gift.quota_confirmed_count || 0);
+  const availableCount = Math.max(0, quotaCount - reservedCount);
+  const quotaValue = getQuotaValue(gift);
+  const metaItems = [
+    ["Tipo", getGiftTypeLabel(gift)],
+    ["Categoria", gift.category || "-"],
+    ["Valor total", formatCurrency(gift.price)],
+    ["Forma", getGiftMethodLabel(gift) || "-"],
+  ];
+
+  if (isQuotaGift(gift)) {
+    metaItems.push(
+      ["Valor por cota", formatCurrency(quotaValue)],
+      ["Total de cotas", quotaCount],
+      ["Cotas reservadas", `${reservedCount}/${quotaCount}`],
+      ["Cotas confirmadas", `${confirmedCount}/${quotaCount}`],
+      ["Cotas disponíveis", availableCount],
+      ["Valor reservado", formatCurrency(Number(gift.quota_reserved_amount || 0))],
+    );
+  }
+
+  if (!isQuotaGift(gift)) {
+    metaItems.push(
+      ["Status", getGiftDisplayStatus(gift) || "-"],
+      ["Pagamento", getGiftDisplayPaymentStatus(gift) || "Pendente"],
+    );
+  }
+
+  return `
+    <div class="admin-details-meta-grid">
+      ${metaItems
+        .map(
+          ([label, value]) => `
+            <div class="admin-details-meta-item">
+              <span>${safeText(label)}</span>
+              <strong>${safeText(value)}</strong>
+            </div>
+          `,
+        )
+        .join("")}
+    </div>
+  `;
+}
+
 function renderGiftDetailsReservationSummary(gift) {
   if (isQuotaGift(gift)) {
     return "";
@@ -943,6 +1023,11 @@ window.openGiftDetailsModal = function (gift) {
     <section class="admin-details-section">
       <span class="admin-details-label">Situação</span>
       ${renderSituationCell(gift)}
+    </section>
+
+    <section class="admin-details-section">
+      <span class="admin-details-label">Informações do Presente</span>
+      ${renderGiftDetailsInfo(gift)}
     </section>
 
     ${
@@ -1836,8 +1921,9 @@ function openGiftModal() {
   renderGiftExternalOptions();
   giftModalTitle.textContent = "Novo Presente";
   giftTypeInput.value = "single";
+  document.getElementById("giftPriceInput").value = formatCurrencyInputFromNumber(0);
   giftQuotaCountInput.value = "";
-  giftQuotaValueInput.value = "";
+  giftQuotaValueInput.value = formatCurrencyInputFromNumber(0);
   giftPurchaseModeInput.disabled = false;
   previousPurchaseMode = giftPurchaseModeInput.value;
   updateGiftTypeVisibility();
@@ -1856,11 +1942,14 @@ window.openEditGiftModal = function (gift) {
   document.getElementById("giftNameInput").value = gift.name || "";
   document.getElementById("giftDescriptionInput").value =
     gift.description || "";
-  document.getElementById("giftPriceInput").value = gift.price ?? "";
+  document.getElementById("giftPriceInput").value = formatCurrencyInputFromNumber(
+    gift.price,
+  );
   document.getElementById("giftTypeInput").value = gift.gift_type || "single";
   document.getElementById("giftQuotaCountInput").value = gift.quota_count || "";
-  document.getElementById("giftQuotaValueInput").value =
-    isQuotaGift(gift) ? getQuotaValue(gift).toFixed(2) : "";
+  document.getElementById("giftQuotaValueInput").value = isQuotaGift(gift)
+    ? formatCurrencyInputFromNumber(getQuotaValue(gift))
+    : formatCurrencyInputFromNumber(0);
   document.getElementById("giftImageUrlInput").value = gift.image_url || "";
   document.getElementById("giftPurchaseModeInput").value =
     gift.purchase_mode || "money";
@@ -1877,11 +1966,13 @@ window.openEditGiftModal = function (gift) {
 };
 
 function updateQuotaValuePreview() {
-  const price = Number(document.getElementById("giftPriceInput").value || 0);
+  const price = parseCurrencyInputValue(
+    document.getElementById("giftPriceInput").value,
+  );
   const quotaCount = Number(giftQuotaCountInput.value || 0);
   const quotaValue = quotaCount > 0 ? price / quotaCount : 0;
 
-  giftQuotaValueInput.value = quotaValue ? quotaValue.toFixed(2) : "";
+  giftQuotaValueInput.value = formatCurrencyInputFromNumber(quotaValue);
 }
 
 function updateGiftTypeVisibility() {
@@ -1891,7 +1982,7 @@ function updateGiftTypeVisibility() {
 
   if (!isQuota) {
     giftQuotaCountInput.value = "";
-    giftQuotaValueInput.value = "";
+    giftQuotaValueInput.value = formatCurrencyInputFromNumber(0);
     giftPurchaseModeInput.disabled = false;
     return;
   }
@@ -2216,7 +2307,16 @@ giftTypeInput.addEventListener("change", () => {
 
 document
   .getElementById("giftPriceInput")
-  .addEventListener("input", updateQuotaValuePreview);
+  .addEventListener("input", (event) => {
+    applyCurrencyInputMask(event.target);
+    updateQuotaValuePreview();
+  });
+document
+  .getElementById("giftPriceInput")
+  .addEventListener("blur", (event) => {
+    applyCurrencyInputMask(event.target);
+    updateQuotaValuePreview();
+  });
 
 giftQuotaCountInput.addEventListener("input", updateQuotaValuePreview);
 
@@ -2265,8 +2365,8 @@ giftForm.addEventListener("submit", async (e) => {
   const purchaseMode = document.getElementById("giftPurchaseModeInput").value;
   const giftType = document.getElementById("giftTypeInput").value;
   const priceInputValue = document.getElementById("giftPriceInput").value;
-  const hasPrice = priceInputValue.trim() !== "";
-  const parsedPrice = hasPrice ? Number(priceInputValue) : null;
+  const hasPrice = parseCurrencyInputValue(priceInputValue) > 0;
+  const parsedPrice = hasPrice ? parseCurrencyInputValue(priceInputValue) : null;
   const price = parsedPrice && parsedPrice > 0 ? parsedPrice : null;
   const effectivePurchaseMode = giftType === "quota" ? "money" : purchaseMode;
   const quotaCount = Number(giftQuotaCountInput.value || 0);

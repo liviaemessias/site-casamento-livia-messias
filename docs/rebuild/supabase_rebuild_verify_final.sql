@@ -17,6 +17,27 @@ select
   ) as check_passed
 union all
 select
+  'guests.guest_side column exists' as check_name,
+  exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'guests'
+      and column_name = 'guest_side'
+      and data_type = 'text'
+      and is_nullable = 'NO'
+      and column_default = '''couple''::text'
+  ) as check_passed
+union all
+select
+  'guests.guest_side check constraint exists' as check_name,
+  exists (
+    select 1
+    from pg_constraint
+    where conname = 'guests_guest_side_check'
+  ) as check_passed
+union all
+select
   'legacy guests.is_admin column is absent' as check_name,
   not exists (
     select 1
@@ -24,6 +45,26 @@ select
     where table_schema = 'public'
       and table_name = 'guests'
       and column_name = 'is_admin'
+  ) as check_passed
+union all
+select
+  'legacy rsvps.food column is absent' as check_name,
+  not exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'rsvps'
+      and column_name = 'food'
+  ) as check_passed
+union all
+select
+  'legacy rsvps.food_restriction column is absent' as check_name,
+  not exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'rsvps'
+      and column_name = 'food_restriction'
   ) as check_passed
 union all
 select
@@ -43,9 +84,17 @@ from (
     ('public.wedding_vendors'),
     ('public.wedding_schedule_sections'),
     ('public.wedding_schedule_activities'),
+    ('public.wedding_tables'),
+    ('public.wedding_table_assignments'),
     ('public.wedding_checklist_categories'),
     ('public.wedding_checklist_responsibles'),
     ('public.wedding_checklist_items'),
+    ('public.financial_budget_scenarios'),
+    ('public.financial_categories'),
+    ('public.financial_payers'),
+    ('public.financial_budget_items'),
+    ('public.financial_expenses'),
+    ('public.financial_expense_payments'),
     ('public.admin_users'),
     ('public.guest_access_sessions'),
     ('public.invite_login_attempts')
@@ -71,9 +120,17 @@ where n.nspname = 'public'
     'wedding_vendors',
     'wedding_schedule_sections',
     'wedding_schedule_activities',
+    'wedding_tables',
+    'wedding_table_assignments',
     'wedding_checklist_categories',
     'wedding_checklist_responsibles',
     'wedding_checklist_items',
+    'financial_budget_scenarios',
+    'financial_categories',
+    'financial_payers',
+    'financial_budget_items',
+    'financial_expenses',
+    'financial_expense_payments',
     'admin_users',
     'guest_access_sessions',
     'invite_login_attempts'
@@ -86,14 +143,14 @@ from (
   values
     ('public.current_guest_id()'),
     ('public.is_admin()'),
-    ('public.create_guest_with_invite_code(text,text,jsonb,integer,boolean)'),
+    ('public.create_guest_with_invite_code(text,text,jsonb,integer,boolean,text)'),
     ('public.admin_confirm_gift_purchase(uuid)'),
     ('public.admin_release_gift_reservation(uuid)'),
     ('public.admin_confirm_gift_contribution(uuid)'),
     ('public.admin_release_gift_contribution(uuid)'),
     ('public.admin_save_guest_rsvp(uuid,text,text,text,text,boolean,text,jsonb)'),
     ('public.admin_delete_guest_rsvp(uuid)'),
-    ('public.admin_update_guest(uuid,text,text,jsonb,integer,boolean)'),
+    ('public.admin_update_guest(uuid,text,text,jsonb,integer,boolean,text)'),
     ('public.admin_set_guest_active(uuid,boolean)'),
     ('public.admin_set_guest_invite_sent(uuid,boolean)'),
     ('public.admin_save_gift(uuid,text,text,text,numeric,text,text,integer,text,text,jsonb)'),
@@ -108,6 +165,7 @@ from (
     ('public.admin_send_gift_contribution_reminder(uuid)'),
     ('public.admin_create_manual_notification_event(text,uuid,text)'),
     ('public.admin_resend_notification_delivery(uuid)'),
+    ('public.rsvp_guest_data_food_summary(jsonb)'),
     ('public.admin_list_wall_messages(text,text,integer,integer)'),
     ('public.admin_approve_wall_message(uuid)'),
     ('public.admin_hide_wall_message(uuid)'),
@@ -131,6 +189,14 @@ from (
     ('public.admin_reorder_schedule_activities(uuid,uuid[])'),
     ('public.admin_delete_schedule_section(uuid)'),
     ('public.admin_delete_schedule_activity(uuid)'),
+    ('public.admin_list_wedding_tables()'),
+    ('public.admin_list_wedding_table_assignments()'),
+    ('public.admin_save_wedding_table(uuid,text,integer,text,text,integer,boolean)'),
+    ('public.admin_assign_guest_to_table(uuid,uuid,text)'),
+    ('public.admin_remove_guest_from_table(uuid)'),
+    ('public.admin_set_wedding_table_active(uuid,boolean)'),
+    ('public.admin_reorder_wedding_tables(uuid[])'),
+    ('public.admin_delete_wedding_table(uuid)'),
     ('public.admin_list_checklist_categories()'),
     ('public.admin_list_checklist_responsibles()'),
     ('public.admin_list_checklist_items()'),
@@ -142,6 +208,28 @@ from (
     ('public.admin_delete_checklist_category(uuid)'),
     ('public.admin_delete_checklist_responsible(uuid)'),
     ('public.admin_delete_checklist_item(uuid)'),
+    ('public.admin_list_financial_categories()'),
+    ('public.admin_save_financial_category(uuid,text,text,text,text,integer,boolean)'),
+    ('public.admin_delete_financial_category(uuid)'),
+    ('public.admin_reorder_financial_categories(text,uuid[])'),
+    ('public.admin_list_financial_payers()'),
+    ('public.admin_save_financial_payer(uuid,text,text,text,text,integer,boolean)'),
+    ('public.admin_delete_financial_payer(uuid)'),
+    ('public.admin_reorder_financial_payers(uuid[])'),
+    ('public.admin_list_financial_budget_scenarios()'),
+    ('public.admin_save_financial_budget_scenario(uuid,text,text,text,boolean,integer,boolean)'),
+    ('public.admin_delete_financial_budget_scenario(uuid)'),
+    ('public.admin_reorder_financial_budget_scenarios(text,uuid[])'),
+    ('public.admin_list_financial_budget_items()'),
+    ('public.admin_save_financial_budget_item(uuid,uuid,uuid,text,numeric,text,text,text,text,integer,boolean)'),
+    ('public.admin_delete_financial_budget_item(uuid)'),
+    ('public.admin_list_financial_expenses()'),
+    ('public.admin_save_financial_expense(uuid,uuid,uuid,text,uuid,uuid,text,text,text,numeric,text,text,date,text,text,boolean)'),
+    ('public.admin_delete_financial_expense(uuid)'),
+    ('public.admin_list_financial_expense_payments()'),
+    ('public.admin_save_financial_expense_payment(uuid,uuid,uuid,integer,text,numeric,date,date,text,text)'),
+    ('public.admin_delete_financial_expense_payment(uuid)'),
+    ('public.admin_get_financial_summary(text)'),
     ('public.enqueue_gift_notification_event(text,text,uuid,timestamp with time zone,uuid,jsonb)'),
     ('public.enqueue_wall_message_notification_event(text,uuid,timestamp with time zone)'),
     ('public.get_public_settings()'),
@@ -198,6 +286,15 @@ select
     'authenticated',
     'public.admin_get_nav_alerts()',
     'execute'
+  ) as check_passed
+union all
+select
+  'administrative navigation alert RPC includes due financial payments flag' as check_name,
+  exists (
+    select 1
+    from pg_proc
+    where oid = 'public.admin_get_nav_alerts()'::regprocedure
+      and proargnames @> array['has_due_financial_payments']
   ) as check_passed
 union all
 select
@@ -589,12 +686,12 @@ select
   'secure invitation code RPC has restricted execution' as check_name,
   not has_function_privilege(
     'anon',
-    'public.create_guest_with_invite_code(text,text,jsonb,integer,boolean)',
+    'public.create_guest_with_invite_code(text,text,jsonb,integer,boolean,text)',
     'execute'
   )
   and has_function_privilege(
     'authenticated',
-    'public.create_guest_with_invite_code(text,text,jsonb,integer,boolean)',
+    'public.create_guest_with_invite_code(text,text,jsonb,integer,boolean,text)',
     'execute'
   ) as check_passed
 union all
@@ -681,7 +778,7 @@ select
   'administrative guest RPCs have restricted execution' as check_name,
   not has_function_privilege(
     'anon',
-    'public.admin_update_guest(uuid,text,text,jsonb,integer,boolean)',
+    'public.admin_update_guest(uuid,text,text,jsonb,integer,boolean,text)',
     'execute'
   )
   and not has_function_privilege(
@@ -696,7 +793,7 @@ select
   )
   and has_function_privilege(
     'authenticated',
-    'public.admin_update_guest(uuid,text,text,jsonb,integer,boolean)',
+    'public.admin_update_guest(uuid,text,text,jsonb,integer,boolean,text)',
     'execute'
   )
   and has_function_privilege(
@@ -783,6 +880,46 @@ select
     'authenticated',
     'public.wedding_schedule_activities',
     'select, insert, update, delete'
+  )
+  and not has_table_privilege(
+    'authenticated',
+    'public.wedding_tables',
+    'select, insert, update, delete'
+  )
+  and not has_table_privilege(
+    'authenticated',
+    'public.wedding_table_assignments',
+    'select, insert, update, delete'
+  )
+  and not has_table_privilege(
+    'authenticated',
+    'public.financial_budget_scenarios',
+    'select, insert, update, delete'
+  )
+  and not has_table_privilege(
+    'authenticated',
+    'public.financial_categories',
+    'select, insert, update, delete'
+  )
+  and not has_table_privilege(
+    'authenticated',
+    'public.financial_payers',
+    'select, insert, update, delete'
+  )
+  and not has_table_privilege(
+    'authenticated',
+    'public.financial_budget_items',
+    'select, insert, update, delete'
+  )
+  and not has_table_privilege(
+    'authenticated',
+    'public.financial_expenses',
+    'select, insert, update, delete'
+  )
+  and not has_table_privilege(
+    'authenticated',
+    'public.financial_expense_payments',
+    'select, insert, update, delete'
   ) as check_passed
 union all
 select
@@ -821,6 +958,78 @@ select
     'anon',
     'public.wedding_schedule_activities',
     'select, insert, update, delete'
+  )
+  and not has_table_privilege(
+    'anon',
+    'public.wedding_tables',
+    'select, insert, update, delete'
+  )
+  and not has_table_privilege(
+    'anon',
+    'public.wedding_table_assignments',
+    'select, insert, update, delete'
+  )
+  and not has_table_privilege(
+    'anon',
+    'public.financial_budget_scenarios',
+    'select, insert, update, delete'
+  )
+  and not has_table_privilege(
+    'anon',
+    'public.financial_categories',
+    'select, insert, update, delete'
+  )
+  and not has_table_privilege(
+    'anon',
+    'public.financial_payers',
+    'select, insert, update, delete'
+  )
+  and not has_table_privilege(
+    'anon',
+    'public.financial_budget_items',
+    'select, insert, update, delete'
+  )
+  and not has_table_privilege(
+    'anon',
+    'public.financial_expenses',
+    'select, insert, update, delete'
+  )
+  and not has_table_privilege(
+    'anon',
+    'public.financial_expense_payments',
+    'select, insert, update, delete'
+  ) as check_passed
+union all
+select
+  'financial admin RPCs have restricted execution' as check_name,
+  not exists (
+    select 1
+    from (values
+      ('public.admin_list_financial_categories()'),
+      ('public.admin_save_financial_category(uuid,text,text,text,text,integer,boolean)'),
+      ('public.admin_delete_financial_category(uuid)'),
+      ('public.admin_reorder_financial_categories(text,uuid[])'),
+      ('public.admin_list_financial_payers()'),
+      ('public.admin_save_financial_payer(uuid,text,text,text,text,integer,boolean)'),
+      ('public.admin_delete_financial_payer(uuid)'),
+      ('public.admin_reorder_financial_payers(uuid[])'),
+      ('public.admin_list_financial_budget_scenarios()'),
+      ('public.admin_save_financial_budget_scenario(uuid,text,text,text,boolean,integer,boolean)'),
+      ('public.admin_delete_financial_budget_scenario(uuid)'),
+      ('public.admin_reorder_financial_budget_scenarios(text,uuid[])'),
+      ('public.admin_list_financial_budget_items()'),
+      ('public.admin_save_financial_budget_item(uuid,uuid,uuid,text,numeric,text,text,text,text,integer,boolean)'),
+      ('public.admin_delete_financial_budget_item(uuid)'),
+      ('public.admin_list_financial_expenses()'),
+      ('public.admin_save_financial_expense(uuid,uuid,uuid,text,uuid,uuid,text,text,text,numeric,text,text,date,text,text,boolean)'),
+      ('public.admin_delete_financial_expense(uuid)'),
+      ('public.admin_list_financial_expense_payments()'),
+      ('public.admin_save_financial_expense_payment(uuid,uuid,uuid,integer,text,numeric,date,date,text,text)'),
+      ('public.admin_delete_financial_expense_payment(uuid)'),
+      ('public.admin_get_financial_summary(text)')
+    ) as expected(function_name)
+    where has_function_privilege('anon', expected.function_name, 'execute')
+       or not has_function_privilege('authenticated', expected.function_name, 'execute')
   ) as check_passed
 union all
 select
@@ -1154,5 +1363,104 @@ select
   (select count(*) >= 18 from public.wedding_checklist_categories)
   and (select count(*) >= 16 from public.wedding_checklist_responsibles)
   and (select count(*) >= 30 from public.wedding_checklist_items) as check_passed
+union all
+select
+  'financial reference scenarios seed data exists' as check_name,
+  exists (
+    select 1
+    from public.financial_budget_scenarios
+    where context = 'wedding'
+      and name = 'Planejado'
+      and is_reference is true
+      and is_active is true
+  )
+  and exists (
+    select 1
+    from public.financial_budget_scenarios
+    where context = 'honeymoon'
+      and name = 'Planejado'
+      and is_reference is true
+      and is_active is true
+  ) as check_passed
+union all
+select
+  'financial has one active reference scenario per context' as check_name,
+  not exists (
+    select 1
+    from (values ('wedding'), ('honeymoon')) as expected(context)
+    left join public.financial_budget_scenarios as scenario
+      on scenario.context = expected.context
+      and scenario.is_reference is true
+      and scenario.is_active is true
+    group by expected.context
+    having count(scenario.id) <> 1
+  ) as check_passed
+union all
+select
+  'financial category and payer seed data exists' as check_name,
+  (select count(*) >= 15 from public.financial_categories where is_active is true)
+  and (select count(*) >= 7 from public.financial_payers where is_active is true) as check_passed
+union all
+select
+  'financial summary RPC source uses qualified aggregate columns' as check_name,
+  exists (
+    select 1
+    from pg_proc
+    join pg_namespace
+      on pg_namespace.oid = pg_proc.pronamespace
+    where pg_namespace.nspname = 'public'
+      and pg_proc.proname = 'admin_get_financial_summary'
+      and pg_get_functiondef(pg_proc.oid) like '%sum(with_calculations.reference_budget_amount)%'
+      and pg_get_functiondef(pg_proc.oid) like '%sum(with_calculations.total_contracted)%'
+      and pg_get_functiondef(pg_proc.oid) like '%min(with_calculations.next_due_date)%'
+  ) as check_passed
+union all
+select
+  'financial scenario RPCs enforce active reference guard' as check_name,
+  exists (
+    select 1
+    from pg_proc
+    join pg_namespace
+      on pg_namespace.oid = pg_proc.pronamespace
+    where pg_namespace.nspname = 'public'
+      and pg_proc.proname = 'admin_save_financial_budget_scenario'
+      and pg_get_functiondef(pg_proc.oid) like '%Each financial context must have one active reference scenario.%'
+      and pg_get_functiondef(pg_proc.oid) like '%A reference financial budget scenario must be active.%'
+  )
+  and exists (
+    select 1
+    from pg_proc
+    join pg_namespace
+      on pg_namespace.oid = pg_proc.pronamespace
+    where pg_namespace.nspname = 'public'
+      and pg_proc.proname = 'admin_delete_financial_budget_scenario'
+      and pg_get_functiondef(pg_proc.oid) like '%Each financial context must have one active reference scenario.%'
+  ) as check_passed
+union all
+select
+  'financial budget items accept shared categories' as check_name,
+  exists (
+    select 1
+    from pg_proc
+    join pg_namespace
+      on pg_namespace.oid = pg_proc.pronamespace
+    where pg_namespace.nspname = 'public'
+      and pg_proc.proname = 'admin_save_financial_budget_item'
+      and pg_get_functiondef(pg_proc.oid) like '%category_record.context not in (scenario_record.context, ''both'')%'
+      and pg_get_functiondef(pg_proc.oid) like '%Financial category does not match the scenario context.%'
+  ) as check_passed
+union all
+select
+  'vendor delete RPC protects financial links' as check_name,
+  exists (
+    select 1
+    from pg_proc
+    join pg_namespace
+      on pg_namespace.oid = pg_proc.pronamespace
+    where pg_namespace.nspname = 'public'
+      and pg_proc.proname = 'admin_delete_vendor'
+      and pg_get_functiondef(pg_proc.oid) like '%public.financial_expenses%'
+      and pg_get_functiondef(pg_proc.oid) like '%Vendor is linked to financial expenses and cannot be deleted.%'
+  ) as check_passed
 ) as rebuild_checks
 order by check_passed asc, check_name asc;

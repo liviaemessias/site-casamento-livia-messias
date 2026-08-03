@@ -1,0 +1,819 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://unpkg.com https://challenges.cloudflare.com; style-src 'self' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Financeiro | Painel Admin | Livia &amp; Messias</title>
+    <link rel="stylesheet" href="./css/style.css" />
+    <link rel="stylesheet" href="./css/admin.css" />
+  </head>
+  <body class="admin-auth-pending">
+    <main class="admin-page admin-financial-page">
+      <section class="admin-header">
+        <div>
+          <p class="section-subtitle">Painel Administrativo</p>
+          <h1>Financeiro</h1>
+        </div>
+        <button id="logoutButton" class="admin-logout">Sair</button>
+      </section>
+
+      <nav class="admin-nav" aria-label="Navegação administrativa">
+        <a class="admin-nav-link" href="./admin-dashboard.html">Dashboard</a>
+        <a class="admin-nav-link" href="./admin-guests.html">Convidados</a>
+        <a class="admin-nav-link" href="./admin-rsvps.html">RSVP</a>
+        <a class="admin-nav-link" href="./admin-gifts.html">Presentes</a>
+        <a class="admin-nav-link" href="./admin-checklist.html">Checklist</a>
+        <a class="admin-nav-link active" href="./admin-financial.html">Financeiro</a>
+        <a class="admin-nav-link" href="./admin-schedule.html">Programação</a>
+        <a class="admin-nav-link" href="./admin-vendors.html">Fornecedores</a>
+        <a class="admin-nav-link" href="./admin-settings.html">Configurações</a>
+      </nav>
+
+      <section class="admin-section">
+        <div class="admin-section-header">
+          <div>
+            <p class="section-subtitle">Orçamento e pagamentos</p>
+            <h2>Visão Geral Financeira</h2>
+          </div>
+
+          <div class="admin-section-actions">
+            <button id="refreshFinancialButton" class="admin-action-button icon-action">
+              <i data-lucide="refresh-cw" aria-hidden="true"></i>
+              Atualizar
+            </button>
+            <a class="admin-action-button icon-action" href="./admin-financial-budget.html">
+              <i data-lucide="arrow-right" aria-hidden="true"></i>
+              Ver Orçamento
+            </a>
+            <a class="admin-action-button icon-action" href="./admin-financial-expenses.html">
+              <i data-lucide="arrow-right" aria-hidden="true"></i>
+              Ver Gastos
+            </a>
+          </div>
+        </div>
+
+        <nav class="financial-module-tabs" aria-label="Navegação do módulo financeiro">
+          <a class="active" href="./admin-financial.html">Visão Geral</a>
+          <a href="./admin-financial-budget.html">Orçamento Previsto</a>
+          <a href="./admin-financial-expenses.html">Gastos Reais</a>
+          <a href="./admin-financial-payments.html">Parcelas</a>
+          <a href="./admin-financial-base.html">Cadastros Base</a>
+        </nav>
+
+        <div class="admin-segmented-control financial-context-tabs" aria-label="Contexto financeiro">
+          <button type="button" class="active" data-financial-context="wedding">Casamento</button>
+          <button type="button" data-financial-context="honeymoon">Lua de Mel</button>
+          <button type="button" data-financial-context="all">Todos</button>
+        </div>
+
+        <div id="financialLoadStatus" class="financial-load-status" role="status" aria-live="polite"></div>
+
+        <section class="admin-grid dashboard-grid financial-summary-grid" aria-label="Resumo financeiro">
+          <article class="admin-card financial-summary-card">
+            <div class="admin-card-header">
+              <span>Orçamento de Referência</span>
+              <button type="button" class="metric-help" aria-label="Ajuda sobre orçamento de referência" data-tooltip="Total previsto no cenário de referência do contexto selecionado.">?</button>
+            </div>
+            <strong id="financialReferenceBudget">R$ 0,00</strong>
+            <small id="financialReferenceScenario">Cenário: -</small>
+          </article>
+          <article class="admin-card financial-summary-card">
+            <div class="admin-card-header">
+              <span>Total Contratado</span>
+              <button type="button" class="metric-help" aria-label="Ajuda sobre total contratado" data-tooltip="Soma dos gastos reais ativos, sem gastos cancelados.">?</button>
+            </div>
+            <strong id="financialContractedTotal">R$ 0,00</strong>
+            <small id="financialCommittedDelta">Diferença: R$ 0,00</small>
+          </article>
+          <article class="admin-card financial-summary-card">
+            <div class="admin-card-header">
+              <span>Total Pago</span>
+              <button type="button" class="metric-help" aria-label="Ajuda sobre total pago" data-tooltip="Soma das parcelas marcadas como pagas.">?</button>
+            </div>
+            <strong id="financialPaidTotal">R$ 0,00</strong>
+            <small id="financialCommittedPercent">Comprometido: -</small>
+          </article>
+          <article class="admin-card financial-summary-card">
+            <div class="admin-card-header">
+              <span>Falta do Orçamento</span>
+              <button type="button" class="metric-help" aria-label="Ajuda sobre falta do orçamento" data-tooltip="Orçamento de referência menos o total já pago. Mostra quanto ainda faltaria pagar para atingir o orçamento planejado.">?</button>
+            </div>
+            <strong id="financialBudgetRemainingTotal">R$ 0,00</strong>
+            <small id="financialBudgetRemainingStatus">Dentro do orçamento pago</small>
+          </article>
+          <article class="admin-card financial-summary-card">
+            <div class="admin-card-header">
+              <span>Em Aberto</span>
+              <button type="button" class="metric-help" aria-label="Ajuda sobre em aberto" data-tooltip="Total contratado menos total pago.">?</button>
+            </div>
+            <strong id="financialRemainingTotal">R$ 0,00</strong>
+            <small id="financialDueThisMonth">Este mês: R$ 0,00</small>
+          </article>
+        </section>
+
+        <section class="financial-overview-grid financial-overview-main-grid" aria-label="Visão inicial do financeiro">
+          <article class="admin-subsection-card">
+            <div class="admin-subsection-header">
+              <div>
+                <p class="section-subtitle">Vencimentos</p>
+                <h3>Próximas Parcelas</h3>
+              </div>
+              <div class="financial-next-due-inline" aria-label="Próximo vencimento financeiro">
+                <span>Próx. venc.: <strong id="financialNextDueDate">-</strong></span>
+                <span id="financialOverdueCount">Atrasadas: 0</span>
+              </div>
+            </div>
+            <div class="admin-table-wrapper">
+              <table class="admin-table financial-table financial-upcoming-payments-table">
+                <thead>
+                  <tr>
+                    <th>Vencimento</th>
+                    <th>Gasto</th>
+                    <th>Valor</th>
+                    <th>Status</th>
+                    <th>Ação</th>
+                  </tr>
+                </thead>
+                <tbody id="financialPaymentsTableBody"></tbody>
+              </table>
+            </div>
+          </article>
+
+          <div class="financial-overview-side-stack">
+            <article class="admin-subsection-card">
+              <div class="admin-subsection-header">
+                <div>
+                  <p class="section-subtitle">Realizado</p>
+                  <h3>Gastos Recentes</h3>
+                </div>
+                <a class="checklist-period-action" href="./admin-financial-expenses.html" title="Ver todos os gastos" aria-label="Ver todos os gastos">
+                  <i data-lucide="arrow-right" aria-hidden="true"></i>
+                </a>
+              </div>
+              <div id="financialExpensesTableBody" class="financial-recent-expenses-list" aria-live="polite"></div>
+            </article>
+
+            <article class="admin-subsection-card">
+              <div class="admin-subsection-header">
+                <div>
+                  <p class="section-subtitle">Planejamento</p>
+                  <h3>Orçamento Previsto</h3>
+                </div>
+                <a class="checklist-period-action" href="./admin-financial-budget.html" title="Ver orçamento" aria-label="Ver orçamento">
+                  <i data-lucide="arrow-right" aria-hidden="true"></i>
+                </a>
+              </div>
+              <div class="financial-overview-scenario-picker financial-budget-scenario-filter">
+                <label for="financialBudgetScenarioFilter">Cenário</label>
+                <select id="financialBudgetScenarioFilter"></select>
+              </div>
+              <div id="financialBudgetTableBody" class="financial-overview-budget-list" aria-live="polite"></div>
+            </article>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <div id="financialBudgetItemModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content">
+        <div class="admin-modal-header">
+          <div>
+            <p class="section-subtitle">Financeiro</p>
+            <h2 id="financialBudgetItemModalTitle">Novo Item Previsto</h2>
+          </div>
+          <button id="closeFinancialBudgetItemModalButton" type="button" class="admin-modal-close" aria-label="Fechar">×</button>
+        </div>
+
+        <form id="financialBudgetItemForm" class="admin-form">
+          <div class="admin-form-grid">
+            <div class="admin-form-group admin-form-group-wide">
+              <label for="financialBudgetTitleInput">Item</label>
+              <input id="financialBudgetTitleInput" type="text" maxlength="180" required />
+            </div>
+            <div class="admin-form-group">
+              <label for="financialBudgetScenarioInput">Cenário</label>
+              <select id="financialBudgetScenarioInput" required></select>
+            </div>
+            <div class="admin-form-group">
+              <label for="financialBudgetCategoryInput">Categoria</label>
+              <select id="financialBudgetCategoryInput" required></select>
+            </div>
+            <div class="admin-form-group">
+              <label for="financialBudgetAmountInput">Valor Estimado</label>
+              <input id="financialBudgetAmountInput" type="text" inputmode="numeric" autocomplete="off" value="R$ 0,00" />
+            </div>
+            <div class="admin-form-group">
+              <label for="financialBudgetPriorityInput">Prioridade</label>
+              <select id="financialBudgetPriorityInput">
+                <option value="normal">Normal</option>
+                <option value="high">Alta</option>
+                <option value="low">Baixa</option>
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label for="financialBudgetStatusInput">Status</label>
+              <select id="financialBudgetStatusInput">
+                <option value="planned">Previsto</option>
+                <option value="researching">Em pesquisa</option>
+                <option value="approved">Aprovado</option>
+                <option value="replaced">Substituído</option>
+                <option value="discarded">Descartado</option>
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label for="financialBudgetOrderInput">Ordem</label>
+              <input id="financialBudgetOrderInput" type="number" step="1" />
+              <small class="admin-field-hint">Se deixar vazio, entra no final do cenário.</small>
+            </div>
+          </div>
+
+          <div class="admin-form-group">
+            <label for="financialBudgetVendorInput">Fornecedor previsto ou referência</label>
+            <input id="financialBudgetVendorInput" type="text" maxlength="180" />
+          </div>
+
+          <div class="admin-form-group">
+            <label for="financialBudgetNotesInput">Observações</label>
+            <textarea id="financialBudgetNotesInput" maxlength="900" rows="4"></textarea>
+          </div>
+
+          <label class="admin-checkbox-label">
+            <input id="financialBudgetActiveInput" type="checkbox" checked />
+            Item ativo
+          </label>
+
+          <div class="admin-modal-actions vendor-modal-actions financial-budget-item-actions">
+            <button type="submit" class="admin-save-button" id="saveFinancialBudgetItemButton">Salvar Item</button>
+            <button type="button" class="admin-action-button danger" id="deleteFinancialBudgetItemButton">Excluir Item</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="financialBudgetItemDetailsModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content admin-details-modal-content">
+        <div class="admin-modal-header">
+          <div>
+            <p class="section-subtitle">Orçamento Previsto</p>
+            <h2 id="financialBudgetItemDetailsTitle">Detalhes do Item Previsto</h2>
+          </div>
+          <button id="closeFinancialBudgetItemDetailsModalButton" type="button" class="admin-modal-close" aria-label="Fechar">×</button>
+        </div>
+
+        <div id="financialBudgetItemDetailsContent" class="admin-details-content"></div>
+
+        <section class="admin-details-section">
+          <span class="admin-details-label">Ações</span>
+          <div class="admin-detail-action-grid financial-budget-details-actions">
+            <button id="editFinancialBudgetItemDetailsButton" type="button" class="admin-detail-action-card">
+              <span class="admin-detail-action-icon">
+                <i data-lucide="edit" aria-hidden="true"></i>
+              </span>
+              <span class="admin-detail-action-text">
+                <strong>Editar item</strong>
+                <small>Abre o formulário completo do item previsto.</small>
+              </span>
+            </button>
+            <button id="deleteFinancialBudgetItemDetailsButton" type="button" class="admin-detail-action-card danger">
+              <span class="admin-detail-action-icon">
+                <i data-lucide="trash-2" aria-hidden="true"></i>
+              </span>
+              <span class="admin-detail-action-text">
+                <strong>Excluir item</strong>
+                <small>Remove este item do orçamento previsto.</small>
+              </span>
+            </button>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div id="financialExpenseModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content">
+        <div class="admin-modal-header">
+          <div>
+            <p class="section-subtitle">Financeiro</p>
+            <h2 id="financialExpenseModalTitle">Novo Gasto Real</h2>
+          </div>
+          <button id="closeFinancialExpenseModalButton" type="button" class="admin-modal-close" aria-label="Fechar">×</button>
+        </div>
+
+        <form id="financialExpenseForm" class="admin-form">
+          <div class="admin-form-grid">
+            <div class="admin-form-group admin-form-group-wide">
+              <label for="financialExpenseTitleInput">Gasto</label>
+              <input id="financialExpenseTitleInput" type="text" maxlength="180" required />
+            </div>
+            <div class="admin-form-group">
+              <label for="financialExpenseContextInput">Contexto</label>
+              <select id="financialExpenseContextInput" required>
+                <option value="wedding">Casamento</option>
+                <option value="honeymoon">Lua de Mel</option>
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label for="financialExpenseCategoryInput">Categoria</label>
+              <select id="financialExpenseCategoryInput" required></select>
+            </div>
+            <div class="admin-form-group admin-form-group-wide">
+              <label for="financialExpenseBudgetItemInput">Item previsto vinculado</label>
+              <select id="financialExpenseBudgetItemInput"></select>
+              <small class="admin-field-hint">Opcional. Use para comparar o gasto real com o orçamento previsto.</small>
+            </div>
+            <div class="admin-form-group">
+              <label for="financialExpenseAmountInput">Valor Total</label>
+              <input id="financialExpenseAmountInput" type="text" inputmode="numeric" autocomplete="off" value="R$ 0,00" />
+            </div>
+            <div class="admin-form-group">
+              <label for="financialExpenseTypeInput">Tipo</label>
+              <select id="financialExpenseTypeInput">
+                <option value="supplier">Fornecedor</option>
+                <option value="one_off_purchase">Compra avulsa</option>
+                <option value="fee">Taxa</option>
+                <option value="reservation">Reserva</option>
+                <option value="service">Serviço</option>
+                <option value="product">Produto</option>
+                <option value="travel">Viagem</option>
+                <option value="lodging">Hospedagem</option>
+                <option value="transport">Transporte</option>
+                <option value="other">Outro</option>
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label for="financialExpensePaymentMethodInput">Pagamento</label>
+              <select id="financialExpensePaymentMethodInput">
+                <option value="custom">A definir/personalizado</option>
+                <option value="cash">À vista</option>
+                <option value="installments">Parcelado</option>
+                <option value="deposit_installments">Entrada + parcelas</option>
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label for="financialExpenseStatusInput">Status</label>
+              <select id="financialExpenseStatusInput">
+                <option value="planned">Planejado</option>
+                <option value="quoting">Cotando</option>
+                <option value="contracted">Contratado</option>
+                <option value="purchased">Comprado</option>
+                <option value="paid">Pago</option>
+                <option value="cancelled">Cancelado</option>
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label for="financialExpenseContractedAtInput">Data de contratação/compra</label>
+              <input id="financialExpenseContractedAtInput" type="date" />
+            </div>
+            <div class="admin-form-group">
+              <label for="financialExpensePayerInput">Pagador principal</label>
+              <select id="financialExpensePayerInput"></select>
+            </div>
+            <div class="admin-form-group">
+              <label for="financialExpenseVendorInput">Fornecedor vinculado</label>
+              <select id="financialExpenseVendorInput"></select>
+            </div>
+          </div>
+
+          <div class="admin-form-group">
+            <label for="financialExpenseDescriptionInput">Descrição</label>
+            <textarea id="financialExpenseDescriptionInput" maxlength="900" rows="3"></textarea>
+          </div>
+
+          <div class="admin-form-group">
+            <label for="financialExpenseReferenceUrlInput">Link ou referência</label>
+            <input id="financialExpenseReferenceUrlInput" type="url" maxlength="1000" />
+          </div>
+
+          <div class="admin-form-group">
+            <label for="financialExpenseNotesInput">Observações</label>
+            <textarea id="financialExpenseNotesInput" maxlength="1600" rows="4"></textarea>
+          </div>
+
+          <label class="admin-checkbox-label">
+            <input id="financialExpenseActiveInput" type="checkbox" checked />
+            Gasto ativo
+          </label>
+
+          <section id="financialExpensePaymentsSection" class="financial-expense-payments-section">
+            <div class="financial-expense-payments-header">
+              <div>
+                <p class="section-subtitle">Pagamentos</p>
+                <h3>Parcelas</h3>
+              </div>
+              <div class="financial-expense-payments-header-actions">
+                <small id="financialExpensePaymentsSummary">Total das parcelas: R$ 0,00</small>
+                <button id="openFinancialPaymentModalButton" type="button" class="financial-inline-action">
+                  <i data-lucide="plus" aria-hidden="true"></i>
+                  Nova Parcela
+                </button>
+              </div>
+            </div>
+
+            <p id="financialExpensePaymentsHint" class="admin-modal-helper">
+              Salve o gasto real primeiro para cadastrar parcelas.
+            </p>
+
+            <details id="financialPaymentGeneratorDisclosure" class="financial-payment-disclosure">
+              <summary class="financial-payment-disclosure-summary">
+                <span>
+                  <strong>Gerar parcelas automaticamente</strong>
+                  <small>Use como ponto de partida e ajuste manualmente depois.</small>
+                </span>
+                <i data-lucide="chevron-down" aria-hidden="true"></i>
+              </summary>
+              <div id="financialPaymentGenerator" class="financial-payment-generator">
+                <div class="admin-form-grid">
+                  <div id="financialPaymentEntryGroup" class="admin-form-group">
+                    <label for="financialPaymentEntryAmountInput">Valor da entrada</label>
+                    <input id="financialPaymentEntryAmountInput" type="text" inputmode="numeric" autocomplete="off" value="R$ 0,00" />
+                  </div>
+                  <div id="financialPaymentEntryDueDateGroup" class="admin-form-group">
+                    <label for="financialPaymentEntryDueDateInput">Vencimento da entrada</label>
+                    <input id="financialPaymentEntryDueDateInput" type="date" />
+                  </div>
+                  <div id="financialPaymentInstallmentsGroup" class="admin-form-group">
+                    <label for="financialPaymentInstallmentsCountInput">Quantidade de parcelas</label>
+                    <input id="financialPaymentInstallmentsCountInput" type="number" min="1" max="240" step="1" value="1" />
+                  </div>
+                  <div id="financialPaymentFirstDueDateGroup" class="admin-form-group">
+                    <label id="financialPaymentFirstDueDateLabel" for="financialPaymentFirstDueDateInput">Primeiro vencimento</label>
+                    <input id="financialPaymentFirstDueDateInput" type="date" />
+                  </div>
+                  <div id="financialPaymentDueIntervalGroup" class="admin-form-group">
+                    <label for="financialPaymentDueIntervalInput">Intervalo</label>
+                    <select id="financialPaymentDueIntervalInput">
+                      <option value="monthly">Mensal</option>
+                      <option value="weekly">Semanal</option>
+                      <option value="none">Mesmo vencimento</option>
+                    </select>
+                  </div>
+                  <label id="financialPaymentGeneratePaidGroup" class="admin-checkbox-label">
+                    <input id="financialPaymentGeneratePaidInput" type="checkbox" />
+                    Gerar pagamento à vista já como pago
+                  </label>
+                </div>
+                <button type="button" class="admin-action-button success is-full-width" id="generateFinancialPaymentsButton">Gerar Parcelas</button>
+              </div>
+            </details>
+
+            <div id="financialExpensePaymentsTableBody" class="financial-expense-payment-card-list" aria-live="polite"></div>
+          </section>
+
+          <div class="admin-modal-actions vendor-modal-actions financial-expense-actions">
+            <button type="submit" class="admin-save-button" id="saveFinancialExpenseButton">Salvar Gasto</button>
+            <button type="button" class="admin-action-button danger" id="deleteFinancialExpenseButton">Excluir Gasto</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="financialExpenseDetailsModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content admin-details-modal-content">
+        <div class="admin-modal-header">
+          <div>
+            <p class="section-subtitle">Gastos Reais</p>
+            <h2 id="financialExpenseDetailsTitle">Detalhes do Gasto Real</h2>
+          </div>
+          <button id="closeFinancialExpenseDetailsModalButton" type="button" class="admin-modal-close" aria-label="Fechar">×</button>
+        </div>
+
+        <div id="financialExpenseDetailsContent" class="admin-details-content"></div>
+
+        <section class="admin-details-section">
+          <span class="admin-details-label">Ações</span>
+          <div class="admin-detail-action-grid financial-expense-details-actions">
+            <button id="editFinancialExpenseDetailsButton" type="button" class="admin-detail-action-card">
+              <span class="admin-detail-action-icon">
+                <i data-lucide="edit" aria-hidden="true"></i>
+              </span>
+              <span class="admin-detail-action-text">
+                <strong>Editar gasto</strong>
+                <small>Abre o formulário completo do gasto real.</small>
+              </span>
+            </button>
+            <button id="deleteFinancialExpenseDetailsButton" type="button" class="admin-detail-action-card danger">
+              <span class="admin-detail-action-icon">
+                <i data-lucide="trash-2" aria-hidden="true"></i>
+              </span>
+              <span class="admin-detail-action-text">
+                <strong>Excluir gasto</strong>
+                <small>Remove este gasto real e suas parcelas.</small>
+              </span>
+            </button>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div id="financialPaymentModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content admin-details-modal-content">
+        <div class="admin-modal-header">
+          <div>
+            <p class="section-subtitle">Parcela</p>
+            <h2 id="financialPaymentModalTitle">Nova Parcela</h2>
+          </div>
+          <button id="closeFinancialPaymentModalButton" type="button" class="admin-modal-close" aria-label="Fechar">×</button>
+        </div>
+
+        <input id="financialPaymentIdInput" type="hidden" />
+        <div id="financialExpensePaymentEditor" class="financial-expense-payment-editor">
+          <div class="admin-form-grid">
+            <div class="admin-form-group">
+              <label for="financialPaymentInstallmentInput">Parcela Nº</label>
+              <input id="financialPaymentInstallmentInput" type="number" min="1" max="240" step="1" value="1" />
+            </div>
+            <div class="admin-form-group">
+              <label for="financialPaymentLabelInput">Descrição da parcela</label>
+              <input id="financialPaymentLabelInput" type="text" maxlength="120" />
+            </div>
+            <div class="admin-form-group">
+              <label for="financialPaymentAmountInput">Valor</label>
+              <input id="financialPaymentAmountInput" type="text" inputmode="numeric" autocomplete="off" value="R$ 0,00" />
+            </div>
+            <div class="admin-form-group">
+              <label for="financialPaymentDueDateInput">Vencimento</label>
+              <input id="financialPaymentDueDateInput" type="date" />
+            </div>
+            <div class="admin-form-group">
+              <label for="financialPaymentStatusInput">Status</label>
+              <select id="financialPaymentStatusInput">
+                <option value="unpaid">Não paga</option>
+                <option value="paid">Paga</option>
+                <option value="cancelled">Cancelada</option>
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label for="financialPaymentPaidAtInput">Data de pagamento</label>
+              <input id="financialPaymentPaidAtInput" type="date" />
+            </div>
+            <div class="admin-form-group admin-form-group-wide">
+              <label for="financialPaymentPayerInput">Pagador efetivo</label>
+              <select id="financialPaymentPayerInput"></select>
+            </div>
+          </div>
+
+          <div class="admin-form-group">
+            <label for="financialPaymentNotesInput">Observações da parcela</label>
+            <textarea id="financialPaymentNotesInput" maxlength="900" rows="3"></textarea>
+          </div>
+
+          <div class="financial-payment-actions">
+            <button type="button" class="admin-action-button success" id="saveFinancialPaymentButton">Salvar Parcela</button>
+            <button type="button" class="admin-action-button" id="cancelFinancialPaymentEditButton">Cancelar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="financialQuickPaymentModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content admin-details-modal-content">
+        <div class="admin-modal-header">
+          <div>
+            <p class="section-subtitle">Pagamento rápido</p>
+            <h2>Marcar Parcela como Paga</h2>
+          </div>
+          <button id="closeFinancialQuickPaymentModalButton" type="button" class="admin-modal-close" aria-label="Fechar">×</button>
+        </div>
+
+        <p id="financialQuickPaymentSummary" class="admin-modal-helper">
+          Confirme os dados do pagamento antes de marcar a parcela como paga.
+        </p>
+
+        <div class="admin-form-grid">
+          <div class="admin-form-group">
+            <label for="financialQuickPaymentPaidAtInput">Data de pagamento</label>
+            <input id="financialQuickPaymentPaidAtInput" type="date" />
+          </div>
+          <div class="admin-form-group">
+            <label for="financialQuickPaymentPayerInput">Pagador</label>
+            <select id="financialQuickPaymentPayerInput"></select>
+          </div>
+        </div>
+
+        <div class="admin-modal-actions vendor-modal-actions financial-quick-payment-actions">
+          <button id="confirmFinancialQuickPaymentButton" type="button" class="admin-save-button">Marcar como Paga</button>
+          <button id="cancelFinancialQuickPaymentButton" type="button" class="admin-action-button">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="financialOrderModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content admin-details-modal-content">
+        <button id="closeFinancialOrderModalButton" type="button" class="admin-modal-close" aria-label="Fechar organização">×</button>
+        <h2>Organizar Ordem</h2>
+        <p class="admin-modal-helper">
+          Use as setas para definir a ordem de exibição dos cadastros base do Financeiro.
+        </p>
+
+        <div class="admin-form-grid financial-order-controls">
+          <div class="admin-form-group">
+            <label for="financialOrderTypeInput">Cadastro</label>
+            <select id="financialOrderTypeInput">
+              <option value="scenarios">Cenários</option>
+              <option value="categories">Categorias</option>
+              <option value="payers">Pagadores</option>
+            </select>
+          </div>
+          <div id="financialOrderContextGroup" class="admin-form-group">
+            <label for="financialOrderContextInput">Contexto</label>
+            <select id="financialOrderContextInput"></select>
+          </div>
+        </div>
+
+        <div id="financialOrderList" class="vendor-order-list" aria-label="Ordem dos cadastros financeiros"></div>
+
+        <div class="admin-modal-actions vendor-modal-actions">
+          <button id="saveFinancialOrderButton" type="button" class="admin-save-button">
+            Salvar Ordem
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="financialScenarioModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content admin-details-modal-content">
+        <div class="admin-modal-header">
+          <div>
+            <p class="section-subtitle">Financeiro</p>
+            <h2>Cenários de Orçamento</h2>
+          </div>
+          <button id="closeFinancialScenarioModalButton" type="button" class="admin-modal-close" aria-label="Fechar">×</button>
+        </div>
+
+        <form id="financialScenarioForm" class="admin-form checklist-category-form">
+          <div class="admin-form-grid">
+            <div class="admin-form-group">
+              <label for="financialScenarioNameInput">Nome</label>
+              <input id="financialScenarioNameInput" type="text" maxlength="120" required />
+            </div>
+            <div class="admin-form-group">
+              <label for="financialScenarioContextInput">Contexto</label>
+              <select id="financialScenarioContextInput" required>
+                <option value="wedding">Casamento</option>
+                <option value="honeymoon">Lua de Mel</option>
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label for="financialScenarioOrderInput">Ordem</label>
+              <input id="financialScenarioOrderInput" type="number" step="1" />
+              <small class="admin-field-hint">Se deixar vazio, entra no final do contexto.</small>
+            </div>
+          </div>
+
+          <div class="admin-form-group">
+            <label for="financialScenarioDescriptionInput">Descrição</label>
+            <textarea id="financialScenarioDescriptionInput" maxlength="500" rows="3"></textarea>
+          </div>
+
+          <label class="admin-checkbox-label">
+            <input id="financialScenarioReferenceInput" type="checkbox" />
+            Cenário de referência
+          </label>
+          <small class="admin-field-hint financial-checkbox-hint">
+            O cenário de referência alimenta os cards principais e substitui o cenário de referência atual do mesmo contexto.
+          </small>
+
+          <label class="admin-checkbox-label">
+            <input id="financialScenarioActiveInput" type="checkbox" checked />
+            Cenário ativo
+          </label>
+
+          <div class="admin-modal-actions vendor-modal-actions checklist-category-actions">
+            <button type="submit" class="admin-save-button" id="saveFinancialScenarioButton">Salvar Cenário</button>
+            <button type="button" class="admin-action-button" id="cancelFinancialScenarioEditButton">Cancelar Edição</button>
+          </div>
+        </form>
+
+        <div id="financialScenarioList" class="checklist-category-list financial-category-manager-list"></div>
+      </div>
+    </div>
+
+    <div id="financialCategoryModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content admin-details-modal-content">
+        <div class="admin-modal-header">
+          <div>
+            <p class="section-subtitle">Financeiro</p>
+            <h2>Categorias Financeiras</h2>
+          </div>
+          <button id="closeFinancialCategoryModalButton" type="button" class="admin-modal-close" aria-label="Fechar">×</button>
+        </div>
+
+        <form id="financialCategoryForm" class="admin-form checklist-category-form">
+          <div class="admin-form-grid">
+            <div class="admin-form-group">
+              <label for="financialCategoryNameInput">Nome</label>
+              <input id="financialCategoryNameInput" type="text" maxlength="120" required />
+            </div>
+            <div class="admin-form-group">
+              <label for="financialCategoryContextInput">Contexto</label>
+              <select id="financialCategoryContextInput" required>
+                <option value="wedding">Casamento</option>
+                <option value="honeymoon">Lua de Mel</option>
+                <option value="both">Compartilhado</option>
+              </select>
+            </div>
+            <div class="admin-form-group">
+              <label for="financialCategoryColorInput">Cor</label>
+              <input id="financialCategoryColorInput" type="color" />
+            </div>
+            <div class="admin-form-group">
+              <label for="financialCategoryIconInput">Ícone</label>
+              <div class="checklist-icon-picker">
+                <select id="financialCategoryIconInput"></select>
+                <span
+                  id="financialCategoryIconPreview"
+                  class="checklist-icon-preview"
+                  aria-hidden="true"
+                ></span>
+              </div>
+            </div>
+            <div class="admin-form-group">
+              <label for="financialCategoryOrderInput">Ordem</label>
+              <input id="financialCategoryOrderInput" type="number" step="1" />
+              <small class="admin-field-hint">Se deixar vazio, entra no final.</small>
+            </div>
+          </div>
+
+          <label class="admin-checkbox-label">
+            <input id="financialCategoryActiveInput" type="checkbox" checked />
+            Categoria ativa
+          </label>
+
+          <div class="admin-modal-actions vendor-modal-actions checklist-category-actions">
+            <button type="submit" class="admin-save-button" id="saveFinancialCategoryButton">Salvar Categoria</button>
+            <button type="button" class="admin-action-button" id="cancelFinancialCategoryEditButton">Cancelar Edição</button>
+          </div>
+        </form>
+
+        <div id="financialCategoryList" class="checklist-category-list financial-category-manager-list"></div>
+      </div>
+    </div>
+
+    <div id="financialPayerModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content admin-details-modal-content">
+        <div class="admin-modal-header">
+          <div>
+            <p class="section-subtitle">Financeiro</p>
+            <h2>Pagadores</h2>
+          </div>
+          <button id="closeFinancialPayerModalButton" type="button" class="admin-modal-close" aria-label="Fechar">×</button>
+        </div>
+
+        <form id="financialPayerForm" class="admin-form checklist-category-form">
+          <div class="admin-form-grid">
+            <div class="admin-form-group">
+              <label for="financialPayerNameInput">Nome</label>
+              <input id="financialPayerNameInput" type="text" maxlength="120" required />
+            </div>
+            <div class="admin-form-group">
+              <label for="financialPayerColorInput">Cor</label>
+              <input id="financialPayerColorInput" type="color" />
+            </div>
+            <div class="admin-form-group">
+              <label for="financialPayerIconInput">Ícone</label>
+              <div class="checklist-icon-picker">
+                <select id="financialPayerIconInput"></select>
+                <span
+                  id="financialPayerIconPreview"
+                  class="checklist-icon-preview"
+                  aria-hidden="true"
+                ></span>
+              </div>
+            </div>
+            <div class="admin-form-group">
+              <label for="financialPayerOrderInput">Ordem</label>
+              <input id="financialPayerOrderInput" type="number" step="1" />
+              <small class="admin-field-hint">Se deixar vazio, entra no final.</small>
+            </div>
+          </div>
+
+          <div class="admin-form-group">
+            <label for="financialPayerDescriptionInput">Descrição</label>
+            <textarea id="financialPayerDescriptionInput" maxlength="500" rows="3"></textarea>
+          </div>
+
+          <label class="admin-checkbox-label">
+            <input id="financialPayerActiveInput" type="checkbox" checked />
+            Pagador ativo
+          </label>
+
+          <div class="admin-modal-actions vendor-modal-actions checklist-category-actions">
+            <button type="submit" class="admin-save-button" id="saveFinancialPayerButton">Salvar Pagador</button>
+            <button type="button" class="admin-action-button" id="cancelFinancialPayerEditButton">Cancelar Edição</button>
+          </div>
+        </form>
+
+        <div id="financialPayerList" class="checklist-category-list financial-category-manager-list"></div>
+      </div>
+    </div>
+
+    <div id="adminToast" class="admin-toast"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="./js/supabase.js"></script>
+    <script src="./js/event-config.js"></script>
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+    <script src="./js/admin-common.js"></script>
+    <script src="./js/admin-bootstrap.js"></script>
+  </body>
+</html>

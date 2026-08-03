@@ -38,23 +38,74 @@
           Carregando dados dos relatórios...
         </p>
 
-        <div class="dashboard-report-grid">
-          <button type="button" id="exportAttendanceReportButton" class="dashboard-report-card">
-            <span>Presença e Buffet</span>
-            <strong>Lista de Confirmados</strong>
-            <small>Convites confirmados, acompanhantes, crianças e restrições alimentares.</small>
-          </button>
-          <button type="button" id="exportFinancialReportButton" class="dashboard-report-card">
-            <span>Financeiro</span>
-            <strong>Valores Reservados</strong>
-            <small>Presentes individuais, cotas, convidados, status e valores.</small>
-          </button>
-          <button type="button" id="exportPendingReportButton" class="dashboard-report-card">
-            <span>Pendências</span>
-            <strong>Ações Pendentes</strong>
-            <small>RSVPs sem resposta, reservas e pagamentos que ainda exigem ação.</small>
-          </button>
-        </div>
+        <section class="admin-report-group" aria-labelledby="eventReportsTitle">
+          <div class="admin-report-group-header">
+            <h3 id="eventReportsTitle">Convidados e Operação</h3>
+          </div>
+          <div class="dashboard-report-grid">
+            <button type="button" id="exportAttendanceReportButton" class="dashboard-report-card">
+              <span>Presença e Buffet</span>
+              <strong>Lista de Confirmados</strong>
+              <small>Convites confirmados, acompanhantes, crianças e restrições alimentares.</small>
+            </button>
+            <button type="button" id="exportBuffetFinalReportButton" class="dashboard-report-card">
+              <span>Buffet</span>
+              <strong>Resumo Final do Buffet</strong>
+              <small>Totais por categoria e relação descritiva de restrições alimentares.</small>
+            </button>
+            <button type="button" id="exportPendingReportButton" class="dashboard-report-card">
+              <span>Pendências</span>
+              <strong>Ações Pendentes</strong>
+              <small>Convites, RSVPs, mesas, buffet, reservas e pagamentos que ainda exigem ação.</small>
+            </button>
+            <button type="button" id="exportTablesReportButton" class="dashboard-report-card">
+              <span>Mesas</span>
+              <strong>Mapa de Mesas</strong>
+              <small>Capacidade, ocupação, convidados atribuídos, RSVP e observações.</small>
+            </button>
+            <button type="button" id="exportReceptionReportButton" class="dashboard-report-card">
+              <span>Recepção</span>
+              <strong>Lista para Recepção</strong>
+              <small>Pessoas confirmadas em ordem alfabética ou agrupadas por mesa.</small>
+            </button>
+          </div>
+        </section>
+
+        <section class="admin-report-group" aria-labelledby="giftReportsTitle">
+          <div class="admin-report-group-header">
+            <h3 id="giftReportsTitle">Presentes</h3>
+          </div>
+          <div class="dashboard-report-grid">
+            <button type="button" id="exportFinancialReportButton" class="dashboard-report-card">
+              <span>Presentes</span>
+              <strong>Presentes e Cotas</strong>
+              <small>Valores reservados, informados e confirmados na lista de presentes.</small>
+            </button>
+          </div>
+        </section>
+
+        <section class="admin-report-group" aria-labelledby="financialReportsTitle">
+          <div class="admin-report-group-header">
+            <h3 id="financialReportsTitle">Financeiro</h3>
+          </div>
+          <div class="dashboard-report-grid">
+            <button type="button" id="exportFinancialBudgetReportButton" class="dashboard-report-card">
+              <span>Financeiro</span>
+              <strong>Orçamento Previsto</strong>
+              <small>Previsto, realizado vinculado, saldo e estouro por item do orçamento.</small>
+            </button>
+            <button type="button" id="exportFinancialExpensesReportButton" class="dashboard-report-card">
+              <span>Financeiro</span>
+              <strong>Gastos Reais</strong>
+              <small>Gastos cadastrados, fornecedores, pagadores e vínculo com orçamento.</small>
+            </button>
+            <button type="button" id="exportFinancialPaymentsReportButton" class="dashboard-report-card">
+              <span>Financeiro</span>
+              <strong>Parcelas</strong>
+              <small>Vencimentos, pagamentos, status e responsáveis por parcela.</small>
+            </button>
+          </div>
+        </section>
       </section>
     </main>
 
@@ -65,10 +116,13 @@
         <button type="button" class="admin-modal-close" id="closeAttendanceReportModalButton" aria-label="Fechar">&times;</button>
         <h2>Exportar Lista de Confirmados</h2>
         <details class="admin-report-column-picker">
-          <summary>Colunas do Relatório</summary>
+          <summary>Colunas dos arquivos CSV e XLSX</summary>
           <div class="admin-report-column-grid">
             <label><input type="checkbox" data-attendance-column="invite" checked /> Convite</label>
             <label><input type="checkbox" data-attendance-column="code" checked /> Código</label>
+            <label><input type="checkbox" data-attendance-column="guestSide" checked /> Convidado de</label>
+            <label><input type="checkbox" data-attendance-column="guestTable" checked /> Mesa</label>
+            <label><input type="checkbox" data-attendance-column="guestTableGuestNote" checked /> Observação do convidado na mesa</label>
             <label><input type="checkbox" data-attendance-column="inviteSent" checked /> Convite enviado</label>
             <label><input type="checkbox" data-attendance-column="people" checked /> Pessoas</label>
             <label><input type="checkbox" data-attendance-column="companions" checked /> Acompanhantes</label>
@@ -99,12 +153,27 @@
       </div>
     </div>
 
+    <div class="admin-modal" id="buffetFinalReportModal">
+      <div class="admin-modal-content admin-report-modal-content">
+        <button type="button" class="admin-modal-close" id="closeBuffetFinalReportModalButton" aria-label="Fechar">&times;</button>
+        <h2>Exportar Relatório Final do Buffet</h2>
+        <p class="admin-report-modal-description">
+          Somente pessoas confirmadas, com totais, mesas e restrições alimentares.
+        </p>
+        <div class="admin-report-option-grid">
+          <button type="button" class="admin-report-option" data-buffet-final-export-format="xlsx" data-buffet-final-export-mode="complete"><span>XLSX</span><strong>Relatório Completo</strong><small>Quatro abas: resumo, pessoas, mesas e restrições.</small></button>
+          <button type="button" class="admin-report-option" data-buffet-final-export-format="pdf" data-buffet-final-export-mode="summary"><span>PDF</span><strong>Resumo para o Buffet</strong><small>Totais destacados e relação paginada de restrições.</small></button>
+          <button type="button" class="admin-report-option buffet-final-complete-option" data-buffet-final-export-format="pdf" data-buffet-final-export-mode="complete"><span>PDF</span><strong>Relatório Completo</strong><small>Todos os confirmados ordenados por mesa.</small></button>
+        </div>
+      </div>
+    </div>
+
     <div class="admin-modal" id="financialReportModal">
       <div class="admin-modal-content admin-report-modal-content">
         <button type="button" class="admin-modal-close" id="closeFinancialReportModalButton" aria-label="Fechar">&times;</button>
-        <h2>Exportar Valores Reservados</h2>
+        <h2>Exportar Presentes e Cotas</h2>
         <details class="admin-report-column-picker">
-          <summary>Colunas do Relatório</summary>
+          <summary>Colunas dos arquivos CSV e XLSX</summary>
           <div class="admin-report-column-grid">
             <label><input type="checkbox" data-financial-column="type" checked /> Tipo</label>
             <label><input type="checkbox" data-financial-column="item" checked /> Item</label>
@@ -115,8 +184,173 @@
           </div>
         </details>
         <div class="admin-report-option-grid">
-          <button type="button" class="admin-report-option" data-financial-export-format="csv"><span>CSV</span><strong>Valores Reservados</strong><small>Arquivo tabular simples para planilhas.</small></button>
-          <button type="button" class="admin-report-option" data-financial-export-format="xlsx"><span>XLSX</span><strong>Valores Reservados</strong><small>Planilha pronta para Excel ou Google Sheets.</small></button>
+          <button type="button" class="admin-report-option" data-financial-export-format="csv"><span>CSV</span><strong>Presentes e Cotas</strong><small>Arquivo tabular simples para planilhas.</small></button>
+          <button type="button" class="admin-report-option" data-financial-export-format="xlsx"><span>XLSX</span><strong>Presentes e Cotas</strong><small>Planilha pronta para Excel ou Google Sheets.</small></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-modal" id="financialBudgetReportModal">
+      <div class="admin-modal-content admin-report-modal-content">
+        <button type="button" class="admin-modal-close" id="closeFinancialBudgetReportModalButton" aria-label="Fechar">&times;</button>
+        <h2>Exportar Orçamento Previsto</h2>
+        <p class="admin-report-modal-description">
+          Relatório com previsto, realizado vinculado, saldo/estouro e classificação dos itens.
+        </p>
+        <div class="admin-report-filter-grid">
+          <label>Contexto<select id="financialBudgetReportContextFilter">
+            <option value="all">Todos</option>
+            <option value="wedding">Casamento</option>
+            <option value="honeymoon">Lua de Mel</option>
+          </select></label>
+          <label>Cenário<select id="financialBudgetReportScenarioFilter"></select></label>
+          <label>Categoria<select id="financialBudgetReportCategoryFilter"></select></label>
+          <label>Status<select id="financialBudgetReportStatusFilter"></select></label>
+          <label>Situação<select id="financialBudgetReportActiveFilter">
+            <option value="active" selected>Ativos</option>
+            <option value="">Todos</option>
+            <option value="inactive">Inativos</option>
+          </select></label>
+          <label>Situação do orçamento<select id="financialBudgetReportBalanceFilter">
+            <option value="">Todos</option>
+            <option value="under">Com saldo</option>
+            <option value="over">Estourados</option>
+            <option value="even">No limite</option>
+            <option value="unlinked">Sem gasto vinculado</option>
+          </select></label>
+        </div>
+        <details class="admin-report-column-picker">
+          <summary>Colunas dos arquivos CSV e XLSX</summary>
+          <div class="admin-report-column-grid">
+            <label><input type="checkbox" data-financial-budget-column="context" checked /> Contexto</label>
+            <label><input type="checkbox" data-financial-budget-column="scenario" checked /> Cenário</label>
+            <label><input type="checkbox" data-financial-budget-column="title" checked /> Item Previsto</label>
+            <label><input type="checkbox" data-financial-budget-column="category" checked /> Categoria</label>
+            <label><input type="checkbox" data-financial-budget-column="total" checked /> Valor Previsto</label>
+            <label><input type="checkbox" data-financial-budget-column="linkedTotal" checked /> Realizado Vinculado</label>
+            <label><input type="checkbox" data-financial-budget-column="linkedPaid" checked /> Pago Vinculado</label>
+            <label><input type="checkbox" data-financial-budget-column="linkedOpen" checked /> Em Aberto</label>
+            <label><input type="checkbox" data-financial-budget-column="balanceLabel" checked /> Saldo / Estouro</label>
+            <label><input type="checkbox" data-financial-budget-column="balanceStatus" checked /> Situação do Orçamento</label>
+            <label><input type="checkbox" data-financial-budget-column="linkedCount" checked /> Gastos Vinculados</label>
+            <label><input type="checkbox" data-financial-budget-column="status" checked /> Status</label>
+            <label><input type="checkbox" data-financial-budget-column="active" checked /> Situação</label>
+            <label><input type="checkbox" data-financial-budget-column="priority" checked /> Prioridade</label>
+            <label><input type="checkbox" data-financial-budget-column="expectedVendor" checked /> Fornecedor/Referência</label>
+            <label><input type="checkbox" data-financial-budget-column="notes" checked /> Observações</label>
+          </div>
+        </details>
+        <div class="admin-report-option-grid">
+          <button type="button" class="admin-report-option" data-financial-budget-export-format="csv"><span>CSV</span><strong>Orçamento Previsto</strong><small>Previsto x realizado por item.</small></button>
+          <button type="button" class="admin-report-option" data-financial-budget-export-format="xlsx"><span>XLSX</span><strong>Orçamento Previsto</strong><small>Planilha com filtros e colunas selecionadas.</small></button>
+          <button type="button" class="admin-report-option" data-financial-budget-export-format="pdf"><span>PDF</span><strong>Resumo Executivo</strong><small>Relatório visual com totais e situação dos itens.</small></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-modal" id="financialExpensesReportModal">
+      <div class="admin-modal-content admin-report-modal-content">
+        <button type="button" class="admin-modal-close" id="closeFinancialExpensesReportModalButton" aria-label="Fechar">&times;</button>
+        <h2>Exportar Gastos Reais</h2>
+        <p class="admin-report-modal-description">
+          Relatório com gastos cadastrados, vínculo com orçamento e, opcionalmente, parcelas logo abaixo de cada gasto.
+        </p>
+        <div class="admin-report-filter-grid">
+          <label>Contexto<select id="financialExpensesReportContextFilter">
+            <option value="all">Todos</option>
+            <option value="wedding">Casamento</option>
+            <option value="honeymoon">Lua de Mel</option>
+          </select></label>
+          <label>Categoria<select id="financialExpensesReportCategoryFilter"></select></label>
+          <label>Tipo<select id="financialExpensesReportTypeFilter"></select></label>
+          <label>Status<select id="financialExpensesReportStatusFilter"></select></label>
+          <label>Pagador<select id="financialExpensesReportPayerFilter"></select></label>
+          <label>Fornecedor<select id="financialExpensesReportVendorFilter"></select></label>
+          <label>Vínculo previsto<select id="financialExpensesReportBudgetLinkFilter">
+            <option value="">Todos</option>
+            <option value="linked">Com item previsto</option>
+            <option value="unlinked">Sem item previsto</option>
+          </select></label>
+          <label>Item previsto<select id="financialExpensesReportBudgetItemFilter"></select></label>
+        </div>
+        <label class="admin-checkbox-label admin-report-inline-option">
+          <input id="financialExpensesReportIncludePayments" type="checkbox" />
+          Incluir parcelas dos gastos
+        </label>
+        <details class="admin-report-column-picker">
+          <summary>Colunas dos arquivos CSV e XLSX</summary>
+          <div class="admin-report-column-grid">
+            <label><input type="checkbox" data-financial-expenses-column="lineType" checked /> Tipo de Linha</label>
+            <label><input type="checkbox" data-financial-expenses-column="context" checked /> Contexto</label>
+            <label><input type="checkbox" data-financial-expenses-column="expense" checked /> Gasto</label>
+            <label><input type="checkbox" data-financial-expenses-column="budgetItem" checked /> Item Previsto Vinculado</label>
+            <label><input type="checkbox" data-financial-expenses-column="category" checked /> Categoria</label>
+            <label><input type="checkbox" data-financial-expenses-column="type" checked /> Tipo</label>
+            <label><input type="checkbox" data-financial-expenses-column="vendor" checked /> Fornecedor</label>
+            <label><input type="checkbox" data-financial-expenses-column="payer" checked /> Pagador Principal</label>
+            <label><input type="checkbox" data-financial-expenses-column="totalValue" checked /> Valor Total</label>
+            <label><input type="checkbox" data-financial-expenses-column="paidValue" checked /> Pago</label>
+            <label><input type="checkbox" data-financial-expenses-column="remainingValue" checked /> Em Aberto</label>
+            <label><input type="checkbox" data-financial-expenses-column="paymentMethod" checked /> Forma de Pagamento</label>
+            <label><input type="checkbox" data-financial-expenses-column="status" checked /> Status do Gasto</label>
+            <label><input type="checkbox" data-financial-expenses-column="contractedAt" checked /> Data de Contratação/Compra</label>
+            <label><input type="checkbox" data-financial-expenses-column="paymentLabel" checked /> Parcela</label>
+            <label><input type="checkbox" data-financial-expenses-column="paymentPayer" checked /> Pagador da Parcela</label>
+            <label><input type="checkbox" data-financial-expenses-column="paymentValue" checked /> Valor da Parcela</label>
+            <label><input type="checkbox" data-financial-expenses-column="dueDate" checked /> Vencimento</label>
+            <label><input type="checkbox" data-financial-expenses-column="paidAt" checked /> Pago em</label>
+            <label><input type="checkbox" data-financial-expenses-column="paymentStatus" checked /> Status da Parcela</label>
+            <label><input type="checkbox" data-financial-expenses-column="referenceUrl" checked /> Link/Referência</label>
+            <label><input type="checkbox" data-financial-expenses-column="notes" checked /> Observações</label>
+          </div>
+        </details>
+        <div class="admin-report-option-grid">
+          <button type="button" class="admin-report-option" data-financial-expenses-export-format="csv"><span>CSV</span><strong>Gastos Reais</strong><small>Gastos e parcelas quando selecionado.</small></button>
+          <button type="button" class="admin-report-option" data-financial-expenses-export-format="xlsx"><span>XLSX</span><strong>Gastos Reais Agrupado</strong><small>Mescla dados do gasto quando incluir parcelas.</small></button>
+          <button type="button" class="admin-report-option" data-financial-expenses-export-format="pdf"><span>PDF</span><strong>Relatório Detalhado</strong><small>Blocos por gasto com parcelas opcionais.</small></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-modal" id="financialPaymentsReportModal">
+      <div class="admin-modal-content admin-report-modal-content">
+        <button type="button" class="admin-modal-close" id="closeFinancialPaymentsReportModalButton" aria-label="Fechar">&times;</button>
+        <h2>Exportar Parcelas</h2>
+        <p class="admin-report-modal-description">
+          Relatório com vencimentos, pagamentos, status e responsáveis por parcela.
+        </p>
+        <div class="admin-report-filter-grid">
+          <label>Contexto<select id="financialPaymentsReportContextFilter">
+            <option value="all">Todos</option>
+            <option value="wedding">Casamento</option>
+            <option value="honeymoon">Lua de Mel</option>
+          </select></label>
+          <label>Categoria<select id="financialPaymentsReportCategoryFilter"></select></label>
+          <label>Status<select id="financialPaymentsReportStatusFilter"></select></label>
+          <label>Pagador<select id="financialPaymentsReportPayerFilter"></select></label>
+          <label>Vencimento de<input id="financialPaymentsReportDueFromFilter" type="date" /></label>
+          <label>Vencimento até<input id="financialPaymentsReportDueToFilter" type="date" /></label>
+        </div>
+        <details class="admin-report-column-picker">
+          <summary>Colunas dos arquivos CSV e XLSX</summary>
+          <div class="admin-report-column-grid">
+            <label><input type="checkbox" data-financial-payments-column="context" checked /> Contexto</label>
+            <label><input type="checkbox" data-financial-payments-column="expense" checked /> Gasto</label>
+            <label><input type="checkbox" data-financial-payments-column="budgetItem" checked /> Item Previsto Vinculado</label>
+            <label><input type="checkbox" data-financial-payments-column="category" checked /> Categoria</label>
+            <label><input type="checkbox" data-financial-payments-column="payment" checked /> Parcela</label>
+            <label><input type="checkbox" data-financial-payments-column="payer" checked /> Pagador</label>
+            <label><input type="checkbox" data-financial-payments-column="value" checked /> Valor</label>
+            <label><input type="checkbox" data-financial-payments-column="dueDate" checked /> Vencimento</label>
+            <label><input type="checkbox" data-financial-payments-column="paidAt" checked /> Pago em</label>
+            <label><input type="checkbox" data-financial-payments-column="status" checked /> Status</label>
+            <label><input type="checkbox" data-financial-payments-column="notes" checked /> Observações</label>
+          </div>
+        </details>
+        <div class="admin-report-option-grid">
+          <button type="button" class="admin-report-option" data-financial-payments-export-format="csv"><span>CSV</span><strong>Parcelas</strong><small>Agenda financeira para planilhas.</small></button>
+          <button type="button" class="admin-report-option" data-financial-payments-export-format="xlsx"><span>XLSX</span><strong>Parcelas Agrupadas</strong><small>Agrupa parcelas por gasto com mesclagem leve.</small></button>
+          <button type="button" class="admin-report-option" data-financial-payments-export-format="pdf"><span>PDF</span><strong>Agenda Financeira</strong><small>Vencimentos agrupados por mês.</small></button>
         </div>
       </div>
     </div>
@@ -124,26 +358,140 @@
     <div class="admin-modal" id="pendingReportModal">
       <div class="admin-modal-content admin-report-modal-content">
         <button type="button" class="admin-modal-close" id="closePendingReportModalButton" aria-label="Fechar">&times;</button>
-        <h2>Exportar Ações Pendentes</h2>
-        <details class="admin-report-column-picker">
-          <summary>Colunas do Relatório</summary>
+        <h2>Exportar Ações e Checklist</h2>
+
+        <section class="admin-report-export-section" aria-labelledby="pendingReportSectionTitle">
+          <h3 id="pendingReportSectionTitle">Ações Pendentes</h3>
+          <p>Exporte as pendências automáticas identificadas pelo sistema.</p>
+          <details class="admin-report-column-picker">
+            <summary>Colunas de Ações Pendentes</summary>
+            <div class="admin-report-column-grid">
+              <label><input type="checkbox" data-pending-column="type" checked /> Tipo</label>
+              <label><input type="checkbox" data-pending-column="item" checked /> Item</label>
+              <label><input type="checkbox" data-pending-column="guestSide" checked /> Convidado de</label>
+              <label><input type="checkbox" data-pending-column="owner" checked /> Responsável</label>
+              <label><input type="checkbox" data-pending-column="status" checked /> Status</label>
+              <label><input type="checkbox" data-pending-column="action" checked /> Ação Sugerida</label>
+            </div>
+          </details>
+          <div class="admin-report-option-grid">
+            <button type="button" class="admin-report-option" data-pending-export-format="csv"><span>CSV</span><strong>Ações Pendentes</strong><small>Lista simples de itens que exigem atenção.</small></button>
+            <button type="button" class="admin-report-option" data-pending-export-format="xlsx"><span>XLSX</span><strong>Ações Pendentes</strong><small>Planilha pronta para acompanhamento.</small></button>
+          </div>
+        </section>
+
+        <section class="admin-report-export-section" aria-labelledby="operationalReportSectionTitle">
+          <h3 id="operationalReportSectionTitle">Checklist Operacional Final</h3>
+          <p>Escolha quais origens devem entrar no documento operacional.</p>
+          <fieldset class="admin-report-scope-picker">
+            <legend>Conteúdo do checklist</legend>
+            <label><input type="radio" name="operationalReportScope" data-operational-scope value="all" checked /> Tudo consolidado</label>
+            <small>Pendências automáticas e tarefas não concluídas do checklist.</small>
+            <label><input type="radio" name="operationalReportScope" data-operational-scope value="automatic" /> Somente pendências automáticas</label>
+            <small>Alertas de convites, mesas, buffet, presentes e pagamentos.</small>
+            <label><input type="radio" name="operationalReportScope" data-operational-scope value="checklist" /> Somente tarefas do checklist</label>
+            <small>Tarefas ainda não concluídas no Checklist do Casamento.</small>
+          </fieldset>
+          <div class="admin-report-option-grid">
+            <button type="button" class="admin-report-option" data-operational-export-format="xlsx"><span>XLSX</span><strong>Checklist Operacional</strong><small>Planilha com o conteúdo escolhido acima.</small></button>
+            <button type="button" class="admin-report-option" data-operational-export-format="pdf"><span>PDF</span><strong>Checklist Operacional</strong><small>Documento paginado com prioridades e marcação manual.</small></button>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div class="admin-modal" id="tablesReportModal">
+      <div class="admin-modal-content admin-report-modal-content">
+        <button type="button" class="admin-modal-close" id="closeTablesReportModalButton" aria-label="Fechar">&times;</button>
+        <h2>Exportar Mapa de Mesas</h2>
+        <details class="admin-report-column-picker" open>
+          <summary>Modo de Ocupação</summary>
           <div class="admin-report-column-grid">
-            <label><input type="checkbox" data-pending-column="type" checked /> Tipo</label>
-            <label><input type="checkbox" data-pending-column="item" checked /> Item</label>
-            <label><input type="checkbox" data-pending-column="owner" checked /> Responsável</label>
-            <label><input type="checkbox" data-pending-column="status" checked /> Status</label>
-            <label><input type="checkbox" data-pending-column="action" checked /> Ação Sugerida</label>
+            <label><input type="radio" name="tablesReportMode" data-tables-mode value="hybrid" checked /> Híbrido</label>
+            <label><input type="radio" name="tablesReportMode" data-tables-mode value="confirmed" /> Confirmado</label>
+            <label><input type="radio" name="tablesReportMode" data-tables-mode value="planned" /> Planejado</label>
+          </div>
+        </details>
+        <details class="admin-report-column-picker">
+          <summary>Colunas dos arquivos CSV e XLSX</summary>
+          <small>
+            As colunas de pessoa, criança, idade, categoria do buffet, restrição alimentar e pagante são usadas somente nas opções detalhadas por pessoa.
+          </small>
+          <div class="admin-report-column-grid">
+            <label><input type="checkbox" data-tables-column="table" checked /> Mesa</label>
+            <label><input type="checkbox" data-tables-column="active" checked /> Ativa</label>
+            <label><input type="checkbox" data-tables-column="status" checked /> Situação</label>
+            <label><input type="checkbox" data-tables-column="capacity" checked /> Capacidade</label>
+            <label><input type="checkbox" data-tables-column="planned" checked /> Planejado</label>
+            <label><input type="checkbox" data-tables-column="confirmed" checked /> Confirmado</label>
+            <label><input type="checkbox" data-tables-column="hybrid" checked /> Híbrido</label>
+            <label><input type="checkbox" data-tables-column="available" checked /> Vagas/Sobra</label>
+            <label><input type="checkbox" data-tables-column="location" checked /> Localização</label>
+            <label><input type="checkbox" data-tables-column="tableNotes" checked /> Observação da mesa</label>
+            <label><input type="checkbox" data-tables-column="guest" checked /> Convidado</label>
+            <label><input type="checkbox" data-tables-column="guestActive" checked /> Convidado ativo</label>
+            <label><input type="checkbox" data-tables-column="guestPresence" checked /> Presença RSVP</label>
+            <label><input type="checkbox" data-tables-column="guestExpected" checked /> Pessoas do convite</label>
+            <label><input type="checkbox" data-tables-column="guestTableNote" checked /> Observação do convidado na mesa</label>
+            <label><input type="checkbox" data-tables-column="person" checked /> Pessoa</label>
+            <label><input type="checkbox" data-tables-column="personRole" checked /> Papel</label>
+            <label><input type="checkbox" data-tables-column="child" checked /> Criança</label>
+            <label><input type="checkbox" data-tables-column="age" checked /> Idade</label>
+            <label><input type="checkbox" data-tables-column="buffetCategory" checked /> Categoria do Buffet</label>
+            <label><input type="checkbox" data-tables-column="hasFoodRestriction" checked /> Possui restrição alimentar</label>
+            <label><input type="checkbox" data-tables-column="food" checked /> Restrição alimentar</label>
+            <label><input type="checkbox" data-tables-column="paying" checked /> Pagante</label>
+            <label><input type="checkbox" data-tables-column="inviteType" checked /> Tipo</label>
+            <label><input type="checkbox" data-tables-column="guestSide" checked /> Convidado de</label>
           </div>
         </details>
         <div class="admin-report-option-grid">
-          <button type="button" class="admin-report-option" data-pending-export-format="csv"><span>CSV</span><strong>Ações Pendentes</strong><small>Lista simples de itens que exigem atenção.</small></button>
-          <button type="button" class="admin-report-option" data-pending-export-format="xlsx"><span>XLSX</span><strong>Ações Pendentes</strong><small>Planilha pronta para acompanhamento.</small></button>
+          <button type="button" class="admin-report-option" data-tables-export-detail="summary" data-tables-export-format="csv"><span>CSV</span><strong>Resumo por Convite</strong><small>Uma linha por convite dentro da mesa.</small></button>
+          <button type="button" class="admin-report-option" data-tables-export-detail="detailed" data-tables-export-format="csv"><span>CSV</span><strong>Detalhado por Pessoa</strong><small>Membros e acompanhantes em linhas separadas.</small></button>
+          <button type="button" class="admin-report-option" data-tables-export-detail="summary" data-tables-export-format="xlsx"><span>XLSX</span><strong>Resumo Agrupado</strong><small>Mesas agrupadas com convidados dentro delas.</small></button>
+          <button type="button" class="admin-report-option" data-tables-export-detail="detailed" data-tables-export-format="xlsx"><span>XLSX</span><strong>Detalhado Agrupado</strong><small>Mesas e convites agrupados por pessoa.</small></button>
+          <button type="button" class="admin-report-option tables-operational-pdf-option" data-tables-export-detail="operational" data-tables-export-format="pdf"><span>PDF</span><strong>Mapa Operacional</strong><small>Mesas, ocupação e pessoas conforme o modo selecionado.</small></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-modal" id="receptionReportModal">
+      <div class="admin-modal-content admin-report-modal-content">
+        <button type="button" class="admin-modal-close" id="closeReceptionReportModalButton" aria-label="Fechar">&times;</button>
+        <h2>Exportar Lista para Recepção</h2>
+        <details class="admin-report-column-picker" open>
+          <summary>Organização da Lista</summary>
+          <div class="admin-report-column-grid">
+            <label><input type="radio" name="receptionReportMode" data-reception-mode value="alphabetical" checked /> Ordem alfabética</label>
+            <label><input type="radio" name="receptionReportMode" data-reception-mode value="table" /> Agrupada por mesa</label>
+          </div>
+        </details>
+        <details class="admin-report-column-picker">
+          <summary>Colunas do Relatório</summary>
+          <div class="admin-report-column-grid">
+            <label><input type="checkbox" data-reception-column="checkIn" checked /> Chegada</label>
+            <label><input type="checkbox" data-reception-column="person" checked /> Pessoa</label>
+            <label><input type="checkbox" data-reception-column="invite" checked /> Responsável pelo convite</label>
+            <label><input type="checkbox" data-reception-column="role" checked /> Papel</label>
+            <label><input type="checkbox" data-reception-column="table" checked /> Mesa</label>
+            <label><input type="checkbox" data-reception-column="tableNote" checked /> Observação na mesa</label>
+            <label><input type="checkbox" data-reception-column="guestSide" checked /> Convidado de</label>
+            <label><input type="checkbox" data-reception-column="buffetCategory" /> Categoria do Buffet</label>
+            <label><input type="checkbox" data-reception-column="food" checked /> Restrição alimentar</label>
+          </div>
+        </details>
+        <div class="admin-report-option-grid">
+          <button type="button" class="admin-report-option" data-reception-export-format="csv"><span>CSV</span><strong>Lista para Recepção</strong><small>Arquivo simples para planilhas.</small></button>
+          <button type="button" class="admin-report-option" data-reception-export-format="xlsx"><span>XLSX</span><strong>Lista para Recepção</strong><small>Planilha pronta para organização.</small></button>
+          <button type="button" class="admin-report-option" data-reception-export-format="pdf"><span>PDF</span><strong>Lista para Impressão</strong><small>Documento paginado com campo para marcar a chegada.</small></button>
         </div>
       </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@4.2.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@5.0.8/dist/jspdf.plugin.autotable.min.js"></script>
     <script src="./js/supabase.js"></script>
     <script src="./js/event-config.js"></script>
     <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>

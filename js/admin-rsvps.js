@@ -12,6 +12,7 @@ const rsvpPresenceFilter = document.getElementById("rsvpPresenceFilter");
 const rsvpCompanionFilter = document.getElementById("rsvpCompanionFilter");
 const rsvpRestrictionFilter = document.getElementById("rsvpRestrictionFilter");
 const rsvpBuffetFilter = document.getElementById("rsvpBuffetFilter");
+const rsvpTableFilter = document.getElementById("rsvpTableFilter");
 const rsvpFilterCount = document.getElementById("rsvpFilterCount");
 const refreshRSVPsButton = document.getElementById("refreshRSVPsButton");
 const exportRSVPsButton = document.getElementById("exportRSVPsButton");
@@ -45,6 +46,9 @@ const adminRSVPGuestCountInput = document.getElementById(
   "adminRSVPGuestCountInput",
 );
 const adminRSVPGuestFields = document.getElementById("adminRSVPGuestFields");
+const adminRSVPPrimaryFoodSection = document.getElementById(
+  "adminRSVPPrimaryFoodSection",
+);
 const adminRSVPFoodRestrictionInput = document.getElementById(
   "adminRSVPFoodRestrictionInput",
 );
@@ -59,6 +63,8 @@ const showAdminToast = AdminCommon.showToast;
 const { escapeAttribute, replaceSafeContent, safeText } = SecurityUtils;
 let cachedRSVPs = [];
 let cachedRSVPGuests = [];
+let cachedRSVPTables = [];
+let cachedRSVPTableAssignments = [];
 let visibleRSVPs = [];
 let selectedRSVPGuest = null;
 let selectedExistingRSVP = null;
@@ -89,6 +95,7 @@ function applyRSVPFiltersFromUrl() {
   setFilterValueFromParam(rsvpCompanionFilter, params, "companions");
   setFilterValueFromParam(rsvpRestrictionFilter, params, "restriction");
   setFilterValueFromParam(rsvpBuffetFilter, params, "buffet");
+  setFilterValueFromParam(rsvpTableFilter, params, "table");
 }
 
 function normalizeText(value) {
@@ -152,6 +159,16 @@ function renderInviteTypeBadge(type) {
 }
 
 function hasDietaryRestriction(rsvp) {
+  const people = [
+    rsvp?.guest_data,
+    ...(rsvp?.guest_data?.members || []),
+    ...(rsvp?.guest_data?.companions || []),
+  ];
+
+  if (people.some((person) => hasPersonDietaryRestriction(person))) {
+    return true;
+  }
+
   if (typeof rsvp?.food_restriction === "boolean") {
     return rsvp.food_restriction;
   }
@@ -159,6 +176,65 @@ function hasDietaryRestriction(rsvp) {
   const food = String(rsvp?.food || "").trim();
 
   return Boolean(food && food !== "-");
+}
+
+function hasPersonDietaryRestriction(person) {
+  if (typeof person?.food_restriction === "boolean") {
+    return person.food_restriction;
+  }
+
+  return Boolean(String(person?.food || "").trim());
+}
+
+function normalizeDietaryRestrictionText(food, personName = "") {
+  const text = String(food || "").trim();
+  const name = String(personName || "").trim();
+
+  if (name && text.toLowerCase().startsWith(`${name.toLowerCase()}:`)) {
+    return text.slice(name.length + 1).trim();
+  }
+
+  return text;
+}
+
+function getPersonDietaryRestrictionDetails(person) {
+  return hasPersonDietaryRestriction(person)
+    ? normalizeDietaryRestrictionText(person?.food, person?.name)
+    : "";
+}
+
+function normalizePersonDietaryRestriction(person) {
+  const hasRestriction = person?.food_restriction === "Sim" ||
+    person?.food_restriction === true;
+  const food = hasRestriction
+    ? normalizeDietaryRestrictionText(person?.food, person?.name)
+    : "";
+
+  return {
+    food,
+    food_restriction: Boolean(food),
+  };
+}
+
+function getPeopleWithDietaryRestriction({ companions = [], members = [], primary = null }) {
+  return [primary, ...members, ...companions]
+    .filter(Boolean)
+    .filter((person) => person.presence !== "Não")
+    .filter((person) => hasPersonDietaryRestriction(person))
+    .map((person) => ({
+      name: person.name || "Sem nome",
+      food: getPersonDietaryRestrictionDetails(person),
+    }));
+}
+
+function buildFoodSummary(people) {
+  return people
+    .map((person) =>
+      person.food
+        ? `${person.name}: ${person.food}`
+        : `${person.name}: Sim, sem detalhes informados`,
+    )
+    .join("; ");
 }
 
 function getDietaryRestrictionLabel(rsvp) {
@@ -170,7 +246,64 @@ function getDietaryRestrictionDetails(rsvp) {
     return "-";
   }
 
+  const people = [
+    rsvp?.guest_data,
+    ...(rsvp?.guest_data?.members || []),
+    ...(rsvp?.guest_data?.companions || []),
+  ]
+    .filter(Boolean)
+    .filter((person) => person.presence !== "Não")
+    .filter((person) => hasPersonDietaryRestriction(person))
+    .map((person) => ({
+      food:
+        getPersonDietaryRestrictionDetails(person) ||
+        "Sim, sem detalhes informados",
+      name: person.name || "Sem nome",
+    }));
+
+  if (people.length) {
+    return people.map((person) => `${person.name}: ${person.food}`).join("; ");
+  }
+
   return String(rsvp.food || "").trim() || "Sim, sem detalhes informados";
+}
+
+function getRSVPDietaryPeople(rsvp) {
+  const people = [];
+  const primaryPerson = getRSVPPrimaryPerson(rsvp);
+
+  if (primaryPerson && hasPersonDietaryRestriction(primaryPerson)) {
+    people.push({
+      index: "",
+      person: primaryPerson,
+      role: "Convidado principal",
+      type: "primary",
+    });
+  }
+
+  (rsvp?.guest_data?.members || []).forEach((member, index) => {
+    if (hasPersonDietaryRestriction(member)) {
+      people.push({
+        index,
+        person: member,
+        role: "Membro do convite",
+        type: "member",
+      });
+    }
+  });
+
+  (rsvp?.guest_data?.companions || []).forEach((companion, index) => {
+    if (hasPersonDietaryRestriction(companion)) {
+      people.push({
+        index,
+        person: companion,
+        role: "Acompanhante",
+        type: "companion",
+      });
+    }
+  });
+
+  return people;
 }
 
 function updateAdminRSVPFoodVisibility() {
@@ -187,10 +320,93 @@ function updateAdminRSVPFoodVisibility() {
   }
 }
 
+function updateAdminPersonFoodVisibility(select, detailsGroup, input) {
+  const hasRestriction = select?.value === "Sim";
+
+  setElementVisibility(detailsGroup, hasRestriction);
+
+  if (input) {
+    input.required = hasRestriction;
+
+    if (!hasRestriction) {
+      input.value = "";
+    }
+  }
+}
+
+function createAdminFoodRestrictionFields({
+  detailsClassName = "",
+  foodClassName,
+  foodValue = "",
+  hasRestriction = false,
+  index,
+  restrictionClassName,
+}) {
+  const restrictionSelect = document.createElement("select");
+  const noOption = document.createElement("option");
+  const yesOption = document.createElement("option");
+  const foodInput = document.createElement("input");
+  const detailsGroup = document.createElement("div");
+
+  restrictionSelect.className = restrictionClassName;
+  restrictionSelect.dataset.index = index;
+  noOption.value = "Não";
+  noOption.textContent = "Não";
+  noOption.selected = !hasRestriction;
+  yesOption.value = "Sim";
+  yesOption.textContent = "Sim";
+  yesOption.selected = hasRestriction;
+  restrictionSelect.append(noOption, yesOption);
+
+  foodInput.type = "text";
+  foodInput.className = foodClassName;
+  foodInput.dataset.index = index;
+  foodInput.value = foodValue;
+  foodInput.placeholder =
+    "Ex.: intolerância à lactose ou alergia a frutos do mar";
+  foodInput.required = hasRestriction;
+
+  detailsGroup.className = [
+    "admin-form-group",
+    detailsClassName,
+    hasRestriction ? "" : "is-hidden",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  detailsGroup.hidden = !hasRestriction;
+  detailsGroup.dataset.index = index;
+  detailsGroup.append(
+    Object.assign(document.createElement("label"), {
+      textContent: "Qual restrição alimentar?",
+    }),
+    foodInput,
+  );
+
+  restrictionSelect.addEventListener("change", () => {
+    updateAdminPersonFoodVisibility(restrictionSelect, detailsGroup, foodInput);
+  });
+
+  return [
+    createAdminFormGroup("Possui restrição alimentar?", restrictionSelect),
+    detailsGroup,
+  ];
+}
+
+function getRSVPPrimaryPerson(rsvp) {
+  const members = rsvp?.guest_data?.members || [];
+
+  return members.length ? null : rsvp?.guest_data;
+}
+
 function renderRSVPDietaryIndicator(rsvp) {
-  if (!hasDietaryRestriction(rsvp)) {
+  const primaryPerson = getRSVPPrimaryPerson(rsvp);
+
+  if (!hasPersonDietaryRestriction(primaryPerson)) {
     return "";
   }
+
+  const details = getPersonDietaryRestrictionDetails(primaryPerson) ||
+    "Restrição alimentar sem detalhes";
 
   return `
     <button
@@ -198,8 +414,9 @@ function renderRSVPDietaryIndicator(rsvp) {
       class="rsvp-inline-indicator dietary-restriction"
       data-rsvp-info-action="dietary-restriction"
       data-rsvp-id="${escapeAttribute(rsvp.id)}"
-      title="Possui restrição alimentar"
-      aria-label="Possui restrição alimentar"
+      data-rsvp-person-type="primary"
+      title="${escapeAttribute(details)}"
+      aria-label="Restrição alimentar do convidado principal: ${escapeAttribute(details)}"
     >
       <i data-lucide="utensils" aria-hidden="true"></i>
     </button>
@@ -235,6 +452,30 @@ function renderRSVPChildIndicator(companion) {
   `;
 }
 
+function renderRSVPDietaryBadge(person, rsvpId, personType, personIndex = "") {
+  if (!hasPersonDietaryRestriction(person)) {
+    return "";
+  }
+
+  const details = getPersonDietaryRestrictionDetails(person) ||
+    "Restrição alimentar sem detalhes";
+
+  return `
+    <button
+      type="button"
+      class="rsvp-inline-indicator dietary-restriction"
+      data-rsvp-info-action="dietary-restriction"
+      data-rsvp-id="${escapeAttribute(rsvpId)}"
+      data-rsvp-person-type="${escapeAttribute(personType)}"
+      data-rsvp-person-index="${escapeAttribute(String(personIndex))}"
+      title="${escapeAttribute(details)}"
+      aria-label="Restrição alimentar: ${escapeAttribute(details)}"
+    >
+      <i data-lucide="utensils" aria-hidden="true"></i>
+    </button>
+  `;
+}
+
 function renderCoupleDetails(rsvp) {
   const members = rsvp.guest_data?.members || [];
 
@@ -246,9 +487,12 @@ function renderCoupleDetails(rsvp) {
     <div class="rsvp-person-list">
       ${members
         .map(
-          (member) => `
+          (member, index) => `
             <div class="rsvp-person-item">
-              <strong>${safeText(member.name, "Sem nome")}</strong>
+              <strong>
+                ${safeText(member.name, "Sem nome")}
+                ${renderRSVPDietaryBadge(member, rsvp.id, "member", index)}
+              </strong>
               <span>Presença: ${safeText(member.presence, "-")}</span>
             </div>
           `,
@@ -268,12 +512,13 @@ function renderCompanionDetails(rsvp) {
   return `
     <div class="rsvp-person-list">
       ${companions
-        .map((companion) => {
+        .map((companion, index) => {
           return `
             <div class="rsvp-person-item">
               <strong>
                 ${safeText(companion.name, "Sem nome")}
                 ${renderRSVPChildIndicator(companion)}
+                ${renderRSVPDietaryBadge(companion, rsvp.id, "companion", index)}
               </strong>
             </div>
           `;
@@ -296,6 +541,26 @@ function getRSVPGuestName(rsvp, guestMap) {
     rsvp.guest_data?.name ||
     "Convidado nao encontrado"
   );
+}
+
+function getRSVPTableAssignment(guestId) {
+  return cachedRSVPTableAssignments.find(
+    (assignment) => assignment.guest_id === guestId,
+  );
+}
+
+function getRSVPTable(guestId) {
+  const assignment = getRSVPTableAssignment(guestId);
+
+  if (!assignment) {
+    return null;
+  }
+
+  return cachedRSVPTables.find((tableItem) => tableItem.id === assignment.table_id);
+}
+
+function getRSVPTableLabel(rsvp) {
+  return getRSVPTable(rsvp.guest_id)?.name || "Sem mesa";
 }
 
 function formatRSVPMembers(rsvp) {
@@ -323,6 +588,8 @@ function renderAdminIcon(name) {
       '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
     eye:
       '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+    layoutGrid:
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>',
     send:
       '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>',
     trash:
@@ -365,11 +632,19 @@ function renderRSVPDetailsMembers(rsvp) {
       <div class="admin-details-list">
         ${members
           .map(
-            (member) => `
+            (member, index) => `
               <div class="admin-details-item">
                 <div>
-                  <strong>${safeText(member.name, "Sem nome")}</strong>
+                  <strong>
+                    ${safeText(member.name, "Sem nome")}
+                    ${renderRSVPDietaryBadge(member, rsvp.id, "member", index)}
+                  </strong>
                   <span>Presença: ${safeText(member.presence, "-")}</span>
+                  ${
+                    hasPersonDietaryRestriction(member)
+                      ? `<span>Restrição: ${safeText(getPersonDietaryRestrictionDetails(member) || "Sim, sem detalhes informados")}</span>`
+                      : ""
+                  }
                 </div>
               </div>
             `,
@@ -423,12 +698,13 @@ function renderRSVPDetailsCompanions(rsvp) {
       <div class="admin-details-list">
         ${companions
           .map(
-            (companion) => `
+            (companion, index) => `
               <div class="admin-details-item">
                 <div>
                   <strong>
                     ${safeText(companion.name, "Sem nome")}
                     ${renderRSVPChildIndicator(companion)}
+                    ${renderRSVPDietaryBadge(companion, rsvp.id, "companion", index)}
                   </strong>
                   <span>
                     ${safeText(getCompanionChildLabel(companion))}
@@ -438,10 +714,60 @@ function renderRSVPDetailsCompanions(rsvp) {
                         : ""
                     }
                   </span>
+                  ${
+                    hasPersonDietaryRestriction(companion)
+                      ? `<span>Restrição: ${safeText(getPersonDietaryRestrictionDetails(companion) || "Sim, sem detalhes informados")}</span>`
+                      : ""
+                  }
                 </div>
               </div>
             `,
           )
+          .join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderRSVPDietaryRestrictionsSection(rsvp) {
+  const people = getRSVPDietaryPeople(rsvp);
+
+  if (!people.length) {
+    return `
+      <section class="admin-details-section">
+        <span class="admin-details-label">Restrições alimentares</span>
+        <p class="admin-muted">Nenhuma restrição alimentar informada.</p>
+      </section>
+    `;
+  }
+
+  return `
+    <section class="admin-details-section">
+      <span class="admin-details-label">Restrições alimentares</span>
+      <div class="admin-details-list dietary-details-list">
+        ${people
+          .map(({ index, person, role, type }) => {
+            const details =
+              getPersonDietaryRestrictionDetails(person) ||
+              "Sim, sem detalhes informados";
+
+            return `
+              <button
+                type="button"
+                class="admin-details-item dietary-detail-card"
+                data-rsvp-info-action="dietary-restriction"
+                data-rsvp-id="${escapeAttribute(rsvp.id)}"
+                data-rsvp-person-type="${escapeAttribute(type)}"
+                data-rsvp-person-index="${escapeAttribute(String(index))}"
+              >
+                <div>
+                  <strong>${safeText(person.name, "Sem nome")}</strong>
+                  <span>${safeText(role)}</span>
+                </div>
+                <span class="dietary-detail-pill">${safeText(details)}</span>
+              </button>
+            `;
+          })
           .join("")}
       </div>
     </section>
@@ -479,6 +805,16 @@ function renderRSVPDetailActionCard({
 function renderRSVPDetailsActions(rsvp) {
   const communicationActions = [];
   const registrationActions = [];
+
+  registrationActions.push(
+    renderRSVPDetailActionCard({
+      action: "manage-table",
+      body: "Abre o cadastro do convidado para definir, trocar ou remover mesa.",
+      icon: "layoutGrid",
+      rsvpId: rsvp.id,
+      title: "Gerenciar Mesa",
+    }),
+  );
 
   registrationActions.push(
     renderRSVPDetailActionCard({
@@ -542,6 +878,17 @@ function getRSVPById(rsvpId) {
 
 function getRSVPGuestById(guestId) {
   return cachedRSVPGuests.find((guest) => guest.id === guestId);
+}
+
+function openGuestTableManagementFromRSVP(rsvpId) {
+  const rsvp = getRSVPById(rsvpId);
+
+  if (!rsvp?.guest_id) {
+    showAdminToast("⚠️ Convidado do RSVP não encontrado");
+    return;
+  }
+
+  window.location.href = `./admin-guests.html?guest=${encodeURIComponent(rsvp.guest_id)}`;
 }
 
 async function getRSVPGuestForEdit(rsvp) {
@@ -615,14 +962,18 @@ window.openRSVPDetailsModal = function (rsvp) {
       ${renderRSVPMetaGrid([
         ["E-mail", rsvp.email || "-"],
         ["Telefone", rsvp.phone || "-"],
-        ["Possui restrição alimentar", getDietaryRestrictionLabel(rsvp)],
-        ["Restrição alimentar", getDietaryRestrictionDetails(rsvp)],
         ["Mensagem", rsvp.message || "-"],
       ])}
     </section>
 
+    ${renderRSVPDietaryRestrictionsSection(rsvp)}
     ${renderRSVPDetailsMembers(rsvp)}
     ${renderRSVPDetailsCompanions(rsvp)}
+
+    <section class="admin-details-section">
+      <span class="admin-details-label">Mesa</span>
+      ${renderRSVPMetaGrid([["Mesa atual", getRSVPTableLabel(rsvp)]])}
+    </section>
 
     <section class="admin-details-section">
       <span class="admin-details-label">Ações</span>
@@ -661,31 +1012,71 @@ window.closeRSVPDetailsModal = function () {
   rsvpDetailsModal.classList.remove("active");
 };
 
-function openRSVPDietaryRestrictionModal(rsvpId) {
-  const rsvp = getRSVPById(rsvpId);
+function getRSVPDietaryPerson(rsvp, personType, personIndex) {
+  if (personType === "primary") {
+    return {
+      person: getRSVPPrimaryPerson(rsvp),
+      role: "Convidado principal",
+    };
+  }
 
-  if (!rsvp || !hasDietaryRestriction(rsvp)) {
+  if (personType === "member") {
+    return {
+      person: rsvp?.guest_data?.members?.[Number(personIndex)],
+      role: "Membro do convite",
+    };
+  }
+
+  if (personType === "companion") {
+    return {
+      person: rsvp?.guest_data?.companions?.[Number(personIndex)],
+      role: "Acompanhante",
+    };
+  }
+
+  return { person: null, role: "" };
+}
+
+function openRSVPDietaryRestrictionModal(rsvpId, personType = "", personIndex = "") {
+  const rsvp = getRSVPById(rsvpId);
+  const { person, role } = getRSVPDietaryPerson(rsvp, personType, personIndex);
+
+  if (!rsvp || !hasPersonDietaryRestriction(person)) {
     showAdminToast("⚠️ Restrição alimentar não encontrada");
     return;
   }
 
+  const details =
+    getPersonDietaryRestrictionDetails(person) ||
+    "Sim, sem detalhes informados";
   const guestName = getRSVPGuestName(rsvp, getRSVPGuestMap());
 
   rsvpDetailsTitle.textContent = "Restrição Alimentar";
 
   replaceSafeContent(rsvpDetailsContent, `
-    <section class="admin-details-section">
-      <span class="admin-details-label">Convidado</span>
-      <p>${safeText(guestName)}</p>
-    </section>
-
-    <section class="admin-details-section">
-      <span class="admin-details-label">Restrição informada</span>
-      <p>${safeText(getDietaryRestrictionDetails(rsvp))}</p>
+    <section class="admin-details-section dietary-detail-modal-card">
+      <span class="admin-details-label">Pessoa com restrição</span>
+      <div class="dietary-detail-modal-header">
+        <span class="rsvp-inline-indicator dietary-restriction">
+          <i data-lucide="utensils" aria-hidden="true"></i>
+        </span>
+        <div>
+          <strong>${safeText(person.name, "Sem nome")}</strong>
+          <span>${safeText(role)}</span>
+          <small>Convite: ${safeText(guestName)}</small>
+        </div>
+      </div>
+      <div class="dietary-detail-modal-text">
+        ${safeText(details)}
+      </div>
     </section>
   `);
 
   rsvpDetailsModal.classList.add("active");
+
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
 }
 
 function closeAdminRSVPModal() {
@@ -710,6 +1101,19 @@ function getAdminRSVPCompanions() {
   const count = Number(adminRSVPGuestCountInput.value || 0);
 
   for (let i = 1; i <= count; i++) {
+    const dietaryRestriction = normalizePersonDietaryRestriction({
+      food:
+        document.querySelector(`.admin-rsvp-companion-food[data-index="${i}"]`)
+          ?.value || "",
+      food_restriction:
+        document.querySelector(
+          `.admin-rsvp-companion-food-restriction[data-index="${i}"]`,
+        )?.value || "Não",
+      name:
+        document.querySelector(`.admin-rsvp-companion-name[data-index="${i}"]`)
+          ?.value || "",
+    });
+
     companions.push({
       name:
         document.querySelector(`.admin-rsvp-companion-name[data-index="${i}"]`)
@@ -720,6 +1124,7 @@ function getAdminRSVPCompanions() {
       age:
         document.querySelector(`.admin-rsvp-companion-age[data-index="${i}"]`)
           ?.value || "",
+      ...dietaryRestriction,
     });
   }
 
@@ -749,6 +1154,11 @@ function createAdminRSVPCompanionField(index, companion = {}) {
   const ageSelect = document.createElement("select");
   const help = document.createElement("small");
   const isChild = companion.is_child === "Sim";
+  const dietaryRestriction = normalizePersonDietaryRestriction({
+    food: companion.food,
+    food_restriction: companion.food_restriction,
+    name: companion.name,
+  });
 
   wrapper.className = "admin-rsvp-companion-card";
   title.textContent = `Acompanhante ${index}`;
@@ -788,6 +1198,14 @@ function createAdminRSVPCompanionField(index, companion = {}) {
     createAdminFormGroup("Nome", nameInput),
     createAdminFormGroup("É criança?", childSelect),
     ageGroup,
+    ...createAdminFoodRestrictionFields({
+      detailsClassName: "admin-rsvp-companion-food-group",
+      foodClassName: "admin-rsvp-companion-food",
+      foodValue: dietaryRestriction.food,
+      hasRestriction: dietaryRestriction.food_restriction,
+      index,
+      restrictionClassName: "admin-rsvp-companion-food-restriction",
+    }),
   );
 
   return wrapper;
@@ -907,6 +1325,7 @@ window.openAdminRSVPModal = async function (selectedGuest) {
   if (selectedGuest.invite_type === "couple") {
     setElementVisibility(adminRSVPPresenceGroup, false);
     setElementVisibility(adminRSVPCoupleMembers, true);
+    setElementVisibility(adminRSVPPrimaryFoodSection, false);
 
     const members = selectedGuest.couple_members || [];
     const existingMembers = data?.guest_data?.members || [];
@@ -915,10 +1334,18 @@ window.openAdminRSVPModal = async function (selectedGuest) {
 
     members.forEach((member, index) => {
       const existingPresence = existingMembers[index]?.presence || "Sim";
+      const dietaryRestriction = normalizePersonDietaryRestriction({
+        food: existingMembers[index]?.food || member.food,
+        food_restriction:
+          existingMembers[index]?.food_restriction ?? member.food_restriction,
+        name: member.name,
+      });
+      const wrapper = document.createElement("div");
       const select = document.createElement("select");
       const yesOption = document.createElement("option");
       const noOption = document.createElement("option");
 
+      wrapper.className = "admin-rsvp-companion-card";
       select.className = "admin-rsvp-member-presence";
       select.dataset.index = index;
       yesOption.value = "Sim";
@@ -928,9 +1355,21 @@ window.openAdminRSVPModal = async function (selectedGuest) {
       noOption.textContent = "Não";
       noOption.selected = existingPresence === "Não";
       select.append(yesOption, noOption);
-      adminRSVPCoupleMembers.appendChild(
-        createAdminFormGroup(member.name || "Sem nome", select),
+      wrapper.append(
+        Object.assign(document.createElement("h4"), {
+          textContent: member.name || "Sem nome",
+        }),
+        createAdminFormGroup("Presença", select),
+        ...createAdminFoodRestrictionFields({
+          detailsClassName: "admin-rsvp-member-food-group",
+          foodClassName: "admin-rsvp-member-food",
+          foodValue: dietaryRestriction.food,
+          hasRestriction: dietaryRestriction.food_restriction,
+          index,
+          restrictionClassName: "admin-rsvp-member-food-restriction",
+        }),
       );
+      adminRSVPCoupleMembers.appendChild(wrapper);
     });
 
     document
@@ -944,6 +1383,7 @@ window.openAdminRSVPModal = async function (selectedGuest) {
   } else {
     setElementVisibility(adminRSVPPresenceGroup, true);
     setElementVisibility(adminRSVPCoupleMembers, false);
+    setElementVisibility(adminRSVPPrimaryFoodSection, true);
     adminRSVPPresenceInput.value = data?.presence || "Sim";
   }
 
@@ -965,47 +1405,94 @@ window.openAdminRSVPModal = async function (selectedGuest) {
   }
 
   if (adminRSVPFoodRestrictionInput) {
-    adminRSVPFoodRestrictionInput.value = hasDietaryRestriction(data)
+    const primaryDietaryRestriction = normalizePersonDietaryRestriction({
+      food: data?.guest_data?.food || data?.food,
+      food_restriction: data?.guest_data?.food_restriction ?? hasDietaryRestriction(data),
+      name: selectedGuest.name,
+    });
+
+    adminRSVPFoodRestrictionInput.value = primaryDietaryRestriction.food_restriction
       ? "Sim"
       : "Não";
+    adminRSVPFoodInput.value = primaryDietaryRestriction.food;
   }
-  adminRSVPFoodInput.value = data?.food || "";
   updateAdminRSVPFoodVisibility();
   adminRSVPMessageInput.value = data?.message || "";
   adminRSVPModal.classList.add("active");
 };
 
 async function loadRSVPsAdmin() {
-  const { data: guests, error: guestsError } = await supabaseClient
-    .from("guests")
-    .select("*");
+  const [
+    guestsResult,
+    rsvpsResult,
+    settingsResult,
+    tablesResult,
+    assignmentsResult,
+  ] = await Promise.all([
+    supabaseClient.from("guests").select("*"),
+    supabaseClient.from("rsvps").select("*"),
+    supabaseClient.rpc("get_public_settings").maybeSingle(),
+    supabaseClient.rpc("admin_list_wedding_tables"),
+    supabaseClient.rpc("admin_list_wedding_table_assignments"),
+  ]);
 
-  const { data: rsvps, error: rsvpsError } = await supabaseClient
-    .from("rsvps")
-    .select("*");
+  const error =
+    guestsResult.error ||
+    rsvpsResult.error ||
+    settingsResult.error ||
+    tablesResult.error ||
+    assignmentsResult.error;
 
-  const { data: settings, error: settingsError } = await supabaseClient
-    .rpc("get_public_settings")
-    .maybeSingle();
-
-  if (guestsError || rsvpsError || settingsError) {
-    console.error(guestsError || rsvpsError || settingsError);
+  if (error) {
+    console.error(error);
     showAdminToast("⚠️ Erro ao carregar confirmações");
     return;
   }
 
-  const activeGuests = guests.filter((guest) => guest.active);
+  const activeGuests = (guestsResult.data || []).filter((guest) => guest.active);
   const activeGuestIds = activeGuests.map((guest) => guest.id);
-  const activeRSVPs = rsvps.filter((rsvp) =>
+  const activeRSVPs = (rsvpsResult.data || []).filter((rsvp) =>
     activeGuestIds.includes(rsvp.guest_id),
   );
 
   cachedRSVPs = activeRSVPs;
   cachedRSVPGuests = activeGuests;
+  cachedRSVPTables = tablesResult.data || [];
+  cachedRSVPTableAssignments = assignmentsResult.data || [];
   buffetPayingAge = BuffetMetrics.normalizePayingAge(
-    settings?.buffet_paying_age,
+    settingsResult.data?.buffet_paying_age,
   );
+  updateRSVPTableFilter();
   applyRSVPFilters();
+}
+
+function updateRSVPTableFilter() {
+  const currentValue = rsvpTableFilter?.value || "";
+
+  if (!rsvpTableFilter) {
+    return;
+  }
+
+  rsvpTableFilter.replaceChildren(
+    new Option("Todas", ""),
+    new Option("Com mesa", "assigned"),
+    new Option("Sem mesa", "unassigned"),
+  );
+
+  cachedRSVPTables
+    .filter((tableItem) => tableItem.is_active)
+    .sort((first, second) => compareValues(first.display_order, second.display_order))
+    .forEach((tableItem) => {
+      rsvpTableFilter.appendChild(new Option(tableItem.name, tableItem.id));
+    });
+
+  if (
+    currentValue === "assigned" ||
+    currentValue === "unassigned" ||
+    cachedRSVPTables.some((tableItem) => tableItem.id === currentValue)
+  ) {
+    rsvpTableFilter.value = currentValue;
+  }
 }
 
 function renderRSVPTable(rsvps, guests) {
@@ -1042,6 +1529,9 @@ function renderRSVPTable(rsvps, guests) {
               ${safeText(guestName)}
               ${renderRSVPDietaryIndicator(rsvp)}
             </strong>
+            <span class="admin-muted rsvp-table-meta">
+              ${safeText(getRSVPTableLabel(rsvp))}
+            </span>
           </td>
           <td>
             ${renderPresenceBadge(rsvp.presence)}
@@ -1096,6 +1586,7 @@ function applyRSVPFilters() {
   const companionFilter = rsvpCompanionFilter?.value || "";
   const restrictionFilter = rsvpRestrictionFilter?.value || "";
   const buffetFilter = rsvpBuffetFilter?.value || "";
+  const tableFilter = rsvpTableFilter?.value || "";
 
   const filteredRSVPs = cachedRSVPs.filter((rsvp) => {
     const guestName =
@@ -1104,6 +1595,7 @@ function applyRSVPFilters() {
       "Convidado não encontrado";
     const companions = rsvp.guest_data?.companions || [];
     const members = rsvp.guest_data?.members || [];
+    const tableItem = getRSVPTable(rsvp.guest_id);
     const companionCount = Number(rsvp.guest_data?.guest_count || 0);
     const buffetMetrics = BuffetMetrics.getRSVPMetrics(
       guestRecordMap[rsvp.guest_id],
@@ -1114,10 +1606,13 @@ function applyRSVPFilters() {
     const searchable = normalizeText(
       [
         guestName,
-        rsvp.food,
+        tableItem?.name,
+        getDietaryRestrictionDetails(rsvp),
         rsvp.message,
         ...companions.map((companion) => companion.name),
+        ...companions.map((companion) => companion.food),
         ...members.map((member) => member.name),
+        ...members.map((member) => member.food),
       ].join(" "),
     );
 
@@ -1142,13 +1637,21 @@ function applyRSVPFilters() {
         buffetMetrics.nonPayingChildren > 0) ||
       (buffetFilter === "child-unknown" &&
         buffetMetrics.unknownAgeChildren > 0);
+    const matchesTable =
+      !tableFilter ||
+      (tableFilter === "assigned"
+        ? Boolean(tableItem)
+        : tableFilter === "unassigned"
+          ? !tableItem
+          : tableItem?.id === tableFilter);
 
     return (
       matchesSearch &&
       matchesPresence &&
       matchesCompanions &&
       matchesRestriction &&
-      matchesBuffet
+      matchesBuffet &&
+      matchesTable
     );
   });
 
@@ -1245,6 +1748,7 @@ function exportRSVPsCSV() {
 
   AdminExport.downloadCSV("rsvps", [
     { label: "Convidado", value: (rsvp) => getRSVPGuestName(rsvp, guestMap) },
+    { label: "Mesa", value: getRSVPTableLabel },
     { label: "Presença", value: "presence" },
     { label: "Membros do casal", value: formatRSVPMembers },
     {
@@ -1301,6 +1805,7 @@ function clearRSVPFilters() {
     rsvpCompanionFilter,
     rsvpRestrictionFilter,
     rsvpBuffetFilter,
+    rsvpTableFilter,
   ].forEach((filter) => {
     if (filter) {
       filter.value = "";
@@ -1400,10 +1905,22 @@ adminRSVPForm?.addEventListener("submit", async (event) => {
         document.querySelector(
           `.admin-rsvp-member-presence[data-index="${index}"]`,
         )?.value || "Não";
+      const dietaryRestriction = normalizePersonDietaryRestriction({
+        food:
+          document.querySelector(
+            `.admin-rsvp-member-food[data-index="${index}"]`,
+          )?.value || "",
+        food_restriction:
+          document.querySelector(
+            `.admin-rsvp-member-food-restriction[data-index="${index}"]`,
+          )?.value || "Não",
+        name: member.name,
+      });
 
       return {
         name: member.name,
         presence,
+        ...dietaryRestriction,
       };
     });
 
@@ -1420,21 +1937,40 @@ adminRSVPForm?.addEventListener("submit", async (event) => {
     companions = [];
   }
 
+  const primaryDietaryRestriction = normalizePersonDietaryRestriction({
+    food: adminRSVPFoodInput.value || "",
+    food_restriction: adminRSVPFoodRestrictionInput?.value || "Não",
+    name: selectedRSVPGuest.name,
+  });
+  const peopleWithDietaryRestriction = getPeopleWithDietaryRestriction({
+    companions,
+    members,
+    primary: isCoupleInvite
+      ? null
+      : {
+          name: selectedRSVPGuest.name,
+          presence: finalPresence,
+          ...primaryDietaryRestriction,
+        },
+  });
+  const hasFoodRestriction = peopleWithDietaryRestriction.length > 0;
+
   const payload = {
     presence: finalPresence,
     email: adminRSVPEmailInput.value || "",
     phone: adminRSVPPhoneInput.value || "",
-    food:
-      adminRSVPFoodRestrictionInput?.value === "Sim"
-        ? adminRSVPFoodInput.value || ""
-        : "",
-    food_restriction: adminRSVPFoodRestrictionInput?.value === "Sim",
+    food: buildFoodSummary(peopleWithDietaryRestriction),
+    food_restriction: hasFoodRestriction,
     message: adminRSVPMessageInput.value || "",
     guest_data: {
       name: selectedRSVPGuest.name,
       email: adminRSVPEmailInput.value || "",
       phone: adminRSVPPhoneInput.value || "",
       guest_count: guestCount,
+      food: isCoupleInvite ? "" : primaryDietaryRestriction.food,
+      food_restriction: isCoupleInvite
+        ? false
+        : primaryDietaryRestriction.food_restriction,
       members,
       companions,
     },
@@ -1445,8 +1981,8 @@ adminRSVPForm?.addEventListener("submit", async (event) => {
     submitted_presence: payload.presence,
     submitted_email: payload.email,
     submitted_phone: payload.phone,
-    submitted_food: payload.food,
-    submitted_food_restriction: payload.food_restriction,
+    submitted_food: payload.guest_data.food || "",
+    submitted_food_restriction: Boolean(payload.guest_data.food_restriction),
     submitted_message: payload.message,
     submitted_guest_data: payload.guest_data,
   });
@@ -1502,6 +2038,7 @@ deleteAdminRSVPButton?.addEventListener("click", async () => {
   rsvpCompanionFilter,
   rsvpRestrictionFilter,
   rsvpBuffetFilter,
+  rsvpTableFilter,
 ].forEach((filter) => {
   filter?.addEventListener("input", applyRSVPFilters);
   filter?.addEventListener("change", applyRSVPFilters);
@@ -1515,7 +2052,11 @@ rsvpsTableBody?.addEventListener("click", (event) => {
   const infoButton = event.target.closest("[data-rsvp-info-action]");
 
   if (infoButton?.dataset.rsvpInfoAction === "dietary-restriction") {
-    openRSVPDietaryRestrictionModal(infoButton.dataset.rsvpId);
+    openRSVPDietaryRestrictionModal(
+      infoButton.dataset.rsvpId,
+      infoButton.dataset.rsvpPersonType,
+      infoButton.dataset.rsvpPersonIndex,
+    );
     return;
   }
 
@@ -1553,6 +2094,17 @@ closeRSVPDetailsModalButton?.addEventListener("click", () => {
 closeAdminRSVPModalButton?.addEventListener("click", closeAdminRSVPModal);
 
 rsvpDetailsContent?.addEventListener("click", (event) => {
+  const infoButton = event.target.closest("[data-rsvp-info-action]");
+
+  if (infoButton?.dataset.rsvpInfoAction === "dietary-restriction") {
+    openRSVPDietaryRestrictionModal(
+      infoButton.dataset.rsvpId,
+      infoButton.dataset.rsvpPersonType,
+      infoButton.dataset.rsvpPersonIndex,
+    );
+    return;
+  }
+
   const button = event.target.closest("[data-rsvp-detail-action]");
 
   if (!button) {
@@ -1571,6 +2123,10 @@ rsvpDetailsContent?.addEventListener("click", (event) => {
 
   if (button.dataset.rsvpDetailAction === "resend-confirmation") {
     resendRSVPConfirmation(button.dataset.rsvpId);
+  }
+
+  if (button.dataset.rsvpDetailAction === "manage-table") {
+    openGuestTableManagementFromRSVP(button.dataset.rsvpId);
   }
 });
 

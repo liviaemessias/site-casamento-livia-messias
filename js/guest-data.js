@@ -15,8 +15,8 @@
     if (isSecureMode()) {
       const { data, error } = await supabaseClient.rpc("save_current_rsvp", {
         submitted_email: payload.email,
-        submitted_food: payload.food,
-        submitted_food_restriction: payload.food_restriction,
+        submitted_food: payload.guest_data?.food || "",
+        submitted_food_restriction: Boolean(payload.guest_data?.food_restriction),
         submitted_guest_data: payload.guest_data,
         submitted_message: payload.message,
         submitted_phone: payload.phone,
@@ -35,14 +35,16 @@
       };
     }
 
+    const { food, food_restriction, ...persistedPayload } = payload;
+
     return existingRSVP
       ? supabaseClient
           .from("rsvps")
-          .update(payload)
+          .update(persistedPayload)
           .eq("id", existingRSVP.id)
           .select()
           .single()
-      : supabaseClient.from("rsvps").insert([payload]).select().single();
+      : supabaseClient.from("rsvps").insert([persistedPayload]).select().single();
   }
 
   async function markGuestConfirmed(guest) {

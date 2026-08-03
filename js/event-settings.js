@@ -99,7 +99,7 @@
     if (document.body.dataset.page !== "home") return;
 
     const numericDate = formatNumericDate(settings.wedding_date);
-    const title = `${names} — ${numericDate}`;
+    const title = `${names} • ${numericDate}`;
     const description = getSiteDescription(settings);
     const siteUrl = getPublicHttpUrl(settings.site_url, defaults.site_url);
     const socialImage = getPublicHttpUrl(

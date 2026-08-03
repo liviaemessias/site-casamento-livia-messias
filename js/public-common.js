@@ -3,10 +3,56 @@
     const navbar = document.querySelector(".navbar");
     const mobileMenu = document.querySelector(".mobile-menu");
     const navLinks = document.querySelector(".nav-links");
+    const dropdowns = Array.from(document.querySelectorAll(".nav-dropdown"));
+    const dropdownCloseTimers = new WeakMap();
+    const desktopDropdownQuery = window.matchMedia(
+      "(hover: hover) and (pointer: fine)",
+    );
+
+    if (navbar?.dataset.navbarInitialized === "true") {
+      navbar.classList.toggle("scrolled", window.scrollY > 50);
+      return;
+    }
 
     if (navbar) {
-      window.addEventListener("scroll", () => {
+      navbar.dataset.navbarInitialized = "true";
+    }
+
+    function clearDropdownCloseTimer(dropdown) {
+      const timer = dropdownCloseTimers.get(dropdown);
+
+      if (timer) {
+        window.clearTimeout(timer);
+        dropdownCloseTimers.delete(dropdown);
+      }
+    }
+
+    function setDropdownOpen(dropdown, isOpen) {
+      clearDropdownCloseTimer(dropdown);
+      dropdown.classList.toggle("open", isOpen);
+      dropdown
+        .querySelector(".nav-dropdown-toggle")
+        ?.setAttribute("aria-expanded", String(isOpen));
+    }
+
+    function closeDropdowns(exceptDropdown = null) {
+      dropdowns.forEach((dropdown) => {
+        if (dropdown === exceptDropdown) {
+          return;
+        }
+
+        setDropdownOpen(dropdown, false);
+      });
+    }
+
+    if (navbar) {
+      const updateNavbarScrollState = () => {
         navbar.classList.toggle("scrolled", window.scrollY > 50);
+      };
+
+      updateNavbarScrollState();
+      window.addEventListener("scroll", updateNavbarScrollState, {
+        passive: true,
       });
     }
 
@@ -21,6 +67,77 @@
         mobileMenu.textContent = isOpen ? "×" : "☰";
       });
     }
+
+    dropdowns.forEach((dropdown) => {
+      const toggle = dropdown.querySelector(".nav-dropdown-toggle");
+      let isPointerPressingToggle = false;
+
+      if (!toggle) {
+        return;
+      }
+
+      function openDropdown() {
+        setDropdownOpen(dropdown, true);
+        closeDropdowns(dropdown);
+      }
+
+      function scheduleDropdownClose() {
+        clearDropdownCloseTimer(dropdown);
+        const timer = window.setTimeout(() => {
+          setDropdownOpen(dropdown, false);
+        }, 180);
+        dropdownCloseTimers.set(dropdown, timer);
+      }
+
+      dropdown.addEventListener("mouseenter", () => {
+        if (desktopDropdownQuery.matches) {
+          openDropdown();
+        }
+      });
+
+      dropdown.addEventListener("mouseleave", () => {
+        if (desktopDropdownQuery.matches) {
+          scheduleDropdownClose();
+        }
+      });
+
+      toggle.addEventListener("pointerdown", () => {
+        isPointerPressingToggle = true;
+        window.setTimeout(() => {
+          isPointerPressingToggle = false;
+        }, 0);
+      });
+
+      dropdown.addEventListener("focusin", () => {
+        if (!isPointerPressingToggle) {
+          openDropdown();
+        }
+      });
+
+      dropdown.addEventListener("focusout", (event) => {
+        if (!dropdown.contains(event.relatedTarget)) {
+          scheduleDropdownClose();
+        }
+      });
+
+      toggle.addEventListener("click", () => {
+        const isOpen = !dropdown.classList.contains("open");
+        setDropdownOpen(dropdown, isOpen);
+        closeDropdowns(isOpen ? dropdown : null);
+      });
+    });
+
+    document.addEventListener("click", (event) => {
+      if (!event.target.closest(".nav-dropdown")) {
+        closeDropdowns();
+      }
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        closeDropdowns();
+      }
+    });
   }
 
   function setupLogout(buttonId = "logoutButton") {
@@ -29,6 +146,12 @@
     if (!logoutButton) {
       return;
     }
+
+    if (logoutButton.dataset.logoutInitialized === "true") {
+      return;
+    }
+
+    logoutButton.dataset.logoutInitialized = "true";
 
     logoutButton.addEventListener("click", async () => {
       logoutButton.disabled = true;
@@ -41,10 +164,7 @@
     const guestNameDisplay = document.getElementById(elementId);
 
     if (guest && guestNameDisplay) {
-      const greeting =
-        guest.invite_type === "couple" ? "Bem-vindos(as)" : "Bem-vindo(a)";
-
-      guestNameDisplay.textContent = `${greeting}, ${guest.name}`;
+      guestNameDisplay.textContent = `Olá, ${guest.name}`;
     }
   }
 

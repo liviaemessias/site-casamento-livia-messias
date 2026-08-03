@@ -16,6 +16,14 @@ drop function if exists public.create_guest_with_invite_code(
   integer,
   boolean
 );
+drop function if exists public.create_guest_with_invite_code(
+  text,
+  text,
+  jsonb,
+  integer,
+  boolean,
+  text
+);
 
 grant insert on table public.guests to authenticated;
 
