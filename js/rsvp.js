@@ -21,6 +21,12 @@ const primaryFoodDetailsGroup = document.getElementById(
   "primaryFoodDetailsGroup",
 );
 const primaryFoodInput = document.querySelector('input[name="primary_food"]');
+const rsvpHeroTitle = document.getElementById("rsvpHeroTitle");
+const rsvpHeroDescription = document.getElementById("rsvpHeroDescription");
+const coupleMembersSectionLabel = document.getElementById(
+  "coupleMembersSectionLabel",
+);
+const successMessage = document.getElementById("successMessage");
 
 const knownEmailDomains = [
   "gmail.com",
@@ -299,6 +305,29 @@ emailInput.value = "";
 ========================= */
 
 const isCoupleInvite = guest.invite_type === "couple";
+
+if (rsvpHeroTitle) {
+  rsvpHeroTitle.textContent = isCoupleInvite
+    ? "Confirmem a presença de vocês"
+    : "Confirme sua presença";
+}
+
+if (rsvpHeroDescription) {
+  rsvpHeroDescription.textContent = isCoupleInvite
+    ? "A presença de vocês tornará esse momento ainda mais especial"
+    : "Sua presença tornará esse momento ainda mais especial";
+}
+
+if (coupleMembersSectionLabel) {
+  coupleMembersSectionLabel.textContent =
+    "Confirmem individualmente a presença de cada pessoa do convite";
+}
+
+if (successMessage) {
+  successMessage.textContent = isCoupleInvite
+    ? "❤️ Obrigado por confirmarem a presença de vocês!"
+    : "❤️ Obrigado por confirmar sua presença!";
+}
 
 const messageField = document.querySelector('textarea[name="message"]');
 

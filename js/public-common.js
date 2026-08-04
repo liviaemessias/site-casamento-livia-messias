@@ -164,7 +164,7 @@
     const guestNameDisplay = document.getElementById(elementId);
 
     if (guest && guestNameDisplay) {
-      guestNameDisplay.textContent = `Olá, ${guest.name}`;
+      guestNameDisplay.textContent = `Olá, ${guest.name}!`;
     }
   }
 

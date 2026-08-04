@@ -17,7 +17,7 @@
     social_image:
       "https://liviaemessias.github.io/site-casamento-livia-messias/assets/images/home/cover-main-page.jpg",
     site_description_template:
-      "Celebre conosco o nosso casamento • {date}. Confira os detalhes do grande dia!",
+      "Celebrem conosco o nosso casamento • {date}. Confiram os detalhes do grande dia!",
   };
 
   function getDefaults() {
