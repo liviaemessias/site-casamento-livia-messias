@@ -95,7 +95,13 @@ Páginas administrativas esperadas:
 - `admin-messages.html`;
 - `admin-checklist.html`;
 - `admin-schedule.html`;
+- `admin-tables.html`;
 - `admin-vendors.html`;
+- `admin-financial.html`;
+- `admin-financial-budget.html`;
+- `admin-financial-expenses.html`;
+- `admin-financial-payments.html`;
+- `admin-financial-base.html`;
 - `admin-settings.html`.
 
 Metadados públicos padrão do site, mantidos no frontend e no `<head>` de

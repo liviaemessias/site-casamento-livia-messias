@@ -13,7 +13,10 @@
       <section class="admin-header">
         <div>
           <p class="section-subtitle">Painel Administrativo</p>
-          <h1>Dashboard</h1>
+          <h1>Visão Geral</h1>
+          <p class="admin-header-description">
+            Visão geral dos principais pontos do casamento em um só lugar.
+          </p>
         </div>
         <button id="logoutButton" class="admin-logout">Sair</button>
       </section>
@@ -35,23 +38,29 @@
       </section>
 
       <section class="admin-overview-metrics" aria-label="Indicadores principais">
-        <a class="overview-metric" href="./admin-rsvps.html?presence=Sim">
+        <a class="overview-metric overview-metric-presence" href="./admin-rsvps.html?presence=Sim">
+          <i data-lucide="users-round" aria-hidden="true"></i>
           <span>Pessoas Esperadas</span><strong id="overviewExpectedPeople">0</strong><small>Presenças confirmadas de <b id="overviewPlannedPeople">0</b> planejadas</small>
         </a>
-        <a class="overview-metric" href="./admin-rsvps.html?buffet=paying">
+        <a class="overview-metric overview-metric-buffet" href="./admin-rsvps.html?buffet=paying">
+          <i data-lucide="utensils" aria-hidden="true"></i>
           <span>Convidados Pagantes</span><strong id="overviewPayingGuests">0</strong><small>Conforme a regra do buffet</small>
         </a>
-        <a class="overview-metric attention" href="./admin-gifts.html?payment=Informado">
+        <a class="overview-metric money" href="./admin-gifts.html?payment=Confirmado">
+          <i data-lucide="badge-dollar-sign" aria-hidden="true"></i>
+          <span>Valor Confirmado</span><strong id="overviewConfirmedValue">R$ 0,00</strong><small>Presentes e cotas confirmados</small>
+        </a>
+        <a class="overview-metric attention overview-metric-gifts" href="./admin-gifts.html?payment=Informado">
+          <i data-lucide="gift" aria-hidden="true"></i>
           <span>Presentes Informados</span><strong id="overviewReportedGifts">0</strong><small>Pagamentos aguardando confirmação</small>
         </a>
-        <a class="overview-metric attention" href="./admin-notifications.html?status=failed">
-          <span>Falhas de E-mail</span><strong id="overviewFailedNotifications">0</strong><small>Notificações que exigem revisão</small>
-        </a>
-        <a class="overview-metric attention" href="./admin-messages.html?status=pending">
+        <a class="overview-metric attention overview-metric-messages" href="./admin-messages.html?status=pending">
+          <i data-lucide="message-square" aria-hidden="true"></i>
           <span>Recados Pendentes</span><strong id="overviewPendingMessages">0</strong><small>Mensagens aguardando aprovação</small>
         </a>
-        <a class="overview-metric money" href="./admin-gifts.html?payment=Confirmado">
-          <span>Valor Confirmado</span><strong id="overviewConfirmedValue">R$ 0,00</strong><small>Presentes e cotas confirmados</small>
+        <a class="overview-metric attention overview-metric-email" href="./admin-notifications.html?status=failed">
+          <i data-lucide="mail-warning" aria-hidden="true"></i>
+          <span>Falhas de E-mail</span><strong id="overviewFailedNotifications">0</strong><small>Notificações que exigem revisão</small>
         </a>
       </section>
 
@@ -59,7 +68,10 @@
         <article class="overview-visual-panel">
           <div class="overview-panel-header">
             <div><span>Presença</span><h3>Situação dos Convites</h3></div>
-            <a href="./admin-indicators.html">Ver Detalhes</a>
+            <a href="./admin-indicators.html">
+              <i data-lucide="arrow-up-right" aria-hidden="true"></i>
+              Ver Detalhes
+            </a>
           </div>
           <div class="overview-donut-layout">
             <div id="overviewAttendanceDonut" class="overview-donut" role="img" aria-label="Distribuição dos convites por RSVP">
@@ -76,7 +88,10 @@
         <article class="overview-visual-panel">
           <div class="overview-panel-header">
             <div><span>Presentes</span><h3>Situação da Lista</h3></div>
-            <a href="./admin-gifts.html">Gerenciar</a>
+            <a href="./admin-gifts.html">
+              <i data-lucide="arrow-up-right" aria-hidden="true"></i>
+              Gerenciar
+            </a>
           </div>
           <div class="overview-gift-summary">
             <div id="overviewGiftBar" class="overview-gift-bar" role="img" aria-label="Distribuição dos presentes por situação">
@@ -92,10 +107,10 @@
       </section>
 
       <section class="admin-overview-actions" aria-label="Acessos rápidos">
-        <a href="./admin-guests.html">Gerenciar Convidados</a>
-        <a href="./admin-guests.html?confirmed=pending">Ver RSVPs Pendentes</a>
-        <a href="./admin-reports.html">Abrir Relatórios</a>
-        <a href="./admin-indicators.html">Ver Todos os Indicadores</a>
+        <a href="./admin-guests.html"><i data-lucide="users" aria-hidden="true"></i>Gerenciar Convidados</a>
+        <a href="./admin-guests.html?confirmed=pending"><i data-lucide="clipboard-list" aria-hidden="true"></i>Ver RSVPs Pendentes</a>
+        <a href="./admin-reports.html"><i data-lucide="file-chart-column" aria-hidden="true"></i>Abrir Relatórios</a>
+        <a href="./admin-indicators.html"><i data-lucide="chart-no-axes-combined" aria-hidden="true"></i>Ver Todos os Indicadores</a>
       </section>
     </main>
 

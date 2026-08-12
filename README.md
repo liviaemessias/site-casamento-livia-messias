@@ -2,7 +2,7 @@
 
 Site de casamento personalizado para centralizar informações do evento, RSVP, lista de presentes e administração dos noivos.
 
-Versão atual: **4.3**.
+Versão atual: **4.4**.
 
 ## Desenvolvimento
 
@@ -34,8 +34,11 @@ GitHub: [messiasfl10](https://github.com/messiasfl10/)
 - Formas de presentear por PIX, cartão via checkout externo, compra online e loja física.
 - QR-Code e PIX Copia e Cola gerados no frontend.
 - Confirmação antes de reservar presentes ou informar pagamentos e compras.
-- Painel administrativo repaginado com navegação lateral responsiva e páginas especializadas.
-- Dashboard operacional com indicadores clicáveis, resumos visuais de RSVP e presentes e atalhos para as principais pendências.
+- Painel administrativo repaginado com navegação lateral desktop, navbar
+  inferior mobile em estilo aplicativo e páginas especializadas.
+- Dashboard operacional refinado com indicadores clicáveis, resumos visuais de
+  RSVP e presentes, atalhos para as principais pendências e cabeçalhos
+  administrativos padronizados.
 - Página de Indicadores com métricas e gráficos detalhados de presença,
   convidados, mesas, buffet, presentes e valores dos presentes.
 - Módulo Financeiro administrativo para orçamento previsto, gastos reais,
@@ -143,7 +146,8 @@ O antigo painel único foi dividido em páginas dedicadas:
 Todas as páginas administrativas passam por `js/admin-bootstrap.js`, que
 confirma a sessão do Supabase Auth e a função `is_admin()` antes de carregar a
 lógica da tela. `js/admin-common.js` concentra logout, toast, formatação de
-datas e atualização de textos simples.
+datas, atualização de textos simples, navegação administrativa responsiva,
+alertas compactos do menu e padronização dos cabeçalhos das páginas.
 
 ## Organização Dos Scripts
 
@@ -176,7 +180,9 @@ datas e atualização de textos simples.
 - `js/event-settings.js`: carrega e aplica nomes, datas, locais e metadados da
   página inicial nas páginas públicas.
 - `js/security-utils.js`: valida textos e URLs e sanitiza conteúdo HTML dinâmico antes da renderização.
-- `js/admin-common.js`: comportamento comum das páginas administrativas.
+- `js/admin-common.js`: comportamento comum das páginas administrativas,
+  incluindo logout, toast, navegação lateral desktop, navbar mobile, alertas do
+  menu e descrições padronizadas dos cabeçalhos.
 - `js/pix.js`: geração pura do payload PIX, CRC16 e URL do QR-Code.
 - `js/gifts.js`: fluxo da lista de presentes, reserva, cotas, escolha da forma de presentear e confirmação de pagamento/compra.
 - `js/rsvp.js`: fluxo de confirmação de presença.
@@ -365,7 +371,10 @@ Regras de valor:
 
 ## Painel Administrativo
 
-O admin foi repaginado com navegação lateral, ícones e menu responsivo. O
+O admin foi repaginado com navegação lateral no desktop, ícones, agrupamentos
+por área e experiência mobile em estilo aplicativo, com topbar dinâmica e navbar
+inferior. Os cabeçalhos das páginas administrativas seguem um padrão visual
+comum, com subtítulo, título, descrição curta e detalhe ornamental discreto. O
 Dashboard inicial oferece uma visão operacional com indicadores clicáveis de
 pessoas confirmadas, capacidade planejada, convidados pagantes, RSVPs
 pendentes, presentes informados e reservados e valor confirmado. Também resume
@@ -515,6 +524,9 @@ PixPayment.getQrCodeUrl(payload);
 
 - `docs/operations/captcha_turnstile_setup.md`: ativação, testes e rollback do Cloudflare Turnstile nos logins.
 - `docs/operations/smtp_email_notifications_setup.md`: configuração SMTP, Gmail, Outlook/Hotmail, deploy e testes das notificações por e-mail.
+- `docs/releases/release_v4.4.md`: notas da versão 4.4, com melhorias visuais
+  e de experiência administrativa, Dashboard inicial refinado, navegação mobile
+  em estilo aplicativo e cabeçalhos administrativos padronizados.
 - `docs/releases/release_v4.3.md`: notas da versão 4.3, com melhorias visuais
   da experiência pública, identidade do casal, menu público, páginas públicas,
   logins e pequenos refinamentos administrativos.
@@ -647,8 +659,10 @@ Concluído:
 - PIX com QR-Code e copia e cola.
 - Presentes por cotas com contribuições via PIX.
 - Cartão via checkout externo e compras externas.
-- Painel administrativo repaginado com navegação lateral responsiva e páginas especializadas.
-- Dashboard operacional com indicadores clicáveis, resumos visuais e atalhos para pendências.
+- Painel administrativo repaginado com navegação lateral desktop, navbar
+  inferior mobile em estilo aplicativo, topbar dinâmica e páginas especializadas.
+- Dashboard operacional refinado com indicadores clicáveis, resumos visuais,
+  atalhos para pendências e cabeçalhos administrativos padronizados.
 - Página de Indicadores com análises detalhadas de presença, buffet, presentes e financeiro.
 - Dashboard administrativo com gráfico de distribuição de RSVPs.
 - Dashboard com convidados pagantes, total de crianças, crianças pagantes, não pagantes e sem idade válida.

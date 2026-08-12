@@ -274,7 +274,7 @@ async function loadOverview() {
   setText("overviewAvailableGifts", giftMetrics.available);
   setText("overviewReservedLegend", giftMetrics.reserved);
   setText("overviewConfirmedGifts", giftMetrics.confirmed);
-  setText("overviewStatus", "Dados atualizados.");
+  setText("overviewStatus", "Atualizado agora");
 
   updateAttendanceDonut({ yes, no, pending });
   updateGiftBar(giftMetrics);

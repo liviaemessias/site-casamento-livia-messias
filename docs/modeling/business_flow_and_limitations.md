@@ -28,7 +28,9 @@ Scripts compartilhados:
 
 - `auth.js`: sessão local e validação do código de convite.
 - `public-common.js`: navbar, logout e saudação das páginas públicas autenticadas.
-- `admin-common.js`: autenticação admin, logout, toast e utilitários do painel.
+- `admin-common.js`: autenticação admin, logout, toast, utilitários do painel,
+  navegação administrativa responsiva, alertas compactos do menu e cabeçalhos
+  padronizados.
 - `pix.js`: geração de payload PIX e URL de QR-Code.
 
 CSS compartilhado:
@@ -230,7 +232,10 @@ selected_purchase_details = objeto da loja
 
 ## Fluxo Administrativo
 
-O painel administrativo foi dividido em páginas.
+O painel administrativo foi dividido em páginas, com navegação lateral no
+desktop e navegação inferior em estilo aplicativo no mobile. Os cabeçalhos das
+páginas seguem um padrão comum com subtítulo, título, descrição curta e detalhe
+ornamental discreto.
 
 ### Dashboard
 
@@ -243,11 +248,11 @@ admin-dashboard.html
 Exibe uma visão resumida com:
 
 - Pessoas esperadas.
-- RSVPs pendentes.
 - Convidados pagantes.
-- Ações pendentes.
-- Presentes reservados.
 - Valor confirmado.
+- Presentes informados aguardando confirmação.
+- Recados pendentes.
+- Falhas de e-mail.
 - Gráfico de rosca da situação dos convites.
 - Barra de distribuição dos presentes.
 - Atalhos para as áreas operacionais, Indicadores e Relatórios.
@@ -611,6 +616,8 @@ Concluído:
 - Fornecedores e Programação do casamento com páginas públicas/protegidas,
   estados vazios amigáveis e gestão administrativa por RPCs seguras.
 - Helpers `admin-common.js` e `public-common.js`.
+- Navegação administrativa desktop/mobile e cabeçalhos padronizados via
+  `admin-common.js`.
 - Módulo `pix.js`.
 - CSS com tokens globais.
 

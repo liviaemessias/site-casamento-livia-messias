@@ -40,6 +40,38 @@
     "admin-reports.html",
     "admin-settings.html",
   ];
+  const ADMIN_NAV_GROUPS = [
+    ["Principal", "admin-dashboard.html"],
+    ["Casamento", "admin-guests.html"],
+    ["Financeiro", "admin-financial.html"],
+    ["Sistema", "admin-notifications.html"],
+  ];
+  const ADMIN_MOBILE_NAV_ITEMS = [
+    ["admin-dashboard.html", "Início", "layout-dashboard"],
+    ["admin-guests.html", "Convidados", "users"],
+    ["admin-rsvps.html", "RSVP", "clipboard-check"],
+    ["admin-financial.html", "Financeiro", "wallet"],
+  ];
+  const ADMIN_PAGE_DESCRIPTIONS = {
+    "admin-dashboard.html": "Visão geral dos principais pontos do casamento em um só lugar.",
+    "admin-guests.html": "Organize convites, grupos, acompanhantes e dados dos convidados.",
+    "admin-rsvps.html": "Acompanhe confirmações de presença, restrições e respostas dos convites.",
+    "admin-gifts.html": "Gerencie presentes, cotas, reservas e confirmações de pagamento.",
+    "admin-indicators.html": "Consulte métricas consolidadas para apoiar as decisões do casamento.",
+    "admin-messages.html": "Aprove, responda e acompanhe os recados enviados pelos convidados.",
+    "admin-checklist.html": "Planeje etapas, responsáveis e pendências da organização.",
+    "admin-schedule.html": "Configure a programação do dia e as atividades exibidas no site.",
+    "admin-tables.html": "Monte o mapa de mesas e distribua convidados para a recepção.",
+    "admin-vendors.html": "Cadastre fornecedores e defina o que aparece no site público.",
+    "admin-financial.html": "Acompanhe orçamento, gastos, parcelas e vencimentos do casamento.",
+    "admin-financial-budget.html": "Controle itens previstos, cenários e saldos do orçamento.",
+    "admin-financial-expenses.html": "Registre gastos reais, vínculos com o orçamento e pagamentos.",
+    "admin-financial-payments.html": "Acompanhe parcelas, vencimentos, atrasos e pagamentos realizados.",
+    "admin-financial-base.html": "Gerencie cenários, categorias e pagadores usados no financeiro.",
+    "admin-notifications.html": "Audite envios de e-mail, falhas e notificações do sistema.",
+    "admin-reports.html": "Exporte relatórios consolidados em CSV, XLSX e PDF.",
+    "admin-settings.html": "Ajuste configurações gerais, textos, datas e notificações do site.",
+  };
   const EVENT_DEFAULTS = window.WeddingEventConfig?.getDefaults() || {};
   const FINANCIAL_NAV_ITEMS = [
     ["admin-financial.html", "Visão Geral"],
@@ -70,7 +102,7 @@
 
   function setNavAlert(page, label) {
     const links = document.querySelectorAll(
-      `.admin-nav-link[href="./${page}"], .admin-nav-sublink[href="./${page}"]`,
+      `.admin-nav-link[href="./${page}"], .admin-nav-sublink[href="./${page}"], .admin-mobile-nav-link[href="./${page}"]`,
     );
 
     if (!links.length) {
@@ -280,6 +312,7 @@
 
     navigation.dataset.sidebarReady = "true";
     navigation.id = "adminSidebar";
+    setupAdminHeaderDescription(header);
 
     const sidebarTop = document.createElement("div");
     const sidebarLinks = document.createElement("div");
@@ -418,6 +451,19 @@
       financialLink.insertAdjacentElement("afterend", submenu);
     }
 
+    ADMIN_NAV_GROUPS.forEach(([label, page]) => {
+      const link = linksByPage.get(page);
+
+      if (!link || link.previousElementSibling?.classList.contains("admin-nav-group")) {
+        return;
+      }
+
+      const group = document.createElement("span");
+      group.className = "admin-nav-group";
+      group.textContent = label;
+      link.insertAdjacentElement("beforebegin", group);
+    });
+
     const activeNavigationItem =
       sidebarLinks.querySelector(".admin-nav-sublink.active") ||
       sidebarLinks.querySelector(".admin-nav-link.active");
@@ -484,10 +530,117 @@
       );
     }
 
-    menuButton.addEventListener("click", () => {
-      setSidebarOpen(!document.body.classList.contains("admin-sidebar-open"));
+    const currentPage = window.location.pathname.split("/").pop() || "admin-dashboard.html";
+    const activeLabelSource =
+      sidebarLinks.querySelector(".admin-nav-sublink.active") ||
+      sidebarLinks.querySelector(".admin-nav-link.active");
+    const activePageTitle = (activeLabelSource?.textContent || "Painel").trim();
+
+    const mobileTopbar = document.createElement("div");
+    const mobileTopbarTitle = document.createElement("span");
+    const mobileTopbarSubtitle = document.createElement("small");
+    const mobileTopbarAction = document.createElement("button");
+    mobileTopbar.className = "admin-mobile-topbar";
+    mobileTopbarTitle.textContent = activePageTitle;
+    mobileTopbarSubtitle.textContent = "Painel Administrativo";
+    mobileTopbarAction.type = "button";
+    mobileTopbarAction.className = "admin-mobile-topbar-action";
+    mobileTopbarAction.setAttribute("aria-label", "Abrir menu administrativo");
+    mobileTopbarAction.appendChild(createIcon("menu"));
+    mobileTopbar.append(mobileTopbarAction, mobileTopbarTitle, mobileTopbarSubtitle);
+    document.body.appendChild(mobileTopbar);
+
+    const mobileBottomNav = document.createElement("nav");
+    const mobileMoreButton = document.createElement("button");
+    mobileBottomNav.className = "admin-mobile-bottom-nav";
+    mobileBottomNav.setAttribute("aria-label", "Navegação administrativa principal");
+
+    ADMIN_MOBILE_NAV_ITEMS.forEach(([page, label, iconName]) => {
+      const link = document.createElement("a");
+      const isFinancialItem =
+        page === "admin-financial.html" &&
+        FINANCIAL_NAV_ITEMS.some(([itemPage]) => itemPage === currentPage);
+
+      link.className = "admin-mobile-nav-link";
+      link.href = `./${page}`;
+      link.append(createIcon(iconName), document.createTextNode(label));
+
+      if (currentPage === page || isFinancialItem) {
+        link.classList.add("active");
+      }
+
+      mobileBottomNav.appendChild(link);
     });
-    backdrop.addEventListener("click", () => setSidebarOpen(false));
+
+    mobileMoreButton.type = "button";
+    mobileMoreButton.className = "admin-mobile-nav-link admin-mobile-more-button";
+    mobileMoreButton.append(createIcon("ellipsis"), document.createTextNode("Mais"));
+    mobileMoreButton.setAttribute("aria-controls", "adminSidebar");
+    mobileMoreButton.setAttribute("aria-expanded", "false");
+    mobileMoreButton.setAttribute("aria-label", "Abrir menu completo");
+
+    if (
+      !ADMIN_MOBILE_NAV_ITEMS.some(([page]) => page === currentPage) &&
+      !FINANCIAL_NAV_ITEMS.some(([page]) => page === currentPage)
+    ) {
+      mobileMoreButton.classList.add("active");
+    }
+
+    mobileBottomNav.appendChild(mobileMoreButton);
+    document.body.appendChild(mobileBottomNav);
+
+    function setMobileBarsHidden(isHidden) {
+      if (document.body.classList.contains("admin-sidebar-open")) {
+        return;
+      }
+
+      mobileTopbar.classList.toggle("is-hidden", isHidden);
+    }
+
+    let lastScrollY = window.scrollY;
+    let scrollTicking = false;
+
+    function updateMobileTopbarOnScroll() {
+      const currentScrollY = window.scrollY;
+      const delta = currentScrollY - lastScrollY;
+
+      if (currentScrollY < 24 || delta < -8) {
+        setMobileBarsHidden(false);
+      } else if (delta > 10) {
+        setMobileBarsHidden(true);
+      }
+
+      lastScrollY = currentScrollY;
+      scrollTicking = false;
+    }
+
+    window.addEventListener(
+      "scroll",
+      () => {
+        if (!scrollTicking) {
+          window.requestAnimationFrame(updateMobileTopbarOnScroll);
+          scrollTicking = true;
+        }
+      },
+      { passive: true },
+    );
+
+    function setAdminMenuOpen(isOpen) {
+      setSidebarOpen(isOpen);
+      mobileMoreButton.setAttribute("aria-expanded", String(isOpen));
+    }
+
+    menuButton.addEventListener("click", () => {
+      setAdminMenuOpen(!document.body.classList.contains("admin-sidebar-open"));
+    });
+    mobileTopbarAction.addEventListener("click", () => {
+      setAdminMenuOpen(!document.body.classList.contains("admin-sidebar-open"));
+    });
+    mobileMoreButton.addEventListener("click", () => {
+      const isOpen = !document.body.classList.contains("admin-sidebar-open");
+      setAdminMenuOpen(isOpen);
+    });
+    backdrop.addEventListener("click", () => setAdminMenuOpen(false));
 
     if (window.lucide) {
       window.lucide.createIcons();
@@ -503,6 +656,26 @@
         updateAdminCountdown();
       }, 60000);
     }
+  }
+
+  function setupAdminHeaderDescription(header) {
+    const headerContent = header?.querySelector("div");
+
+    if (!headerContent || headerContent.querySelector(".admin-header-description")) {
+      return;
+    }
+
+    const currentPage = window.location.pathname.split("/").pop() || "admin-dashboard.html";
+    const descriptionText = ADMIN_PAGE_DESCRIPTIONS[currentPage];
+
+    if (!descriptionText) {
+      return;
+    }
+
+    const description = document.createElement("p");
+    description.className = "admin-header-description";
+    description.textContent = descriptionText;
+    headerContent.appendChild(description);
   }
 
   function setupModalScrollLock() {
