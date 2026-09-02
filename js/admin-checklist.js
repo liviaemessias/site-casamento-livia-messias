@@ -76,6 +76,7 @@ const checklistCategoryFilter = document.getElementById("checklistCategoryFilter
 const checklistOwnerFilter = document.getElementById("checklistOwnerFilter");
 const checklistPriorityFilter = document.getElementById("checklistPriorityFilter");
 const checklistFilterCount = document.getElementById("checklistFilterCount");
+const checklistFiltersPanel = document.getElementById("checklistFiltersPanel");
 const clearChecklistFiltersButton = document.getElementById("clearChecklistFiltersButton");
 const refreshChecklistButton = document.getElementById("refreshChecklistButton");
 const exportChecklistButton = document.getElementById("exportChecklistButton");
@@ -534,7 +535,7 @@ function renderChecklistCard(item) {
   const completed = item.status === "completed";
 
   return `
-    <article class="checklist-task-card ${completed ? "is-completed" : ""}" data-checklist-item-id="${escapeAttribute(item.id)}">
+    <article class="checklist-task-card ${completed ? "is-completed" : ""}" data-checklist-item-id="${escapeAttribute(item.id)}" tabindex="0">
       <div class="checklist-task-main">
         <label class="admin-table-checkbox checklist-task-check" title="${completed ? "Marcar como pendente" : "Marcar como concluída"}">
           <input
@@ -591,6 +592,11 @@ function renderChecklistBoard() {
     visibleItems.length === cachedItems.length
       ? `${cachedItems.length} tarefa${cachedItems.length === 1 ? "" : "s"}`
       : `${visibleItems.length} de ${cachedItems.length} tarefa${cachedItems.length === 1 ? "" : "s"}`;
+  if (checklistFiltersPanel) {
+    checklistFiltersPanel.dataset.hasActiveFilters = String(
+      visibleItems.length !== cachedItems.length,
+    );
+  }
 
   renderPeriodNav(visibleItems);
 
@@ -1279,6 +1285,22 @@ closeResponsibleManagerButton?.addEventListener("click", closeResponsibleManager
 checklistResponsibleForm?.addEventListener("submit", saveResponsible);
 cancelResponsibleEditButton?.addEventListener("click", resetResponsibleForm);
 
+function shouldIgnoreChecklistCardClick(target) {
+  return Boolean(
+    target.closest(
+      "button, a, input, select, textarea, label, [data-checklist-action], [data-checklist-period-action], .admin-action-button",
+    ),
+  );
+}
+
+function openChecklistDetailsFromCard(card) {
+  const item = getItemById(card?.dataset.checklistItemId);
+
+  if (item) {
+    openDetailsModal(item);
+  }
+}
+
 checklistBoard?.addEventListener("click", (event) => {
   const periodAction = event.target.closest("[data-checklist-period-action]");
 
@@ -1316,7 +1338,30 @@ checklistBoard?.addEventListener("click", (event) => {
     if (item) {
       openDetailsModal(item);
     }
+
+    return;
   }
+
+  const card = event.target.closest("[data-checklist-item-id]");
+
+  if (card && !shouldIgnoreChecklistCardClick(event.target)) {
+    openChecklistDetailsFromCard(card);
+  }
+});
+
+checklistBoard?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  const card = event.target.closest("[data-checklist-item-id]");
+
+  if (!card || shouldIgnoreChecklistCardClick(event.target)) {
+    return;
+  }
+
+  event.preventDefault();
+  openChecklistDetailsFromCard(card);
 });
 
 checklistCategoryList?.addEventListener("click", (event) => {

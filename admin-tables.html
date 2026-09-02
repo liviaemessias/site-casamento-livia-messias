@@ -27,29 +27,29 @@
         <a class="admin-nav-link" href="./admin-settings.html">Configurações</a>
       </nav>
 
-      <section class="admin-section">
-        <div class="admin-section-header">
+      <section class="admin-section" id="tables">
+        <div class="admin-section-header admin-list-toolbar">
           <div>
             <p class="section-subtitle">Recepção</p>
-            <h2>Definição de Mesas</h2>
+            <h2>Mesas</h2>
           </div>
 
           <div class="admin-section-actions">
-            <button id="refreshTablesButton" class="admin-action-button icon-action">
+            <button id="refreshTablesButton" class="admin-action-button icon-action" aria-label="Atualizar mesas" title="Atualizar">
               <i data-lucide="refresh-cw" aria-hidden="true"></i>
-              Atualizar
+              <span>Atualizar</span>
             </button>
-            <button id="exportTablesButton" class="admin-action-button icon-action">
+            <button id="exportTablesButton" class="admin-action-button icon-action" aria-label="Exportar mesas" title="Exportar">
               <i data-lucide="download" aria-hidden="true"></i>
-              Exportar CSV
+              <span>Exportar</span>
             </button>
-            <button id="openTableOrderModalButton" class="admin-action-button icon-action">
+            <button id="openTableOrderModalButton" class="admin-action-button icon-action" aria-label="Organizar mesas" title="Organizar">
               <i data-lucide="list-ordered" aria-hidden="true"></i>
-              Organizar Ordem
+              <span>Organizar</span>
             </button>
-            <button id="openTableModalButton" class="admin-action-button icon-action success">
+            <button id="openTableModalButton" class="admin-action-button icon-action success" aria-label="Nova mesa" title="Nova mesa">
               <i data-lucide="plus" aria-hidden="true"></i>
-              Nova Mesa
+              <span>Nova</span>
             </button>
           </div>
         </div>
@@ -91,50 +91,59 @@
           </article>
         </section>
 
-        <div class="admin-filters" aria-label="Filtros de mesas">
-          <div class="admin-filter-field">
-            <label for="tableSearchInput">Buscar</label>
-            <input id="tableSearchInput" type="search" placeholder="Mesa, local, observação ou convidado" />
-          </div>
+        <details class="admin-filter-panel" id="tableFiltersPanel">
+          <summary class="admin-filter-panel-toggle">
+            <span>
+              <i data-lucide="sliders-horizontal" aria-hidden="true"></i>
+              Filtros
+            </span>
+            <small id="tableFilterCount" class="admin-filter-count"></small>
+          </summary>
 
-          <div class="admin-filter-field">
-            <label for="tableStatusFilter">Situação</label>
-            <select id="tableStatusFilter">
-              <option value="">Todas</option>
-              <option value="active">Ativas</option>
-              <option value="available">Com vagas</option>
-              <option value="full">Lotadas</option>
-              <option value="over">Acima da capacidade</option>
-              <option value="inactive">Inativas</option>
-            </select>
-          </div>
+          <div class="admin-filters" aria-label="Filtros de mesas">
+            <div class="admin-filter-field">
+              <label for="tableSearchInput">Buscar</label>
+              <input id="tableSearchInput" type="search" placeholder="Mesa, local, observação ou convidado" />
+            </div>
 
-          <div class="admin-filter-field">
-            <label for="tableGuestSideFilter">Convidado de</label>
-            <select id="tableGuestSideFilter">
-              <option value="">Todos</option>
-              <option value="couple">Casal</option>
-              <option value="bride">Noiva</option>
-              <option value="groom">Noivo</option>
-            </select>
-          </div>
+            <div class="admin-filter-field">
+              <label for="tableStatusFilter">Situação</label>
+              <select id="tableStatusFilter">
+                <option value="">Todas</option>
+                <option value="active">Ativas</option>
+                <option value="available">Com vagas</option>
+                <option value="full">Lotadas</option>
+                <option value="over">Acima da capacidade</option>
+                <option value="inactive">Inativas</option>
+              </select>
+            </div>
 
-          <div class="admin-filter-field">
-            <label for="tableGuestStatusFilter">Convidados</label>
-            <select id="tableGuestStatusFilter">
-              <option value="">Todos</option>
-              <option value="active">Ativos</option>
-              <option value="inactive">Inativos</option>
-            </select>
-          </div>
+            <div class="admin-filter-field">
+              <label for="tableGuestSideFilter">Convidado de</label>
+              <select id="tableGuestSideFilter">
+                <option value="">Todos</option>
+                <option value="couple">Casal</option>
+                <option value="bride">Noiva</option>
+                <option value="groom">Noivo</option>
+              </select>
+            </div>
 
-          <div class="admin-filter-actions">
-            <span id="tableFilterCount" class="admin-filter-count"></span>
-            <button id="clearTableFiltersButton" type="button" class="admin-clear-filters">
-              Limpar Filtros
-            </button>
+            <div class="admin-filter-field">
+              <label for="tableGuestStatusFilter">Convidados</label>
+              <select id="tableGuestStatusFilter">
+                <option value="">Todos</option>
+                <option value="active">Ativos</option>
+                <option value="inactive">Inativos</option>
+              </select>
+            </div>
+
+            <div class="admin-filter-actions">
+              <button id="clearTableFiltersButton" type="button" class="admin-clear-filters">
+                Limpar Filtros
+              </button>
+            </div>
           </div>
-        </div>
+        </details>
 
         <div id="tablesGrid" class="wedding-tables-grid"></div>
       </section>

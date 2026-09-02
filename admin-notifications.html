@@ -32,16 +32,16 @@
       </nav>
 
       <section class="admin-section" id="notifications">
-        <div class="admin-section-header">
+        <div class="admin-section-header admin-list-toolbar">
           <div>
             <p class="section-subtitle">Auditoria</p>
             <h2>Histórico de Notificações</h2>
           </div>
 
           <div class="admin-section-actions">
-            <button id="refreshNotificationsButton" class="admin-action-button icon-action">
+            <button id="refreshNotificationsButton" class="admin-action-button icon-action" aria-label="Atualizar notificações" title="Atualizar">
               <i data-lucide="refresh-cw" aria-hidden="true"></i>
-              Atualizar
+              <span>Atualizar</span>
             </button>
           </div>
         </div>
@@ -125,90 +125,99 @@
           </article>
         </section>
 
-        <div class="admin-filters" aria-label="Filtros de notificações">
-          <div class="admin-filter-field">
-            <label for="notificationSearchInput">Busca</label>
-            <input
-              type="search"
-              id="notificationSearchInput"
-              placeholder="Convidado, e-mail, presente, ID ou motivo"
-              autocomplete="off"
-            />
-          </div>
+        <details class="admin-filter-panel" id="notificationFiltersPanel">
+          <summary class="admin-filter-panel-toggle">
+            <span>
+              <i data-lucide="sliders-horizontal" aria-hidden="true"></i>
+              Filtros
+            </span>
+            <small id="notificationFilterCount" class="admin-filter-count"></small>
+          </summary>
 
-          <div class="admin-filter-field">
-            <label for="notificationStatusFilter">Status</label>
-            <select id="notificationStatusFilter">
-              <option value="">Todos</option>
-              <option value="sent">Enviadas</option>
-              <option value="failed">Falhas</option>
-              <option value="skipped">Ignoradas</option>
-              <option value="pending">Pendentes</option>
-              <option value="processing">Processando</option>
-              <option value="processed">Processadas</option>
-            </select>
-          </div>
+          <div class="admin-filters" aria-label="Filtros de notificações">
+            <div class="admin-filter-field">
+              <label for="notificationSearchInput">Busca</label>
+              <input
+                type="search"
+                id="notificationSearchInput"
+                placeholder="Convidado, e-mail, presente, ID ou motivo"
+                autocomplete="off"
+              />
+            </div>
 
-          <div class="admin-filter-field">
-            <label for="notificationTypeFilter">Tipo</label>
-            <select id="notificationTypeFilter">
-              <option value="">Todos</option>
-              <option value="rsvp_saved">RSVP</option>
-              <option value="wall_message_submitted">Recado enviado</option>
-              <option value="wall_message_approved">Recado aprovado</option>
-              <option value="wall_message_replied">Recado respondido</option>
-              <option value="gift_reserved">Presente reservado</option>
-              <option value="gift_reservation_reminder">Lembrete de presente</option>
-              <option value="gift_payment_reported">Pagamento informado</option>
-              <option value="gift_purchase_confirmed">Presente confirmado</option>
-              <option value="gift_reservation_released">Presente liberado</option>
-              <option value="gift_contribution_reserved">Cota reservada</option>
-              <option value="gift_contribution_reminder">Lembrete de cota</option>
-              <option value="gift_contribution_payment_reported">Pagamento de cota informado</option>
-              <option value="gift_contribution_confirmed">Cota confirmada</option>
-              <option value="gift_contribution_released">Cota liberada</option>
-            </select>
-          </div>
+            <div class="admin-filter-field">
+              <label for="notificationStatusFilter">Status</label>
+              <select id="notificationStatusFilter">
+                <option value="">Todos</option>
+                <option value="sent">Enviadas</option>
+                <option value="failed">Falhas</option>
+                <option value="skipped">Ignoradas</option>
+                <option value="pending">Pendentes</option>
+                <option value="processing">Processando</option>
+                <option value="processed">Processadas</option>
+              </select>
+            </div>
 
-          <div class="admin-filter-field">
-            <label for="notificationOriginFilter">Origem</label>
-            <select id="notificationOriginFilter">
-              <option value="">Todas</option>
-              <option value="automatic">Automática</option>
-              <option value="manual">Manual</option>
-            </select>
-          </div>
+            <div class="admin-filter-field">
+              <label for="notificationTypeFilter">Tipo</label>
+              <select id="notificationTypeFilter">
+                <option value="">Todos</option>
+                <option value="rsvp_saved">RSVP</option>
+                <option value="wall_message_submitted">Recado enviado</option>
+                <option value="wall_message_approved">Recado aprovado</option>
+                <option value="wall_message_replied">Recado respondido</option>
+                <option value="gift_reserved">Presente reservado</option>
+                <option value="gift_reservation_reminder">Lembrete de presente</option>
+                <option value="gift_payment_reported">Pagamento informado</option>
+                <option value="gift_purchase_confirmed">Presente confirmado</option>
+                <option value="gift_reservation_released">Presente liberado</option>
+                <option value="gift_contribution_reserved">Cota reservada</option>
+                <option value="gift_contribution_reminder">Lembrete de cota</option>
+                <option value="gift_contribution_payment_reported">Pagamento de cota informado</option>
+                <option value="gift_contribution_confirmed">Cota confirmada</option>
+                <option value="gift_contribution_released">Cota liberada</option>
+              </select>
+            </div>
 
-          <div class="admin-filter-field">
-            <label for="notificationRecipientFilter">Destinatário</label>
-            <select id="notificationRecipientFilter">
-              <option value="">Todos</option>
-              <option value="admin">Admin</option>
-              <option value="guest">Convidado</option>
-            </select>
-          </div>
+            <div class="admin-filter-field">
+              <label for="notificationOriginFilter">Origem</label>
+              <select id="notificationOriginFilter">
+                <option value="">Todas</option>
+                <option value="automatic">Automática</option>
+                <option value="manual">Manual</option>
+              </select>
+            </div>
 
-          <div class="admin-filter-field">
-            <label for="notificationPeriodFilter">Período</label>
-            <select id="notificationPeriodFilter">
-              <option value="">Todos</option>
-              <option value="today">Hoje</option>
-              <option value="7">Últimos 7 dias</option>
-              <option value="30">Últimos 30 dias</option>
-            </select>
-          </div>
+            <div class="admin-filter-field">
+              <label for="notificationRecipientFilter">Destinatário</label>
+              <select id="notificationRecipientFilter">
+                <option value="">Todos</option>
+                <option value="admin">Admin</option>
+                <option value="guest">Convidado</option>
+              </select>
+            </div>
 
-          <div class="admin-filter-actions">
-            <span id="notificationFilterCount" class="admin-filter-count"></span>
-            <button
-              type="button"
-              id="clearNotificationFiltersButton"
-              class="admin-clear-filters"
-            >
-              Limpar Filtros
-            </button>
+            <div class="admin-filter-field">
+              <label for="notificationPeriodFilter">Período</label>
+              <select id="notificationPeriodFilter">
+                <option value="">Todos</option>
+                <option value="today">Hoje</option>
+                <option value="7">Últimos 7 dias</option>
+                <option value="30">Últimos 30 dias</option>
+              </select>
+            </div>
+
+            <div class="admin-filter-actions">
+              <button
+                type="button"
+                id="clearNotificationFiltersButton"
+                class="admin-clear-filters"
+              >
+                Limpar Filtros
+              </button>
+            </div>
           </div>
-        </div>
+        </details>
 
         <div class="admin-table-wrapper">
           <table class="admin-table notifications-table">
@@ -251,6 +260,11 @@
             <tbody id="notificationsTableBody"></tbody>
           </table>
         </div>
+        <div
+          id="notificationsMobileList"
+          class="admin-mobile-card-list notifications-mobile-list"
+          aria-label="Notificações"
+        ></div>
 
         <div class="admin-pagination" aria-label="Paginação de notificações">
           <button
@@ -278,17 +292,22 @@
       </section>
     </main>
 
-    <div class="admin-modal" id="notificationDetailsModal">
+    <div class="admin-modal" id="notificationDetailsModal" aria-hidden="true">
       <div class="admin-modal-content admin-details-modal-content">
-        <button
-          type="button"
-          class="admin-modal-close"
-          id="closeNotificationDetailsModalButton"
-        >
-          &times;
-        </button>
-
-        <h2 id="notificationDetailsTitle">Detalhes da Notificação</h2>
+        <div class="admin-modal-header">
+          <div>
+            <p class="section-subtitle">Notificações</p>
+            <h2 id="notificationDetailsTitle">Detalhes da Notificação</h2>
+          </div>
+          <button
+            type="button"
+            class="admin-modal-close"
+            id="closeNotificationDetailsModalButton"
+            aria-label="Fechar"
+          >
+            &times;
+          </button>
+        </div>
         <div id="notificationDetailsContent" class="admin-details-content"></div>
       </div>
     </div>

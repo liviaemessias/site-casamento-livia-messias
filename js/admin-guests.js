@@ -36,6 +36,8 @@ const clearGuestFiltersButton = document.getElementById(
   "clearGuestFiltersButton",
 );
 const guestsTableBody = document.getElementById("guestsTableBody");
+const guestsMobileList = document.getElementById("guestsMobileList");
+const guestFiltersPanel = document.getElementById("guestFiltersPanel");
 const guestModal = document.getElementById("guestModal");
 const openGuestModalButton = document.getElementById("openGuestModalButton");
 const closeGuestModalButton = document.getElementById("closeGuestModalButton");
@@ -459,7 +461,7 @@ function renderInviteSentToggle(guest) {
   const sent = Boolean(guest.invite_sent);
 
   return `
-    <label class="admin-table-checkbox" title="${sent ? "Marcar convite como não enviado" : "Marcar convite como enviado"}">
+    <label class="admin-toggle-switch guest-invite-toggle" title="${sent ? "Marcar convite como não enviado" : "Marcar convite como enviado"}">
       <input
         type="checkbox"
         data-guest-action="toggle-invite-sent"
@@ -467,6 +469,7 @@ function renderInviteSentToggle(guest) {
         ${sent ? "checked" : ""}
         aria-label="${sent ? "Convite enviado" : "Convite não enviado"}"
       />
+      <span aria-hidden="true"></span>
     </label>
   `;
 }
@@ -840,13 +843,14 @@ function renderGuestsTable(guests) {
         </td>
       </tr>
     `);
+    renderGuestsMobileList(guests);
     return;
   }
 
   replaceSafeContent(guestsTableBody, guests
     .map(
       (guest) => `
-        <tr>
+        <tr data-guest-row-id="${escapeAttribute(guest.id)}" tabindex="0">
           <td>
             <strong class="guest-table-name">${safeText(guest.name)}</strong>
             <span class="admin-muted guest-table-type">
@@ -897,6 +901,120 @@ function renderGuestsTable(guests) {
         </tr>
       `,
     )
+    .join(""));
+  renderGuestsMobileList(guests);
+}
+
+function renderGuestsMobileList(guests) {
+  if (!guestsMobileList) {
+    return;
+  }
+
+  if (!guests.length) {
+    replaceSafeContent(guestsMobileList, `
+      <div class="admin-mobile-empty-state">
+        Nenhum convidado encontrado para os filtros selecionados.
+      </div>
+    `);
+    return;
+  }
+
+  replaceSafeContent(guestsMobileList, guests
+    .map((guest) => {
+      const inviteSentLabel = getInviteSentLabel(guest);
+      const shortInviteSentLabel = guest.invite_sent ? "Enviado" : "Pendente";
+      const nextInviteSent = !Boolean(guest.invite_sent);
+
+      return `
+        <article class="admin-mobile-list-card guest-mobile-card" data-guest-card-id="${escapeAttribute(guest.id)}" tabindex="0">
+          <div class="admin-mobile-card-main">
+            <div>
+              <strong>${safeText(guest.name)}</strong>
+              <span>${safeText(getInviteTypeLabel(guest.invite_type))} · ${safeText(getGuestTableLabel(guest))}</span>
+            </div>
+            <span
+              class="guest-table-side ${safeText(getGuestSideClass(guest.guest_side))}"
+              title="Convidado de: ${safeText(getGuestSideLabel(guest.guest_side))}"
+            >
+              <span class="guest-table-side-dot" aria-hidden="true"></span>
+              ${safeText(getGuestSideLabel(guest.guest_side))}
+            </span>
+          </div>
+
+          <div class="admin-mobile-card-badges">
+            ${
+              guest.confirmed
+                ? '<span class="admin-badge badge-available">RSVP Sim</span>'
+                : '<span class="admin-badge badge-muted">RSVP pendente</span>'
+            }
+            ${renderInviteSentBadge(guest)}
+            ${
+              guest.active
+                ? '<span class="admin-badge badge-available">Ativo</span>'
+                : '<span class="admin-badge badge-danger">Inativo</span>'
+            }
+          </div>
+
+          <dl class="admin-mobile-card-meta">
+            <div>
+              <dt>Acomp.</dt>
+              <dd>${Number(guest.max_guests || 0)}</dd>
+            </div>
+            <div>
+              <dt>Acessos</dt>
+              <dd>${Number(guest.access_count || 0)}</dd>
+            </div>
+            <div>
+              <dt>Código</dt>
+              <dd>
+                <button
+                  type="button"
+                  class="admin-code-button"
+                  data-guest-action="copy-code"
+                  data-invite-code="${escapeAttribute(guest.invite_code)}"
+                  title="Copiar código"
+                  aria-label="Copiar código ${escapeAttribute(guest.invite_code)}"
+                >
+                  <code>${safeText(guest.invite_code)}</code>
+                </button>
+              </dd>
+            </div>
+          </dl>
+
+          <div class="admin-mobile-card-actions">
+            <button
+              class="admin-action-button icon-action"
+              data-guest-action="details"
+              data-guest-id="${escapeAttribute(guest.id)}"
+            >
+              ${renderAdminIcon("eye")}
+              Detalhes
+            </button>
+            <button
+              class="admin-action-button icon-action"
+              data-guest-action="edit"
+              data-guest-id="${escapeAttribute(guest.id)}"
+            >
+              ${renderAdminIcon("edit")}
+              Editar
+            </button>
+            <button
+              class="admin-action-button icon-action guest-mobile-invite-toggle-button"
+              data-guest-action="toggle-invite-sent"
+              data-guest-id="${escapeAttribute(guest.id)}"
+              data-next-invite-sent="${String(nextInviteSent)}"
+              aria-pressed="${String(Boolean(guest.invite_sent))}"
+              title="${safeText(inviteSentLabel)}"
+            >
+              <span class="admin-toggle-switch is-readonly ${guest.invite_sent ? "is-on" : ""}" aria-hidden="true">
+                <span></span>
+              </span>
+              <span>${safeText(shortInviteSentLabel)}</span>
+            </button>
+          </div>
+        </article>
+      `;
+    })
     .join(""));
 }
 
@@ -1068,6 +1186,10 @@ function updateGuestFilterCount(count) {
     count === total
       ? `${total} convidado${total === 1 ? "" : "s"}`
       : `${count} de ${total} convidado${total === 1 ? "" : "s"}`;
+
+  if (guestFiltersPanel) {
+    guestFiltersPanel.dataset.hasActiveFilters = String(count !== total);
+  }
 }
 
 function findCachedGuestById(guestId) {
@@ -1518,6 +1640,25 @@ function handleGuestAction(action, guestId, button) {
   if (action === "remove-table") {
     removeGuestFromTable(guest);
   }
+}
+
+function shouldIgnoreGuestItemClick(target) {
+  return Boolean(
+    target.closest(
+      "button, a, input, select, textarea, label, [data-guest-action], .admin-action-button",
+    ),
+  );
+}
+
+function openGuestDetailsFromInteractiveItem(element) {
+  const guestId = element?.dataset.guestRowId || element?.dataset.guestCardId;
+  const guest = guestId ? findCachedGuestById(guestId) : null;
+
+  if (!guest) {
+    return;
+  }
+
+  openGuestDetailsModal(guest);
 }
 
 function closeAdminRSVPModal() {
@@ -2172,10 +2313,62 @@ guestsTableBody?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-guest-action]");
 
   if (!button) {
+    const row = event.target.closest("[data-guest-row-id]");
+
+    if (row && !shouldIgnoreGuestItemClick(event.target)) {
+      openGuestDetailsFromInteractiveItem(row);
+    }
+
     return;
   }
 
   handleGuestAction(button.dataset.guestAction, button.dataset.guestId, button);
+});
+
+guestsTableBody?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  const row = event.target.closest("[data-guest-row-id]");
+
+  if (!row || shouldIgnoreGuestItemClick(event.target)) {
+    return;
+  }
+
+  event.preventDefault();
+  openGuestDetailsFromInteractiveItem(row);
+});
+
+guestsMobileList?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-guest-action]");
+
+  if (!button) {
+    const card = event.target.closest("[data-guest-card-id]");
+
+    if (card && !shouldIgnoreGuestItemClick(event.target)) {
+      openGuestDetailsFromInteractiveItem(card);
+    }
+
+    return;
+  }
+
+  handleGuestAction(button.dataset.guestAction, button.dataset.guestId, button);
+});
+
+guestsMobileList?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  const card = event.target.closest("[data-guest-card-id]");
+
+  if (!card || shouldIgnoreGuestItemClick(event.target)) {
+    return;
+  }
+
+  event.preventDefault();
+  openGuestDetailsFromInteractiveItem(card);
 });
 
 guestDetailsContent?.addEventListener("click", (event) => {

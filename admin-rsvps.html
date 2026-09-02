@@ -36,103 +36,111 @@
       </nav>
 
       <section class="admin-section" id="rsvps">
-        <div class="admin-section-header">
-          <div>
-            <p class="section-subtitle">RSVP</p>
+        <div class="admin-section-header admin-list-toolbar">
+          <div class="admin-list-toolbar-title">
+            <p class="section-subtitle">Gestão</p>
 
-            <h2>Confirmações de Presença</h2>
+            <h2>RSVPs</h2>
           </div>
 
           <div class="admin-section-actions">
-            <button id="refreshRSVPsButton" class="admin-action-button icon-action">
+            <button id="refreshRSVPsButton" class="admin-action-button icon-action" aria-label="Atualizar RSVPs" title="Atualizar">
               <i data-lucide="refresh-cw" aria-hidden="true"></i>
-              Atualizar
+              <span>Atualizar</span>
             </button>
 
-            <button id="exportRSVPsButton" class="admin-action-button icon-action">
+            <button id="exportRSVPsButton" class="admin-action-button icon-action" aria-label="Exportar RSVPs" title="Exportar">
               <i data-lucide="download" aria-hidden="true"></i>
-              Exportar CSV
+              <span>Exportar</span>
             </button>
 
-            <a class="admin-action-button icon-action success" href="./admin-guests.html">
+            <a class="admin-action-button icon-action success" href="./admin-guests.html" aria-label="RSVP manual" title="RSVP manual">
               <i data-lucide="plus" aria-hidden="true"></i>
-              RSVP manual
+              <span>Manual</span>
             </a>
           </div>
         </div>
 
-        <div class="admin-filters" aria-label="Filtros de RSVP">
-          <div class="admin-filter-field">
-            <label for="rsvpSearchInput">Buscar</label>
-            <input
-              type="search"
-              id="rsvpSearchInput"
-              placeholder="Convidado, acompanhante ou mensagem"
-            />
-          </div>
+        <details class="admin-filter-panel" id="rsvpFiltersPanel">
+          <summary class="admin-filter-panel-toggle">
+            <span>
+              <i data-lucide="sliders-horizontal" aria-hidden="true"></i>
+              Filtros
+            </span>
+            <small id="rsvpFilterCount" class="admin-filter-count"></small>
+          </summary>
 
-          <div class="admin-filter-field">
-            <label for="rsvpPresenceFilter">Presença</label>
-            <select id="rsvpPresenceFilter">
-              <option value="">Todas</option>
-              <option value="Sim">Sim</option>
-              <option value="Não">Não</option>
-            </select>
-          </div>
+          <div class="admin-filters" aria-label="Filtros de RSVP">
+            <div class="admin-filter-field">
+              <label for="rsvpSearchInput">Buscar</label>
+              <input
+                type="search"
+                id="rsvpSearchInput"
+                placeholder="Convidado, acompanhante ou mensagem"
+              />
+            </div>
 
-          <div class="admin-filter-field">
-            <label for="rsvpCompanionFilter">Acompanhantes</label>
-            <select id="rsvpCompanionFilter">
-              <option value="">Todos</option>
-              <option value="with">Com acompanhantes</option>
-              <option value="without">Sem acompanhantes</option>
-            </select>
-          </div>
+            <div class="admin-filter-field">
+              <label for="rsvpPresenceFilter">Presença</label>
+              <select id="rsvpPresenceFilter">
+                <option value="">Todas</option>
+                <option value="Sim">Sim</option>
+                <option value="Não">Não</option>
+              </select>
+            </div>
 
-          <div class="admin-filter-field">
-            <label for="rsvpRestrictionFilter">Restrição Alimentar</label>
-            <select id="rsvpRestrictionFilter">
-              <option value="">Todas</option>
-              <option value="with">Com restrição</option>
-              <option value="without">Sem restrição</option>
-            </select>
-          </div>
+            <div class="admin-filter-field">
+              <label for="rsvpCompanionFilter">Acompanhantes</label>
+              <select id="rsvpCompanionFilter">
+                <option value="">Todos</option>
+                <option value="with">Com acompanhantes</option>
+                <option value="without">Sem acompanhantes</option>
+              </select>
+            </div>
 
-          <div class="admin-filter-field">
-            <label for="rsvpBuffetFilter">Buffet</label>
-            <select id="rsvpBuffetFilter">
-              <option value="">Todas as Categorias</option>
-              <option value="paying">Com Pagantes</option>
-              <option value="children">Com Crianças</option>
-              <option value="child-paying">Com Criança Pagante</option>
-              <option value="child-non-paying">
-                Com Criança Não Pagante
-              </option>
-              <option value="child-unknown">Com Criança Sem Idade</option>
-            </select>
-          </div>
+            <div class="admin-filter-field">
+              <label for="rsvpRestrictionFilter">Restrição Alimentar</label>
+              <select id="rsvpRestrictionFilter">
+                <option value="">Todas</option>
+                <option value="with">Com restrição</option>
+                <option value="without">Sem restrição</option>
+              </select>
+            </div>
 
-          <div class="admin-filter-field">
-            <label for="rsvpTableFilter">Mesa</label>
-            <select id="rsvpTableFilter">
-              <option value="">Todas</option>
-              <option value="assigned">Com mesa</option>
-              <option value="unassigned">Sem mesa</option>
-            </select>
-          </div>
+            <div class="admin-filter-field">
+              <label for="rsvpBuffetFilter">Buffet</label>
+              <select id="rsvpBuffetFilter">
+                <option value="">Todas as Categorias</option>
+                <option value="paying">Com Pagantes</option>
+                <option value="children">Com Crianças</option>
+                <option value="child-paying">Com Criança Pagante</option>
+                <option value="child-non-paying">
+                  Com Criança Não Pagante
+                </option>
+                <option value="child-unknown">Com Criança Sem Idade</option>
+              </select>
+            </div>
 
-          <div class="admin-filter-actions">
-            <span id="rsvpFilterCount" class="admin-filter-count"></span>
+            <div class="admin-filter-field">
+              <label for="rsvpTableFilter">Mesa</label>
+              <select id="rsvpTableFilter">
+                <option value="">Todas</option>
+                <option value="assigned">Com mesa</option>
+                <option value="unassigned">Sem mesa</option>
+              </select>
+            </div>
 
-            <button
-              type="button"
-              id="clearRSVPFiltersButton"
-              class="admin-clear-filters"
-            >
-              Limpar Filtros
-            </button>
+            <div class="admin-filter-actions">
+              <button
+                type="button"
+                id="clearRSVPFiltersButton"
+                class="admin-clear-filters"
+              >
+                Limpar Filtros
+              </button>
+            </div>
           </div>
-        </div>
+        </details>
 
         <div class="admin-table-wrapper">
           <table class="admin-table rsvps-table">
@@ -167,6 +175,12 @@
             <tbody id="rsvpsTableBody"></tbody>
           </table>
         </div>
+
+        <div
+          id="rsvpsMobileList"
+          class="admin-mobile-card-list rsvps-mobile-list"
+          aria-live="polite"
+        ></div>
       </section>
     </main>
 

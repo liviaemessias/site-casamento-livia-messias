@@ -30,21 +30,21 @@
         <a class="admin-nav-link" href="./admin-settings.html">Configurações</a>
       </nav>
 
-      <section class="admin-section">
-        <div class="admin-section-header">
+      <section class="admin-section" id="financialPayments">
+        <div class="admin-section-header admin-list-toolbar">
           <div>
             <p class="section-subtitle">Vencimentos e pagamentos</p>
             <h2>Parcelas</h2>
           </div>
 
           <div class="admin-section-actions">
-            <button id="refreshFinancialButton" class="admin-action-button icon-action">
+            <button id="refreshFinancialButton" class="admin-action-button icon-action" aria-label="Atualizar parcelas" title="Atualizar">
               <i data-lucide="refresh-cw" aria-hidden="true"></i>
-              Atualizar
+              <span>Atualizar</span>
             </button>
-            <a class="admin-action-button icon-action success" href="./admin-financial-expenses.html">
+            <a class="admin-action-button icon-action success" href="./admin-financial-expenses.html" aria-label="Novo gasto real" title="Novo gasto real">
               <i data-lucide="plus" aria-hidden="true"></i>
-              Gasto Real
+              <span>Novo</span>
             </a>
           </div>
         </div>
@@ -74,42 +74,51 @@
             <small id="financialAllPaymentsSummary"></small>
           </div>
 
-          <div class="admin-filters-grid financial-payments-filters">
-            <div class="admin-filter-field">
-              <label for="financialPaymentSearchInput">Buscar</label>
-              <input id="financialPaymentSearchInput" type="search" placeholder="Gasto, parcela, categoria, pagador..." />
+          <details class="admin-filter-panel" id="financialPaymentFiltersPanel">
+            <summary class="admin-filter-panel-toggle">
+              <span>
+                <i data-lucide="sliders-horizontal" aria-hidden="true"></i>
+                Filtros
+              </span>
+              <small id="financialPaymentFilterCount" class="admin-filter-count"></small>
+            </summary>
+
+            <div class="admin-filters-grid financial-payments-filters">
+              <div class="admin-filter-field">
+                <label for="financialPaymentSearchInput">Buscar</label>
+                <input id="financialPaymentSearchInput" type="search" placeholder="Gasto, parcela, categoria, pagador..." />
+              </div>
+              <div class="admin-filter-field">
+                <label for="financialPaymentCategoryFilter">Categoria</label>
+                <select id="financialPaymentCategoryFilter"></select>
+              </div>
+              <div class="admin-filter-field">
+                <label for="financialPaymentStatusFilter">Status</label>
+                <select id="financialPaymentStatusFilter"></select>
+              </div>
+              <div class="admin-filter-field">
+                <label for="financialPaymentPayerFilter">Pagador</label>
+                <select id="financialPaymentPayerFilter"></select>
+              </div>
+              <div class="admin-filter-field">
+                <label for="financialPaymentDueFromFilter">Vencimento de</label>
+                <input id="financialPaymentDueFromFilter" type="date" />
+              </div>
+              <div class="admin-filter-field">
+                <label for="financialPaymentDueToFilter">Vencimento até</label>
+                <input id="financialPaymentDueToFilter" type="date" />
+              </div>
+              <div class="admin-filter-actions">
+                <button
+                  type="button"
+                  id="clearFinancialPaymentFiltersButton"
+                  class="admin-clear-filters"
+                >
+                  Limpar Filtros
+                </button>
+              </div>
             </div>
-            <div class="admin-filter-field">
-              <label for="financialPaymentCategoryFilter">Categoria</label>
-              <select id="financialPaymentCategoryFilter"></select>
-            </div>
-            <div class="admin-filter-field">
-              <label for="financialPaymentStatusFilter">Status</label>
-              <select id="financialPaymentStatusFilter"></select>
-            </div>
-            <div class="admin-filter-field">
-              <label for="financialPaymentPayerFilter">Pagador</label>
-              <select id="financialPaymentPayerFilter"></select>
-            </div>
-            <div class="admin-filter-field">
-              <label for="financialPaymentDueFromFilter">Vencimento de</label>
-              <input id="financialPaymentDueFromFilter" type="date" />
-            </div>
-            <div class="admin-filter-field">
-              <label for="financialPaymentDueToFilter">Vencimento até</label>
-              <input id="financialPaymentDueToFilter" type="date" />
-            </div>
-            <div class="admin-filter-actions">
-              <span id="financialPaymentFilterCount" class="admin-filter-count"></span>
-              <button
-                type="button"
-                id="clearFinancialPaymentFiltersButton"
-                class="admin-clear-filters"
-              >
-                Limpar Filtros
-              </button>
-            </div>
-          </div>
+          </details>
 
           <div class="admin-table-wrapper">
             <table class="admin-table financial-table financial-full-payments-table">
@@ -161,6 +170,11 @@
               <tbody id="financialAllPaymentsTableBody"></tbody>
             </table>
           </div>
+          <div
+            id="financialAllPaymentsMobileList"
+            class="admin-mobile-card-list financial-payment-mobile-list"
+            aria-label="Parcelas"
+          ></div>
         </section>
       </section>
     </main>

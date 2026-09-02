@@ -8,6 +8,9 @@ const settingsForm = document.getElementById("settingsForm");
 const notificationPreferencesTableBody = document.getElementById(
   "notificationPreferencesTableBody",
 );
+const notificationPreferencesMobileList = document.getElementById(
+  "notificationPreferencesMobileList",
+);
 const refreshNotificationPreferencesButton = document.getElementById(
   "refreshNotificationPreferencesButton",
 );
@@ -90,11 +93,75 @@ function renderPreferenceCheckbox(preference, field, label) {
         data-notification-preference-field="${escapeAttribute(field)}"
         aria-label="${escapeAttribute(`${label}: ${preference.label}`)}"
       />
+      <span aria-hidden="true"></span>
     </label>
   `;
 }
 
+function createNotificationPreferenceToggle(preference, field, label) {
+  const wrapper = document.createElement("label");
+  const input = document.createElement("input");
+
+  wrapper.className = "admin-table-checkbox notification-preference-toggle";
+  input.type = "checkbox";
+  input.checked = Boolean(preference[field]);
+  input.dataset.notificationPreferenceAction = "toggle";
+  input.dataset.notificationPreferenceEvent = preference.event_type;
+  input.dataset.notificationPreferenceField = field;
+  input.setAttribute("aria-label", `${label}: ${preference.label}`);
+  wrapper.append(input, document.createElement("span"));
+
+  return wrapper;
+}
+
+function createNotificationPreferenceMobileCard(preference) {
+  const card = document.createElement("article");
+  const header = document.createElement("div");
+  const titleGroup = document.createElement("div");
+  const title = document.createElement("strong");
+  const description = document.createElement("span");
+  const group = document.createElement("span");
+  const toggles = document.createElement("div");
+  const options = [
+    ["automatic_enabled", "Automática"],
+    ["manual_enabled", "Manual"],
+    ["admin_enabled", "Admin"],
+    ["guest_enabled", "Convidado"],
+  ];
+
+  card.className = "notification-preference-mobile-card";
+  header.className = "notification-preference-mobile-header";
+  titleGroup.className = "notification-preference-mobile-title-group";
+  title.textContent = preference.label || "-";
+  description.textContent = preference.description || preference.event_type || "";
+  group.className = "notification-preference-mobile-group";
+  group.textContent = getNotificationGroupLabel(preference.event_group);
+  titleGroup.append(title);
+
+  if (description.textContent) {
+    titleGroup.appendChild(description);
+  }
+
+  header.append(titleGroup, group);
+  toggles.className = "notification-preference-mobile-toggles";
+  options.forEach(([field, label]) => {
+    const item = document.createElement("div");
+    const itemLabel = document.createElement("span");
+
+    item.className = "notification-preference-mobile-toggle";
+    itemLabel.textContent = label;
+    item.append(itemLabel, createNotificationPreferenceToggle(preference, field, label));
+    toggles.appendChild(item);
+  });
+
+  card.append(header, toggles);
+
+  return card;
+}
+
 function renderNotificationPreferences(preferences) {
+  notificationPreferencesMobileList?.replaceChildren();
+
   if (!preferences.length) {
     replaceSafeContent(
       notificationPreferencesTableBody,
@@ -106,6 +173,13 @@ function renderNotificationPreferences(preferences) {
         </tr>
       `,
     );
+    if (notificationPreferencesMobileList) {
+      const emptyState = document.createElement("div");
+
+      emptyState.className = "admin-mobile-empty-state";
+      emptyState.textContent = "Nenhuma preferência de notificação cadastrada.";
+      notificationPreferencesMobileList.appendChild(emptyState);
+    }
     return;
   }
 
@@ -131,6 +205,25 @@ function renderNotificationPreferences(preferences) {
       )
       .join(""),
   );
+
+  if (notificationPreferencesMobileList) {
+    preferences.forEach((preference) => {
+      notificationPreferencesMobileList.appendChild(
+        createNotificationPreferenceMobileCard(preference),
+      );
+    });
+  }
+}
+
+function setRefreshNotificationPreferencesButtonLabel(label) {
+  const icon = document.createElement("i");
+  const text = document.createElement("span");
+
+  icon.setAttribute("data-lucide", "refresh-cw");
+  icon.setAttribute("aria-hidden", "true");
+  text.textContent = label;
+  refreshNotificationPreferencesButton.replaceChildren(icon, text);
+  window.lucide?.createIcons();
 }
 
 async function loadSettings() {
@@ -149,14 +242,14 @@ async function loadSettings() {
 
 async function loadNotificationPreferences() {
   refreshNotificationPreferencesButton.disabled = true;
-  refreshNotificationPreferencesButton.textContent = "Atualizando...";
+  setRefreshNotificationPreferencesButtonLabel("Atualizando...");
 
   const { data, error } = await supabaseClient.rpc(
     "admin_list_notification_preferences",
   );
 
   refreshNotificationPreferencesButton.disabled = false;
-  refreshNotificationPreferencesButton.textContent = "Atualizar Preferências";
+  setRefreshNotificationPreferencesButtonLabel("Atualizar");
 
   if (error) {
     console.error(error);
@@ -172,16 +265,24 @@ async function updateNotificationPreference(eventType, field, checked, input) {
   const preference = cachedNotificationPreferences.find(
     (item) => item.event_type === eventType,
   );
+  const relatedInputs = document.querySelectorAll(
+    `[data-notification-preference-event="${CSS.escape(eventType)}"][data-notification-preference-field="${CSS.escape(field)}"]`,
+  );
 
   if (!preference) {
     showAdminToast("⚠️ Preferência não encontrada. Atualize a lista");
-    input.checked = !checked;
+    relatedInputs.forEach((relatedInput) => {
+      relatedInput.checked = !checked;
+    });
     return;
   }
 
   const previousValue = preference[field];
   preference[field] = checked;
-  input.disabled = true;
+  relatedInputs.forEach((relatedInput) => {
+    relatedInput.checked = checked;
+    relatedInput.disabled = true;
+  });
 
   const { data, error } = await supabaseClient.rpc(
     "admin_update_notification_preference",
@@ -195,11 +296,16 @@ async function updateNotificationPreference(eventType, field, checked, input) {
   );
 
   input.disabled = false;
+  relatedInputs.forEach((relatedInput) => {
+    relatedInput.disabled = false;
+  });
 
   if (error || data !== true) {
     console.error(error);
     preference[field] = previousValue;
-    input.checked = previousValue;
+    relatedInputs.forEach((relatedInput) => {
+      relatedInput.checked = previousValue;
+    });
     showAdminToast("⚠️ Não foi possível salvar a preferência");
     return;
   }
@@ -320,6 +426,21 @@ refreshNotificationPreferencesButton.addEventListener("click", () =>
 );
 
 notificationPreferencesTableBody.addEventListener("change", (event) => {
+  const input = event.target.closest("[data-notification-preference-action]");
+
+  if (!input) {
+    return;
+  }
+
+  updateNotificationPreference(
+    input.dataset.notificationPreferenceEvent,
+    input.dataset.notificationPreferenceField,
+    input.checked,
+    input,
+  );
+});
+
+notificationPreferencesMobileList?.addEventListener("change", (event) => {
   const input = event.target.closest("[data-notification-preference-action]");
 
   if (!input) {

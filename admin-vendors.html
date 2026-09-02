@@ -28,25 +28,25 @@
         <a class="admin-nav-link" href="./admin-settings.html">Configurações</a>
       </nav>
 
-      <section class="admin-section">
-        <div class="admin-section-header">
+      <section class="admin-section" id="vendors">
+        <div class="admin-section-header admin-list-toolbar">
           <div>
             <p class="section-subtitle">Site público</p>
             <h2>Fornecedores do Casamento</h2>
           </div>
 
           <div class="admin-section-actions">
-            <button id="refreshVendorsButton" class="admin-action-button icon-action">
+            <button id="refreshVendorsButton" class="admin-action-button icon-action" aria-label="Atualizar fornecedores" title="Atualizar">
               <i data-lucide="refresh-cw" aria-hidden="true"></i>
-              Atualizar
+              <span>Atualizar</span>
             </button>
-            <button id="openVendorOrderModalButton" class="admin-action-button icon-action">
+            <button id="openVendorOrderModalButton" class="admin-action-button icon-action" aria-label="Organizar fornecedores" title="Organizar">
               <i data-lucide="list-ordered" aria-hidden="true"></i>
-              Organizar Ordem
+              <span>Organizar</span>
             </button>
-            <button id="openVendorModalButton" class="admin-action-button icon-action success">
+            <button id="openVendorModalButton" class="admin-action-button icon-action success" aria-label="Novo fornecedor" title="Novo fornecedor">
               <i data-lucide="plus" aria-hidden="true"></i>
-              Novo Fornecedor
+              <span>Novo</span>
             </button>
           </div>
         </div>
@@ -82,52 +82,61 @@
           </article>
         </section>
 
-        <div class="admin-filters" aria-label="Filtros de fornecedores">
-          <div class="admin-filter-field">
-            <label for="vendorSearchInput">Buscar</label>
-            <input
-              type="search"
-              id="vendorSearchInput"
-              placeholder="Nome, categoria, responsável ou descrição"
-            />
-          </div>
+        <details class="admin-filter-panel" id="vendorFiltersPanel">
+          <summary class="admin-filter-panel-toggle">
+            <span>
+              <i data-lucide="sliders-horizontal" aria-hidden="true"></i>
+              Filtros
+            </span>
+            <small id="vendorFilterCount" class="admin-filter-count"></small>
+          </summary>
 
-          <div class="admin-filter-field">
-            <label for="vendorCategoryFilter">Categoria</label>
-            <select id="vendorCategoryFilter">
-              <option value="">Todas</option>
-            </select>
-          </div>
+          <div class="admin-filters" aria-label="Filtros de fornecedores">
+            <div class="admin-filter-field">
+              <label for="vendorSearchInput">Buscar</label>
+              <input
+                type="search"
+                id="vendorSearchInput"
+                placeholder="Nome, categoria, responsável ou descrição"
+              />
+            </div>
 
-          <div class="admin-filter-field">
-            <label for="vendorVisibilityFilter">Visibilidade</label>
-            <select id="vendorVisibilityFilter">
-              <option value="">Todos</option>
-              <option value="visible">Visíveis</option>
-              <option value="hidden">Ocultos</option>
-            </select>
-          </div>
+            <div class="admin-filter-field">
+              <label for="vendorCategoryFilter">Categoria</label>
+              <select id="vendorCategoryFilter">
+                <option value="">Todas</option>
+              </select>
+            </div>
 
-          <div class="admin-filter-field">
-            <label for="vendorFeaturedFilter">Destaque</label>
-            <select id="vendorFeaturedFilter">
-              <option value="">Todos</option>
-              <option value="featured">Destaques</option>
-              <option value="regular">Sem destaque</option>
-            </select>
-          </div>
+            <div class="admin-filter-field">
+              <label for="vendorVisibilityFilter">Visibilidade</label>
+              <select id="vendorVisibilityFilter">
+                <option value="">Todos</option>
+                <option value="visible">Visíveis</option>
+                <option value="hidden">Ocultos</option>
+              </select>
+            </div>
 
-          <div class="admin-filter-actions">
-            <span id="vendorFilterCount" class="admin-filter-count"></span>
-            <button
-              type="button"
-              id="clearVendorFiltersButton"
-              class="admin-clear-filters"
-            >
-              Limpar Filtros
-            </button>
+            <div class="admin-filter-field">
+              <label for="vendorFeaturedFilter">Destaque</label>
+              <select id="vendorFeaturedFilter">
+                <option value="">Todos</option>
+                <option value="featured">Destaques</option>
+                <option value="regular">Sem destaque</option>
+              </select>
+            </div>
+
+            <div class="admin-filter-actions">
+              <button
+                type="button"
+                id="clearVendorFiltersButton"
+                class="admin-clear-filters"
+              >
+                Limpar Filtros
+              </button>
+            </div>
           </div>
-        </div>
+        </details>
 
         <div class="admin-table-wrapper">
           <table class="admin-table vendors-table">
@@ -169,6 +178,11 @@
             <tbody id="vendorsTableBody"></tbody>
           </table>
         </div>
+        <div
+          id="vendorsMobileList"
+          class="admin-mobile-card-list vendors-mobile-list"
+          aria-label="Lista de fornecedores"
+        ></div>
       </section>
     </main>
 
@@ -243,13 +257,15 @@
           </div>
 
           <div class="admin-form-grid compact-form-grid">
-            <label class="admin-checkbox-label">
+            <label class="admin-checkbox-label admin-toggle-option">
               <input id="vendorVisibleInput" type="checkbox" checked />
+              <span aria-hidden="true"></span>
               Visível no site
             </label>
 
-            <label class="admin-checkbox-label">
+            <label class="admin-checkbox-label admin-toggle-option">
               <input id="vendorFeaturedInput" type="checkbox" />
+              <span aria-hidden="true"></span>
               Destaque
             </label>
           </div>

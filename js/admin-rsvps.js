@@ -7,6 +7,7 @@ function setElementVisibility(element, visible) {
 }
 
 const rsvpsTableBody = document.getElementById("rsvpsTableBody");
+const rsvpsMobileList = document.getElementById("rsvpsMobileList");
 const rsvpSearchInput = document.getElementById("rsvpSearchInput");
 const rsvpPresenceFilter = document.getElementById("rsvpPresenceFilter");
 const rsvpCompanionFilter = document.getElementById("rsvpCompanionFilter");
@@ -14,6 +15,7 @@ const rsvpRestrictionFilter = document.getElementById("rsvpRestrictionFilter");
 const rsvpBuffetFilter = document.getElementById("rsvpBuffetFilter");
 const rsvpTableFilter = document.getElementById("rsvpTableFilter");
 const rsvpFilterCount = document.getElementById("rsvpFilterCount");
+const rsvpFiltersPanel = document.getElementById("rsvpFiltersPanel");
 const refreshRSVPsButton = document.getElementById("refreshRSVPsButton");
 const exportRSVPsButton = document.getElementById("exportRSVPsButton");
 const clearRSVPFiltersButton = document.getElementById(
@@ -1510,6 +1512,7 @@ function renderRSVPTable(rsvps, guests) {
         </td>
       </tr>
     `);
+    renderRSVPMobileList(rsvps, guestMap);
     return;
   }
 
@@ -1523,7 +1526,7 @@ function renderRSVPTable(rsvps, guests) {
       const companionCount = Number(rsvp.guest_data?.guest_count || 0);
 
       return `
-        <tr>
+        <tr data-rsvp-row-id="${escapeAttribute(rsvp.id)}" tabindex="0">
           <td>
             <strong class="rsvp-table-guest">
               ${safeText(guestName)}
@@ -1565,6 +1568,106 @@ function renderRSVPTable(rsvps, guests) {
             </div>
           </td>
         </tr>
+      `;
+    })
+    .join(""));
+  renderRSVPMobileList(rsvps, guestMap);
+
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
+}
+
+function renderRSVPMobileList(rsvps, guestMap) {
+  if (!rsvpsMobileList) {
+    return;
+  }
+
+  if (!rsvps.length) {
+    replaceSafeContent(rsvpsMobileList, `
+      <div class="admin-mobile-empty-state">
+        Nenhum RSVP encontrado para os filtros selecionados.
+      </div>
+    `);
+    return;
+  }
+
+  replaceSafeContent(rsvpsMobileList, rsvps
+    .map((rsvp) => {
+      const guestName =
+        guestMap[rsvp.guest_id] ||
+        rsvp.guest_data?.name ||
+        "Convidado não encontrado";
+      const companionCount = Number(rsvp.guest_data?.guest_count || 0);
+      const message = String(rsvp.message || "").trim();
+
+      return `
+        <article class="admin-mobile-list-card rsvp-mobile-card" data-rsvp-card-id="${escapeAttribute(rsvp.id)}" tabindex="0">
+          <div class="admin-mobile-card-main">
+            <div>
+              <strong>
+                ${safeText(guestName)}
+                ${renderRSVPDietaryIndicator(rsvp)}
+              </strong>
+              <span>${safeText(getRSVPTableLabel(rsvp))} · ${formatDate(rsvp.updated_at || rsvp.created_at)}</span>
+            </div>
+            ${renderPresenceBadge(rsvp.presence)}
+          </div>
+
+          <div class="admin-mobile-card-badges">
+            ${renderInviteTypeBadge(getRSVPGuestById(rsvp.guest_id)?.invite_type)}
+            ${
+              hasDietaryRestriction(rsvp)
+                ? '<span class="admin-badge badge-warning">Restrição</span>'
+                : '<span class="admin-badge badge-muted">Sem restrição</span>'
+            }
+            ${
+              companionCount > 0
+                ? `<span class="admin-badge badge-payment">${companionCount} acomp.</span>`
+                : '<span class="admin-badge badge-muted">Sem acomp.</span>'
+            }
+          </div>
+
+          <dl class="admin-mobile-card-meta rsvp-mobile-card-meta">
+            <div>
+              <dt>Presença</dt>
+              <dd>${safeText(rsvp.presence || "-")}</dd>
+            </div>
+            <div>
+              <dt>Acomp.</dt>
+              <dd>${companionCount}</dd>
+            </div>
+            <div>
+              <dt>Mensagem</dt>
+              <dd>${message ? "Sim" : "Não"}</dd>
+            </div>
+          </dl>
+
+          ${
+            message
+              ? `<p class="rsvp-mobile-message">${safeText(message)}</p>`
+              : ""
+          }
+
+          <div class="admin-mobile-card-actions rsvp-mobile-card-actions">
+            <button
+              class="admin-action-button icon-action"
+              data-rsvp-action="details"
+              data-rsvp-id="${escapeAttribute(rsvp.id)}"
+            >
+              ${renderAdminIcon("eye")}
+              Detalhes
+            </button>
+            <button
+              class="admin-action-button danger icon-action"
+              data-rsvp-action="delete"
+              data-rsvp-id="${escapeAttribute(rsvp.id)}"
+            >
+              ${renderAdminIcon("trash")}
+              Remover
+            </button>
+          </div>
+        </article>
       `;
     })
     .join(""));
@@ -1726,6 +1829,10 @@ function updateRSVPFilterCount(count) {
     count === total
       ? `${total} RSVP${total === 1 ? "" : "s"}`
       : `${count} de ${total} RSVP${total === 1 ? "" : "s"}`;
+
+  if (rsvpFiltersPanel) {
+    rsvpFiltersPanel.dataset.hasActiveFilters = String(count !== total);
+  }
 }
 
 function exportRSVPsCSV() {
@@ -1813,6 +1920,23 @@ function clearRSVPFilters() {
   });
 
   applyRSVPFilters();
+}
+
+function shouldIgnoreRSVPItemClick(target) {
+  return Boolean(
+    target.closest(
+      "button, a, input, select, textarea, label, [data-rsvp-action], [data-rsvp-info-action], .admin-action-button",
+    ),
+  );
+}
+
+function openRSVPDetailsFromInteractiveItem(element) {
+  const rsvpId = element?.dataset.rsvpRowId || element?.dataset.rsvpCardId;
+  const rsvp = rsvpId ? getRSVPById(rsvpId) : null;
+
+  if (rsvp) {
+    openRSVPDetailsModal(rsvp);
+  }
 }
 
 window.deleteRSVPFromTable = async function (rsvpId) {
@@ -2063,6 +2187,12 @@ rsvpsTableBody?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-rsvp-action]");
 
   if (!button) {
+    const row = event.target.closest("[data-rsvp-row-id]");
+
+    if (row && !shouldIgnoreRSVPItemClick(event.target)) {
+      openRSVPDetailsFromInteractiveItem(row);
+    }
+
     return;
   }
 
@@ -2085,6 +2215,73 @@ rsvpsTableBody?.addEventListener("click", (event) => {
   if (button.dataset.rsvpAction === "resend-confirmation") {
     resendRSVPConfirmation(button.dataset.rsvpId);
   }
+});
+
+rsvpsTableBody?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  const row = event.target.closest("[data-rsvp-row-id]");
+
+  if (!row || shouldIgnoreRSVPItemClick(event.target)) {
+    return;
+  }
+
+  event.preventDefault();
+  openRSVPDetailsFromInteractiveItem(row);
+});
+
+rsvpsMobileList?.addEventListener("click", (event) => {
+  const infoButton = event.target.closest("[data-rsvp-info-action]");
+
+  if (infoButton?.dataset.rsvpInfoAction === "dietary-restriction") {
+    openRSVPDietaryRestrictionModal(
+      infoButton.dataset.rsvpId,
+      infoButton.dataset.rsvpPersonType,
+      infoButton.dataset.rsvpPersonIndex,
+    );
+    return;
+  }
+
+  const button = event.target.closest("[data-rsvp-action]");
+
+  if (!button) {
+    const card = event.target.closest("[data-rsvp-card-id]");
+
+    if (card && !shouldIgnoreRSVPItemClick(event.target)) {
+      openRSVPDetailsFromInteractiveItem(card);
+    }
+
+    return;
+  }
+
+  if (button.dataset.rsvpAction === "details") {
+    const rsvp = getRSVPById(button.dataset.rsvpId);
+
+    if (rsvp) {
+      openRSVPDetailsModal(rsvp);
+    }
+  }
+
+  if (button.dataset.rsvpAction === "delete") {
+    deleteRSVPFromTable(button.dataset.rsvpId);
+  }
+});
+
+rsvpsMobileList?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  const card = event.target.closest("[data-rsvp-card-id]");
+
+  if (!card || shouldIgnoreRSVPItemClick(event.target)) {
+    return;
+  }
+
+  event.preventDefault();
+  openRSVPDetailsFromInteractiveItem(card);
 });
 
 closeRSVPDetailsModalButton?.addEventListener("click", () => {

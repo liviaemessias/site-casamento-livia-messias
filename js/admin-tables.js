@@ -6,6 +6,7 @@ const tableStatusFilter = document.getElementById("tableStatusFilter");
 const tableGuestSideFilter = document.getElementById("tableGuestSideFilter");
 const tableGuestStatusFilter = document.getElementById("tableGuestStatusFilter");
 const tableFilterCount = document.getElementById("tableFilterCount");
+const tableFiltersPanel = document.getElementById("tableFiltersPanel");
 const clearTableFiltersButton = document.getElementById("clearTableFiltersButton");
 const refreshTablesButton = document.getElementById("refreshTablesButton");
 const exportTablesButton = document.getElementById("exportTablesButton");
@@ -497,7 +498,15 @@ function renderTableCard(tableItem) {
 function renderTables() {
   const tables = getFilteredTables();
 
-  tableFilterCount.textContent = `${tables.length} de ${cachedTables.length} mesas`;
+  tableFilterCount.textContent =
+    tables.length === cachedTables.length
+      ? `${cachedTables.length} mesa${cachedTables.length === 1 ? "" : "s"}`
+      : `${tables.length} de ${cachedTables.length} mesas`;
+  if (tableFiltersPanel) {
+    tableFiltersPanel.dataset.hasActiveFilters = String(
+      tables.length !== cachedTables.length,
+    );
+  }
   updateViewModeButtons();
   updateTableSummary();
 

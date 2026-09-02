@@ -30,17 +30,17 @@
         <a class="admin-nav-link" href="./admin-settings.html">Configurações</a>
       </nav>
 
-      <section class="admin-section">
-        <div class="admin-section-header">
+      <section class="admin-section" id="financialBase">
+        <div class="admin-section-header admin-list-toolbar">
           <div>
             <p class="section-subtitle">Configuração do módulo</p>
             <h2>Cadastros Base</h2>
           </div>
 
           <div class="admin-section-actions">
-            <button id="refreshFinancialButton" class="admin-action-button icon-action">
+            <button id="refreshFinancialButton" class="admin-action-button icon-action" aria-label="Atualizar cadastros base" title="Atualizar">
               <i data-lucide="refresh-cw" aria-hidden="true"></i>
-              Atualizar
+              <span>Atualizar</span>
             </button>
           </div>
         </div>
@@ -67,9 +67,9 @@
               <p class="section-subtitle">Cadastros Base</p>
               <h3>Cenários, Categorias e Pagadores</h3>
             </div>
-            <button id="openFinancialOrderModalButton" type="button" class="admin-action-button icon-action">
+            <button id="openFinancialOrderModalButton" type="button" class="admin-action-button icon-action financial-base-order-button">
               <i data-lucide="list-ordered" aria-hidden="true"></i>
-              Organizar Ordem
+              <span>Organizar ordem</span>
             </button>
           </div>
 

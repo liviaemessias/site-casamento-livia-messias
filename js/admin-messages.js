@@ -1,6 +1,7 @@
 AdminCommon.setupLogout();
 
 const wallMessagesTableBody = document.getElementById("wallMessagesTableBody");
+const wallMessagesMobileList = document.getElementById("wallMessagesMobileList");
 const wallMessageSearchInput = document.getElementById("wallMessageSearchInput");
 const wallMessageStatusFilter = document.getElementById(
   "wallMessageStatusFilter",
@@ -14,6 +15,9 @@ const wallMessageReplyFilter = document.getElementById(
 const wallMessageSortSelect = document.getElementById("wallMessageSortSelect");
 const wallMessageFilterCount = document.getElementById(
   "wallMessageFilterCount",
+);
+const wallMessageFiltersPanel = document.getElementById(
+  "wallMessageFiltersPanel",
 );
 const clearWallMessageFiltersButton = document.getElementById(
   "clearWallMessageFiltersButton",
@@ -292,7 +296,15 @@ function updateSummary() {
 function renderWallMessages() {
   const messages = getFilteredWallMessages();
 
-  wallMessageFilterCount.textContent = `${messages.length} de ${cachedWallMessages.length} recados`;
+  wallMessageFilterCount.textContent =
+    messages.length === cachedWallMessages.length
+      ? `${cachedWallMessages.length} recado${cachedWallMessages.length === 1 ? "" : "s"}`
+      : `${messages.length} de ${cachedWallMessages.length} recados`;
+  if (wallMessageFiltersPanel) {
+    wallMessageFiltersPanel.dataset.hasActiveFilters = String(
+      messages.length !== cachedWallMessages.length,
+    );
+  }
   updateWallMessageSortButtons();
 
   if (!messages.length) {
@@ -306,6 +318,7 @@ function renderWallMessages() {
         </tr>
       `,
     );
+    renderWallMessagesMobileList(messages);
     return;
   }
 
@@ -314,7 +327,7 @@ function renderWallMessages() {
     messages
       .map(
         (message) => `
-          <tr>
+          <tr data-wall-message-row-id="${escapeAttribute(message.id)}" tabindex="0">
             <td>
               <strong>${safeText(message.guest_name)}</strong>
               <span class="admin-muted wall-message-invite-type">
@@ -379,6 +392,132 @@ function renderWallMessages() {
               </div>
             </td>
           </tr>
+        `,
+      )
+      .join(""),
+  );
+
+  renderWallMessagesMobileList(messages);
+  window.lucide?.createIcons();
+}
+
+function renderWallMessageMobileActions(message) {
+  return `
+    <div class="admin-mobile-card-actions wall-message-mobile-actions">
+      <button
+        type="button"
+        class="admin-action-button icon-action"
+        data-wall-action="details"
+        data-wall-message-id="${escapeAttribute(message.id)}"
+      >
+        ${renderIcon("eye")}
+        Detalhes
+      </button>
+      ${
+        message.status !== "approved"
+          ? `
+            <button
+              type="button"
+              class="admin-action-button success icon-action"
+              data-wall-action="approve"
+              data-wall-message-id="${escapeAttribute(message.id)}"
+            >
+              ${renderIcon("check")}
+              Aprovar
+            </button>
+          `
+          : `
+            <button
+              type="button"
+              class="admin-action-button icon-action"
+              data-wall-action="reply"
+              data-wall-message-id="${escapeAttribute(message.id)}"
+            >
+              ${renderIcon("reply")}
+              ${message.couple_reply ? "Editar" : "Responder"}
+            </button>
+          `
+      }
+      ${
+        message.status === "pending"
+          ? `
+            <button
+              type="button"
+              class="admin-action-button icon-action"
+              data-wall-action="hide"
+              data-wall-message-id="${escapeAttribute(message.id)}"
+            >
+              ${renderIcon("eye-off")}
+              Ocultar
+            </button>
+          `
+          : ""
+      }
+    </div>
+  `;
+}
+
+function renderWallMessagesMobileList(messages) {
+  if (!wallMessagesMobileList) {
+    return;
+  }
+
+  if (!messages.length) {
+    replaceSafeContent(
+      wallMessagesMobileList,
+      `
+        <div class="admin-mobile-empty-state">
+          Nenhum recado encontrado para os filtros selecionados.
+        </div>
+      `,
+    );
+    return;
+  }
+
+  replaceSafeContent(
+    wallMessagesMobileList,
+    messages
+      .map(
+        (message) => `
+          <article
+            class="admin-mobile-list-card wall-message-mobile-card"
+            data-wall-message-card-id="${escapeAttribute(message.id)}"
+            tabindex="0"
+          >
+            <div class="admin-mobile-card-main">
+              <div>
+                <strong>${safeText(message.guest_name)}</strong>
+                <span>${message.invite_type === "couple" ? "Casal" : "Individual"}</span>
+              </div>
+              ${renderStatusBadge(message)}
+            </div>
+
+            <p class="wall-message-mobile-text">${safeText(message.message)}</p>
+
+            ${
+              message.couple_reply
+                ? `
+                  <div class="wall-message-mobile-reply">
+                    <span>Resposta</span>
+                    <p>${safeText(message.couple_reply)}</p>
+                  </div>
+                `
+                : ""
+            }
+
+            <dl class="admin-mobile-card-meta wall-message-mobile-meta">
+              <div>
+                <dt>Atualizado</dt>
+                <dd>${safeText(formatDate(message.updated_at || message.submitted_at))}</dd>
+              </div>
+              <div>
+                <dt>Resposta</dt>
+                <dd>${message.couple_reply ? "Sim" : "Não"}</dd>
+              </div>
+            </dl>
+
+            ${renderWallMessageMobileActions(message)}
+          </article>
         `,
       )
       .join(""),
@@ -692,10 +831,33 @@ async function saveReply(event) {
   await loadWallMessages();
 }
 
+function shouldIgnoreWallMessageItemClick(target) {
+  return Boolean(
+    target.closest(
+      "button, a, input, select, textarea, label, [data-wall-action], .admin-action-button",
+    ),
+  );
+}
+
+function openWallMessageDetailsFromInteractiveItem(element) {
+  const messageId =
+    element?.dataset.wallMessageRowId || element?.dataset.wallMessageCardId;
+
+  if (messageId) {
+    openWallMessageDetailsModal(messageId);
+  }
+}
+
 wallMessagesTableBody.addEventListener("click", (event) => {
   const button = event.target.closest("[data-wall-action]");
 
   if (!button) {
+    const row = event.target.closest("[data-wall-message-row-id]");
+
+    if (row && !shouldIgnoreWallMessageItemClick(event.target)) {
+      openWallMessageDetailsFromInteractiveItem(row);
+    }
+
     return;
   }
 
@@ -713,6 +875,65 @@ wallMessagesTableBody.addEventListener("click", (event) => {
   }
 
   updateWallMessage(action, messageId);
+});
+
+wallMessagesTableBody.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  const row = event.target.closest("[data-wall-message-row-id]");
+
+  if (!row || shouldIgnoreWallMessageItemClick(event.target)) {
+    return;
+  }
+
+  event.preventDefault();
+  openWallMessageDetailsFromInteractiveItem(row);
+});
+
+wallMessagesMobileList?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-wall-action]");
+
+  if (!button) {
+    const card = event.target.closest("[data-wall-message-card-id]");
+
+    if (card && !shouldIgnoreWallMessageItemClick(event.target)) {
+      openWallMessageDetailsFromInteractiveItem(card);
+    }
+
+    return;
+  }
+
+  const action = button.dataset.wallAction;
+  const messageId = button.dataset.wallMessageId;
+
+  if (action === "reply") {
+    openReplyModal(messageId);
+    return;
+  }
+
+  if (action === "details") {
+    openWallMessageDetailsModal(messageId);
+    return;
+  }
+
+  updateWallMessage(action, messageId);
+});
+
+wallMessagesMobileList?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  const card = event.target.closest("[data-wall-message-card-id]");
+
+  if (!card || shouldIgnoreWallMessageItemClick(event.target)) {
+    return;
+  }
+
+  event.preventDefault();
+  openWallMessageDetailsFromInteractiveItem(card);
 });
 
 wallMessageDetailsContent.addEventListener("click", (event) => {

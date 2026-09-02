@@ -30,21 +30,21 @@
         <a class="admin-nav-link" href="./admin-settings.html">Configurações</a>
       </nav>
 
-      <section class="admin-section">
-        <div class="admin-section-header">
+      <section class="admin-section" id="financialBudget">
+        <div class="admin-section-header admin-list-toolbar">
           <div>
             <p class="section-subtitle">Planejamento financeiro</p>
             <h2>Orçamento Previsto</h2>
           </div>
 
           <div class="admin-section-actions">
-            <button id="refreshFinancialButton" class="admin-action-button icon-action">
+            <button id="refreshFinancialButton" class="admin-action-button icon-action" aria-label="Atualizar orçamento previsto" title="Atualizar">
               <i data-lucide="refresh-cw" aria-hidden="true"></i>
-              Atualizar
+              <span>Atualizar</span>
             </button>
-            <button id="newBudgetItemButton" class="admin-action-button icon-action success">
+            <button id="newBudgetItemButton" class="admin-action-button icon-action success" aria-label="Novo item previsto" title="Novo item previsto">
               <i data-lucide="plus" aria-hidden="true"></i>
-              Item Previsto
+              <span>Novo</span>
             </button>
           </div>
         </div>
@@ -116,48 +116,57 @@
             </div>
           </div>
 
-          <div class="admin-filters-grid financial-budget-filters">
-            <div class="admin-filter-field">
-              <label for="financialBudgetSearchInput">Buscar</label>
-              <input id="financialBudgetSearchInput" type="search" placeholder="Item, categoria, fornecedor..." />
+          <details class="admin-filter-panel" id="financialBudgetFiltersPanel">
+            <summary class="admin-filter-panel-toggle">
+              <span>
+                <i data-lucide="sliders-horizontal" aria-hidden="true"></i>
+                Filtros
+              </span>
+              <small id="financialBudgetFilterCount" class="admin-filter-count"></small>
+            </summary>
+
+            <div class="admin-filters-grid financial-budget-filters">
+              <div class="admin-filter-field">
+                <label for="financialBudgetSearchInput">Buscar</label>
+                <input id="financialBudgetSearchInput" type="search" placeholder="Item, categoria, fornecedor..." />
+              </div>
+              <div class="admin-filter-field">
+                <label for="financialBudgetCategoryFilter">Categoria</label>
+                <select id="financialBudgetCategoryFilter"></select>
+              </div>
+              <div class="admin-filter-field">
+                <label for="financialBudgetStatusFilter">Status</label>
+                <select id="financialBudgetStatusFilter"></select>
+              </div>
+              <div class="admin-filter-field">
+                <label for="financialBudgetActiveFilter">Situação</label>
+                <select id="financialBudgetActiveFilter">
+                  <option value="">Todos</option>
+                  <option value="active">Ativos</option>
+                  <option value="inactive">Inativos</option>
+                </select>
+              </div>
+              <div class="admin-filter-field">
+                <label for="financialBudgetBalanceFilter">Situação do orçamento</label>
+                <select id="financialBudgetBalanceFilter">
+                  <option value="">Todos</option>
+                  <option value="under">Com saldo</option>
+                  <option value="over">Estourados</option>
+                  <option value="even">No limite</option>
+                  <option value="unlinked">Sem gasto vinculado</option>
+                </select>
+              </div>
+              <div class="admin-filter-actions">
+                <button
+                  type="button"
+                  id="clearFinancialBudgetFiltersButton"
+                  class="admin-clear-filters"
+                >
+                  Limpar Filtros
+                </button>
+              </div>
             </div>
-            <div class="admin-filter-field">
-              <label for="financialBudgetCategoryFilter">Categoria</label>
-              <select id="financialBudgetCategoryFilter"></select>
-            </div>
-            <div class="admin-filter-field">
-              <label for="financialBudgetStatusFilter">Status</label>
-              <select id="financialBudgetStatusFilter"></select>
-            </div>
-            <div class="admin-filter-field">
-              <label for="financialBudgetActiveFilter">Situação</label>
-              <select id="financialBudgetActiveFilter">
-                <option value="">Todos</option>
-                <option value="active">Ativos</option>
-                <option value="inactive">Inativos</option>
-              </select>
-            </div>
-            <div class="admin-filter-field">
-              <label for="financialBudgetBalanceFilter">Situação do orçamento</label>
-              <select id="financialBudgetBalanceFilter">
-                <option value="">Todos</option>
-                <option value="under">Com saldo</option>
-                <option value="over">Estourados</option>
-                <option value="even">No limite</option>
-                <option value="unlinked">Sem gasto vinculado</option>
-              </select>
-            </div>
-            <div class="admin-filter-actions">
-              <span id="financialBudgetFilterCount" class="admin-filter-count"></span>
-              <button
-                type="button"
-                id="clearFinancialBudgetFiltersButton"
-                class="admin-clear-filters"
-              >
-                Limpar Filtros
-              </button>
-            </div>
-          </div>
+          </details>
 
           <div class="admin-table-wrapper">
             <table class="admin-table financial-table" data-financial-budget-actions="true">
@@ -204,6 +213,11 @@
               <tbody id="financialBudgetTableBody"></tbody>
             </table>
           </div>
+          <div
+            id="financialBudgetMobileList"
+            class="admin-mobile-card-list financial-budget-mobile-list"
+            aria-label="Itens previstos"
+          ></div>
         </section>
       </section>
     </main>
@@ -271,8 +285,9 @@
             <textarea id="financialBudgetNotesInput" maxlength="900" rows="4"></textarea>
           </div>
 
-          <label class="admin-checkbox-label">
+          <label class="admin-checkbox-label admin-toggle-option">
             <input id="financialBudgetActiveInput" type="checkbox" checked />
+            <span aria-hidden="true"></span>
             Item ativo
           </label>
 

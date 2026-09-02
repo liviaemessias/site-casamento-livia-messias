@@ -1,6 +1,7 @@
 AdminCommon.setupLogout();
 
 const notificationsTableBody = document.getElementById("notificationsTableBody");
+const notificationsMobileList = document.getElementById("notificationsMobileList");
 const notificationSearchInput = document.getElementById("notificationSearchInput");
 const notificationStatusFilter = document.getElementById(
   "notificationStatusFilter",
@@ -17,6 +18,9 @@ const notificationPeriodFilter = document.getElementById(
 );
 const notificationFilterCount = document.getElementById(
   "notificationFilterCount",
+);
+const notificationFiltersPanel = document.getElementById(
+  "notificationFiltersPanel",
 );
 const clearNotificationFiltersButton = document.getElementById(
   "clearNotificationFiltersButton",
@@ -222,6 +226,15 @@ function renderStatusBadge(status) {
   )}</span>`;
 }
 
+function createNotificationIcon(name) {
+  const icon = document.createElement("i");
+
+  icon.setAttribute("data-lucide", name);
+  icon.setAttribute("aria-hidden", "true");
+
+  return icon;
+}
+
 function getNotificationStatus(notification) {
   return notification.delivery_status || notification.event_status || "";
 }
@@ -256,6 +269,17 @@ function updateSummaryCardState() {
       card.dataset.notificationSummaryStatus === notificationStatusFilter.value,
     );
   });
+}
+
+function hasActiveNotificationFilters() {
+  return Boolean(
+    notificationSearchInput.value.trim() ||
+      notificationStatusFilter.value ||
+      notificationTypeFilter.value ||
+      notificationOriginFilter.value ||
+      notificationRecipientFilter.value ||
+      notificationPeriodFilter.value,
+  );
 }
 
 function updatePagination() {
@@ -298,6 +322,7 @@ function setNotificationSort(key) {
 
 function renderNotificationsTable(notifications) {
   updateNotificationSortButtons();
+  notificationsMobileList?.replaceChildren();
 
   if (!notifications.length) {
     replaceSafeContent(
@@ -310,6 +335,14 @@ function renderNotificationsTable(notifications) {
         </tr>
       `,
     );
+    if (notificationsMobileList) {
+      const emptyState = document.createElement("div");
+
+      emptyState.className = "admin-mobile-empty-state";
+      emptyState.textContent =
+        "Nenhuma notificação encontrada para os filtros selecionados.";
+      notificationsMobileList.appendChild(emptyState);
+    }
     return;
   }
 
@@ -322,7 +355,7 @@ function renderNotificationsTable(notifications) {
         const reason = getNotificationReason(notification);
 
         return `
-          <tr>
+          <tr data-notification-index="${escapeAttribute(index)}" tabindex="0">
             <td>${safeText(formatDate(notification.created_at))}</td>
             <td>${safeText(getNotificationTypeLabel(notification.event_type))}</td>
             <td>${safeText(notification.guest_name, "Sem convidado")}</td>
@@ -337,14 +370,13 @@ function renderNotificationsTable(notifications) {
             <td>
               <button
                 type="button"
-                class="admin-action-button icon-action notification-details-action"
+                class="admin-action-button icon-only notification-details-action"
                 data-notification-action="details"
                 data-notification-index="${escapeAttribute(index)}"
                 aria-label="Ver detalhes da notificação"
                 title="Ver detalhes"
               >
                 <i data-lucide="eye" aria-hidden="true"></i>
-                Detalhes
               </button>
             </td>
           </tr>
@@ -353,9 +385,81 @@ function renderNotificationsTable(notifications) {
       .join(""),
   );
 
+  if (notificationsMobileList) {
+    notifications.forEach((notification, index) => {
+      notificationsMobileList.appendChild(
+        createNotificationMobileCard(notification, index),
+      );
+    });
+  }
+
   if (window.lucide) {
     window.lucide.createIcons();
   }
+}
+
+function createNotificationMobileCard(notification, index) {
+  const status = getNotificationStatus(notification);
+  const reason = getNotificationReason(notification);
+  const card = document.createElement("article");
+  const main = document.createElement("div");
+  const titleGroup = document.createElement("div");
+  const side = document.createElement("div");
+  const footer = document.createElement("div");
+  const type = document.createElement("strong");
+  const meta = document.createElement("span");
+  const date = document.createElement("strong");
+  const recipient = document.createElement("span");
+  const statusBadge = document.createElement("span");
+  const reasonText = document.createElement("span");
+  const actions = document.createElement("div");
+  const detailsButton = document.createElement("button");
+
+  card.className = "notification-mobile-card";
+  card.dataset.notificationIndex = String(index);
+  card.tabIndex = 0;
+
+  main.className = "notification-mobile-main";
+  titleGroup.className = "notification-mobile-title-group";
+  type.textContent = getNotificationTypeLabel(notification.event_type);
+  meta.textContent = [
+    notification.guest_name || "Sem convidado",
+    notification.recipient_email || "-",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  titleGroup.append(type, meta);
+
+  side.className = "notification-mobile-side";
+  date.textContent = formatDate(notification.created_at);
+  recipient.textContent = getRecipientLabel(notification.recipient_type);
+  side.append(date, recipient);
+  main.append(titleGroup, side);
+
+  statusBadge.className = `admin-badge ${getStatusBadgeClass(status)}`;
+  statusBadge.textContent = getStatusLabel(status);
+
+  reasonText.className =
+    status === "failed" || status === "skipped"
+      ? "notification-error-text"
+      : "notification-mobile-reason";
+  reasonText.textContent = reason;
+
+  actions.className = "notification-mobile-actions";
+  detailsButton.type = "button";
+  detailsButton.className = "checklist-period-action";
+  detailsButton.dataset.notificationAction = "details";
+  detailsButton.dataset.notificationIndex = String(index);
+  detailsButton.title = "Detalhes da notificação";
+  detailsButton.setAttribute("aria-label", "Detalhes da notificação");
+  detailsButton.appendChild(createNotificationIcon("eye"));
+  actions.appendChild(detailsButton);
+
+  footer.className = "notification-mobile-footer";
+  footer.append(statusBadge, reasonText, actions);
+  card.append(main, footer);
+
+  return card;
 }
 
 function renderPayload(payload) {
@@ -461,6 +565,7 @@ function openNotificationDetails(index) {
   selectedNotification = notification;
   renderNotificationDetails(notification);
   notificationDetailsModal.classList.add("active");
+  notificationDetailsModal.setAttribute("aria-hidden", "false");
 
   if (window.lucide) {
     window.lucide.createIcons();
@@ -470,6 +575,7 @@ function openNotificationDetails(index) {
 function closeNotificationDetails() {
   selectedNotification = null;
   notificationDetailsModal.classList.remove("active");
+  notificationDetailsModal.setAttribute("aria-hidden", "true");
 }
 
 async function processManualNotificationEvent(notificationEventId) {
@@ -562,10 +668,13 @@ function setRefreshNotificationsButtonLabel(label) {
   refreshNotificationsButton.replaceChildren();
 
   const icon = document.createElement("i");
+  const text = document.createElement("span");
+
   icon.setAttribute("data-lucide", "refresh-cw");
   icon.setAttribute("aria-hidden", "true");
+  text.textContent = label;
 
-  refreshNotificationsButton.append(icon, document.createTextNode(label));
+  refreshNotificationsButton.append(icon, text);
   window.lucide?.createIcons();
 }
 
@@ -596,6 +705,11 @@ async function loadNotifications() {
   notificationFilterCount.textContent = `${totalNotifications} registro${
     totalNotifications === 1 ? "" : "s"
   }`;
+  if (notificationFiltersPanel) {
+    notificationFiltersPanel.dataset.hasActiveFilters = String(
+      hasActiveNotificationFilters(),
+    );
+  }
   updateSummary(summaryResult.data);
   updatePagination();
   updateSummaryCardState();
@@ -688,12 +802,70 @@ closeNotificationDetailsModalButton.addEventListener(
 notificationsTableBody.addEventListener("click", (event) => {
   const button = event.target.closest("[data-notification-action]");
 
-  if (!button) {
+  if (button) {
+    if (button.dataset.notificationAction === "details") {
+      openNotificationDetails(button.dataset.notificationIndex);
+    }
+
     return;
   }
 
-  if (button.dataset.notificationAction === "details") {
-    openNotificationDetails(button.dataset.notificationIndex);
+  const row = event.target.closest("[data-notification-index]");
+
+  if (row) {
+    openNotificationDetails(row.dataset.notificationIndex);
+  }
+});
+
+notificationsTableBody.addEventListener("keydown", (event) => {
+  if (event.target.closest("[data-notification-action]")) {
+    return;
+  }
+
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  const row = event.target.closest("[data-notification-index]");
+
+  if (row) {
+    event.preventDefault();
+    openNotificationDetails(row.dataset.notificationIndex);
+  }
+});
+
+notificationsMobileList?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-notification-action]");
+
+  if (button) {
+    if (button.dataset.notificationAction === "details") {
+      openNotificationDetails(button.dataset.notificationIndex);
+    }
+
+    return;
+  }
+
+  const card = event.target.closest("[data-notification-index]");
+
+  if (card) {
+    openNotificationDetails(card.dataset.notificationIndex);
+  }
+});
+
+notificationsMobileList?.addEventListener("keydown", (event) => {
+  if (event.target.closest("[data-notification-action]")) {
+    return;
+  }
+
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  const card = event.target.closest("[data-notification-index]");
+
+  if (card) {
+    event.preventDefault();
+    openNotificationDetails(card.dataset.notificationIndex);
   }
 });
 

@@ -30,26 +30,18 @@
         <a class="admin-nav-link" href="./admin-settings.html">Configurações</a>
       </nav>
 
-      <section class="admin-section">
-        <div class="admin-section-header">
+      <section class="admin-section" id="financialOverview">
+        <div class="admin-section-header admin-list-toolbar">
           <div>
             <p class="section-subtitle">Orçamento e pagamentos</p>
             <h2>Visão Geral Financeira</h2>
           </div>
 
           <div class="admin-section-actions">
-            <button id="refreshFinancialButton" class="admin-action-button icon-action">
+            <button id="refreshFinancialButton" class="admin-action-button icon-action" aria-label="Atualizar financeiro" title="Atualizar">
               <i data-lucide="refresh-cw" aria-hidden="true"></i>
-              Atualizar
+              <span>Atualizar</span>
             </button>
-            <a class="admin-action-button icon-action" href="./admin-financial-budget.html">
-              <i data-lucide="arrow-right" aria-hidden="true"></i>
-              Ver Orçamento
-            </a>
-            <a class="admin-action-button icon-action" href="./admin-financial-expenses.html">
-              <i data-lucide="arrow-right" aria-hidden="true"></i>
-              Ver Gastos
-            </a>
           </div>
         </div>
 
@@ -138,6 +130,11 @@
                 <tbody id="financialPaymentsTableBody"></tbody>
               </table>
             </div>
+            <div
+              id="financialPaymentsMobileList"
+              class="financial-overview-payment-list"
+              aria-label="Próximas parcelas"
+            ></div>
           </article>
 
           <div class="financial-overview-side-stack">
@@ -562,6 +559,44 @@
             <button type="button" class="admin-action-button" id="cancelFinancialPaymentEditButton">Cancelar</button>
           </div>
         </div>
+      </div>
+    </div>
+
+    <div id="financialPaymentDetailsModal" class="admin-modal" aria-hidden="true">
+      <div class="admin-modal-content admin-details-modal-content">
+        <div class="admin-modal-header">
+          <div>
+            <p class="section-subtitle">Parcelas</p>
+            <h2 id="financialPaymentDetailsTitle">Detalhes da Parcela</h2>
+          </div>
+          <button id="closeFinancialPaymentDetailsModalButton" type="button" class="admin-modal-close" aria-label="Fechar">×</button>
+        </div>
+
+        <div id="financialPaymentDetailsContent" class="admin-details-content"></div>
+
+        <section class="admin-details-section">
+          <span class="admin-details-label">Ações</span>
+          <div class="admin-detail-action-grid financial-payment-details-actions">
+            <button id="editFinancialPaymentDetailsButton" type="button" class="admin-detail-action-card">
+              <span class="admin-detail-action-icon">
+                <i data-lucide="edit" aria-hidden="true"></i>
+              </span>
+              <span class="admin-detail-action-text">
+                <strong>Editar parcela</strong>
+                <small>Abre o formulário completo da parcela.</small>
+              </span>
+            </button>
+            <button id="deleteFinancialPaymentDetailsButton" type="button" class="admin-detail-action-card danger">
+              <span class="admin-detail-action-icon">
+                <i data-lucide="trash-2" aria-hidden="true"></i>
+              </span>
+              <span class="admin-detail-action-text">
+                <strong>Excluir parcela</strong>
+                <small>Remove esta parcela do gasto real.</small>
+              </span>
+            </button>
+          </div>
+        </section>
       </div>
     </div>
 

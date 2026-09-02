@@ -1,11 +1,13 @@
 AdminCommon.setupLogout();
 
 const vendorsTableBody = document.getElementById("vendorsTableBody");
+const vendorsMobileList = document.getElementById("vendorsMobileList");
 const vendorSearchInput = document.getElementById("vendorSearchInput");
 const vendorCategoryFilter = document.getElementById("vendorCategoryFilter");
 const vendorVisibilityFilter = document.getElementById("vendorVisibilityFilter");
 const vendorFeaturedFilter = document.getElementById("vendorFeaturedFilter");
 const vendorFilterCount = document.getElementById("vendorFilterCount");
+const vendorFiltersPanel = document.getElementById("vendorFiltersPanel");
 const clearVendorFiltersButton = document.getElementById("clearVendorFiltersButton");
 const refreshVendorsButton = document.getElementById("refreshVendorsButton");
 const openVendorModalButton = document.getElementById("openVendorModalButton");
@@ -229,7 +231,7 @@ function renderVisibilityToggle(vendor) {
   const visible = Boolean(vendor.is_visible);
 
   return `
-    <label class="admin-table-checkbox" title="${visible ? "Ocultar fornecedor" : "Exibir fornecedor"}">
+    <label class="admin-toggle-switch vendor-visibility-toggle" title="${visible ? "Ocultar fornecedor" : "Exibir fornecedor"}">
       <input
         type="checkbox"
         data-vendor-action="toggle-visible"
@@ -237,6 +239,7 @@ function renderVisibilityToggle(vendor) {
         ${visible ? "checked" : ""}
         aria-label="${visible ? "Fornecedor visível" : "Fornecedor oculto"}"
       />
+      <span aria-hidden="true"></span>
     </label>
   `;
 }
@@ -553,10 +556,84 @@ function closeVendorDetailsModal() {
   vendorDetailsModal.setAttribute("aria-hidden", "true");
 }
 
+function renderVendorMobileCard(vendor) {
+  const visible = Boolean(vendor.is_visible);
+  const featured = Boolean(vendor.is_featured);
+  const description = vendor.description
+    ? `<p class="vendor-mobile-description">${safeText(vendor.description)}</p>`
+    : "";
+
+  return `
+    <article
+      class="admin-mobile-list-card vendor-mobile-card"
+      data-vendor-card-id="${escapeAttribute(vendor.id)}"
+      role="button"
+      tabindex="0"
+    >
+      <div class="admin-mobile-card-main">
+        <div>
+          <strong>${safeText(vendor.name)}</strong>
+          <span>${safeText(vendor.category || "Sem categoria")}</span>
+        </div>
+        <span class="admin-badge ${visible ? "badge-confirmed" : "badge-muted"}">
+          ${visible ? "Visível" : "Oculto"}
+        </span>
+      </div>
+
+      ${description}
+
+      <div class="admin-mobile-card-badges">
+        ${featured ? '<span class="admin-badge badge-payment">Destaque</span>' : ""}
+      </div>
+
+      <dl class="admin-mobile-card-meta vendor-mobile-meta">
+        <div>
+          <dt>Responsáveis</dt>
+          <dd>${safeText(vendor.responsible_names || "-")}</dd>
+        </div>
+        <div>
+          <dt>Ordem</dt>
+          <dd>${safeText(vendor.display_order ?? 0)}</dd>
+        </div>
+      </dl>
+
+      <div class="admin-mobile-card-actions vendor-mobile-actions">
+        ${renderVisibilityToggle(vendor)}
+        <button
+          type="button"
+          class="admin-action-button icon-action"
+          data-vendor-action="details"
+          data-vendor-id="${escapeAttribute(vendor.id)}"
+        >
+          ${renderIcon("eye")}
+          Detalhes
+        </button>
+        <button
+          type="button"
+          class="admin-action-button icon-action"
+          data-vendor-action="edit"
+          data-vendor-id="${escapeAttribute(vendor.id)}"
+        >
+          ${renderIcon("edit")}
+          Editar
+        </button>
+      </div>
+    </article>
+  `;
+}
+
 function renderVendorsTable() {
   const vendors = getFilteredVendors();
 
-  vendorFilterCount.textContent = `${vendors.length} de ${cachedVendors.length} fornecedores`;
+  vendorFilterCount.textContent =
+    vendors.length === cachedVendors.length
+      ? `${cachedVendors.length} fornecedor${cachedVendors.length === 1 ? "" : "es"}`
+      : `${vendors.length} de ${cachedVendors.length} fornecedores`;
+  if (vendorFiltersPanel) {
+    vendorFiltersPanel.dataset.hasActiveFilters = String(
+      vendors.length !== cachedVendors.length,
+    );
+  }
   updateVendorSortButtons();
 
   if (!vendors.length) {
@@ -570,6 +647,14 @@ function renderVendorsTable() {
         </tr>
       `,
     );
+    replaceSafeContent(
+      vendorsMobileList,
+      `
+        <div class="admin-empty-state">
+          Nenhum fornecedor encontrado.
+        </div>
+      `,
+    );
     return;
   }
 
@@ -578,7 +663,7 @@ function renderVendorsTable() {
     vendors
       .map(
         (vendor) => `
-          <tr>
+          <tr data-vendor-row-id="${escapeAttribute(vendor.id)}" tabindex="0">
             <td>
               <strong>${safeText(vendor.name)}</strong>
               <span class="admin-muted vendor-table-description">
@@ -616,6 +701,11 @@ function renderVendorsTable() {
         `,
       )
       .join(""),
+  );
+
+  replaceSafeContent(
+    vendorsMobileList,
+    vendors.map((vendor) => renderVendorMobileCard(vendor)).join(""),
   );
 
   window.lucide?.createIcons();
@@ -831,29 +921,123 @@ vendorSummaryCards.forEach((card) => {
 });
 
 vendorsTableBody?.addEventListener("click", (event) => {
-  const button = event.target.closest("[data-vendor-action]");
-
-  if (!button) {
+  if (event.target.closest(".vendor-visibility-toggle")) {
     return;
   }
 
-  const vendorId = button.dataset.vendorId;
+  const button = event.target.closest("[data-vendor-action]");
 
-  if (button.dataset.vendorAction === "details") {
-    openVendorDetailsModal(vendorId);
+  if (button) {
+    const vendorId = button.dataset.vendorId;
+
+    if (button.dataset.vendorAction === "details") {
+      openVendorDetailsModal(vendorId);
+      return;
+    }
+
+    if (button.dataset.vendorAction === "edit") {
+      openVendorModal(getVendorById(vendorId));
+      return;
+    }
+
+    if (button.dataset.vendorAction === "delete") {
+      deleteVendor(vendorId);
+      return;
+    }
   }
 
-  if (button.dataset.vendorAction === "edit") {
-    openVendorModal(getVendorById(vendorId));
+  const row = event.target.closest("[data-vendor-row-id]");
+
+  if (row) {
+    openVendorDetailsModal(row.dataset.vendorRowId);
+  }
+});
+
+vendorsTableBody?.addEventListener("change", (event) => {
+  const input = event.target.closest("[data-vendor-action='toggle-visible']");
+
+  if (!input) {
+    return;
   }
 
-  if (button.dataset.vendorAction === "toggle-visible") {
-    toggleVendorVisibility(vendorId);
+  toggleVendorVisibility(input.dataset.vendorId);
+});
+
+vendorsTableBody?.addEventListener("keydown", (event) => {
+  if (event.target.closest("[data-vendor-action]")) {
+    return;
   }
 
-  if (button.dataset.vendorAction === "delete") {
-    deleteVendor(vendorId);
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
   }
+
+  const row = event.target.closest("[data-vendor-row-id]");
+
+  if (!row) {
+    return;
+  }
+
+  event.preventDefault();
+  openVendorDetailsModal(row.dataset.vendorRowId);
+});
+
+vendorsMobileList?.addEventListener("click", (event) => {
+  if (event.target.closest(".vendor-visibility-toggle")) {
+    return;
+  }
+
+  const button = event.target.closest("[data-vendor-action]");
+
+  if (button) {
+    const vendorId = button.dataset.vendorId;
+
+    if (button.dataset.vendorAction === "details") {
+      openVendorDetailsModal(vendorId);
+      return;
+    }
+
+    if (button.dataset.vendorAction === "edit") {
+      openVendorModal(getVendorById(vendorId));
+      return;
+    }
+
+  }
+
+  const card = event.target.closest("[data-vendor-card-id]");
+
+  if (card) {
+    openVendorDetailsModal(card.dataset.vendorCardId);
+  }
+});
+
+vendorsMobileList?.addEventListener("change", (event) => {
+  const input = event.target.closest("[data-vendor-action='toggle-visible']");
+
+  if (!input) {
+    return;
+  }
+
+  toggleVendorVisibility(input.dataset.vendorId);
+});
+
+vendorsMobileList?.addEventListener("keydown", (event) => {
+  if (event.target.closest("[data-vendor-action]")) {
+    return;
+  }
+
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  const card = event.target.closest("[data-vendor-card-id]");
+
+  if (!card) {
+    return;
+  }
+
+  event.preventDefault();
+  openVendorDetailsModal(card.dataset.vendorCardId);
 });
 
 vendorDetailsContent?.addEventListener("click", (event) => {

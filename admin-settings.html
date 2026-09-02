@@ -217,7 +217,7 @@
       </section>
 
       <section class="admin-section admin-settings-section">
-        <div class="admin-section-header">
+        <div class="admin-section-header notification-preferences-toolbar">
           <div>
             <p class="section-subtitle">Notificações</p>
             <h2>E-mails do Site</h2>
@@ -228,9 +228,11 @@
               type="button"
               id="refreshNotificationPreferencesButton"
               class="admin-action-button icon-action"
+              aria-label="Atualizar preferências de notificação"
+              title="Atualizar"
             >
               <i data-lucide="refresh-cw" aria-hidden="true"></i>
-              Atualizar Preferências
+              <span>Atualizar</span>
             </button>
           </div>
         </div>
@@ -259,6 +261,11 @@
               <tbody id="notificationPreferencesTableBody"></tbody>
             </table>
           </div>
+          <div
+            id="notificationPreferencesMobileList"
+            class="admin-mobile-card-list notification-preferences-mobile-list"
+            aria-label="Preferências de notificação"
+          ></div>
         </div>
       </section>
     </main>

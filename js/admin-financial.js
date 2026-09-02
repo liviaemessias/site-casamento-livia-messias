@@ -9,11 +9,17 @@ const newExpenseButton = document.getElementById("newExpenseButton");
 const financialPaymentsTableBody = document.getElementById(
   "financialPaymentsTableBody",
 );
+const financialPaymentsMobileList = document.getElementById(
+  "financialPaymentsMobileList",
+);
 const financialAllPaymentsTableBody = document.getElementById(
   "financialAllPaymentsTableBody",
 );
 const financialAllPaymentsSummary = document.getElementById(
   "financialAllPaymentsSummary",
+);
+const financialAllPaymentsMobileList = document.getElementById(
+  "financialAllPaymentsMobileList",
 );
 const financialPaymentDetailsModal = document.getElementById(
   "financialPaymentDetailsModal",
@@ -57,6 +63,9 @@ const clearFinancialPaymentFiltersButton = document.getElementById(
 const financialPaymentFilterCount = document.getElementById(
   "financialPaymentFilterCount",
 );
+const financialPaymentFiltersPanel = document.getElementById(
+  "financialPaymentFiltersPanel",
+);
 const financialExpensesTableBody = document.getElementById(
   "financialExpensesTableBody",
 );
@@ -65,6 +74,9 @@ const financialAllExpensesTableBody = document.getElementById(
 );
 const financialAllExpensesSummary = document.getElementById(
   "financialAllExpensesSummary",
+);
+const financialAllExpensesMobileList = document.getElementById(
+  "financialAllExpensesMobileList",
 );
 const financialExpenseSearchInput = document.getElementById(
   "financialExpenseSearchInput",
@@ -96,6 +108,9 @@ const clearFinancialExpenseFiltersButton = document.getElementById(
 const financialExpenseFilterCount = document.getElementById(
   "financialExpenseFilterCount",
 );
+const financialExpenseFiltersPanel = document.getElementById(
+  "financialExpenseFiltersPanel",
+);
 const financialBudgetTableBody = document.getElementById("financialBudgetTableBody");
 const financialBudgetScenarioFilter = document.getElementById(
   "financialBudgetScenarioFilter",
@@ -120,6 +135,12 @@ const clearFinancialBudgetFiltersButton = document.getElementById(
 );
 const financialBudgetFilterCount = document.getElementById(
   "financialBudgetFilterCount",
+);
+const financialBudgetFiltersPanel = document.getElementById(
+  "financialBudgetFiltersPanel",
+);
+const financialBudgetMobileList = document.getElementById(
+  "financialBudgetMobileList",
 );
 const financialScenariosList = document.getElementById("financialScenariosList");
 const financialCategoriesList = document.getElementById("financialCategoriesList");
@@ -668,8 +689,8 @@ let selectedQuickPaymentId = null;
 let orderedFinancialBaseIds = [];
 let draggedFinancialOrderId = null;
 let financialExpenseSortState = {
-  direction: "asc",
-  key: "title",
+  direction: "desc",
+  key: "contracted_at",
 };
 let financialBudgetSortState = {
   direction: "asc",
@@ -901,7 +922,7 @@ function getScenarioById(scenarioId) {
 }
 
 function getBudgetItemById(itemId) {
-  return cachedBudgetItems.find((item) => item.id === itemId);
+  return cachedBudgetItems.find((item) => String(item.id) === String(itemId));
 }
 
 function getFinancialUrlParams() {
@@ -918,11 +939,15 @@ function getBudgetItemExpensesUrl(item) {
 }
 
 function getExpenseById(expenseId) {
-  return cachedExpenses.find((expense) => expense.id === expenseId);
+  return cachedExpenses.find(
+    (expense) => String(expense.id) === String(expenseId),
+  );
 }
 
 function getPaymentById(paymentId) {
-  return cachedPayments.find((payment) => payment.id === paymentId);
+  return cachedPayments.find(
+    (payment) => String(payment.id) === String(paymentId),
+  );
 }
 
 function getPaymentsByExpenseId(expenseId) {
@@ -1372,6 +1397,12 @@ function createFinancialBaseItemCard(label, details = [], options = {}) {
     card.style.setProperty("--financial-base-item-color", options.color);
   }
 
+  if (options.actionType && options.itemId) {
+    card.dataset.financialBaseType = options.actionType;
+    card.dataset.financialBaseId = options.itemId;
+    card.tabIndex = 0;
+  }
+
   iconWrap.appendChild(createIcon(options.icon || "circle"));
   meta.textContent = details.filter(Boolean).join(" · ");
 
@@ -1666,6 +1697,65 @@ function updateSummaryCards() {
   );
 }
 
+function createFinancialOverviewPaymentCard(payment) {
+  const card = document.createElement("article");
+  const main = document.createElement("div");
+  const titleWrap = document.createElement("div");
+  const side = document.createElement("div");
+  const title = document.createElement("strong");
+  const meta = document.createElement("span");
+  const amount = document.createElement("strong");
+  const status = payment.display_status || payment.status;
+  const statusBadge = createBadge(
+    getStatusLabel(status, PAYMENT_STATUS_LABELS),
+    status,
+  );
+  const actions = document.createElement("div");
+  const payButton = document.createElement("button");
+  const isDueToday = payment.due_date === getTodayISODate();
+
+  card.className = "financial-overview-payment-card";
+  card.dataset.financialOverviewPaymentId = payment.id;
+  card.tabIndex = 0;
+  card.classList.toggle("financial-payment-card-overdue", status === "overdue");
+  card.classList.toggle(
+    "financial-payment-card-due-today",
+    status !== "overdue" && isDueToday,
+  );
+
+  main.className = "financial-overview-payment-main";
+  titleWrap.className = "financial-overview-payment-title-group";
+  title.textContent = payment.expense_title || "-";
+  meta.textContent = [
+    `Venc. ${formatDate(payment.due_date)}`,
+    payment.payer_name || "Pagador a definir",
+    payment.label ||
+      (payment.installment_number ? `Parcela ${payment.installment_number}` : ""),
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  titleWrap.append(title, meta);
+
+  side.className = "financial-overview-payment-side";
+  amount.textContent = formatCurrency(payment.amount);
+  side.append(amount, statusBadge);
+  main.append(titleWrap, side);
+
+  actions.className = "financial-overview-payment-actions";
+  payButton.type = "button";
+  payButton.className = "checklist-period-action financial-quick-payment-action";
+  payButton.dataset.financialPaymentAction = "quick-paid";
+  payButton.dataset.financialPaymentId = payment.id;
+  payButton.title = "Marcar parcela como paga";
+  payButton.setAttribute("aria-label", "Marcar parcela como paga");
+  payButton.appendChild(createIcon("check"));
+  actions.appendChild(payButton);
+
+  card.append(main, actions);
+
+  return card;
+}
+
 function renderPaymentsTable() {
   if (!financialPaymentsTableBody) {
     return;
@@ -1682,11 +1772,18 @@ function renderPaymentsTable() {
     .slice(0, 8);
 
   financialPaymentsTableBody.replaceChildren();
+  financialPaymentsMobileList?.replaceChildren();
 
   if (!payments.length) {
     financialPaymentsTableBody.appendChild(
       createEmptyRow("Nenhuma parcela em aberto neste contexto.", 5),
     );
+    if (financialPaymentsMobileList) {
+      const emptyState = document.createElement("div");
+      emptyState.className = "admin-empty-state";
+      emptyState.textContent = "Nenhuma parcela em aberto neste contexto.";
+      financialPaymentsMobileList.appendChild(emptyState);
+    }
     return;
   }
 
@@ -1701,6 +1798,8 @@ function renderPaymentsTable() {
     const payer = document.createElement("small");
     const payButton = document.createElement("button");
 
+    row.dataset.financialOverviewPaymentId = payment.id;
+    row.tabIndex = 0;
     statusCell.appendChild(
       createBadge(getStatusLabel(status, PAYMENT_STATUS_LABELS), status),
     );
@@ -1734,6 +1833,12 @@ function renderPaymentsTable() {
       actionCell,
     );
     financialPaymentsTableBody.appendChild(row);
+
+    if (financialPaymentsMobileList) {
+      financialPaymentsMobileList.appendChild(
+        createFinancialOverviewPaymentCard(payment),
+      );
+    }
   });
 }
 
@@ -1909,6 +2014,73 @@ function setFinancialPaymentSort(key) {
   renderAllPaymentsTable();
 }
 
+function createFinancialPaymentMobileCard(payment) {
+  const card = document.createElement("article");
+  const main = document.createElement("div");
+  const titleGroup = document.createElement("div");
+  const side = document.createElement("div");
+  const footer = document.createElement("div");
+  const title = document.createElement("strong");
+  const meta = document.createElement("span");
+  const amount = document.createElement("strong");
+  const dueDate = document.createElement("span");
+  const status = payment.display_status || payment.status;
+  const statusBadge = createBadge(
+    getStatusLabel(status, PAYMENT_STATUS_LABELS),
+    status,
+  );
+  const actions = document.createElement("div");
+  const detailsButton = document.createElement("button");
+  const deleteButton = document.createElement("button");
+
+  card.className = "financial-payment-mobile-card";
+  card.dataset.financialPaymentId = payment.id;
+  card.tabIndex = 0;
+
+  main.className = "financial-payment-mobile-main";
+  titleGroup.className = "financial-payment-mobile-title-group";
+  title.textContent = payment.expense_title || "-";
+  meta.textContent = [
+    payment.label || `Parcela ${payment.installment_number || "-"}`,
+    payment.category_name || "-",
+    payment.payer_name || "Pagador a definir",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  titleGroup.append(title, meta);
+
+  side.className = "financial-payment-mobile-side";
+  amount.textContent = formatCurrency(payment.amount);
+  dueDate.textContent = `Venc. ${formatDate(payment.due_date)}`;
+  side.append(amount, dueDate);
+  main.append(titleGroup, side);
+
+  footer.className = "financial-payment-mobile-footer";
+  actions.className = "financial-payment-mobile-actions";
+
+  detailsButton.type = "button";
+  detailsButton.className = "checklist-period-action";
+  detailsButton.dataset.financialPaymentAction = "details";
+  detailsButton.dataset.financialPaymentId = payment.id;
+  detailsButton.title = "Detalhes da parcela";
+  detailsButton.setAttribute("aria-label", "Detalhes da parcela");
+  detailsButton.appendChild(createIcon("eye"));
+
+  deleteButton.type = "button";
+  deleteButton.className = "checklist-period-action danger";
+  deleteButton.dataset.financialPaymentAction = "delete";
+  deleteButton.dataset.financialPaymentId = payment.id;
+  deleteButton.title = "Excluir parcela";
+  deleteButton.setAttribute("aria-label", "Excluir parcela");
+  deleteButton.appendChild(createIcon("trash-2"));
+
+  actions.append(detailsButton, deleteButton);
+  footer.append(statusBadge, actions);
+  card.append(main, footer);
+
+  return card;
+}
+
 function renderAllPaymentsTable() {
   if (!financialAllPaymentsTableBody || !financialAllPaymentsSummary) {
     return;
@@ -1919,6 +2091,7 @@ function renderAllPaymentsTable() {
   const sortedPayments = sortFinancialPayments(payments);
 
   financialAllPaymentsTableBody.replaceChildren();
+  financialAllPaymentsMobileList?.replaceChildren();
   financialAllPaymentsSummary.textContent = "";
   updateFinancialFilterCount(
     financialPaymentFilterCount,
@@ -1927,12 +2100,23 @@ function renderAllPaymentsTable() {
     "parcela",
     "parcelas",
   );
+  if (financialPaymentFiltersPanel) {
+    financialPaymentFiltersPanel.dataset.hasActiveFilters = String(
+      payments.length !== contextPayments.length,
+    );
+  }
 
   if (!payments.length) {
     updateFinancialPaymentSortButtons();
     financialAllPaymentsTableBody.appendChild(
       createEmptyRow("Nenhuma parcela encontrada neste contexto.", 9),
     );
+    if (financialAllPaymentsMobileList) {
+      const emptyState = document.createElement("div");
+      emptyState.className = "admin-mobile-empty-state";
+      emptyState.textContent = "Nenhuma parcela encontrada neste contexto.";
+      financialAllPaymentsMobileList.appendChild(emptyState);
+    }
     return;
   }
 
@@ -1946,6 +2130,8 @@ function renderAllPaymentsTable() {
     const detailsButton = document.createElement("button");
     const deleteButton = document.createElement("button");
 
+    row.dataset.financialPaymentId = payment.id;
+    row.tabIndex = 0;
     statusCell.appendChild(
       createBadge(getStatusLabel(status, PAYMENT_STATUS_LABELS), status),
     );
@@ -1980,9 +2166,16 @@ function renderAllPaymentsTable() {
       actionsCell,
     );
     financialAllPaymentsTableBody.appendChild(row);
+    financialAllPaymentsMobileList?.appendChild(
+      createFinancialPaymentMobileCard(payment),
+    );
   });
 
   updateFinancialPaymentSortButtons();
+
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
 }
 
 function sortExpensesByDate(first, second) {
@@ -2018,6 +2211,7 @@ function sortExpensesByRecentDate(first, second) {
 function getFinancialExpenseSortValue(expense) {
   const sortValues = {
     category: expense.category_name,
+    contracted_at: expense.contracted_at || "",
     paid: Number(expense.paid_amount || 0),
     remaining: Number(expense.remaining_amount || 0),
     status: getStatusLabel(expense.status, EXPENSE_STATUS_LABELS),
@@ -2144,6 +2338,8 @@ function createExpenseTableRow(expense, options = {}) {
     const detailsButton = document.createElement("button");
     const deleteButton = document.createElement("button");
 
+    row.dataset.financialExpenseId = expense.id;
+    row.tabIndex = 0;
     statusCell.appendChild(
       createBadge(
         getStatusLabel(expense.status, EXPENSE_STATUS_LABELS),
@@ -2166,7 +2362,10 @@ function createExpenseTableRow(expense, options = {}) {
 
     actionsCell.append(detailsButton, deleteButton);
   const titleCell = createCell("");
+  const typeCell = createCell("");
   const title = document.createElement("strong");
+  const type = document.createElement("strong");
+  const category = document.createElement("small");
 
   title.className = "financial-expense-title";
   title.textContent = expense.title || "-";
@@ -2200,10 +2399,16 @@ function createExpenseTableRow(expense, options = {}) {
     titleCell.appendChild(payer);
   }
 
+  type.className = "financial-expense-title";
+  type.textContent = getStatusLabel(expense.type, EXPENSE_TYPE_LABELS);
+  category.className = "admin-muted financial-expense-subtitle";
+  category.textContent = expense.category_name || "-";
+  typeCell.append(type, category);
+
   row.append(
-      titleCell,
-      createCell(getStatusLabel(expense.type, EXPENSE_TYPE_LABELS)),
-      createCell(expense.category_name || "-"),
+    titleCell,
+    typeCell,
+    createCell(formatDate(expense.contracted_at)),
   );
 
   row.append(
@@ -2269,6 +2474,78 @@ function createRecentExpenseCard(expense) {
   return card;
 }
 
+function createFinancialExpenseMobileCard(expense) {
+  const card = document.createElement("article");
+  const main = document.createElement("div");
+  const titleGroup = document.createElement("div");
+  const side = document.createElement("div");
+  const footer = document.createElement("div");
+  const title = document.createElement("strong");
+  const meta = document.createElement("span");
+  const paid = document.createElement("span");
+  const amount = document.createElement("strong");
+  const remaining = document.createElement("span");
+  const statusBadge = createBadge(
+    getStatusLabel(expense.status, EXPENSE_STATUS_LABELS),
+    expense.status,
+  );
+  const actions = document.createElement("div");
+  const detailsButton = document.createElement("button");
+  const deleteButton = document.createElement("button");
+
+  card.className = "financial-expense-mobile-card";
+  card.dataset.financialExpenseId = expense.id;
+  card.tabIndex = 0;
+
+  main.className = "financial-expense-mobile-main";
+  titleGroup.className = "financial-expense-mobile-title-group";
+  title.textContent = expense.title || "-";
+  meta.textContent = [
+    getStatusLabel(expense.type, EXPENSE_TYPE_LABELS),
+    expense.category_name || "-",
+    `Data: ${formatDate(expense.contracted_at)}`,
+    expense.default_payer_name || "Pagador a definir",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  paid.className = "financial-expense-mobile-paid";
+  paid.textContent = `Pago ${formatCurrency(expense.paid_amount)} de ${formatCurrency(
+    expense.total_amount,
+  )}`;
+  titleGroup.append(title, meta, paid);
+
+  side.className = "financial-expense-mobile-side";
+  amount.textContent = formatCurrency(expense.total_amount);
+  remaining.textContent = `Aberto: ${formatCurrency(expense.remaining_amount)}`;
+  side.append(amount, remaining);
+  main.append(titleGroup, side);
+
+  footer.className = "financial-expense-mobile-footer";
+  actions.className = "financial-expense-mobile-actions";
+
+  detailsButton.type = "button";
+  detailsButton.className = "checklist-period-action";
+  detailsButton.dataset.financialExpenseAction = "details";
+  detailsButton.dataset.financialExpenseId = expense.id;
+  detailsButton.title = "Detalhes do gasto";
+  detailsButton.setAttribute("aria-label", "Detalhes do gasto");
+  detailsButton.appendChild(createIcon("eye"));
+
+  deleteButton.type = "button";
+  deleteButton.className = "checklist-period-action danger";
+  deleteButton.dataset.financialExpenseAction = "delete";
+  deleteButton.dataset.financialExpenseId = expense.id;
+  deleteButton.title = "Excluir gasto";
+  deleteButton.setAttribute("aria-label", "Excluir gasto");
+  deleteButton.appendChild(createIcon("trash-2"));
+
+  actions.append(detailsButton, deleteButton);
+  footer.append(statusBadge, actions);
+  card.append(main, footer);
+
+  return card;
+}
+
 function renderExpensesTable() {
   if (!financialExpensesTableBody) {
     return;
@@ -2320,22 +2597,41 @@ function renderAllExpensesTable() {
     "gasto",
     "gastos",
   );
+  if (financialExpenseFiltersPanel) {
+    financialExpenseFiltersPanel.dataset.hasActiveFilters = String(
+      expenses.length !== contextExpenses.length,
+    );
+  }
   financialAllExpensesTableBody.replaceChildren();
+  financialAllExpensesMobileList?.replaceChildren();
 
   if (!expenses.length) {
     updateFinancialExpenseSortButtons();
     financialAllExpensesTableBody.appendChild(
       createEmptyRow("Nenhum gasto real encontrado com os filtros atuais.", 8),
     );
+    if (financialAllExpensesMobileList) {
+      const emptyState = document.createElement("div");
+      emptyState.className = "admin-mobile-empty-state";
+      emptyState.textContent = "Nenhum gasto real encontrado com os filtros atuais.";
+      financialAllExpensesMobileList.appendChild(emptyState);
+    }
     return;
   }
 
   sortedExpenses.forEach((expense) => {
     const row = createExpenseTableRow(expense, { includeDetails: true });
     financialAllExpensesTableBody.appendChild(row);
+    financialAllExpensesMobileList?.appendChild(
+      createFinancialExpenseMobileCard(expense),
+    );
   });
 
   updateFinancialExpenseSortButtons();
+
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
 }
 
 function setSelectOptions(selectElement, options, placeholder) {
@@ -3229,6 +3525,78 @@ function closeFinancialPayerDetailsModal() {
   financialPayerDetailsModal?.setAttribute("aria-hidden", "true");
 }
 
+function createFinancialBudgetMobileCard(item) {
+  const card = document.createElement("article");
+  const main = document.createElement("div");
+  const titleGroup = document.createElement("div");
+  const side = document.createElement("div");
+  const footer = document.createElement("div");
+  const title = document.createElement("strong");
+  const meta = document.createElement("span");
+  const amount = document.createElement("strong");
+  const balance = document.createElement("span");
+  const statusBadge = createBadge(
+    getStatusLabel(item.status, BUDGET_STATUS_LABELS),
+    item.status,
+  );
+  const values = document.createElement("span");
+  const actions = document.createElement("div");
+  const detailsButton = document.createElement("button");
+  const deleteButton = document.createElement("button");
+
+  card.className = "financial-budget-mobile-card";
+  card.dataset.financialBudgetItemId = item.id;
+  card.tabIndex = 0;
+
+  main.className = "financial-budget-mobile-main";
+  titleGroup.className = "financial-budget-mobile-title-group";
+  title.textContent = item.title || "-";
+  meta.textContent = [
+    item.category_name || "-",
+    getContextLabel(item.context),
+    item.scenario_name || "-",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  values.className = "financial-budget-mobile-realized";
+  values.textContent = `Realizado: ${formatCurrency(item.linked_expense_total)}`;
+  titleGroup.append(title, meta, values);
+
+  side.className = "financial-budget-mobile-side";
+  amount.textContent = formatCurrency(item.estimated_amount);
+  balance.className = `financial-overview-budget-balance ${getBudgetBalanceClass(
+    item.linked_delta,
+  )}`;
+  balance.textContent = formatBudgetBalanceLabel(item.linked_delta);
+  side.append(amount, balance);
+  main.append(titleGroup, side);
+
+  footer.className = "financial-budget-mobile-footer";
+  actions.className = "financial-budget-mobile-actions";
+
+  detailsButton.type = "button";
+  detailsButton.className = "checklist-period-action";
+  detailsButton.dataset.financialBudgetAction = "details";
+  detailsButton.dataset.financialBudgetItemId = item.id;
+  detailsButton.title = "Detalhes do item previsto";
+  detailsButton.setAttribute("aria-label", "Detalhes do item previsto");
+  detailsButton.appendChild(createIcon("eye"));
+
+  deleteButton.type = "button";
+  deleteButton.className = "checklist-period-action danger";
+  deleteButton.dataset.financialBudgetAction = "delete";
+  deleteButton.dataset.financialBudgetItemId = item.id;
+  deleteButton.title = "Excluir item previsto";
+  deleteButton.setAttribute("aria-label", "Excluir item previsto");
+  deleteButton.appendChild(createIcon("trash-2"));
+
+  actions.append(detailsButton, deleteButton);
+  footer.append(statusBadge, actions);
+  card.append(main, footer);
+
+  return card;
+}
+
 function renderBudgetTable() {
   if (!financialBudgetTableBody) {
     return;
@@ -3252,6 +3620,7 @@ function renderBudgetTable() {
   }
 
   financialBudgetTableBody.replaceChildren();
+  financialBudgetMobileList?.replaceChildren();
   updateFinancialBudgetSortButtons();
   updateFinancialFilterCount(
     financialBudgetFilterCount,
@@ -3260,6 +3629,11 @@ function renderBudgetTable() {
     "item previsto",
     "itens previstos",
   );
+  if (financialBudgetFiltersPanel) {
+    financialBudgetFiltersPanel.dataset.hasActiveFilters = String(
+      budgetItems.length !== scopedBudgetItems.length,
+    );
+  }
 
   if (!budgetItems.length) {
     financialBudgetTableBody.appendChild(
@@ -3268,6 +3642,12 @@ function renderBudgetTable() {
         canManageBudgetItems ? 8 : 7,
       ),
     );
+    if (financialBudgetMobileList) {
+      const emptyState = document.createElement("div");
+      emptyState.className = "admin-mobile-empty-state";
+      emptyState.textContent = "Nenhum item previsto cadastrado neste contexto.";
+      financialBudgetMobileList.appendChild(emptyState);
+    }
     return;
   }
 
@@ -3278,6 +3658,8 @@ function renderBudgetTable() {
     const category = document.createElement("small");
     const statusCell = createCell("");
 
+    row.dataset.financialBudgetItemId = item.id;
+    row.tabIndex = 0;
     title.className = "financial-expense-title";
     title.textContent = item.title || "-";
     category.className = "admin-muted financial-expense-subtitle";
@@ -3321,6 +3703,10 @@ function renderBudgetTable() {
     }
 
     financialBudgetTableBody.appendChild(row);
+
+    if (financialBudgetMobileList) {
+      financialBudgetMobileList.appendChild(createFinancialBudgetMobileCard(item));
+    }
   });
 
   if (window.lucide) {
@@ -5510,6 +5896,23 @@ async function loadFinancialData() {
   }
 }
 
+function focusActiveFinancialModuleTab() {
+  const tabs = document.querySelector(".financial-module-tabs");
+  const activeTab = tabs?.querySelector(".active");
+
+  if (!tabs || !activeTab) {
+    return;
+  }
+
+  window.requestAnimationFrame(() => {
+    activeTab.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+      inline: "center",
+    });
+  });
+}
+
 financialContextButtons.forEach((button) => {
   button.addEventListener("click", () => {
     activeContext = button.dataset.financialContext || "all";
@@ -5589,23 +5992,100 @@ financialBudgetScenarioInput?.addEventListener("change", () => {
 financialBudgetTableBody?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-financial-budget-action]");
 
-  if (!button) {
+  if (button) {
+    const item = getBudgetItemById(button.dataset.financialBudgetItemId);
+
+    if (button.dataset.financialBudgetAction === "details" && item) {
+      openFinancialBudgetItemDetailsModal(item);
+      return;
+    }
+
+    if (button.dataset.financialBudgetAction === "edit" && item) {
+      openFinancialBudgetItemModal(item);
+      return;
+    }
+
+    if (button.dataset.financialBudgetAction === "delete") {
+      deleteFinancialBudgetItem(button.dataset.financialBudgetItemId);
+      return;
+    }
+  }
+
+  const itemElement = event.target.closest("[data-financial-budget-item-id]");
+  const item = itemElement
+    ? getBudgetItemById(itemElement.dataset.financialBudgetItemId)
+    : null;
+
+  if (item) {
+    openFinancialBudgetItemDetailsModal(item);
+  }
+});
+
+financialBudgetTableBody?.addEventListener("keydown", (event) => {
+  if (event.target.closest("[data-financial-budget-action]")) {
     return;
   }
 
-  const item = getBudgetItemById(button.dataset.financialBudgetItemId);
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
 
-  if (button.dataset.financialBudgetAction === "details" && item) {
+  const itemElement = event.target.closest("[data-financial-budget-item-id]");
+  const item = itemElement
+    ? getBudgetItemById(itemElement.dataset.financialBudgetItemId)
+    : null;
+
+  if (!item) {
+    return;
+  }
+
+  event.preventDefault();
+  openFinancialBudgetItemDetailsModal(item);
+});
+
+financialBudgetMobileList?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-financial-budget-action]");
+
+  if (button) {
+    const item = getBudgetItemById(button.dataset.financialBudgetItemId);
+
+    if (button.dataset.financialBudgetAction === "details" && item) {
+      openFinancialBudgetItemDetailsModal(item);
+      return;
+    }
+
+    if (button.dataset.financialBudgetAction === "delete") {
+      deleteFinancialBudgetItem(button.dataset.financialBudgetItemId);
+      return;
+    }
+  }
+
+  const card = event.target.closest("[data-financial-budget-item-id]");
+  const item = card ? getBudgetItemById(card.dataset.financialBudgetItemId) : null;
+
+  if (item) {
     openFinancialBudgetItemDetailsModal(item);
   }
+});
 
-  if (button.dataset.financialBudgetAction === "edit" && item) {
-    openFinancialBudgetItemModal(item);
+financialBudgetMobileList?.addEventListener("keydown", (event) => {
+  if (event.target.closest("[data-financial-budget-action]")) {
+    return;
   }
 
-  if (button.dataset.financialBudgetAction === "delete") {
-    deleteFinancialBudgetItem(button.dataset.financialBudgetItemId);
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
   }
+
+  const card = event.target.closest("[data-financial-budget-item-id]");
+  const item = card ? getBudgetItemById(card.dataset.financialBudgetItemId) : null;
+
+  if (!item) {
+    return;
+  }
+
+  event.preventDefault();
+  openFinancialBudgetItemDetailsModal(item);
 });
 
 financialBudgetItemModal?.addEventListener("click", (event) => {
@@ -5707,13 +6187,85 @@ financialPaymentModal?.addEventListener("click", (event) => {
 financialPaymentsTableBody?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-financial-payment-action]");
 
-  if (!button) {
+  if (button) {
+    if (button.dataset.financialPaymentAction === "quick-paid") {
+      openFinancialQuickPaymentModal(button.dataset.financialPaymentId);
+    }
     return;
   }
 
-  if (button.dataset.financialPaymentAction === "quick-paid") {
-    openFinancialQuickPaymentModal(button.dataset.financialPaymentId);
+  const row = event.target.closest("[data-financial-overview-payment-id]");
+  const payment = row
+    ? getPaymentById(row.dataset.financialOverviewPaymentId)
+    : null;
+
+  if (payment) {
+    openFinancialPaymentDetailsModal(payment);
   }
+});
+
+financialPaymentsTableBody?.addEventListener("keydown", (event) => {
+  if (event.target.closest("[data-financial-payment-action]")) {
+    return;
+  }
+
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  const row = event.target.closest("[data-financial-overview-payment-id]");
+  const payment = row
+    ? getPaymentById(row.dataset.financialOverviewPaymentId)
+    : null;
+
+  if (!payment) {
+    return;
+  }
+
+  event.preventDefault();
+  openFinancialPaymentDetailsModal(payment);
+});
+
+financialPaymentsMobileList?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-financial-payment-action]");
+
+  if (button) {
+    if (button.dataset.financialPaymentAction === "quick-paid") {
+      openFinancialQuickPaymentModal(button.dataset.financialPaymentId);
+    }
+    return;
+  }
+
+  const card = event.target.closest("[data-financial-overview-payment-id]");
+  const payment = card
+    ? getPaymentById(card.dataset.financialOverviewPaymentId)
+    : null;
+
+  if (payment) {
+    openFinancialPaymentDetailsModal(payment);
+  }
+});
+
+financialPaymentsMobileList?.addEventListener("keydown", (event) => {
+  if (event.target.closest("[data-financial-payment-action]")) {
+    return;
+  }
+
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  const card = event.target.closest("[data-financial-overview-payment-id]");
+  const payment = card
+    ? getPaymentById(card.dataset.financialOverviewPaymentId)
+    : null;
+
+  if (!payment) {
+    return;
+  }
+
+  event.preventDefault();
+  openFinancialPaymentDetailsModal(payment);
 });
 
 closeFinancialQuickPaymentModalButton?.addEventListener(
@@ -5837,37 +6389,181 @@ document.querySelectorAll("[data-financial-budget-sort]").forEach((button) => {
 financialAllExpensesTableBody?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-financial-expense-action]");
 
-  if (!button) {
+  if (button) {
+    const expense = getExpenseById(button.dataset.financialExpenseId);
+
+    if (button.dataset.financialExpenseAction === "details" && expense) {
+      openFinancialExpenseDetailsModal(expense);
+      return;
+    }
+
+    if (button.dataset.financialExpenseAction === "delete") {
+      deleteFinancialExpense(button.dataset.financialExpenseId);
+      return;
+    }
+  }
+
+  const row = event.target.closest("[data-financial-expense-id]");
+  const expense = row ? getExpenseById(row.dataset.financialExpenseId) : null;
+
+  if (expense) {
+    openFinancialExpenseDetailsModal(expense);
+  }
+});
+
+financialAllExpensesTableBody?.addEventListener("keydown", (event) => {
+  if (event.target.closest("[data-financial-expense-action]")) {
     return;
   }
 
-  const expense = getExpenseById(button.dataset.financialExpenseId);
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
 
-  if (button.dataset.financialExpenseAction === "details" && expense) {
+  const row = event.target.closest("[data-financial-expense-id]");
+  const expense = row ? getExpenseById(row.dataset.financialExpenseId) : null;
+
+  if (!expense) {
+    return;
+  }
+
+  event.preventDefault();
+  openFinancialExpenseDetailsModal(expense);
+});
+
+financialAllExpensesMobileList?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-financial-expense-action]");
+
+  if (button) {
+    const expense = getExpenseById(button.dataset.financialExpenseId);
+
+    if (button.dataset.financialExpenseAction === "details" && expense) {
+      openFinancialExpenseDetailsModal(expense);
+      return;
+    }
+
+    if (button.dataset.financialExpenseAction === "delete") {
+      deleteFinancialExpense(button.dataset.financialExpenseId);
+      return;
+    }
+  }
+
+  const card = event.target.closest("[data-financial-expense-id]");
+  const expense = card ? getExpenseById(card.dataset.financialExpenseId) : null;
+
+  if (expense) {
     openFinancialExpenseDetailsModal(expense);
   }
+});
 
-  if (button.dataset.financialExpenseAction === "delete") {
-    deleteFinancialExpense(button.dataset.financialExpenseId);
+financialAllExpensesMobileList?.addEventListener("keydown", (event) => {
+  if (event.target.closest("[data-financial-expense-action]")) {
+    return;
   }
+
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  const card = event.target.closest("[data-financial-expense-id]");
+  const expense = card ? getExpenseById(card.dataset.financialExpenseId) : null;
+
+  if (!expense) {
+    return;
+  }
+
+  event.preventDefault();
+  openFinancialExpenseDetailsModal(expense);
 });
 
 financialAllPaymentsTableBody?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-financial-payment-action]");
 
-  if (!button) {
+  if (button) {
+    const payment = getPaymentById(button.dataset.financialPaymentId);
+
+    if (button.dataset.financialPaymentAction === "details" && payment) {
+      openFinancialPaymentDetailsModal(payment);
+      return;
+    }
+
+    if (button.dataset.financialPaymentAction === "delete") {
+      deleteFinancialPayment(button.dataset.financialPaymentId);
+      return;
+    }
+  }
+
+  const row = event.target.closest("[data-financial-payment-id]");
+  const payment = row ? getPaymentById(row.dataset.financialPaymentId) : null;
+
+  if (payment) {
+    openFinancialPaymentDetailsModal(payment);
+  }
+});
+
+financialAllPaymentsTableBody?.addEventListener("keydown", (event) => {
+  if (event.target.closest("[data-financial-payment-action]")) {
     return;
   }
 
-  const payment = getPaymentById(button.dataset.financialPaymentId);
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
 
-  if (button.dataset.financialPaymentAction === "details" && payment) {
+  const row = event.target.closest("[data-financial-payment-id]");
+  const payment = row ? getPaymentById(row.dataset.financialPaymentId) : null;
+
+  if (!payment) {
+    return;
+  }
+
+  event.preventDefault();
+  openFinancialPaymentDetailsModal(payment);
+});
+
+financialAllPaymentsMobileList?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-financial-payment-action]");
+
+  if (button) {
+    const payment = getPaymentById(button.dataset.financialPaymentId);
+
+    if (button.dataset.financialPaymentAction === "details" && payment) {
+      openFinancialPaymentDetailsModal(payment);
+      return;
+    }
+
+    if (button.dataset.financialPaymentAction === "delete") {
+      deleteFinancialPayment(button.dataset.financialPaymentId);
+      return;
+    }
+  }
+
+  const card = event.target.closest("[data-financial-payment-id]");
+  const payment = card ? getPaymentById(card.dataset.financialPaymentId) : null;
+
+  if (payment) {
     openFinancialPaymentDetailsModal(payment);
   }
+});
 
-  if (button.dataset.financialPaymentAction === "delete") {
-    deleteFinancialPayment(button.dataset.financialPaymentId);
+financialAllPaymentsMobileList?.addEventListener("keydown", (event) => {
+  if (event.target.closest("[data-financial-payment-action]")) {
+    return;
   }
+
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  const card = event.target.closest("[data-financial-payment-id]");
+  const payment = card ? getPaymentById(card.dataset.financialPaymentId) : null;
+
+  if (!payment) {
+    return;
+  }
+
+  event.preventDefault();
+  openFinancialPaymentDetailsModal(payment);
 });
 
 financialExpenseModal?.addEventListener("click", (event) => {
@@ -5984,50 +6680,95 @@ financialOrderModal?.addEventListener("click", (event) => {
 function handleFinancialBaseCardAction(event) {
   const button = event.target.closest("[data-financial-base-action]");
 
-  if (!button) {
+  if (button) {
+    const { financialBaseAction: action, financialBaseType: type, financialBaseId: id } =
+      button.dataset;
+
+    if (type === "scenario") {
+      const scenario = getScenarioById(id);
+
+      if (action === "details" && scenario) {
+        openFinancialScenarioDetailsModal(scenario);
+      }
+      if (action === "delete") {
+        deleteFinancialScenario(id);
+      }
+    }
+
+    if (type === "category") {
+      const category = getCategoryById(id);
+
+      if (action === "details" && category) {
+        openFinancialCategoryDetailsModal(category);
+      }
+      if (action === "delete") {
+        deleteFinancialCategory(id);
+      }
+    }
+
+    if (type === "payer") {
+      const payer = getPayerById(id);
+
+      if (action === "details" && payer) {
+        openFinancialPayerDetailsModal(payer);
+      }
+      if (action === "delete") {
+        deleteFinancialPayer(id);
+      }
+    }
+
     return;
   }
 
-  const { financialBaseAction: action, financialBaseType: type, financialBaseId: id } =
-    button.dataset;
+  const card = event.target.closest("[data-financial-base-type][data-financial-base-id]");
+
+  if (!card) {
+    return;
+  }
+
+  const { financialBaseType: type, financialBaseId: id } = card.dataset;
 
   if (type === "scenario") {
     const scenario = getScenarioById(id);
-
-    if (action === "details" && scenario) {
+    if (scenario) {
       openFinancialScenarioDetailsModal(scenario);
-    }
-    if (action === "delete") {
-      deleteFinancialScenario(id);
     }
   }
 
   if (type === "category") {
     const category = getCategoryById(id);
-
-    if (action === "details" && category) {
+    if (category) {
       openFinancialCategoryDetailsModal(category);
-    }
-    if (action === "delete") {
-      deleteFinancialCategory(id);
     }
   }
 
   if (type === "payer") {
     const payer = getPayerById(id);
-
-    if (action === "details" && payer) {
+    if (payer) {
       openFinancialPayerDetailsModal(payer);
     }
-    if (action === "delete") {
-      deleteFinancialPayer(id);
-    }
   }
+}
+
+function handleFinancialBaseCardKeydown(event) {
+  if (event.target.closest("[data-financial-base-action]")) {
+    return;
+  }
+
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  event.preventDefault();
+  handleFinancialBaseCardAction(event);
 }
 
 financialScenariosList?.addEventListener("click", handleFinancialBaseCardAction);
 financialCategoriesList?.addEventListener("click", handleFinancialBaseCardAction);
 financialPayersList?.addEventListener("click", handleFinancialBaseCardAction);
+financialScenariosList?.addEventListener("keydown", handleFinancialBaseCardKeydown);
+financialCategoriesList?.addEventListener("keydown", handleFinancialBaseCardKeydown);
+financialPayersList?.addEventListener("keydown", handleFinancialBaseCardKeydown);
 
 openFinancialScenarioModalButton?.addEventListener("click", () => {
   openFinancialScenarioModal();
@@ -6281,4 +7022,5 @@ populateFinancialCategoryIconSelect();
 updateFinancialCategoryIconPreview();
 populateFinancialPayerIconSelect();
 updateFinancialPayerIconPreview();
+focusActiveFinancialModuleTab();
 loadFinancialData();

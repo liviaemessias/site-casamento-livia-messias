@@ -30,21 +30,21 @@
         <a class="admin-nav-link" href="./admin-settings.html">Configurações</a>
       </nav>
 
-      <section class="admin-section">
-        <div class="admin-section-header">
+      <section class="admin-section" id="financialExpenses">
+        <div class="admin-section-header admin-list-toolbar">
           <div>
             <p class="section-subtitle">Gestão financeira</p>
             <h2>Gastos Reais</h2>
           </div>
 
           <div class="admin-section-actions">
-            <button id="refreshFinancialButton" class="admin-action-button icon-action">
+            <button id="refreshFinancialButton" class="admin-action-button icon-action" aria-label="Atualizar gastos reais" title="Atualizar">
               <i data-lucide="refresh-cw" aria-hidden="true"></i>
-              Atualizar
+              <span>Atualizar</span>
             </button>
-            <button id="newExpenseButton" class="admin-action-button icon-action success">
+            <button id="newExpenseButton" class="admin-action-button icon-action success" aria-label="Novo gasto real" title="Novo gasto real">
               <i data-lucide="plus" aria-hidden="true"></i>
-              Gasto Real
+              <span>Novo</span>
             </button>
           </div>
         </div>
@@ -74,54 +74,63 @@
             <small id="financialAllExpensesSummary">0 gastos encontrados</small>
           </div>
 
-          <div class="admin-filters-grid financial-expenses-filters">
-            <div class="admin-filter-field">
-              <label for="financialExpenseSearchInput">Buscar</label>
-              <input id="financialExpenseSearchInput" type="search" placeholder="Nome, categoria, fornecedor..." />
+          <details class="admin-filter-panel" id="financialExpenseFiltersPanel">
+            <summary class="admin-filter-panel-toggle">
+              <span>
+                <i data-lucide="sliders-horizontal" aria-hidden="true"></i>
+                Filtros
+              </span>
+              <small id="financialExpenseFilterCount" class="admin-filter-count"></small>
+            </summary>
+
+            <div class="admin-filters-grid financial-expenses-filters">
+              <div class="admin-filter-field">
+                <label for="financialExpenseSearchInput">Buscar</label>
+                <input id="financialExpenseSearchInput" type="search" placeholder="Nome, categoria, fornecedor..." />
+              </div>
+              <div class="admin-filter-field">
+                <label for="financialExpenseCategoryFilter">Categoria</label>
+                <select id="financialExpenseCategoryFilter"></select>
+              </div>
+              <div class="admin-filter-field">
+                <label for="financialExpenseTypeFilter">Tipo</label>
+                <select id="financialExpenseTypeFilter"></select>
+              </div>
+              <div class="admin-filter-field">
+                <label for="financialExpenseStatusFilter">Status</label>
+                <select id="financialExpenseStatusFilter"></select>
+              </div>
+              <div class="admin-filter-field">
+                <label for="financialExpensePayerFilter">Pagador</label>
+                <select id="financialExpensePayerFilter"></select>
+              </div>
+              <div class="admin-filter-field">
+                <label for="financialExpenseVendorFilter">Fornecedor</label>
+                <select id="financialExpenseVendorFilter"></select>
+              </div>
+              <div class="admin-filter-field">
+                <label for="financialExpenseBudgetLinkFilter">Vínculo previsto</label>
+                <select id="financialExpenseBudgetLinkFilter">
+                  <option value="">Todos</option>
+                  <option value="linked">Com item previsto</option>
+                  <option value="unlinked">Sem item previsto</option>
+                </select>
+              </div>
+              <div class="admin-filter-field">
+                <label for="financialExpenseBudgetItemFilter">Item previsto</label>
+                <select id="financialExpenseBudgetItemFilter"></select>
+              </div>
+              <div class="admin-filter-actions">
+                <button
+                  type="button"
+                  id="clearFinancialExpenseFiltersButton"
+                  class="admin-clear-filters"
+                >
+                  Limpar Filtros
+                </button>
+              </div>
             </div>
-            <div class="admin-filter-field">
-              <label for="financialExpenseCategoryFilter">Categoria</label>
-              <select id="financialExpenseCategoryFilter"></select>
-            </div>
-            <div class="admin-filter-field">
-              <label for="financialExpenseTypeFilter">Tipo</label>
-              <select id="financialExpenseTypeFilter"></select>
-            </div>
-            <div class="admin-filter-field">
-              <label for="financialExpenseStatusFilter">Status</label>
-              <select id="financialExpenseStatusFilter"></select>
-            </div>
-            <div class="admin-filter-field">
-              <label for="financialExpensePayerFilter">Pagador</label>
-              <select id="financialExpensePayerFilter"></select>
-            </div>
-            <div class="admin-filter-field">
-              <label for="financialExpenseVendorFilter">Fornecedor</label>
-              <select id="financialExpenseVendorFilter"></select>
-            </div>
-            <div class="admin-filter-field">
-              <label for="financialExpenseBudgetLinkFilter">Vínculo previsto</label>
-              <select id="financialExpenseBudgetLinkFilter">
-                <option value="">Todos</option>
-                <option value="linked">Com item previsto</option>
-                <option value="unlinked">Sem item previsto</option>
-              </select>
-            </div>
-            <div class="admin-filter-field">
-              <label for="financialExpenseBudgetItemFilter">Item previsto</label>
-              <select id="financialExpenseBudgetItemFilter"></select>
-            </div>
-            <div class="admin-filter-actions">
-              <span id="financialExpenseFilterCount" class="admin-filter-count"></span>
-              <button
-                type="button"
-                id="clearFinancialExpenseFiltersButton"
-                class="admin-clear-filters"
-              >
-                Limpar Filtros
-              </button>
-            </div>
-          </div>
+          </details>
 
           <div class="admin-table-wrapper">
             <table class="admin-table financial-table financial-full-expenses-table">
@@ -134,12 +143,12 @@
                   </th>
                   <th>
                     <button class="admin-sort-button" data-financial-expense-sort="type">
-                      Tipo
+                      Tipo / Categoria
                     </button>
                   </th>
                   <th>
-                    <button class="admin-sort-button" data-financial-expense-sort="category">
-                      Categoria
+                    <button class="admin-sort-button" data-financial-expense-sort="contracted_at">
+                      Data
                     </button>
                   </th>
                   <th>
@@ -168,6 +177,11 @@
               <tbody id="financialAllExpensesTableBody"></tbody>
             </table>
           </div>
+          <div
+            id="financialAllExpensesMobileList"
+            class="admin-mobile-card-list financial-expense-mobile-list"
+            aria-label="Gastos reais"
+          ></div>
         </section>
       </section>
     </main>

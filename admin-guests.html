@@ -38,108 +38,116 @@
       </nav>
 
       <section class="admin-section" id="guests">
-        <div class="admin-section-header">
+        <div class="admin-section-header admin-list-toolbar">
           <div>
-            <p class="section-subtitle">Convidados</p>
+            <p class="section-subtitle">Gestão</p>
 
-            <h2>Gestão de Convidados</h2>
+            <h2>Convidados</h2>
           </div>
 
           <div class="admin-section-actions">
-            <button id="refreshGuestsButton" class="admin-action-button icon-action">
+            <button id="refreshGuestsButton" class="admin-action-button icon-action" aria-label="Atualizar convidados" title="Atualizar">
               <i data-lucide="refresh-cw" aria-hidden="true"></i>
-              Atualizar
+              <span>Atualizar</span>
             </button>
 
-            <button id="exportGuestsButton" class="admin-action-button icon-action">
+            <button id="exportGuestsButton" class="admin-action-button icon-action" aria-label="Exportar convidados" title="Exportar">
               <i data-lucide="download" aria-hidden="true"></i>
-              Exportar CSV
+              <span>Exportar</span>
             </button>
 
-            <button id="openGuestModalButton" class="admin-action-button icon-action success">
+            <button id="openGuestModalButton" class="admin-action-button icon-action success" aria-label="Novo convidado" title="Novo convidado">
               <i data-lucide="plus" aria-hidden="true"></i>
-              Novo Convidado
+              <span>Novo</span>
             </button>
           </div>
         </div>
 
-        <div class="admin-filters" aria-label="Filtros de convidados">
-          <div class="admin-filter-field">
-            <label for="guestSearchInput">Buscar</label>
-            <input
-              type="search"
-              id="guestSearchInput"
-              placeholder="Nome ou código do convite"
-            />
-          </div>
+        <details class="admin-filter-panel" id="guestFiltersPanel">
+          <summary class="admin-filter-panel-toggle">
+            <span>
+              <i data-lucide="sliders-horizontal" aria-hidden="true"></i>
+              Filtros
+            </span>
+            <small id="guestFilterCount" class="admin-filter-count"></small>
+          </summary>
 
-          <div class="admin-filter-field">
-            <label for="guestStatusFilter">Status</label>
-            <select id="guestStatusFilter">
-              <option value="">Todos</option>
-              <option value="active">Ativos</option>
-              <option value="inactive">Inativos</option>
-            </select>
-          </div>
+          <div class="admin-filters" aria-label="Filtros de convidados">
+            <div class="admin-filter-field">
+              <label for="guestSearchInput">Buscar</label>
+              <input
+                type="search"
+                id="guestSearchInput"
+                placeholder="Nome ou código do convite"
+              />
+            </div>
 
-          <div class="admin-filter-field">
-            <label for="guestConfirmedFilter">RSVP</label>
-            <select id="guestConfirmedFilter">
-              <option value="">Todos</option>
-              <option value="confirmed">Confirmados</option>
-              <option value="pending">Pendentes</option>
-            </select>
-          </div>
+            <div class="admin-filter-field">
+              <label for="guestStatusFilter">Status</label>
+              <select id="guestStatusFilter">
+                <option value="">Todos</option>
+                <option value="active">Ativos</option>
+                <option value="inactive">Inativos</option>
+              </select>
+            </div>
 
-          <div class="admin-filter-field">
-            <label for="guestInviteSentFilter">Convite</label>
-            <select id="guestInviteSentFilter">
-              <option value="">Todos</option>
-              <option value="sent">Enviados</option>
-              <option value="not_sent">Não enviados</option>
-            </select>
-          </div>
+            <div class="admin-filter-field">
+              <label for="guestConfirmedFilter">RSVP</label>
+              <select id="guestConfirmedFilter">
+                <option value="">Todos</option>
+                <option value="confirmed">Confirmados</option>
+                <option value="pending">Pendentes</option>
+              </select>
+            </div>
 
-          <div class="admin-filter-field">
-            <label for="guestTypeFilter">Tipo</label>
-            <select id="guestTypeFilter">
-              <option value="">Todos</option>
-              <option value="individual">Individual</option>
-              <option value="couple">Casal</option>
-            </select>
-          </div>
+            <div class="admin-filter-field">
+              <label for="guestInviteSentFilter">Convite</label>
+              <select id="guestInviteSentFilter">
+                <option value="">Todos</option>
+                <option value="sent">Enviados</option>
+                <option value="not_sent">Não enviados</option>
+              </select>
+            </div>
 
-          <div class="admin-filter-field">
-            <label for="guestSideFilter">Convidado de</label>
-            <select id="guestSideFilter">
-              <option value="">Todos</option>
-              <option value="couple">Casal</option>
-              <option value="bride">Noiva</option>
-              <option value="groom">Noivo</option>
-            </select>
-          </div>
+            <div class="admin-filter-field">
+              <label for="guestTypeFilter">Tipo</label>
+              <select id="guestTypeFilter">
+                <option value="">Todos</option>
+                <option value="individual">Individual</option>
+                <option value="couple">Casal</option>
+              </select>
+            </div>
 
-          <div class="admin-filter-field">
-            <label for="guestTableFilter">Mesa</label>
-            <select id="guestTableFilter">
-              <option value="">Todas</option>
-              <option value="assigned">Com mesa</option>
-              <option value="unassigned">Sem mesa</option>
-            </select>
-          </div>
+            <div class="admin-filter-field">
+              <label for="guestSideFilter">Convidado de</label>
+              <select id="guestSideFilter">
+                <option value="">Todos</option>
+                <option value="couple">Casal</option>
+                <option value="bride">Noiva</option>
+                <option value="groom">Noivo</option>
+              </select>
+            </div>
 
-          <div class="admin-filter-actions">
-            <span id="guestFilterCount" class="admin-filter-count"></span>
+            <div class="admin-filter-field">
+              <label for="guestTableFilter">Mesa</label>
+              <select id="guestTableFilter">
+                <option value="">Todas</option>
+                <option value="assigned">Com mesa</option>
+                <option value="unassigned">Sem mesa</option>
+              </select>
+            </div>
 
-            <button
-              type="button"
-              id="clearGuestFiltersButton"
-              class="admin-clear-filters"
-            >
-              Limpar Filtros
-            </button>
+            <div class="admin-filter-actions">
+              <button
+                type="button"
+                id="clearGuestFiltersButton"
+                class="admin-clear-filters"
+              >
+                Limpar Filtros
+              </button>
+            </div>
           </div>
-        </div>
+        </details>
 
         <div class="admin-table-wrapper">
           <table class="admin-table guests-table">
@@ -192,6 +200,12 @@
             <tbody id="guestsTableBody"></tbody>
           </table>
         </div>
+
+        <div
+          id="guestsMobileList"
+          class="admin-mobile-card-list guests-mobile-list"
+          aria-live="polite"
+        ></div>
       </section>
     </main>
 

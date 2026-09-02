@@ -2,9 +2,12 @@ AdminCommon.setupLogout();
 
 const sectionsTableBody = document.getElementById("sectionsTableBody");
 const activitiesTableBody = document.getElementById("activitiesTableBody");
+const sectionsMobileList = document.getElementById("sectionsMobileList");
+const activitiesMobileList = document.getElementById("activitiesMobileList");
 const sectionSearchInput = document.getElementById("sectionSearchInput");
 const sectionVisibilityFilter = document.getElementById("sectionVisibilityFilter");
 const sectionFilterCount = document.getElementById("sectionFilterCount");
+const sectionFiltersPanel = document.getElementById("sectionFiltersPanel");
 const clearSectionFiltersButton = document.getElementById("clearSectionFiltersButton");
 const activitySearchInput = document.getElementById("activitySearchInput");
 const activitySectionFilter = document.getElementById("activitySectionFilter");
@@ -12,6 +15,7 @@ const activityTypeFilter = document.getElementById("activityTypeFilter");
 const activityTimeModeFilter = document.getElementById("activityTimeModeFilter");
 const activityVisibilityFilter = document.getElementById("activityVisibilityFilter");
 const activityFilterCount = document.getElementById("activityFilterCount");
+const activityFiltersPanel = document.getElementById("activityFiltersPanel");
 const clearActivityFiltersButton = document.getElementById("clearActivityFiltersButton");
 const refreshScheduleButton = document.getElementById("refreshScheduleButton");
 const openSectionModalButton = document.getElementById("openSectionModalButton");
@@ -184,7 +188,7 @@ function renderVisibilityToggle(entity, actionName) {
   const visible = Boolean(entity.is_visible);
 
   return `
-    <label class="admin-table-checkbox" title="${visible ? "Ocultar" : "Exibir"}">
+    <label class="admin-toggle-switch schedule-visibility-toggle" title="${visible ? "Ocultar" : "Exibir"}">
       <input
         type="checkbox"
         data-schedule-action="${actionName}"
@@ -192,6 +196,7 @@ function renderVisibilityToggle(entity, actionName) {
         ${visible ? "checked" : ""}
         aria-label="${visible ? "Visível" : "Oculto"}"
       />
+      <span aria-hidden="true"></span>
     </label>
   `;
 }
@@ -356,9 +361,157 @@ function getFilteredActivities() {
   );
 }
 
+function renderScheduleMobileActions(kind, entity) {
+  const detailAction = kind === "section" ? "section-details" : "activity-details";
+  const editAction = kind === "section" ? "section-edit" : "activity-edit";
+
+  return `
+    <div class="admin-mobile-card-actions schedule-mobile-actions">
+      <button
+        type="button"
+        class="admin-action-button icon-action"
+        data-schedule-action="${detailAction}"
+        data-schedule-id="${escapeAttribute(entity.id)}"
+      >
+        ${renderIcon("eye")}
+        Detalhes
+      </button>
+      <button
+        type="button"
+        class="admin-action-button icon-action"
+        data-schedule-action="${editAction}"
+        data-schedule-id="${escapeAttribute(entity.id)}"
+      >
+        ${renderIcon("edit")}
+        Editar
+      </button>
+    </div>
+  `;
+}
+
+function renderSectionsMobileList(sections) {
+  if (!sectionsMobileList) {
+    return;
+  }
+
+  if (!sections.length) {
+    replaceSafeContent(
+      sectionsMobileList,
+      '<div class="admin-mobile-empty-state">Nenhuma etapa encontrada para os filtros selecionados.</div>',
+    );
+    return;
+  }
+
+  replaceSafeContent(
+    sectionsMobileList,
+    sections
+      .map(
+        (section) => `
+          <article class="admin-mobile-list-card schedule-mobile-card" data-schedule-section-card-id="${escapeAttribute(section.id)}" tabindex="0">
+            <div class="admin-mobile-card-main">
+              <div>
+                <strong>${safeText(section.title)}</strong>
+                <span>${safeText(section.location_name || "Local não informado")}</span>
+              </div>
+              ${renderVisibilityToggle(section, "toggle-section-visible")}
+            </div>
+
+            ${
+              section.description
+                ? `<p class="schedule-mobile-description">${safeText(section.description)}</p>`
+                : ""
+            }
+
+            <dl class="admin-mobile-card-meta schedule-mobile-meta">
+              <div>
+                <dt>Ordem</dt>
+                <dd>${safeText(section.display_order ?? 0)}</dd>
+              </div>
+              <div>
+                <dt>Endereço</dt>
+                <dd>${safeText(section.address || "-")}</dd>
+              </div>
+            </dl>
+
+            ${renderScheduleMobileActions("section", section)}
+          </article>
+        `,
+      )
+      .join(""),
+  );
+
+  window.lucide?.createIcons();
+}
+
+function renderActivitiesMobileList(activities) {
+  if (!activitiesMobileList) {
+    return;
+  }
+
+  if (!activities.length) {
+    replaceSafeContent(
+      activitiesMobileList,
+      '<div class="admin-mobile-empty-state">Nenhuma atividade encontrada para os filtros selecionados.</div>',
+    );
+    return;
+  }
+
+  replaceSafeContent(
+    activitiesMobileList,
+    activities
+      .map(
+        (activity) => `
+          <article class="admin-mobile-list-card schedule-mobile-card" data-schedule-activity-card-id="${escapeAttribute(activity.id)}" tabindex="0">
+            <div class="admin-mobile-card-main">
+              <div>
+                <strong>${safeText(activity.title)}</strong>
+                <span>${safeText(getSectionTitle(activity.section_id))}</span>
+              </div>
+              ${renderVisibilityToggle(activity, "toggle-activity-visible")}
+            </div>
+
+            ${
+              activity.description
+                ? `<p class="schedule-mobile-description">${safeText(activity.description)}</p>`
+                : ""
+            }
+
+            <dl class="admin-mobile-card-meta schedule-mobile-meta">
+              <div>
+                <dt>Tipo</dt>
+                <dd>${safeText(ACTIVITY_TYPE_LABELS[activity.activity_type] || "Outro")}</dd>
+              </div>
+              <div>
+                <dt>Horário</dt>
+                <dd>${safeText(getTimeLabel(activity) || "-")}</dd>
+              </div>
+              <div>
+                <dt>Ordem</dt>
+                <dd>${safeText(activity.display_order ?? 0)}</dd>
+              </div>
+            </dl>
+
+            ${renderScheduleMobileActions("activity", activity)}
+          </article>
+        `,
+      )
+      .join(""),
+  );
+
+  window.lucide?.createIcons();
+}
+
 function renderSectionsTable() {
   const sections = getFilteredSections();
-  sectionFilterCount.textContent = `${sections.length} de ${cachedSections.length} etapas`;
+  sectionFilterCount.textContent =
+    sections.length === cachedSections.length
+      ? `${cachedSections.length} etapa${cachedSections.length === 1 ? "" : "s"}`
+      : `${sections.length} de ${cachedSections.length} etapas`;
+  if (sectionFiltersPanel) {
+    sectionFiltersPanel.dataset.hasActiveFilters = String(
+      sections.length !== cachedSections.length,
+    );
+  }
   updateSortButtons("[data-section-sort]", sectionSortState.key, sectionSortState.direction, "sectionSort");
 
   if (!sections.length) {
@@ -366,6 +519,7 @@ function renderSectionsTable() {
       sectionsTableBody,
       '<tr><td colspan="5" class="admin-empty-state">Nenhuma etapa encontrada.</td></tr>',
     );
+    renderSectionsMobileList(sections);
     return;
   }
 
@@ -374,7 +528,7 @@ function renderSectionsTable() {
     sections
       .map(
         (section) => `
-          <tr>
+          <tr data-schedule-section-row-id="${escapeAttribute(section.id)}" tabindex="0">
             <td>
               <strong>${safeText(section.title)}</strong>
               <span class="admin-muted guest-table-type">${safeText(section.description, "")}</span>
@@ -398,12 +552,21 @@ function renderSectionsTable() {
       .join(""),
   );
 
+  renderSectionsMobileList(sections);
   window.lucide?.createIcons();
 }
 
 function renderActivitiesTable() {
   const activities = getFilteredActivities();
-  activityFilterCount.textContent = `${activities.length} de ${cachedActivities.length} atividades`;
+  activityFilterCount.textContent =
+    activities.length === cachedActivities.length
+      ? `${cachedActivities.length} atividade${cachedActivities.length === 1 ? "" : "s"}`
+      : `${activities.length} de ${cachedActivities.length} atividades`;
+  if (activityFiltersPanel) {
+    activityFiltersPanel.dataset.hasActiveFilters = String(
+      activities.length !== cachedActivities.length,
+    );
+  }
   updateSortButtons("[data-activity-sort]", activitySortState.key, activitySortState.direction, "activitySort");
 
   if (!activities.length) {
@@ -411,6 +574,7 @@ function renderActivitiesTable() {
       activitiesTableBody,
       '<tr><td colspan="7" class="admin-empty-state">Nenhuma atividade encontrada.</td></tr>',
     );
+    renderActivitiesMobileList(activities);
     return;
   }
 
@@ -419,7 +583,7 @@ function renderActivitiesTable() {
     activities
       .map(
         (activity) => `
-          <tr>
+          <tr data-schedule-activity-row-id="${escapeAttribute(activity.id)}" tabindex="0">
             <td>
               <strong>${safeText(activity.title)}</strong>
               <span class="admin-muted guest-table-type">${safeText(activity.description, "")}</span>
@@ -445,6 +609,7 @@ function renderActivitiesTable() {
       .join(""),
   );
 
+  renderActivitiesMobileList(activities);
   window.lucide?.createIcons();
 }
 
@@ -651,9 +816,10 @@ async function toggleSectionVisibility(sectionId) {
     return;
   }
 
-  showAdminToast(section.is_visible ? "💜 Etapa ocultada!" : "💜 Etapa exibida!");
+  const toastMessage = section.is_visible ? "💜 Etapa ocultada!" : "💜 Etapa exibida!";
   closeScheduleDetailsModal();
   await loadScheduleAdmin();
+  showAdminToast(toastMessage);
 }
 
 async function toggleActivityVisibility(activityId) {
@@ -674,9 +840,12 @@ async function toggleActivityVisibility(activityId) {
     return;
   }
 
-  showAdminToast(activity.is_visible ? "💜 Atividade ocultada!" : "💜 Atividade exibida!");
+  const toastMessage = activity.is_visible
+    ? "💜 Atividade ocultada!"
+    : "💜 Atividade exibida!";
   closeScheduleDetailsModal();
   await loadScheduleAdmin();
+  showAdminToast(toastMessage);
 }
 
 async function deleteSection(sectionId) {
@@ -1115,10 +1284,52 @@ scheduleSummaryCards.forEach((card) => {
   });
 });
 
+function shouldIgnoreScheduleItemClick(target) {
+  return Boolean(
+    target.closest(
+      "button, a, input, select, textarea, label, [data-schedule-action], .admin-action-button",
+    ),
+  );
+}
+
+function openScheduleDetailsFromInteractiveItem(element) {
+  const sectionId =
+    element?.dataset.scheduleSectionRowId || element?.dataset.scheduleSectionCardId;
+  const activityId =
+    element?.dataset.scheduleActivityRowId || element?.dataset.scheduleActivityCardId;
+
+  if (sectionId) {
+    openSectionDetails(sectionId);
+  }
+
+  if (activityId) {
+    openActivityDetails(activityId);
+  }
+}
+
+function handleScheduleVisibilityToggle(input) {
+  const id = input?.dataset.scheduleId;
+  const action = input?.dataset.scheduleAction;
+
+  if (action === "toggle-section-visible") {
+    void toggleSectionVisibility(id);
+  }
+
+  if (action === "toggle-activity-visible") {
+    void toggleActivityVisibility(id);
+  }
+}
+
 sectionsTableBody.addEventListener("click", (event) => {
   const button = event.target.closest("[data-schedule-action]");
 
   if (!button) {
+    const row = event.target.closest("[data-schedule-section-row-id]");
+
+    if (row && !shouldIgnoreScheduleItemClick(event.target)) {
+      openScheduleDetailsFromInteractiveItem(row);
+    }
+
     return;
   }
 
@@ -1134,7 +1345,82 @@ sectionsTableBody.addEventListener("click", (event) => {
   }
 
   if (action === "toggle-section-visible") {
-    toggleSectionVisibility(id);
+    return;
+  }
+});
+
+sectionsTableBody.addEventListener("change", (event) => {
+  const input = event.target.closest("[data-schedule-action='toggle-section-visible']");
+
+  if (input) {
+    handleScheduleVisibilityToggle(input);
+  }
+});
+
+sectionsTableBody.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  const row = event.target.closest("[data-schedule-section-row-id]");
+
+  if (!row || shouldIgnoreScheduleItemClick(event.target)) {
+    return;
+  }
+
+  event.preventDefault();
+  openScheduleDetailsFromInteractiveItem(row);
+});
+
+sectionsMobileList?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-schedule-action]");
+
+  if (button) {
+    const id = button.dataset.scheduleId;
+    const action = button.dataset.scheduleAction;
+
+    if (action === "section-details") {
+      openSectionDetails(id);
+    }
+
+    if (action === "section-edit") {
+      openSectionModal(getSectionById(id));
+    }
+
+    if (action === "toggle-section-visible") {
+      return;
+    }
+
+    return;
+  }
+
+  const card = event.target.closest("[data-schedule-section-card-id]");
+
+  if (card && !shouldIgnoreScheduleItemClick(event.target)) {
+    openScheduleDetailsFromInteractiveItem(card);
+  }
+});
+
+sectionsMobileList?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  const card = event.target.closest("[data-schedule-section-card-id]");
+
+  if (!card || shouldIgnoreScheduleItemClick(event.target)) {
+    return;
+  }
+
+  event.preventDefault();
+  openScheduleDetailsFromInteractiveItem(card);
+});
+
+sectionsMobileList?.addEventListener("change", (event) => {
+  const input = event.target.closest("[data-schedule-action='toggle-section-visible']");
+
+  if (input) {
+    handleScheduleVisibilityToggle(input);
   }
 });
 
@@ -1142,6 +1428,12 @@ activitiesTableBody.addEventListener("click", (event) => {
   const button = event.target.closest("[data-schedule-action]");
 
   if (!button) {
+    const row = event.target.closest("[data-schedule-activity-row-id]");
+
+    if (row && !shouldIgnoreScheduleItemClick(event.target)) {
+      openScheduleDetailsFromInteractiveItem(row);
+    }
+
     return;
   }
 
@@ -1157,7 +1449,82 @@ activitiesTableBody.addEventListener("click", (event) => {
   }
 
   if (action === "toggle-activity-visible") {
-    toggleActivityVisibility(id);
+    return;
+  }
+});
+
+activitiesTableBody.addEventListener("change", (event) => {
+  const input = event.target.closest("[data-schedule-action='toggle-activity-visible']");
+
+  if (input) {
+    handleScheduleVisibilityToggle(input);
+  }
+});
+
+activitiesTableBody.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  const row = event.target.closest("[data-schedule-activity-row-id]");
+
+  if (!row || shouldIgnoreScheduleItemClick(event.target)) {
+    return;
+  }
+
+  event.preventDefault();
+  openScheduleDetailsFromInteractiveItem(row);
+});
+
+activitiesMobileList?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-schedule-action]");
+
+  if (button) {
+    const id = button.dataset.scheduleId;
+    const action = button.dataset.scheduleAction;
+
+    if (action === "activity-details") {
+      openActivityDetails(id);
+    }
+
+    if (action === "activity-edit") {
+      openActivityModal(getActivityById(id));
+    }
+
+    if (action === "toggle-activity-visible") {
+      return;
+    }
+
+    return;
+  }
+
+  const card = event.target.closest("[data-schedule-activity-card-id]");
+
+  if (card && !shouldIgnoreScheduleItemClick(event.target)) {
+    openScheduleDetailsFromInteractiveItem(card);
+  }
+});
+
+activitiesMobileList?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  const card = event.target.closest("[data-schedule-activity-card-id]");
+
+  if (!card || shouldIgnoreScheduleItemClick(event.target)) {
+    return;
+  }
+
+  event.preventDefault();
+  openScheduleDetailsFromInteractiveItem(card);
+});
+
+activitiesMobileList?.addEventListener("change", (event) => {
+  const input = event.target.closest("[data-schedule-action='toggle-activity-visible']");
+
+  if (input) {
+    handleScheduleVisibilityToggle(input);
   }
 });
 

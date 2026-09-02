@@ -35,112 +35,120 @@
         </a>
       </nav>
 
-      <section class="admin-section">
-        <div class="admin-section-header">
+      <section class="admin-section" id="gifts">
+        <div class="admin-section-header admin-list-toolbar">
           <div>
-            <p class="section-subtitle">Presentes</p>
+            <p class="section-subtitle">Gestão</p>
 
-            <h2>Controle da Lista de Presentes</h2>
+            <h2>Presentes</h2>
           </div>
 
           <div class="admin-section-actions">
-            <button id="refreshGiftsButton" class="admin-action-button icon-action">
+            <button id="refreshGiftsButton" class="admin-action-button icon-action" aria-label="Atualizar presentes" title="Atualizar">
               <i data-lucide="refresh-cw" aria-hidden="true"></i>
-              Atualizar
+              <span>Atualizar</span>
             </button>
 
-            <button id="exportGiftsButton" class="admin-action-button icon-action">
+            <button id="exportGiftsButton" class="admin-action-button icon-action" aria-label="Exportar presentes" title="Exportar">
               <i data-lucide="download" aria-hidden="true"></i>
-              Exportar CSV
+              <span>Exportar</span>
             </button>
 
-            <button id="openGiftModalButton" class="admin-action-button icon-action success">
+            <button id="openGiftModalButton" class="admin-action-button icon-action success" aria-label="Novo presente" title="Novo presente">
               <i data-lucide="plus" aria-hidden="true"></i>
-              Novo Presente
+              <span>Novo</span>
             </button>
           </div>
         </div>
 
-        <div class="admin-filters" aria-label="Filtros de presentes">
-          <div class="admin-filter-field">
-            <label for="giftSearchInput">Buscar</label>
-            <input
-              type="search"
-              id="giftSearchInput"
-              placeholder="Presente, categoria ou convidado"
-            />
-          </div>
+        <details class="admin-filter-panel" id="giftFiltersPanel">
+          <summary class="admin-filter-panel-toggle">
+            <span>
+              <i data-lucide="sliders-horizontal" aria-hidden="true"></i>
+              Filtros
+            </span>
+            <small id="giftFilterCount" class="admin-filter-count"></small>
+          </summary>
 
-          <div class="admin-filter-field">
-            <label for="giftStatusFilter">Status</label>
-            <select id="giftStatusFilter">
-              <option value="">Todos</option>
-              <option value="Disponível">Disponível</option>
-              <option value="Parcial">Parcial</option>
-              <option value="Reservado">Reservado</option>
-              <option value="Comprado">Comprado</option>
-            </select>
-          </div>
+          <div class="admin-filters" aria-label="Filtros de presentes">
+            <div class="admin-filter-field">
+              <label for="giftSearchInput">Buscar</label>
+              <input
+                type="search"
+                id="giftSearchInput"
+                placeholder="Presente, categoria ou convidado"
+              />
+            </div>
 
-          <div class="admin-filter-field">
-            <label for="giftTypeFilter">Tipo</label>
-            <select id="giftTypeFilter">
-              <option value="">Todos</option>
-              <option value="single">Individual</option>
-              <option value="quota">Por cotas</option>
-            </select>
-          </div>
+            <div class="admin-filter-field">
+              <label for="giftStatusFilter">Status</label>
+              <select id="giftStatusFilter">
+                <option value="">Todos</option>
+                <option value="Disponível">Disponível</option>
+                <option value="Parcial">Parcial</option>
+                <option value="Reservado">Reservado</option>
+                <option value="Comprado">Comprado</option>
+              </select>
+            </div>
 
-          <div class="admin-filter-field">
-            <label for="giftPaymentFilter">Pagamento</label>
-            <select id="giftPaymentFilter">
-              <option value="">Todos</option>
-              <option value="Pendente">Pendente</option>
-              <option value="Informado">Informado</option>
-              <option value="Parcialmente informado">Parcialmente informado</option>
-              <option value="Parcialmente confirmado">Parcialmente confirmado</option>
-              <option value="Confirmado">Confirmado</option>
-              <option value="sem_status">Sem status</option>
-            </select>
-          </div>
+            <div class="admin-filter-field">
+              <label for="giftTypeFilter">Tipo</label>
+              <select id="giftTypeFilter">
+                <option value="">Todos</option>
+                <option value="single">Individual</option>
+                <option value="quota">Por cotas</option>
+              </select>
+            </div>
 
-          <div class="admin-filter-field">
-            <label for="giftQuotaFilter">Cotas</label>
-            <select id="giftQuotaFilter">
-              <option value="">Todas</option>
-              <option value="not_quota">Não se aplica</option>
-              <option value="available">Com cotas disponíveis</option>
-              <option value="partially_reserved">Parcialmente reservado</option>
-              <option value="fully_reserved">Totalmente reservado</option>
-              <option value="partially_confirmed">Parcialmente confirmado</option>
-              <option value="fully_confirmed">Totalmente confirmado</option>
-            </select>
-          </div>
+            <div class="admin-filter-field">
+              <label for="giftPaymentFilter">Pagamento</label>
+              <select id="giftPaymentFilter">
+                <option value="">Todos</option>
+                <option value="Pendente">Pendente</option>
+                <option value="Informado">Informado</option>
+                <option value="Parcialmente informado">Parcialmente informado</option>
+                <option value="Parcialmente confirmado">Parcialmente confirmado</option>
+                <option value="Confirmado">Confirmado</option>
+                <option value="sem_status">Sem status</option>
+              </select>
+            </div>
 
-          <div class="admin-filter-field">
-            <label for="giftMethodFilter">Forma</label>
-            <select id="giftMethodFilter">
-              <option value="">Todas</option>
-              <option value="pix">PIX</option>
-              <option value="card">Cartão</option>
-              <option value="online">Compra online</option>
-              <option value="physical">Loja física</option>
-              <option value="sem_metodo">Sem forma</option>
-            </select>
-          </div>
+            <div class="admin-filter-field">
+              <label for="giftQuotaFilter">Cotas</label>
+              <select id="giftQuotaFilter">
+                <option value="">Todas</option>
+                <option value="not_quota">Não se aplica</option>
+                <option value="available">Com cotas disponíveis</option>
+                <option value="partially_reserved">Parcialmente reservado</option>
+                <option value="fully_reserved">Totalmente reservado</option>
+                <option value="partially_confirmed">Parcialmente confirmado</option>
+                <option value="fully_confirmed">Totalmente confirmado</option>
+              </select>
+            </div>
 
-          <div class="admin-filter-actions">
-            <span id="giftFilterCount" class="admin-filter-count"></span>
+            <div class="admin-filter-field">
+              <label for="giftMethodFilter">Forma</label>
+              <select id="giftMethodFilter">
+                <option value="">Todas</option>
+                <option value="pix">PIX</option>
+                <option value="card">Cartão</option>
+                <option value="online">Compra online</option>
+                <option value="physical">Loja física</option>
+                <option value="sem_metodo">Sem forma</option>
+              </select>
+            </div>
 
-            <button
-              type="button"
-              id="clearGiftFiltersButton"
-              class="admin-clear-filters"
-            >
-              Limpar Filtros
-            </button>
+            <div class="admin-filter-actions">
+              <button
+                type="button"
+                id="clearGiftFiltersButton"
+                class="admin-clear-filters"
+              >
+                Limpar Filtros
+              </button>
+            </div>
           </div>
-        </div>
+        </details>
 
         <div class="admin-table-wrapper">
           <table class="admin-table gifts-table">
@@ -179,6 +187,12 @@
             <tbody id="giftsTableBody"></tbody>
           </table>
         </div>
+
+        <div
+          id="giftsMobileList"
+          class="admin-mobile-card-list gifts-mobile-list"
+          aria-live="polite"
+        ></div>
       </section>
     </main>
 

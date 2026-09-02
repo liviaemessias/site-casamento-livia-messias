@@ -27,17 +27,22 @@
         <a class="admin-nav-link" href="./admin-settings.html">Configurações</a>
       </nav>
 
-      <section class="admin-section">
-        <div class="admin-section-header">
+      <section class="admin-section" id="wallMessages">
+        <div class="admin-section-header admin-list-toolbar">
           <div>
             <p class="section-subtitle">Mural</p>
-            <h2>Recados dos Convidados</h2>
+            <h2>Recados</h2>
           </div>
 
           <div class="admin-section-actions">
-            <button id="refreshWallMessagesButton" class="admin-action-button icon-action">
+            <button
+              id="refreshWallMessagesButton"
+              class="admin-action-button icon-action"
+              aria-label="Atualizar recados"
+              title="Atualizar"
+            >
               <i data-lucide="refresh-cw" aria-hidden="true"></i>
-              Atualizar
+              <span>Atualizar</span>
             </button>
           </div>
         </div>
@@ -73,66 +78,75 @@
           </article>
         </section>
 
-        <div class="admin-filters" aria-label="Filtros de recados">
-          <div class="admin-filter-field">
-            <label for="wallMessageSearchInput">Buscar</label>
-            <input
-              type="search"
-              id="wallMessageSearchInput"
-              placeholder="Convidado, recado ou resposta"
-            />
-          </div>
+        <details class="admin-filter-panel" id="wallMessageFiltersPanel">
+          <summary class="admin-filter-panel-toggle">
+            <span>
+              <i data-lucide="sliders-horizontal" aria-hidden="true"></i>
+              Filtros
+            </span>
+            <small id="wallMessageFilterCount" class="admin-filter-count"></small>
+          </summary>
 
-          <div class="admin-filter-field">
-            <label for="wallMessageStatusFilter">Status</label>
-            <select id="wallMessageStatusFilter">
-              <option value="">Todos</option>
-              <option value="pending">Pendentes</option>
-              <option value="approved">Aprovados</option>
-              <option value="hidden">Ocultos</option>
-              <option value="replied">Respondidos</option>
-            </select>
-          </div>
+          <div class="admin-filters" aria-label="Filtros de recados">
+            <div class="admin-filter-field">
+              <label for="wallMessageSearchInput">Buscar</label>
+              <input
+                type="search"
+                id="wallMessageSearchInput"
+                placeholder="Convidado, recado ou resposta"
+              />
+            </div>
 
-          <div class="admin-filter-field">
-            <label for="wallMessageInviteTypeFilter">Convite</label>
-            <select id="wallMessageInviteTypeFilter">
-              <option value="">Todos</option>
-              <option value="individual">Individual</option>
-              <option value="couple">Casal</option>
-            </select>
-          </div>
+            <div class="admin-filter-field">
+              <label for="wallMessageStatusFilter">Status</label>
+              <select id="wallMessageStatusFilter">
+                <option value="">Todos</option>
+                <option value="pending">Pendentes</option>
+                <option value="approved">Aprovados</option>
+                <option value="hidden">Ocultos</option>
+                <option value="replied">Respondidos</option>
+              </select>
+            </div>
 
-          <div class="admin-filter-field">
-            <label for="wallMessageReplyFilter">Resposta</label>
-            <select id="wallMessageReplyFilter">
-              <option value="">Todos</option>
-              <option value="with-reply">Com Resposta</option>
-              <option value="without-reply">Sem Resposta</option>
-            </select>
-          </div>
+            <div class="admin-filter-field">
+              <label for="wallMessageInviteTypeFilter">Convite</label>
+              <select id="wallMessageInviteTypeFilter">
+                <option value="">Todos</option>
+                <option value="individual">Individual</option>
+                <option value="couple">Casal</option>
+              </select>
+            </div>
 
-          <div class="admin-filter-field">
-            <label for="wallMessageSortSelect">Ordenar</label>
-            <select id="wallMessageSortSelect">
-              <option value="updated-desc">Mais Recentes</option>
-              <option value="updated-asc">Mais Antigos</option>
-              <option value="pending-first">Pendentes Primeiro</option>
-              <option value="guest-asc">Convidado A-Z</option>
-            </select>
-          </div>
+            <div class="admin-filter-field">
+              <label for="wallMessageReplyFilter">Resposta</label>
+              <select id="wallMessageReplyFilter">
+                <option value="">Todos</option>
+                <option value="with-reply">Com Resposta</option>
+                <option value="without-reply">Sem Resposta</option>
+              </select>
+            </div>
 
-          <div class="admin-filter-actions">
-            <span id="wallMessageFilterCount" class="admin-filter-count"></span>
-            <button
-              type="button"
-              id="clearWallMessageFiltersButton"
-              class="admin-clear-filters"
-            >
-              Limpar Filtros
-            </button>
+            <div class="admin-filter-field">
+              <label for="wallMessageSortSelect">Ordenar</label>
+              <select id="wallMessageSortSelect">
+                <option value="updated-desc">Mais Recentes</option>
+                <option value="updated-asc">Mais Antigos</option>
+                <option value="pending-first">Pendentes Primeiro</option>
+                <option value="guest-asc">Convidado A-Z</option>
+              </select>
+            </div>
+
+            <div class="admin-filter-actions">
+              <button
+                type="button"
+                id="clearWallMessageFiltersButton"
+                class="admin-clear-filters"
+              >
+                Limpar Filtros
+              </button>
+            </div>
           </div>
-        </div>
+        </details>
 
         <div class="admin-table-wrapper">
           <table class="admin-table wall-messages-table">
@@ -161,6 +175,12 @@
             <tbody id="wallMessagesTableBody"></tbody>
           </table>
         </div>
+
+        <div
+          id="wallMessagesMobileList"
+          class="admin-mobile-card-list wall-messages-mobile-list"
+          aria-live="polite"
+        ></div>
       </section>
     </main>
 

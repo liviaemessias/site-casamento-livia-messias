@@ -29,80 +29,88 @@
         <a class="admin-nav-link" href="./admin-settings.html">Configurações</a>
       </nav>
 
-      <section class="admin-section">
-        <div class="admin-section-header">
+      <section class="admin-grid dashboard-grid schedule-summary-grid" aria-label="Resumo da programação">
+        <article class="admin-card admin-card-link schedule-summary-card" data-schedule-summary="sections" role="button" tabindex="0">
+          <div class="admin-card-header">
+            <span>Etapas</span>
+            <button type="button" class="metric-help" aria-label="Ajuda sobre etapas" data-tooltip="Total de etapas cadastradas.">?</button>
+          </div>
+          <strong id="scheduleSectionCount">0</strong>
+        </article>
+        <article class="admin-card admin-card-link schedule-summary-card" data-schedule-summary="activities" role="button" tabindex="0">
+          <div class="admin-card-header">
+            <span>Atividades</span>
+            <button type="button" class="metric-help" aria-label="Ajuda sobre atividades" data-tooltip="Total de atividades cadastradas.">?</button>
+          </div>
+          <strong id="scheduleActivityCount">0</strong>
+        </article>
+        <article class="admin-card admin-card-link schedule-summary-card" data-schedule-summary="visible" role="button" tabindex="0">
+          <div class="admin-card-header">
+            <span>Visíveis</span>
+            <button type="button" class="metric-help" aria-label="Ajuda sobre visíveis" data-tooltip="Atividades exibidas na página pública.">?</button>
+          </div>
+          <strong id="scheduleVisibleCount">0</strong>
+        </article>
+        <article class="admin-card admin-card-link schedule-summary-card" data-schedule-summary="tbd" role="button" tabindex="0">
+          <div class="admin-card-header">
+            <span>A Definir</span>
+            <button type="button" class="metric-help" aria-label="Ajuda sobre horários a definir" data-tooltip="Atividades com horário a definir.">?</button>
+          </div>
+          <strong id="scheduleTbdCount">0</strong>
+        </article>
+      </section>
+
+      <section class="admin-section" id="scheduleSections">
+        <div class="schedule-section-heading">
           <div>
-            <p class="section-subtitle">Etapas</p>
-            <h2>Etapas da Programação</h2>
+            <h2>Etapas</h2>
           </div>
 
           <div class="admin-section-actions">
-            <button id="refreshScheduleButton" class="admin-action-button icon-action">
+            <button id="refreshScheduleButton" class="admin-action-button icon-action" aria-label="Atualizar programação" title="Atualizar">
               <i data-lucide="refresh-cw" aria-hidden="true"></i>
-              Atualizar
+              <span>Atualizar</span>
             </button>
-            <button id="openSectionOrderModalButton" class="admin-action-button icon-action">
+            <button id="openSectionOrderModalButton" class="admin-action-button icon-action" aria-label="Organizar etapas" title="Organizar">
               <i data-lucide="list-ordered" aria-hidden="true"></i>
-              Organizar Ordem
+              <span>Organizar</span>
             </button>
-            <button id="openSectionModalButton" class="admin-action-button icon-action success">
+            <button id="openSectionModalButton" class="admin-action-button icon-action success" aria-label="Nova etapa" title="Nova etapa">
               <i data-lucide="plus" aria-hidden="true"></i>
-              Nova Etapa
+              <span>Nova</span>
             </button>
           </div>
         </div>
 
-        <section class="admin-grid dashboard-grid schedule-summary-grid" aria-label="Resumo da programação">
-          <article class="admin-card admin-card-link schedule-summary-card" data-schedule-summary="sections" role="button" tabindex="0">
-            <div class="admin-card-header">
-              <span>Etapas</span>
-              <button type="button" class="metric-help" aria-label="Ajuda sobre etapas" data-tooltip="Total de etapas cadastradas.">?</button>
-            </div>
-            <strong id="scheduleSectionCount">0</strong>
-          </article>
-          <article class="admin-card admin-card-link schedule-summary-card" data-schedule-summary="activities" role="button" tabindex="0">
-            <div class="admin-card-header">
-              <span>Atividades</span>
-              <button type="button" class="metric-help" aria-label="Ajuda sobre atividades" data-tooltip="Total de atividades cadastradas.">?</button>
-            </div>
-            <strong id="scheduleActivityCount">0</strong>
-          </article>
-          <article class="admin-card admin-card-link schedule-summary-card" data-schedule-summary="visible" role="button" tabindex="0">
-            <div class="admin-card-header">
-              <span>Visíveis</span>
-              <button type="button" class="metric-help" aria-label="Ajuda sobre visíveis" data-tooltip="Atividades exibidas na página pública.">?</button>
-            </div>
-            <strong id="scheduleVisibleCount">0</strong>
-          </article>
-          <article class="admin-card admin-card-link schedule-summary-card" data-schedule-summary="tbd" role="button" tabindex="0">
-            <div class="admin-card-header">
-              <span>A Definir</span>
-              <button type="button" class="metric-help" aria-label="Ajuda sobre horários a definir" data-tooltip="Atividades com horário a definir.">?</button>
-            </div>
-            <strong id="scheduleTbdCount">0</strong>
-          </article>
-        </section>
+        <details class="admin-filter-panel" id="sectionFiltersPanel">
+          <summary class="admin-filter-panel-toggle">
+            <span>
+              <i data-lucide="sliders-horizontal" aria-hidden="true"></i>
+              Filtros
+            </span>
+            <small id="sectionFilterCount" class="admin-filter-count"></small>
+          </summary>
 
-        <div class="admin-filters" aria-label="Filtros de etapas">
-          <div class="admin-filter-field">
-            <label for="sectionSearchInput">Buscar Etapa</label>
-            <input id="sectionSearchInput" type="search" placeholder="Título, local ou endereço" />
+          <div class="admin-filters" aria-label="Filtros de etapas">
+            <div class="admin-filter-field">
+              <label for="sectionSearchInput">Buscar Etapa</label>
+              <input id="sectionSearchInput" type="search" placeholder="Título, local ou endereço" />
+            </div>
+            <div class="admin-filter-field">
+              <label for="sectionVisibilityFilter">Visibilidade</label>
+              <select id="sectionVisibilityFilter">
+                <option value="">Todas</option>
+                <option value="visible">Visíveis</option>
+                <option value="hidden">Ocultas</option>
+              </select>
+            </div>
+            <div class="admin-filter-actions">
+              <button id="clearSectionFiltersButton" type="button" class="admin-clear-filters">
+                Limpar Filtros
+              </button>
+            </div>
           </div>
-          <div class="admin-filter-field">
-            <label for="sectionVisibilityFilter">Visibilidade</label>
-            <select id="sectionVisibilityFilter">
-              <option value="">Todas</option>
-              <option value="visible">Visíveis</option>
-              <option value="hidden">Ocultas</option>
-            </select>
-          </div>
-          <div class="admin-filter-actions">
-            <span id="sectionFilterCount" class="admin-filter-count"></span>
-            <button id="clearSectionFiltersButton" type="button" class="admin-clear-filters">
-              Limpar Filtros
-            </button>
-          </div>
-        </div>
+        </details>
 
         <div class="admin-table-wrapper">
           <table class="admin-table schedule-sections-table">
@@ -118,74 +126,88 @@
             <tbody id="sectionsTableBody"></tbody>
           </table>
         </div>
+
+        <div
+          id="sectionsMobileList"
+          class="admin-mobile-card-list schedule-mobile-list"
+          aria-live="polite"
+        ></div>
       </section>
 
-      <section class="admin-section">
-        <div class="admin-section-header">
+      <section class="admin-section" id="scheduleActivities">
+        <div class="schedule-section-heading">
           <div>
-            <p class="section-subtitle">Atividades</p>
-            <h2>Atividades da Programação</h2>
+            <h2>Atividades</h2>
           </div>
 
           <div class="admin-section-actions">
-            <button id="openActivityOrderModalButton" class="admin-action-button icon-action">
+            <button id="openActivityOrderModalButton" class="admin-action-button icon-action" aria-label="Organizar atividades" title="Organizar">
               <i data-lucide="list-ordered" aria-hidden="true"></i>
-              Organizar Ordem
+              <span>Organizar</span>
             </button>
-            <button id="openActivityModalButton" class="admin-action-button icon-action success">
+            <button id="openActivityModalButton" class="admin-action-button icon-action success" aria-label="Nova atividade" title="Nova atividade">
               <i data-lucide="plus" aria-hidden="true"></i>
-              Nova Atividade
+              <span>Nova</span>
             </button>
           </div>
         </div>
 
-        <div class="admin-filters" aria-label="Filtros de atividades">
-          <div class="admin-filter-field">
-            <label for="activitySearchInput">Buscar Atividade</label>
-            <input id="activitySearchInput" type="search" placeholder="Título, etapa ou descrição" />
+        <details class="admin-filter-panel" id="activityFiltersPanel">
+          <summary class="admin-filter-panel-toggle">
+            <span>
+              <i data-lucide="sliders-horizontal" aria-hidden="true"></i>
+              Filtros
+            </span>
+            <small id="activityFilterCount" class="admin-filter-count"></small>
+          </summary>
+
+          <div class="admin-filters" aria-label="Filtros de atividades">
+            <div class="admin-filter-field">
+              <label for="activitySearchInput">Buscar Atividade</label>
+              <input id="activitySearchInput" type="search" placeholder="Título, etapa ou descrição" />
+            </div>
+            <div class="admin-filter-field">
+              <label for="activitySectionFilter">Etapa</label>
+              <select id="activitySectionFilter">
+                <option value="">Todas</option>
+              </select>
+            </div>
+            <div class="admin-filter-field">
+              <label for="activityTypeFilter">Tipo</label>
+              <select id="activityTypeFilter">
+                <option value="">Todos</option>
+                <option value="moment">Momento</option>
+                <option value="attraction">Atração</option>
+                <option value="island">Ilha</option>
+                <option value="service">Serviço</option>
+                <option value="other">Outro</option>
+              </select>
+            </div>
+            <div class="admin-filter-field">
+              <label for="activityTimeModeFilter">Horário</label>
+              <select id="activityTimeModeFilter">
+                <option value="">Todos</option>
+                <option value="scheduled">Horário Específico</option>
+                <option value="period">Período</option>
+                <option value="available">Disponível</option>
+                <option value="tbd">A Definir</option>
+              </select>
+            </div>
+            <div class="admin-filter-field">
+              <label for="activityVisibilityFilter">Visibilidade</label>
+              <select id="activityVisibilityFilter">
+                <option value="">Todas</option>
+                <option value="visible">Visíveis</option>
+                <option value="hidden">Ocultas</option>
+              </select>
+            </div>
+            <div class="admin-filter-actions">
+              <button id="clearActivityFiltersButton" type="button" class="admin-clear-filters">
+                Limpar Filtros
+              </button>
+            </div>
           </div>
-          <div class="admin-filter-field">
-            <label for="activitySectionFilter">Etapa</label>
-            <select id="activitySectionFilter">
-              <option value="">Todas</option>
-            </select>
-          </div>
-          <div class="admin-filter-field">
-            <label for="activityTypeFilter">Tipo</label>
-            <select id="activityTypeFilter">
-              <option value="">Todos</option>
-              <option value="moment">Momento</option>
-              <option value="attraction">Atração</option>
-              <option value="island">Ilha</option>
-              <option value="service">Serviço</option>
-              <option value="other">Outro</option>
-            </select>
-          </div>
-          <div class="admin-filter-field">
-            <label for="activityTimeModeFilter">Horário</label>
-            <select id="activityTimeModeFilter">
-              <option value="">Todos</option>
-              <option value="scheduled">Horário Específico</option>
-              <option value="period">Período</option>
-              <option value="available">Disponível</option>
-              <option value="tbd">A Definir</option>
-            </select>
-          </div>
-          <div class="admin-filter-field">
-            <label for="activityVisibilityFilter">Visibilidade</label>
-            <select id="activityVisibilityFilter">
-              <option value="">Todas</option>
-              <option value="visible">Visíveis</option>
-              <option value="hidden">Ocultas</option>
-            </select>
-          </div>
-          <div class="admin-filter-actions">
-            <span id="activityFilterCount" class="admin-filter-count"></span>
-            <button id="clearActivityFiltersButton" type="button" class="admin-clear-filters">
-              Limpar Filtros
-            </button>
-          </div>
-        </div>
+        </details>
 
         <div class="admin-table-wrapper">
           <table class="admin-table schedule-activities-table">
@@ -203,6 +225,12 @@
             <tbody id="activitiesTableBody"></tbody>
           </table>
         </div>
+
+        <div
+          id="activitiesMobileList"
+          class="admin-mobile-card-list schedule-mobile-list"
+          aria-live="polite"
+        ></div>
       </section>
     </main>
 

@@ -29,33 +29,33 @@
         <a class="admin-nav-link" href="./admin-settings.html">Configurações</a>
       </nav>
 
-      <section class="admin-section">
-        <div class="admin-section-header">
+      <section class="admin-section" id="checklist">
+        <div class="admin-section-header admin-list-toolbar">
           <div>
             <p class="section-subtitle">Organização</p>
-            <h2>Checklist do Casamento</h2>
+            <h2>Checklist</h2>
           </div>
 
           <div class="admin-section-actions">
-            <button id="refreshChecklistButton" class="admin-action-button icon-action">
+            <button id="refreshChecklistButton" class="admin-action-button icon-action" aria-label="Atualizar checklist" title="Atualizar">
               <i data-lucide="refresh-cw" aria-hidden="true"></i>
-              Atualizar
+              <span>Atualizar</span>
             </button>
-            <button id="exportChecklistButton" class="admin-action-button icon-action">
+            <button id="exportChecklistButton" class="admin-action-button icon-action" aria-label="Exportar checklist" title="Exportar">
               <i data-lucide="download" aria-hidden="true"></i>
-              Exportar CSV
+              <span>Exportar</span>
             </button>
-            <button id="openCategoryManagerButton" class="admin-action-button icon-action">
+            <button id="openCategoryManagerButton" class="admin-action-button icon-action" aria-label="Categorias do checklist" title="Categorias">
               <i data-lucide="tags" aria-hidden="true"></i>
-              Categorias
+              <span>Categorias</span>
             </button>
-            <button id="openResponsibleManagerButton" class="admin-action-button icon-action">
+            <button id="openResponsibleManagerButton" class="admin-action-button icon-action" aria-label="Responsáveis do checklist" title="Responsáveis">
               <i data-lucide="user-check" aria-hidden="true"></i>
-              Responsáveis
+              <span>Responsáveis</span>
             </button>
-            <button id="openChecklistItemModalButton" class="admin-action-button icon-action success">
+            <button id="openChecklistItemModalButton" class="admin-action-button icon-action success" aria-label="Nova tarefa" title="Nova tarefa">
               <i data-lucide="plus" aria-hidden="true"></i>
-              Nova Tarefa
+              <span>Nova</span>
             </button>
           </div>
         </div>
@@ -98,55 +98,64 @@
           </article>
         </section>
 
-        <div class="admin-filters" aria-label="Filtros do checklist">
-          <div class="admin-filter-field">
-            <label for="checklistSearchInput">Buscar</label>
-            <input id="checklistSearchInput" type="search" placeholder="Tarefa, descrição, categoria ou observação" />
+        <details class="admin-filter-panel" id="checklistFiltersPanel">
+          <summary class="admin-filter-panel-toggle">
+            <span>
+              <i data-lucide="sliders-horizontal" aria-hidden="true"></i>
+              Filtros
+            </span>
+            <small id="checklistFilterCount" class="admin-filter-count"></small>
+          </summary>
+
+          <div class="admin-filters" aria-label="Filtros do checklist">
+            <div class="admin-filter-field">
+              <label for="checklistSearchInput">Buscar</label>
+              <input id="checklistSearchInput" type="search" placeholder="Tarefa, descrição, categoria ou observação" />
+            </div>
+            <div class="admin-filter-field">
+              <label for="checklistPeriodFilter">Período</label>
+              <select id="checklistPeriodFilter">
+                <option value="">Todos</option>
+              </select>
+            </div>
+            <div class="admin-filter-field">
+              <label for="checklistStatusFilter">Status</label>
+              <select id="checklistStatusFilter">
+                <option value="">Todos</option>
+                <option value="pending">Pendentes</option>
+                <option value="in_progress">Em Andamento</option>
+                <option value="completed">Concluídas</option>
+                <option value="overdue">Atrasadas</option>
+              </select>
+            </div>
+            <div class="admin-filter-field">
+              <label for="checklistCategoryFilter">Categoria</label>
+              <select id="checklistCategoryFilter">
+                <option value="">Todas</option>
+              </select>
+            </div>
+            <div class="admin-filter-field">
+              <label for="checklistOwnerFilter">Responsável</label>
+              <select id="checklistOwnerFilter">
+                <option value="">Todos</option>
+              </select>
+            </div>
+            <div class="admin-filter-field">
+              <label for="checklistPriorityFilter">Prioridade</label>
+              <select id="checklistPriorityFilter">
+                <option value="">Todas</option>
+                <option value="high">Alta</option>
+                <option value="normal">Normal</option>
+                <option value="low">Baixa</option>
+              </select>
+            </div>
+            <div class="admin-filter-actions">
+              <button id="clearChecklistFiltersButton" type="button" class="admin-clear-filters">
+                Limpar Filtros
+              </button>
+            </div>
           </div>
-          <div class="admin-filter-field">
-            <label for="checklistPeriodFilter">Período</label>
-            <select id="checklistPeriodFilter">
-              <option value="">Todos</option>
-            </select>
-          </div>
-          <div class="admin-filter-field">
-            <label for="checklistStatusFilter">Status</label>
-            <select id="checklistStatusFilter">
-              <option value="">Todos</option>
-              <option value="pending">Pendentes</option>
-              <option value="in_progress">Em Andamento</option>
-              <option value="completed">Concluídas</option>
-              <option value="overdue">Atrasadas</option>
-            </select>
-          </div>
-          <div class="admin-filter-field">
-            <label for="checklistCategoryFilter">Categoria</label>
-            <select id="checklistCategoryFilter">
-              <option value="">Todas</option>
-            </select>
-          </div>
-          <div class="admin-filter-field">
-            <label for="checklistOwnerFilter">Responsável</label>
-            <select id="checklistOwnerFilter">
-              <option value="">Todos</option>
-            </select>
-          </div>
-          <div class="admin-filter-field">
-            <label for="checklistPriorityFilter">Prioridade</label>
-            <select id="checklistPriorityFilter">
-              <option value="">Todas</option>
-              <option value="high">Alta</option>
-              <option value="normal">Normal</option>
-              <option value="low">Baixa</option>
-            </select>
-          </div>
-          <div class="admin-filter-actions">
-            <span id="checklistFilterCount" class="admin-filter-count"></span>
-            <button id="clearChecklistFiltersButton" type="button" class="admin-clear-filters">
-              Limpar Filtros
-            </button>
-          </div>
-        </div>
+        </details>
 
         <div id="checklistPeriodNav" class="checklist-period-nav" aria-label="Atalhos dos períodos"></div>
         <div id="checklistBoard" class="checklist-board"></div>

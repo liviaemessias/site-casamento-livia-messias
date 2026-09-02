@@ -19,6 +19,7 @@ let giftSortState = {
 };
 
 const giftsTableBody = document.getElementById("giftsTableBody");
+const giftsMobileList = document.getElementById("giftsMobileList");
 const giftSearchInput = document.getElementById("giftSearchInput");
 const giftStatusFilter = document.getElementById("giftStatusFilter");
 const giftTypeFilter = document.getElementById("giftTypeFilter");
@@ -26,6 +27,7 @@ const giftPaymentFilter = document.getElementById("giftPaymentFilter");
 const giftQuotaFilter = document.getElementById("giftQuotaFilter");
 const giftMethodFilter = document.getElementById("giftMethodFilter");
 const giftFilterCount = document.getElementById("giftFilterCount");
+const giftFiltersPanel = document.getElementById("giftFiltersPanel");
 const refreshGiftsButton = document.getElementById("refreshGiftsButton");
 const exportGiftsButton = document.getElementById("exportGiftsButton");
 const clearGiftFiltersButton = document.getElementById("clearGiftFiltersButton");
@@ -146,7 +148,7 @@ function renderStatusBadge(status) {
   return `<span class="admin-badge badge-muted">${safeText(status)}</span>`;
 }
 
-function renderPaymentBadge(status) {
+function renderPaymentBadge(status, options = {}) {
   if (status === "Confirmado") {
     return `<span class="admin-badge badge-bought">Confirmado</span>`;
   }
@@ -165,6 +167,10 @@ function renderPaymentBadge(status) {
 
   if (status === "Pendente") {
     return `<span class="admin-badge badge-muted">Pendente</span>`;
+  }
+
+  if (options.omitEmpty) {
+    return "";
   }
 
   return `<span class="admin-badge badge-muted">-</span>`;
@@ -486,6 +492,47 @@ function renderQuotaProgress(gift) {
   `;
 }
 
+function getQuotaContributionStatusMeta(status) {
+  const normalizedStatus = String(status || "Pendente").trim();
+  const statusMap = {
+    Confirmado: {
+      icon: "check-circle-2",
+      label: "Pagamento confirmado",
+      modifier: "confirmed",
+    },
+    Informado: {
+      icon: "badge-check",
+      label: "Pagamento informado",
+      modifier: "reported",
+    },
+    Pendente: {
+      icon: "clock-3",
+      label: "Pagamento pendente",
+      modifier: "pending",
+    },
+  };
+
+  return statusMap[normalizedStatus] || {
+    icon: "circle-help",
+    label: normalizedStatus || "Pagamento pendente",
+    modifier: "pending",
+  };
+}
+
+function renderQuotaContributionStatusIndicator(status) {
+  const meta = getQuotaContributionStatusMeta(status);
+
+  return `
+    <span
+      class="quota-contributor-status-icon is-${safeText(meta.modifier)}"
+      title="${escapeAttribute(meta.label)}"
+      aria-label="${escapeAttribute(meta.label)}"
+    >
+      ${renderTableActionIcon(meta.icon)}
+    </span>
+  `;
+}
+
 function renderQuotaContributors(gift, guestMap) {
   const contributions = gift.quota_contributions || [];
 
@@ -505,14 +552,12 @@ function renderQuotaContributors(gift, guestMap) {
 
           return `
             <div class="quota-contributor-item">
-              <strong>
-                ${safeText(guestName)}
+              <span class="quota-contributor-name">
+                ${safeText(guestName)} (${quantity})
+                ${renderQuotaContributionStatusIndicator(contribution.payment_status)}
                 ${renderGiftMessageIndicator(contribution.message, {
                   contributionId: contribution.id,
                 })}
-              </strong>
-              <span>
-                ${quantity} cota${quantity === 1 ? "" : "s"} · ${safeText(contribution.payment_status, "Pendente")}
               </span>
             </div>
           `;
@@ -544,7 +589,7 @@ function renderGiftMessageIndicator(message, options = {}) {
   `;
 }
 
-function renderPurchaseMethodBadge(gift) {
+function renderPurchaseMethodBadge(gift, options = {}) {
   if (isQuotaGift(gift)) {
     return `
       <span class="admin-badge badge-payment">
@@ -555,6 +600,10 @@ function renderPurchaseMethodBadge(gift) {
 
   const method = gift.selected_purchase_method;
   const store = gift.selected_purchase_details?.store;
+
+  if (!method && options.omitEmpty) {
+    return "";
+  }
 
   let label = "-";
 
@@ -582,11 +631,15 @@ function renderPurchaseMethodBadge(gift) {
 }
 
 function renderSituationCell(gift) {
+  const situationBadges = [
+    renderStatusBadge(getGiftDisplayStatus(gift)),
+    renderPurchaseMethodBadge(gift, { omitEmpty: true }),
+    renderPaymentBadge(getGiftDisplayPaymentStatus(gift), { omitEmpty: true }),
+  ].filter((badge) => String(badge || "").trim());
+
   return `
     <div class="gift-situation-stack">
-      ${renderStatusBadge(getGiftDisplayStatus(gift))}
-      ${renderPurchaseMethodBadge(gift)}
-      ${renderPaymentBadge(getGiftDisplayPaymentStatus(gift))}
+      ${situationBadges.length ? situationBadges.join("") : renderPaymentBadge("")}
     </div>
   `;
 }
@@ -1157,6 +1210,7 @@ function renderGiftsTable(gifts, guests) {
         </td>
       </tr>
     `);
+    renderGiftsMobileList(gifts, guestMap);
     return;
   }
 
@@ -1178,11 +1232,14 @@ function renderGiftsTable(gifts, guests) {
       `;
 
       return `
-        <tr>
+        <tr data-gift-row-id="${escapeAttribute(gift.id)}" tabindex="0">
           <td>
             <strong class="gift-table-name">${safeText(gift.name)}</strong>
             <span class="admin-muted gift-table-type">
               ${safeText(getGiftTypeLabel(gift))}
+            </span>
+            <span class="gift-table-price">
+              ${formatCurrency(gift.price)}
             </span>
           </td>
           <td>${safeText(gift.category)}</td>
@@ -1192,6 +1249,138 @@ function renderGiftsTable(gifts, guests) {
           <td>${formatDate(gift.reserved_at)}</td>
           <td>${renderGiftActions(gift)}</td>
         </tr>
+      `;
+    })
+    .join(""));
+  renderGiftsMobileList(gifts, guestMap);
+
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
+}
+
+function renderGiftMobileActions(gift) {
+  const confirmButton =
+    !isQuotaGift(gift) && gift.status === "Reservado"
+      ? `
+        <button
+          class="admin-action-button success icon-action"
+          data-gift-action="confirm"
+          data-gift-id="${escapeAttribute(gift.id)}"
+          title="Confirmar compra"
+        >
+          ${renderTableActionIcon("check")}
+          Confirmar
+        </button>
+      `
+      : "";
+  const reminderButton =
+    !isQuotaGift(gift) &&
+    gift.status === "Reservado" &&
+    safeText(gift.payment_status, "Pendente") === "Pendente"
+      ? `
+        <button
+          class="admin-action-button icon-action"
+          data-gift-action="reminder"
+          data-gift-id="${escapeAttribute(gift.id)}"
+          title="Enviar lembrete"
+        >
+          ${renderTableActionIcon("mail")}
+          Lembrete
+        </button>
+      `
+      : "";
+
+  return `
+    <div class="admin-mobile-card-actions gift-mobile-card-actions">
+      ${confirmButton}
+      ${reminderButton}
+      <button
+        class="admin-action-button icon-action"
+        data-gift-action="details"
+        data-gift-id="${escapeAttribute(gift.id)}"
+      >
+        ${renderTableActionIcon("eye")}
+        Detalhes
+      </button>
+      <button
+        class="admin-action-button icon-action"
+        data-gift-action="edit"
+        data-gift-id="${escapeAttribute(gift.id)}"
+      >
+        ${renderTableActionIcon("edit")}
+        Editar
+      </button>
+    </div>
+  `;
+}
+
+function renderGiftsMobileList(gifts, guestMap) {
+  if (!giftsMobileList) {
+    return;
+  }
+
+  if (!gifts.length) {
+    replaceSafeContent(giftsMobileList, `
+      <div class="admin-mobile-empty-state">
+        Nenhum presente encontrado para os filtros selecionados.
+      </div>
+    `);
+    return;
+  }
+
+  replaceSafeContent(giftsMobileList, gifts
+    .map((gift) => {
+      const reservedNames = getGiftReservedNames(gift, guestMap);
+      const paymentStatus = getGiftDisplayPaymentStatus(gift);
+      const mobileBadges = [
+        renderPurchaseMethodBadge(gift, { omitEmpty: true }),
+        renderPaymentBadge(paymentStatus, { omitEmpty: true }),
+        isQuotaGift(gift)
+          ? `<span class="admin-badge badge-payment">${Number(gift.quota_reserved_count || 0)}/${Number(gift.quota_count || 0)} cotas</span>`
+          : "",
+      ].filter((badge) => String(badge || "").trim());
+
+      return `
+        <article class="admin-mobile-list-card gift-mobile-card" data-gift-card-id="${escapeAttribute(gift.id)}" tabindex="0">
+          <div class="admin-mobile-card-main">
+            <div>
+              <strong>${safeText(gift.name)}</strong>
+              <span>${safeText(gift.category || "-")} · ${safeText(getGiftTypeLabel(gift))}</span>
+            </div>
+            ${renderStatusBadge(getGiftDisplayStatus(gift))}
+          </div>
+
+          ${
+            mobileBadges.length
+              ? `<div class="admin-mobile-card-badges">${mobileBadges.join("")}</div>`
+              : ""
+          }
+
+          <dl class="admin-mobile-card-meta gift-mobile-card-meta">
+            <div>
+              <dt>Valor</dt>
+              <dd>${formatCurrency(gift.price)}</dd>
+            </div>
+            <div>
+              <dt>Reservado</dt>
+              <dd>${reservedNames ? "Sim" : "Não"}</dd>
+            </div>
+            <div>
+              <dt>Data</dt>
+              <dd>${gift.reserved_at ? formatDate(gift.reserved_at) : "-"}</dd>
+            </div>
+          </dl>
+
+          ${
+            reservedNames
+              ? `<p class="gift-mobile-reserved">${safeText(reservedNames)}</p>`
+              : ""
+          }
+
+          ${isQuotaGift(gift) ? renderQuotaProgress(gift) : ""}
+          ${renderGiftMobileActions(gift)}
+        </article>
       `;
     })
     .join(""));
@@ -1372,6 +1561,10 @@ function updateGiftFilterCount(count) {
     count === total
       ? `${total} presente${total === 1 ? "" : "s"}`
       : `${count} de ${total} presente${total === 1 ? "" : "s"}`;
+
+  if (giftFiltersPanel) {
+    giftFiltersPanel.dataset.hasActiveFilters = String(count !== total);
+  }
 }
 
 function findCachedGiftById(giftId) {
@@ -1545,6 +1738,23 @@ function clearGiftFilters() {
   });
 
   applyGiftFilters();
+}
+
+function shouldIgnoreGiftItemClick(target) {
+  return Boolean(
+    target.closest(
+      "button, a, input, select, textarea, label, [data-gift-action], [data-gift-message-id], [data-gift-message-contribution-id], .admin-action-button",
+    ),
+  );
+}
+
+function openGiftDetailsFromInteractiveItem(element) {
+  const giftId = element?.dataset.giftRowId || element?.dataset.giftCardId;
+  const gift = giftId ? findCachedGiftById(giftId) : null;
+
+  if (gift) {
+    openGiftDetailsModal(gift);
+  }
 }
 
 async function notifyGiftNotifications(eventType, aggregateId) {
@@ -2225,10 +2435,80 @@ giftsTableBody?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-gift-action]");
 
   if (!button) {
+    const row = event.target.closest("[data-gift-row-id]");
+
+    if (row && !shouldIgnoreGiftItemClick(event.target)) {
+      openGiftDetailsFromInteractiveItem(row);
+    }
+
     return;
   }
 
   handleGiftAction(button.dataset.giftAction, button.dataset.giftId);
+});
+
+giftsTableBody?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  const row = event.target.closest("[data-gift-row-id]");
+
+  if (!row || shouldIgnoreGiftItemClick(event.target)) {
+    return;
+  }
+
+  event.preventDefault();
+  openGiftDetailsFromInteractiveItem(row);
+});
+
+giftsMobileList?.addEventListener("click", (event) => {
+  const giftMessageButton = event.target.closest("[data-gift-message-id]");
+
+  if (giftMessageButton) {
+    openGiftMessageModal(giftMessageButton.dataset.giftMessageId);
+    return;
+  }
+
+  const contributionMessageButton = event.target.closest(
+    "[data-gift-message-contribution-id]",
+  );
+
+  if (contributionMessageButton) {
+    openGiftContributionMessageModal(
+      contributionMessageButton.dataset.giftMessageContributionId,
+    );
+    return;
+  }
+
+  const button = event.target.closest("[data-gift-action]");
+
+  if (!button) {
+    const card = event.target.closest("[data-gift-card-id]");
+
+    if (card && !shouldIgnoreGiftItemClick(event.target)) {
+      openGiftDetailsFromInteractiveItem(card);
+    }
+
+    return;
+  }
+
+  handleGiftAction(button.dataset.giftAction, button.dataset.giftId);
+});
+
+giftsMobileList?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  const card = event.target.closest("[data-gift-card-id]");
+
+  if (!card || shouldIgnoreGiftItemClick(event.target)) {
+    return;
+  }
+
+  event.preventDefault();
+  openGiftDetailsFromInteractiveItem(card);
 });
 
 giftDetailsContent?.addEventListener("click", (event) => {
