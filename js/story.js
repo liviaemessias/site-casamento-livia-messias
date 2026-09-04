@@ -44,11 +44,46 @@ function closeNavDropdowns(exceptDropdown = null) {
   });
 }
 
+function ensureNavCloseButton() {
+  if (!navLinks || navLinks.querySelector(".public-nav-close")) {
+    return null;
+  }
+
+  const item = document.createElement("li");
+  const button = document.createElement("button");
+
+  item.className = "public-nav-close-item";
+  button.type = "button";
+  button.className = "public-nav-close";
+  button.setAttribute("aria-label", "Fechar menu");
+  button.textContent = "×";
+  item.appendChild(button);
+  navLinks.prepend(item);
+
+  return button;
+}
+
+function closeNavigationPanel() {
+  navLinks.classList.remove("active");
+  mobileMenu.setAttribute("aria-expanded", "false");
+  mobileMenu.setAttribute("aria-label", "Abrir menu");
+  mobileMenu.textContent = "☰";
+}
+
+const navCloseButton = ensureNavCloseButton();
+
+navCloseButton?.addEventListener("click", closeNavigationPanel);
+
 mobileMenu.addEventListener("click", () => {
-  const isOpen = navLinks.classList.toggle("active");
-  mobileMenu.setAttribute("aria-expanded", String(isOpen));
-  mobileMenu.setAttribute("aria-label", isOpen ? "Fechar menu" : "Abrir menu");
-  mobileMenu.textContent = isOpen ? "×" : "☰";
+  const shouldOpen = !navLinks.classList.contains("active");
+  closeNavigationPanel();
+
+  if (shouldOpen) {
+    navLinks.classList.add("active");
+    mobileMenu.setAttribute("aria-expanded", "true");
+    mobileMenu.setAttribute("aria-label", "Fechar menu");
+    mobileMenu.textContent = "×";
+  }
 });
 
 navDropdowns.forEach((dropdown) => {
@@ -114,11 +149,26 @@ document.addEventListener("click", (event) => {
   if (!event.target.closest(".nav-dropdown")) {
     closeNavDropdowns();
   }
+
+  if (
+    navLinks.classList.contains("active") &&
+    !event.target.closest("#navLinks") &&
+    !event.target.closest("#mobileMenu")
+  ) {
+    closeNavigationPanel();
+  }
 });
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
     closeNavDropdowns();
+    closeNavigationPanel();
+  }
+});
+
+navLinks.addEventListener("click", (event) => {
+  if (event.target.closest("a")) {
+    closeNavigationPanel();
   }
 });
 

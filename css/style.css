@@ -254,9 +254,9 @@ body {
 
 .hero-couple-logo {
   display: block;
-  width: clamp(72px, 8vw, 104px);
+  width: clamp(64px, 7vw, 92px);
   height: auto;
-  margin: 0 auto 1.2rem;
+  margin: 0 auto 1rem;
   opacity: 0.9;
   filter: drop-shadow(0 10px 22px rgba(31, 15, 48, 0.28));
 }
@@ -272,10 +272,10 @@ body {
 
 .hero h1 {
   font-family: var(--font-romantic);
-  font-size: clamp(4.7rem, 8.4vw, 7.2rem);
+  font-size: clamp(4.35rem, 7.8vw, 6.75rem);
   font-weight: 400;
   line-height: 0.82;
-  margin-bottom: 1.2rem;
+  margin-bottom: 1rem;
   text-shadow: 0 12px 34px rgba(31, 15, 48, 0.36);
 }
 
@@ -295,7 +295,7 @@ body {
 
 .hero-text {
   max-width: 680px;
-  margin: 0 auto 1.45rem;
+  margin: 0 auto 1.2rem;
   font-size: 1.08rem;
   line-height: 1.85rem;
   color: #f3ebff;
@@ -311,12 +311,60 @@ body {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.24);
   backdrop-filter: blur(12px);
-  margin-bottom: 1.35rem;
+  margin-bottom: 0.9rem;
   color: rgba(255, 255, 255, 0.92);
   font-size: 0.82rem;
   font-weight: 500;
   letter-spacing: 0.18rem;
   text-transform: uppercase;
+}
+
+.hero-quick-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(0.58rem, 1.4vw, 0.9rem);
+  margin: 0 auto;
+}
+
+.hero-quick-action {
+  display: inline-grid;
+  width: clamp(44px, 4.4vw, 54px);
+  height: clamp(44px, 4.4vw, 54px);
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 50%;
+  background: var(--primary);
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  text-decoration: none;
+  box-shadow: 0 10px 24px rgba(48, 22, 75, 0.26);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition:
+    background 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
+}
+
+.hero-quick-action svg {
+  width: 48%;
+  height: 48%;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.7;
+}
+
+.hero-quick-action:hover,
+.hero-quick-action:focus-visible {
+  border-color: rgba(255, 255, 255, 0.38);
+  background: var(--color-primary-hover);
+  box-shadow: 0 14px 30px rgba(48, 22, 75, 0.34);
+  transform: translateY(-3px);
 }
 
 .hero-button {
@@ -1043,36 +1091,49 @@ body {
   }
 
   .hero h1 {
-    font-size: 3.6rem;
-    margin-bottom: 1rem;
+    font-size: clamp(3.15rem, 15vw, 3.55rem);
+    margin-bottom: 0.78rem;
   }
 
   .hero-couple-logo {
-    width: 70px;
-    margin-bottom: 1rem;
+    width: 58px;
+    margin-bottom: 0.72rem;
   }
 
   .hero-text {
-    font-size: 0.95rem;
-    line-height: 1.65rem;
+    font-size: 0.88rem;
+    line-height: 1.48rem;
+    margin-bottom: 0.9rem;
   }
 
   .hero-subtitle {
     letter-spacing: 0.28rem;
-    font-size: 0.72rem;
+    margin-bottom: 0.72rem;
+    font-size: 0.68rem;
   }
 
   .hero-date {
     min-width: min(230px, 82vw);
-    padding: 0.55rem 1rem;
-    font-size: 0.72rem;
+    padding: 0.5rem 0.9rem;
+    margin-bottom: 0.76rem;
+    font-size: 0.68rem;
     letter-spacing: 0.12rem;
+  }
+
+  .hero-quick-actions {
+    gap: 0.56rem;
+    margin-bottom: 0;
+  }
+
+  .hero-quick-action {
+    width: 42px;
+    height: 42px;
   }
 
   .hero .hero-button {
     min-width: min(230px, 82vw);
-    padding: 0.58rem 1.2rem;
-    font-size: 0.85rem;
+    padding: 0.54rem 1.1rem;
+    font-size: 0.8rem;
   }
 
   .event-grid {

@@ -45,6 +45,39 @@
       });
     }
 
+    function ensureNavCloseButton() {
+      if (!navLinks || navLinks.querySelector(".public-nav-close")) {
+        return null;
+      }
+
+      const item = document.createElement("li");
+      const button = document.createElement("button");
+
+      item.className = "public-nav-close-item";
+      button.type = "button";
+      button.className = "public-nav-close";
+      button.setAttribute("aria-label", "Fechar menu");
+      button.textContent = "×";
+      item.appendChild(button);
+      navLinks.prepend(item);
+
+      return button;
+    }
+
+    function closeNavigationPanel() {
+      navLinks?.classList.remove("active", "hero-shortcut-open");
+      mobileMenu?.setAttribute("aria-expanded", "false");
+      mobileMenu?.setAttribute("aria-label", "Abrir menu");
+
+      if (mobileMenu) {
+        mobileMenu.textContent = "☰";
+      }
+    }
+
+    const navCloseButton = ensureNavCloseButton();
+
+    navCloseButton?.addEventListener("click", closeNavigationPanel);
+
     if (navbar) {
       const updateNavbarScrollState = () => {
         navbar.classList.toggle("scrolled", window.scrollY > 50);
@@ -58,13 +91,15 @@
 
     if (mobileMenu && navLinks) {
       mobileMenu.addEventListener("click", () => {
-        const isOpen = navLinks.classList.toggle("active");
-        mobileMenu.setAttribute("aria-expanded", String(isOpen));
-        mobileMenu.setAttribute(
-          "aria-label",
-          isOpen ? "Fechar menu" : "Abrir menu",
-        );
-        mobileMenu.textContent = isOpen ? "×" : "☰";
+        const shouldOpen = !navLinks.classList.contains("active");
+        closeNavigationPanel();
+
+        if (shouldOpen) {
+          navLinks.classList.add("active");
+          mobileMenu.setAttribute("aria-expanded", "true");
+          mobileMenu.setAttribute("aria-label", "Fechar menu");
+          mobileMenu.textContent = "×";
+        }
       });
     }
 
@@ -131,11 +166,26 @@
       if (!event.target.closest(".nav-dropdown")) {
         closeDropdowns();
       }
+
+      if (
+        navLinks?.classList.contains("active") &&
+        !event.target.closest(".nav-links") &&
+        !event.target.closest(".mobile-menu")
+      ) {
+        closeNavigationPanel();
+      }
     });
 
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape") {
         closeDropdowns();
+        closeNavigationPanel();
+      }
+    });
+
+    navLinks?.addEventListener("click", (event) => {
+      if (event.target.closest("a")) {
+        closeNavigationPanel();
       }
     });
   }
