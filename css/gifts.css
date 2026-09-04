@@ -152,10 +152,10 @@
 .pending-gift-card {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(160px, 0.5fr);
-  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 0.55fr);
+  gap: 0.9rem;
   align-items: center;
-  padding: 1.1rem;
+  padding: 0.95rem;
   border: 1px solid rgba(var(--color-primary-rgb), 0.12);
   border-radius: var(--radius-2xl);
   background: var(--white);
@@ -208,7 +208,8 @@
 .pending-gift-content h3 {
   margin: 0 0 0.35rem;
   font-family: var(--font-heading);
-  font-size: 1.5rem;
+  font-size: 1.35rem;
+  line-height: 1.08;
 }
 
 .pending-gift-content p {
@@ -219,12 +220,63 @@
 
 .pending-gift-actions {
   display: grid;
-  gap: 0.65rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.42rem;
 }
 
 .pending-gift-actions .gift-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
+  min-width: 0;
   margin-top: 0;
+  padding: 0.62rem 0.58rem;
+  border-radius: 12px;
+  overflow: hidden;
+  font-size: 0.72rem;
+  line-height: 1.15;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pending-gift-actions .payment-confirm-button {
+  grid-column: 1 / -1;
+  position: relative;
+  min-height: 38px;
+  padding-inline: 0.62rem;
+  font-size: 0.7rem;
+  letter-spacing: -0.01em;
+}
+
+.pending-gift-actions > :only-child {
+  grid-column: 1 / -1;
+}
+
+.pending-gift-actions .full-row {
+  grid-column: 1 / -1;
+}
+
+.pending-gift-actions .payment-confirm-button {
+  overflow: visible;
+}
+
+.pending-gift-actions .payment-confirm-button::before {
+  position: absolute;
+  top: -0.34rem;
+  right: -0.28rem;
+  display: inline-grid;
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  border: 1px solid var(--color-primary);
+  background: #ffffff;
+  background-color: #ffffff;
+  color: var(--color-primary);
+  box-shadow: none;
+  font-size: 0.58rem;
+  pointer-events: none;
 }
 
 .gifts-filter-panel {
@@ -409,8 +461,8 @@
 
 .gifts-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(auto-fill, minmax(205px, 1fr));
+  gap: 1rem;
   align-items: stretch;
   justify-content: center;
 }
@@ -448,10 +500,10 @@
   background: var(--white);
   backdrop-filter: blur(15px);
   border: 1px solid rgba(var(--color-primary-rgb), 0.1);
-  border-radius: var(--radius-3xl);
-  padding: 1.5rem;
-  box-shadow: 0 16px 42px rgba(35, 24, 42, 0.08);
-  overflow: hidden;
+  border-radius: 22px;
+  padding: 0.7rem;
+  box-shadow: 0 12px 30px rgba(35, 24, 42, 0.075);
+  overflow: visible;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -478,20 +530,43 @@
 
 .gift-card:hover {
   border-color: rgba(var(--color-primary-rgb), 0.18);
-  box-shadow: 0 20px 52px rgba(35, 24, 42, 0.12);
-  transform: translateY(-3px);
+  box-shadow: 0 18px 42px rgba(35, 24, 42, 0.12);
+  transform: translateY(-2px);
 }
 
 .gift-card:hover::before {
   opacity: 1;
 }
 
+.gift-card-media {
+  position: relative;
+  display: grid;
+  min-height: 132px;
+  place-items: center;
+  margin-bottom: 0.8rem;
+  overflow: hidden;
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(var(--color-primary-rgb), 0.1), transparent 36%),
+    linear-gradient(135deg, #fff, var(--color-primary-extra-faint));
+}
+
+.gift-card-placeholder {
+  display: inline-grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(var(--color-primary-rgb), 0.08);
+  color: var(--color-primary);
+  font-size: 1.45rem;
+}
+
 .gift-image {
   width: 100%;
-  height: 220px;
+  height: 132px;
   object-fit: cover;
-  border-radius: var(--radius-2xl);
-  margin-bottom: 1.5rem;
+  border-radius: inherit;
 }
 
 .gift-category {
@@ -508,11 +583,101 @@
   margin-bottom: 0.9rem;
 }
 
+.gift-card-status {
+  position: absolute;
+  right: 0.45rem;
+  bottom: 0.45rem;
+  max-width: calc(100% - 0.9rem);
+  padding: 0.3rem 0.52rem;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--color-primary);
+  font-size: 0.64rem;
+  font-weight: 700;
+  line-height: 1.1;
+  text-align: center;
+  box-shadow: 0 8px 18px rgba(35, 24, 42, 0.12);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.gift-card-status.comprado,
+.gift-card-status.comprado-por-voce,
+.gift-card-status.comprado-por-voces,
+.gift-card-status.informado {
+  color: #7b425a;
+}
+
+.gift-card-status.cotas-disponiveis,
+.gift-card-status.disponivel {
+  color: #168f85;
+}
+
+.gift-card-owner-badge {
+  position: absolute;
+  top: -0.42rem;
+  right: -0.34rem;
+  z-index: 4;
+  display: inline-grid;
+  width: 1.35rem;
+  height: 1.35rem;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.86);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--color-primary);
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: 0 8px 18px rgba(35, 24, 42, 0.12);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.gift-card-owner-badge.confirmed {
+  border-color: rgba(var(--color-primary-rgb), 0.2);
+  color: var(--color-primary);
+}
+
+.gift-card-owner-badge.waiting {
+  border-color: rgba(174, 119, 61, 0.25);
+  color: #9a6325;
+}
+
+.gift-card-owner-badge.pending {
+  border-color: rgba(123, 66, 90, 0.24);
+  color: #7b425a;
+}
+
+.gift-card-body {
+  display: grid;
+  flex: 1;
+  gap: 0.48rem;
+  align-content: start;
+}
+
+.gift-card-category {
+  align-self: flex-start;
+  color: var(--color-text-subtle);
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
 .gift-card h3 {
   font-family: var(--font-heading);
-  font-size: 2rem;
-  line-height: 1.05;
-  margin-bottom: 0.85rem;
+  display: -webkit-box;
+  min-height: 2.35em;
+  margin: 0;
+  overflow: hidden;
+  color: var(--color-primary);
+  font-size: 1.18rem;
+  line-height: 1.12;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .gift-card p {
@@ -521,15 +686,81 @@
   margin-bottom: 1rem;
 }
 
+.gift-card-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+  min-height: 25px;
+}
+
 .gift-price {
   align-self: flex-start;
   color: var(--color-primary);
-  padding: 0.35rem 0.75rem;
+  padding: 0.28rem 0.55rem;
   border-radius: var(--radius-pill);
   background: var(--color-primary-extra-faint);
   font-weight: 600;
-  font-size: 1.05rem;
-  margin-bottom: 1.5rem;
+  font-size: 0.78rem;
+  margin-bottom: 0;
+}
+
+
+.gift-payment-methods {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: 0;
+}
+
+.gift-payment-method-icon {
+  display: inline-grid;
+  position: relative;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  border: 1px solid rgba(var(--color-primary-rgb), 0.12);
+  border-radius: var(--radius-pill);
+  background: rgba(var(--color-primary-rgb), 0.055);
+  color: var(--color-primary);
+  line-height: 1;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82);
+}
+
+.gift-payment-method-icon.pix {
+  color: #168f85;
+  background: rgba(22, 143, 133, 0.08);
+  border-color: rgba(22, 143, 133, 0.15);
+}
+
+.gift-payment-method-icon.card {
+  color: var(--color-primary);
+}
+
+.gift-payment-method-icon.external {
+  color: #9a6325;
+  background: rgba(174, 119, 61, 0.1);
+  border-color: rgba(174, 119, 61, 0.16);
+}
+
+.gift-payment-method-icon svg {
+  display: block;
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.gift-payment-method-icon.pix svg {
+  width: 15px;
+  height: 15px;
+  fill: currentColor;
+  stroke: none;
 }
 
 .quota-card-info {
@@ -540,6 +771,22 @@
   border-radius: var(--radius-xl);
   background: var(--color-primary-faint);
   border: 1px solid var(--color-border);
+}
+
+.quota-card-info.compact {
+  position: absolute;
+  top: 0.45rem;
+  left: 0.45rem;
+  width: min(68%, 142px);
+  gap: 0.28rem;
+  margin: 0;
+  padding: 0.34rem 0.46rem;
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 8px 18px rgba(35, 24, 42, 0.12);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .quota-progress-label {
@@ -561,6 +808,11 @@
   overflow: hidden;
   border-radius: var(--radius-pill);
   background: var(--color-primary-soft);
+}
+
+.quota-card-info.compact .quota-progress-bar {
+  height: 5px;
+  background: rgba(var(--color-primary-rgb), 0.1);
 }
 
 .quota-progress-bar span {
@@ -595,6 +847,56 @@
 .quota-card-info small {
   color: var(--color-text-muted);
   font-weight: 600;
+}
+
+.quota-card-info.compact small {
+  color: var(--color-primary);
+  font-size: 0.58rem;
+  line-height: 1.2;
+}
+
+.gift-card-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.42rem;
+  align-items: stretch;
+  align-content: end;
+  min-height: 5.25rem;
+  margin-top: auto;
+  padding-top: 0.8rem;
+}
+
+.gift-card-actions .payment-confirm-button {
+  grid-column: 1 / -1;
+}
+
+.gift-card-actions > :only-child {
+  grid-column: 1 / -1;
+}
+
+.gift-card-actions .gift-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0;
+  border-radius: 12px;
+  padding: 0.62rem 0.58rem;
+  font-size: 0.72rem;
+  line-height: 1.15;
+  text-align: center;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gift-card-actions .payment-confirm-button {
+  position: relative;
+  overflow: visible;
+  min-height: 38px;
+  padding-inline: 0.62rem;
+  font-size: 0.7rem;
+  letter-spacing: -0.01em;
 }
 
 .gift-button {
@@ -633,7 +935,40 @@
 }
 
 .quota-unavailable-button {
-  margin-top: 1rem;
+  margin-top: 0;
+}
+
+.gift-card-actions .gift-button.secondary,
+.gift-card-details-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  border: 1px solid rgba(var(--color-primary-rgb), 0.12);
+  border-radius: 12px;
+  padding: 0.62rem 0.58rem;
+  background: var(--color-primary-extra-faint);
+  color: var(--color-primary);
+  box-shadow: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.15;
+  overflow: hidden;
+  text-align: center;
+  transition: 0.25s ease;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gift-card-actions .gift-button.secondary:hover,
+.gift-card-actions .gift-button.secondary:focus-visible,
+.gift-card-details-button:hover,
+.gift-card-details-button:focus-visible {
+  border-color: rgba(var(--color-primary-rgb), 0.22);
+  background: rgba(var(--color-primary-rgb), 0.09);
+  transform: translateY(-1px);
 }
 
 .gift-card.reservado {
@@ -707,6 +1042,79 @@
   font-size: 2rem;
   margin-bottom: 1rem;
   color: var(--color-primary);
+}
+
+.gift-catalog-details-modal-content {
+  max-width: 620px;
+}
+
+.gift-catalog-details {
+  display: grid;
+  gap: 0.95rem;
+}
+
+.gift-catalog-details-image {
+  width: 100%;
+  max-height: 260px;
+  object-fit: cover;
+  border-radius: var(--radius-2xl);
+  box-shadow: 0 14px 34px rgba(35, 24, 42, 0.1);
+}
+
+.gift-catalog-details h2 {
+  margin-bottom: 0;
+}
+
+.gift-catalog-details .gift-card-category {
+  margin-top: 0.15rem;
+}
+
+.gift-catalog-details .gift-price {
+  justify-self: flex-start;
+  font-size: 0.92rem;
+}
+
+.gift-catalog-details-description {
+  margin: 0;
+  color: var(--color-text-muted);
+  line-height: 1.75;
+}
+
+.gift-catalog-details-description.muted {
+  color: var(--color-text-subtle);
+  font-style: italic;
+}
+
+.gift-catalog-details-section {
+  display: grid;
+  gap: 0.55rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(var(--color-primary-rgb), 0.1);
+}
+
+.gift-catalog-details-section > span {
+  color: var(--color-primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.gift-catalog-details .gift-payment-methods {
+  gap: 0.5rem;
+}
+
+.gift-catalog-method {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.55rem 0.35rem 0.35rem;
+  border: 1px solid rgba(var(--color-primary-rgb), 0.1);
+  border-radius: var(--radius-pill);
+  background: rgba(var(--color-primary-rgb), 0.035);
+  color: var(--color-text);
+  font-size: 0.82rem;
+  font-weight: 600;
 }
 
 .modal-description {
@@ -870,10 +1278,70 @@
   display: none;
 }
 
+.quota-payment-note {
+  position: relative;
+  margin: 0.05rem 0 0;
+  padding: 0.15rem 0 0.15rem 1.05rem;
+  border: 0;
+  border-left: 2px solid rgba(var(--color-primary-rgb), 0.22);
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+  font-weight: 500;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.quota-payment-note::before {
+  position: absolute;
+  top: 0.62rem;
+  left: 0.38rem;
+  width: 0.24rem;
+  height: 0.24rem;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  content: "";
+}
+
+.confirmation-modal .quota-payment-note {
+  max-width: 330px;
+  margin: -0.55rem auto 0.65rem;
+  padding-left: 1rem;
+  text-align: left;
+}
+
 #pixPaymentBlock,
 #cardPaymentBlock {
   display: grid;
   gap: 0.75rem;
+}
+
+@media (min-width: 760px) {
+  #pixModal .modal-content {
+    max-width: 640px;
+  }
+
+  #pixPaymentBlock {
+    grid-template-columns: 176px minmax(0, 1fr);
+    align-items: center;
+    column-gap: 1.1rem;
+  }
+
+  #pixPaymentBlock .pix-qrcode {
+    grid-row: 1 / span 2;
+    margin: 0;
+  }
+
+  #pixPaymentBlock .pix-key-container {
+    align-self: end;
+  }
+
+  #pixPaymentBlock .pix-installment-hint {
+    align-self: start;
+    margin: -0.25rem 0 0;
+    text-align: left;
+  }
 }
 
 .pix-key-container {
@@ -932,6 +1400,15 @@
   font-size: 0.8rem;
   line-height: 1;
   pointer-events: none;
+}
+
+.pix-installment-hint {
+  max-width: 380px;
+  margin: -0.2rem auto 0;
+  color: var(--color-text-subtle);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  text-align: center;
 }
 
 .pix-button,
@@ -1014,7 +1491,7 @@
 
 @media (max-width: 992px) {
   .gifts-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
   }
 
   .pending-gifts-grid {
@@ -1028,7 +1505,8 @@
 
 @media (max-width: 768px) {
   .gifts-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
   }
 
   .gifts-pending-header,
@@ -1277,6 +1755,10 @@
   margin-top: 0.8rem;
 }
 
+.gift-card-actions .payment-button {
+  margin-top: 0;
+}
+
 .payment-confirm-button {
   border: 1px solid var(--color-primary);
   background: var(--color-primary);
@@ -1297,6 +1779,23 @@
   color: var(--color-primary);
   font-size: 0.65rem;
   line-height: 1;
+}
+
+.gift-card-actions .payment-confirm-button::before {
+  position: absolute;
+  top: -0.34rem;
+  right: -0.28rem;
+  display: inline-grid;
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  border: 1px solid var(--color-primary);
+  background: #ffffff;
+  background-color: #ffffff;
+  color: var(--color-primary);
+  box-shadow: none;
+  font-size: 0.58rem;
+  pointer-events: none;
 }
 
 .payment-confirm-button:hover {
@@ -1557,8 +2056,8 @@
   }
 
   .pending-gift-card {
-    gap: 0.75rem;
-    padding: 0.9rem;
+    gap: 0.65rem;
+    padding: 0.82rem;
     border-radius: var(--radius-lg);
   }
 
@@ -1567,11 +2066,27 @@
   }
 
   .pending-gift-content h3 {
-    font-size: 1.3rem;
+    font-size: 1.22rem;
   }
 
   .pending-gift-content p {
-    font-size: 0.88rem;
+    font-size: 0.82rem;
+  }
+
+  .pending-gift-actions {
+    gap: 0.35rem;
+  }
+
+  .pending-gift-actions .gift-button {
+    min-height: 36px;
+    padding: 0.54rem 0.42rem;
+    border-radius: 11px;
+    font-size: 0.64rem;
+  }
+
+  .pending-gift-actions .payment-confirm-button {
+    min-height: 36px;
+    font-size: 0.62rem;
   }
 
   #giftsGrid {
@@ -1596,23 +2111,36 @@
   }
 
   .gift-card {
-    padding: 1rem;
-    border-radius: var(--radius-lg);
+    padding: 0.58rem;
+    border-radius: 18px;
   }
 
   .gift-card:hover {
     transform: none;
   }
 
+  .gift-card-media {
+    min-height: 112px;
+    margin-bottom: 0.65rem;
+    border-radius: 14px;
+  }
+
+  .gift-card-placeholder {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+  }
+
   .gift-image {
-    height: 155px;
-    margin-bottom: 1rem;
-    border-radius: var(--radius-md);
+    height: 112px;
+    margin-bottom: 0;
+    border-radius: inherit;
   }
 
   .gift-card h3 {
-    margin-bottom: 0.65rem;
-    font-size: 1.5rem;
+    min-height: 2.4em;
+    margin-bottom: 0;
+    font-size: 1.03rem;
   }
 
   .gift-card p {
@@ -1622,8 +2150,50 @@
   }
 
   .gift-price {
-    margin-bottom: 1rem;
-    font-size: 1.05rem;
+    margin-bottom: 0;
+    padding: 0.24rem 0.45rem;
+    font-size: 0.72rem;
+  }
+
+  .gift-card-meta-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.38rem;
+  }
+
+  .gift-card-category {
+    font-size: 0.55rem;
+    letter-spacing: 0.07em;
+  }
+
+  .gift-card-status {
+    right: 0.35rem;
+    bottom: 0.35rem;
+    padding: 0.26rem 0.42rem;
+    font-size: 0.58rem;
+  }
+
+  .gift-card-owner-badge {
+    top: -0.34rem;
+    right: -0.26rem;
+    width: 1.16rem;
+    height: 1.16rem;
+    font-size: 0.66rem;
+  }
+
+  .gift-payment-method-icon {
+    width: 23px;
+    height: 23px;
+  }
+
+  .gift-payment-method-icon svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  .gift-payment-method-icon.pix svg {
+    width: 14px;
+    height: 14px;
   }
 
   .quota-card-info {
@@ -1631,6 +2201,18 @@
     margin-bottom: 0.9rem;
     padding: 0.75rem;
     border-radius: var(--radius-md);
+  }
+
+  .quota-card-info.compact {
+    gap: 0.3rem;
+    top: 0.35rem;
+    left: 0.35rem;
+    width: min(72%, 128px);
+    margin: 0;
+    padding: 0.28rem 0.38rem;
+    border: 1px solid rgba(255, 255, 255, 0.78);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.92);
   }
 
   .quota-progress-label {
@@ -1646,10 +2228,28 @@
     font-size: 0.78rem;
   }
 
-  .gift-button {
-    min-height: 44px;
-    padding: 0.8rem;
-    font-size: 0.9rem;
+  .quota-card-info.compact small {
+    font-size: 0.54rem;
+  }
+
+  .gift-card-actions {
+    gap: 0.35rem;
+    min-height: 4.85rem;
+    margin-top: auto;
+    padding-top: 0.65rem;
+  }
+
+  .gift-card-actions .gift-button,
+  .gift-card-details-button {
+    min-height: 36px;
+    padding: 0.54rem 0.42rem;
+    border-radius: 11px;
+    font-size: 0.64rem;
+  }
+
+  .gift-card-actions .payment-confirm-button {
+    min-height: 36px;
+    font-size: 0.62rem;
   }
 
   .gift-status,
@@ -1788,5 +2388,11 @@
 @media (max-width: 420px) {
   .confirmation-actions {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 360px) {
+  .gifts-grid {
+    grid-template-columns: 1fr;
   }
 }

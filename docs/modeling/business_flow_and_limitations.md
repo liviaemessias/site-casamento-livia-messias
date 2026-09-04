@@ -13,21 +13,41 @@ Páginas públicas:
 - `login.html`
 - `rsvp.html`
 - `gifts.html`
+- `photos.html`
+- `messages.html`
+- `vendors.html`
+- `schedule.html`
 
 Páginas administrativas:
 
+- `admin-login.html`
 - `admin-dashboard.html`
 - `admin-indicators.html`
 - `admin-reports.html`
+- `admin-notifications.html`
 - `admin-gifts.html`
 - `admin-guests.html`
 - `admin-rsvps.html`
+- `admin-messages.html`
+- `admin-checklist.html`
+- `admin-tables.html`
+- `admin-vendors.html`
+- `admin-schedule.html`
+- `admin-financial.html`
+- `admin-financial-budget.html`
+- `admin-financial-expenses.html`
+- `admin-financial-payments.html`
+- `admin-financial-base.html`
 - `admin-settings.html`
 
 Scripts compartilhados:
 
-- `auth.js`: sessão local e validação do código de convite.
+- `guest-auth.js`: sessão, login por convite e logout dos convidados.
+- `guest-bootstrap.js`: validação do convidado antes de carregar páginas
+  protegidas.
 - `public-common.js`: navbar, logout e saudação das páginas públicas autenticadas.
+- `admin-bootstrap.js`: proteção das páginas administrativas por Supabase Auth
+  e `is_admin()`.
 - `admin-common.js`: autenticação admin, logout, toast, utilitários do painel,
   navegação administrativa responsiva, alertas compactos do menu e cabeçalhos
   padronizados.
@@ -39,16 +59,7 @@ CSS compartilhado:
 
 ## Fluxo De Autenticação
 
-O frontend público está preparado para dois modos.
-
-Modo atual `legacy`:
-
-1. O convidado acessa `login.html`.
-2. Informa o código de convite.
-3. O frontend consulta `guests.invite_code`.
-4. A sessão é salva no `localStorage`.
-
-Modo preparado `supabase`:
+O frontend público usa autenticação de convidados por Supabase:
 
 1. O Supabase Auth cria uma sessão anônima.
 2. `claim-invite` valida o código.
@@ -56,7 +67,8 @@ Modo preparado `supabase`:
 4. `guest-bootstrap.js` carrega a página após obter o perfil.
 5. RSVP e presentes usam RLS e RPCs restritas.
 
-A mudança de modo será feita somente durante o corte definitivo da RLS.
+O modo legado com sessão local permanece apenas como referência/fallback
+controlado no código, mas não é o fluxo principal do projeto.
 
 Páginas administrativas usam um fluxo separado:
 
@@ -233,9 +245,12 @@ selected_purchase_details = objeto da loja
 ## Fluxo Administrativo
 
 O painel administrativo foi dividido em páginas, com navegação lateral no
-desktop e navegação inferior em estilo aplicativo no mobile. Os cabeçalhos das
-páginas seguem um padrão comum com subtítulo, título, descrição curta e detalhe
-ornamental discreto.
+desktop e navegação inferior em estilo aplicativo no mobile. A navegação
+destaca e centraliza a opção ativa quando possível, inclusive em submenus como
+Financeiro. Os cabeçalhos das páginas seguem um padrão comum com subtítulo,
+título, descrição curta e detalhe ornamental discreto. As páginas de gestão
+priorizam filtros recolhíveis, ações compactas, tabelas no desktop e cards/listas
+mais leves no mobile.
 
 ### Dashboard
 
@@ -376,6 +391,8 @@ Permite:
 - Configurar modo de compra.
 - Configurar link de pagamento por cartão.
 - Cadastrar opções de compra online e loja física.
+- Sinalizar na listagem o modo de compra do presente: Dinheiro/PIX/Cartão,
+  Compra Externa ou Híbrida.
 - Liberar reservas.
 - Marcar presentes como comprados.
 - Confirmar ou liberar contribuições por cota.
@@ -440,6 +457,8 @@ Permite:
 - Visualizar confirmações.
 - Consultar acompanhantes.
 - Consultar restrições e mensagens.
+- Em convites de casal, visualizar a presença de cada membro diretamente no
+  nome do convite, preservando complementos cadastrados como `e Família`.
 - Consultar a mesa atual do convite.
 - Acessar `Gerenciar Mesa`, que abre o detalhe do convidado correspondente para
   definir, trocar ou remover mesa.
@@ -520,11 +539,11 @@ Os filtros e a ordenação do admin são aplicados no frontend, em memória, sob
 
 Isso evita novas consultas a cada tecla digitada ou clique de ordenação e preserva os controles após operações que recarregam a tabela.
 
-### Exportação CSV
+### Exportações E Relatórios
 
 As páginas de Presentes, Convidados e RSVP possuem exportação CSV. O arquivo baixado respeita os filtros e a ordenação aplicados na tabela no momento do clique.
 
-O Dashboard também possui relatórios consolidados exportáveis:
+A página de Relatórios também possui relatórios consolidados exportáveis:
 
 - Presença e buffet: convites confirmados, pessoas do convite, acompanhantes, crianças, convidados pagantes, crianças pagantes, não pagantes e sem idade válida, além da regra de idade aplicada, com seleção de colunas e CSV/XLSX resumido ou detalhado por pessoa.
 - Financeiro: presentes individuais e cotas com convidado, status, valor e data, com seleção de colunas e CSV/XLSX.

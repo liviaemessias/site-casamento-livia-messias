@@ -301,6 +301,66 @@
     }
   }
 
+  function focusAdminNavItem(item, container, options = {}) {
+    if (!item || !container) {
+      return;
+    }
+
+    const { inline = false } = options;
+    const itemRect = item.getBoundingClientRect();
+    const containerRect = container.getBoundingClientRect();
+
+    if (!itemRect.width || !itemRect.height || !containerRect.width || !containerRect.height) {
+      return;
+    }
+
+    if (inline && container.scrollWidth > container.clientWidth) {
+      const targetLeft =
+        container.scrollLeft +
+        itemRect.left -
+        containerRect.left -
+        container.clientWidth / 2 +
+        itemRect.width / 2;
+      const maxScrollLeft = Math.max(container.scrollWidth - container.clientWidth, 0);
+
+      container.scrollTo({
+        left: Math.min(Math.max(targetLeft, 0), maxScrollLeft),
+        behavior: "auto",
+      });
+    }
+
+    if (container.scrollHeight <= container.clientHeight) {
+      return;
+    }
+
+    const targetTop =
+      container.scrollTop +
+      itemRect.top -
+      containerRect.top -
+      container.clientHeight / 2 +
+      itemRect.height / 2;
+    const maxScrollTop = Math.max(container.scrollHeight - container.clientHeight, 0);
+
+    container.scrollTo({
+      top: Math.min(Math.max(targetTop, 0), maxScrollTop),
+      behavior: "auto",
+    });
+  }
+
+  function focusActiveAdminSidebarItem(sidebarLinks) {
+    const activeNavigationItem =
+      sidebarLinks?.querySelector(".admin-nav-sublink.active") ||
+      sidebarLinks?.querySelector(".admin-nav-link.active");
+
+    if (!activeNavigationItem || !sidebarLinks) {
+      return;
+    }
+
+    window.requestAnimationFrame(() => {
+      focusAdminNavItem(activeNavigationItem, sidebarLinks);
+    });
+  }
+
   function setupAdminSidebar() {
     const navigation = document.querySelector(".admin-nav");
     const header = document.querySelector(".admin-header");
@@ -464,27 +524,7 @@
       link.insertAdjacentElement("beforebegin", group);
     });
 
-    const activeNavigationItem =
-      sidebarLinks.querySelector(".admin-nav-sublink.active") ||
-      sidebarLinks.querySelector(".admin-nav-link.active");
-
-    if (activeNavigationItem) {
-      window.requestAnimationFrame(() => {
-        const safeOffset = 12;
-        const itemTop = activeNavigationItem.offsetTop;
-        const itemHeight = activeNavigationItem.offsetHeight;
-        const targetTop = itemTop - sidebarLinks.clientHeight / 2 + itemHeight / 2;
-        const maxScrollTop = Math.max(
-          sidebarLinks.scrollHeight - sidebarLinks.clientHeight,
-          0,
-        );
-
-        sidebarLinks.scrollTo({
-          top: Math.min(Math.max(targetTop - safeOffset, 0), maxScrollTop),
-          behavior: "auto",
-        });
-      });
-    }
+    focusActiveAdminSidebarItem(sidebarLinks);
 
     const footer = document.createElement("div");
     footer.className = "admin-sidebar-footer";
@@ -628,6 +668,10 @@
     function setAdminMenuOpen(isOpen) {
       setSidebarOpen(isOpen);
       mobileMoreButton.setAttribute("aria-expanded", String(isOpen));
+
+      if (isOpen) {
+        focusActiveAdminSidebarItem(sidebarLinks);
+      }
     }
 
     menuButton.addEventListener("click", () => {
@@ -645,6 +689,14 @@
     if (window.lucide) {
       window.lucide.createIcons();
     }
+
+    window.requestAnimationFrame(() => {
+      const activeMobileItem =
+        mobileBottomNav.querySelector(".admin-mobile-nav-link.active") ||
+        mobileMoreButton;
+
+      focusAdminNavItem(activeMobileItem, mobileBottomNav, { inline: true });
+    });
 
     updateAdminBrand();
     updateAdminCountdown();

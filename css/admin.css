@@ -2153,6 +2153,14 @@
   font-size: 0.88rem;
 }
 
+.rsvp-person-item .rsvp-person-name {
+  display: inline;
+  min-width: 0;
+  margin-top: 0;
+  color: inherit;
+  font-size: inherit;
+}
+
 .rsvp-person-item span {
   margin-top: 0.18rem;
   color: var(--color-text-muted);
@@ -2160,9 +2168,28 @@
 }
 
 .rsvp-table-guest {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.rsvp-couple-title-member {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  min-width: 0;
+  gap: 0.28rem;
+}
+
+.rsvp-couple-title-member .rsvp-person-name {
+  display: inline;
+  min-width: 0;
+}
+
+.rsvp-couple-title-separator {
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+  font-weight: 700;
 }
 
 .rsvps-mobile-list {
@@ -2170,13 +2197,47 @@
 }
 
 .rsvp-mobile-card .admin-mobile-card-main strong {
-  display: inline-flex;
+  display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.35rem;
 }
 
 .rsvp-mobile-card .admin-mobile-card-main > .admin-badge {
   flex: 0 0 auto;
+}
+
+.rsvp-mobile-card .admin-mobile-card-main > div {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.rsvp-mobile-card .rsvp-table-guest,
+.rsvp-mobile-card .admin-mobile-card-main strong {
+  display: block;
+  line-height: 1.45;
+}
+
+.rsvp-mobile-card .rsvp-couple-title-member {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  gap: 0.22rem;
+  margin: 0.02rem 0;
+  vertical-align: middle;
+}
+
+.rsvp-mobile-card .rsvp-couple-title-separator {
+  display: inline-block;
+  margin: 0 0.18rem;
+  vertical-align: middle;
+}
+
+.rsvp-mobile-card .rsvp-inline-indicator {
+  display: inline-grid;
+  place-items: center;
+  line-height: 1;
+  vertical-align: middle;
 }
 
 .rsvp-mobile-card-meta {
@@ -2255,6 +2316,20 @@
   background: var(--color-primary-extra-faint);
   color: var(--color-primary);
   cursor: pointer;
+}
+
+.rsvp-inline-indicator.rsvp-person-presence-indicator {
+  flex: 0 0 18px;
+}
+
+.rsvp-inline-indicator.rsvp-person-presence-indicator.present {
+  background: var(--color-success-soft);
+  color: var(--color-success);
+}
+
+.rsvp-inline-indicator.rsvp-person-presence-indicator.absent {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
 }
 
 .rsvp-child-indicator.paying {
@@ -6140,8 +6215,59 @@
   width: 100%;
 }
 
-.gift-table-name {
+.gift-table-title,
+.gift-mobile-title {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  gap: 0.35rem;
+}
+
+.gift-table-name,
+.gift-mobile-title strong {
+  min-width: 0;
+}
+
+.admin-mobile-card-main > div > .gift-mobile-title {
+  display: inline-flex;
+  margin-top: 0;
+  color: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.admin-mobile-card-main .gift-mobile-title .gift-purchase-mode-indicator {
+  display: inline-grid;
+}
+
+.gift-purchase-mode-indicator {
+  display: inline-grid;
+  flex: 0 0 19px;
+  width: 19px;
+  height: 19px;
+  place-items: center;
+  border-radius: var(--radius-pill);
+  background: rgba(var(--color-primary-rgb), 0.08);
+  color: var(--color-primary);
+  vertical-align: -0.15rem;
+}
+
+.gift-purchase-mode-indicator.external {
+  background: rgba(174, 119, 61, 0.14);
+  color: #9a6325;
+}
+
+.gift-purchase-mode-indicator.hybrid {
+  background: rgba(91, 17, 102, 0.12);
+  color: var(--color-primary);
+}
+
+.gift-purchase-mode-indicator svg {
   display: block;
+  width: 12px;
+  height: 12px;
+  stroke: currentColor;
+  stroke-width: 2.2;
 }
 
 .gift-table-type {

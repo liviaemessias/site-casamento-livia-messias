@@ -454,6 +454,23 @@ function renderRSVPChildIndicator(companion) {
   `;
 }
 
+function renderRSVPPersonPresenceIndicator(presence) {
+  const isPresent = presence === "Sim";
+  const label = isPresent ? "Presença confirmada" : "Presença não confirmada";
+  const icon = isPresent ? "check" : "x";
+  const modifier = isPresent ? "present" : "absent";
+
+  return `
+    <span
+      class="rsvp-inline-indicator rsvp-person-presence-indicator ${modifier}"
+      title="${escapeAttribute(label)}"
+      aria-label="${escapeAttribute(label)}"
+    >
+      <i data-lucide="${escapeAttribute(icon)}" aria-hidden="true"></i>
+    </span>
+  `;
+}
+
 function renderRSVPDietaryBadge(person, rsvpId, personType, personIndex = "") {
   if (!hasPersonDietaryRestriction(person)) {
     return "";
@@ -492,16 +509,133 @@ function renderCoupleDetails(rsvp) {
           (member, index) => `
             <div class="rsvp-person-item">
               <strong>
-                ${safeText(member.name, "Sem nome")}
+                ${renderRSVPPersonPresenceIndicator(member.presence)}
+                <span class="rsvp-person-name">${safeText(member.name, "Sem nome")}</span>
                 ${renderRSVPDietaryBadge(member, rsvp.id, "member", index)}
               </strong>
-              <span>Presença: ${safeText(member.presence, "-")}</span>
             </div>
           `,
         )
         .join("")}
     </div>
   `;
+}
+
+function normalizeRSVPSearchText(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function getNormalizedTextMap(value) {
+  const source = String(value || "");
+  let normalized = "";
+  const map = [];
+
+  Array.from(source).forEach((char, index) => {
+    const normalizedChar = normalizeRSVPSearchText(char);
+
+    Array.from(normalizedChar).forEach(() => {
+      map.push(index);
+    });
+
+    normalized += normalizedChar;
+  });
+
+  return { map, normalized, source };
+}
+
+function findRSVPMemberNameMatch(textMap, memberName, startIndex = 0) {
+  const normalizedName = normalizeRSVPSearchText(memberName).trim();
+
+  if (!normalizedName) {
+    return null;
+  }
+
+  const normalizedIndex = textMap.normalized.indexOf(
+    normalizedName,
+    Math.max(startIndex, 0),
+  );
+
+  if (normalizedIndex < 0) {
+    return null;
+  }
+
+  const endNormalizedIndex = normalizedIndex + normalizedName.length - 1;
+  const start = textMap.map[normalizedIndex];
+  const end = (textMap.map[endNormalizedIndex] ?? start) + 1;
+
+  return {
+    end,
+    normalizedEnd: normalizedIndex + normalizedName.length,
+    start,
+  };
+}
+
+function renderRSVPCoupleTitleMember(member, rsvpId, index, displayName = member?.name) {
+  return `
+    <span class="rsvp-couple-title-member">
+      <span class="rsvp-person-name">${safeText(displayName, "Sem nome")}</span>
+      ${renderRSVPPersonPresenceIndicator(member.presence)}
+      ${renderRSVPDietaryBadge(member, rsvpId, "member", index)}
+    </span>
+  `;
+}
+
+function renderRSVPHybridCoupleGuestTitle(rsvp, fallbackName) {
+  const members = rsvp.guest_data?.members || [];
+  const textMap = getNormalizedTextMap(fallbackName);
+  const parts = [];
+  let sourceCursor = 0;
+  let normalizedCursor = 0;
+
+  for (const [index, member] of members.entries()) {
+    const match = findRSVPMemberNameMatch(textMap, member.name, normalizedCursor);
+
+    if (!match) {
+      return "";
+    }
+
+    if (match.start > sourceCursor) {
+      parts.push(safeText(textMap.source.slice(sourceCursor, match.start)));
+    }
+
+    parts.push(
+      renderRSVPCoupleTitleMember(
+        member,
+        rsvp.id,
+        index,
+        textMap.source.slice(match.start, match.end),
+      ),
+    );
+    sourceCursor = match.end;
+    normalizedCursor = match.normalizedEnd;
+  }
+
+  if (sourceCursor < textMap.source.length) {
+    parts.push(safeText(textMap.source.slice(sourceCursor)));
+  }
+
+  return parts.join("");
+}
+
+function renderRSVPGuestTitle(rsvp, fallbackName) {
+  const members = rsvp.guest_data?.members || [];
+
+  if (!members.length) {
+    return `
+      ${safeText(fallbackName)}
+      ${renderRSVPDietaryIndicator(rsvp)}
+    `;
+  }
+
+  return renderRSVPHybridCoupleGuestTitle(rsvp, fallbackName) ||
+    members
+      .map((member, index) =>
+        renderRSVPCoupleTitleMember(member, rsvp.id, index),
+      )
+      .join('<span class="rsvp-couple-title-separator">e</span>');
 }
 
 function renderCompanionDetails(rsvp) {
@@ -1529,8 +1663,7 @@ function renderRSVPTable(rsvps, guests) {
         <tr data-rsvp-row-id="${escapeAttribute(rsvp.id)}" tabindex="0">
           <td>
             <strong class="rsvp-table-guest">
-              ${safeText(guestName)}
-              ${renderRSVPDietaryIndicator(rsvp)}
+              ${renderRSVPGuestTitle(rsvp, guestName)}
             </strong>
             <span class="admin-muted rsvp-table-meta">
               ${safeText(getRSVPTableLabel(rsvp))}
@@ -1538,7 +1671,6 @@ function renderRSVPTable(rsvps, guests) {
           </td>
           <td>
             ${renderPresenceBadge(rsvp.presence)}
-            ${renderCoupleDetails(rsvp)}
           </td>
           <td>${companionCount}</td>
           <td>${renderCompanionDetails(rsvp)}</td>
@@ -1606,8 +1738,7 @@ function renderRSVPMobileList(rsvps, guestMap) {
           <div class="admin-mobile-card-main">
             <div>
               <strong>
-                ${safeText(guestName)}
-                ${renderRSVPDietaryIndicator(rsvp)}
+                ${renderRSVPGuestTitle(rsvp, guestName)}
               </strong>
               <span>${safeText(getRSVPTableLabel(rsvp))} · ${formatDate(rsvp.updated_at || rsvp.created_at)}</span>
             </div>

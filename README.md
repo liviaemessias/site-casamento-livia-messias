@@ -39,6 +39,9 @@ GitHub: [messiasfl10](https://github.com/messiasfl10/)
 - Dashboard operacional refinado com indicadores clicáveis, resumos visuais de
   RSVP e presentes, atalhos para as principais pendências e cabeçalhos
   administrativos padronizados.
+- Páginas administrativas refinadas com cabeçalhos compactos, filtros
+  recolhíveis, tabelas desktop, cards mobile, toggles elegantes, ações discretas
+  e indicadores visuais para estados importantes.
 - Página de Indicadores com métricas e gráficos detalhados de presença,
   convidados, mesas, buffet, presentes e valores dos presentes.
 - Módulo Financeiro administrativo para orçamento previsto, gastos reais,
@@ -372,10 +375,14 @@ Regras de valor:
 ## Painel Administrativo
 
 O admin foi repaginado com navegação lateral no desktop, ícones, agrupamentos
-por área e experiência mobile em estilo aplicativo, com topbar dinâmica e navbar
-inferior. Os cabeçalhos das páginas administrativas seguem um padrão visual
-comum, com subtítulo, título, descrição curta e detalhe ornamental discreto. O
-Dashboard inicial oferece uma visão operacional com indicadores clicáveis de
+por área, foco automático no item ativo e experiência mobile em estilo
+aplicativo, com topbar dinâmica e navbar inferior. Os cabeçalhos das páginas
+administrativas seguem um padrão visual comum, com subtítulo, título, descrição
+curta e detalhe ornamental discreto. As páginas de gestão usam uma abordagem
+mais compacta, com filtros recolhíveis, ações discretas, tabelas otimizadas no
+desktop e cards/listas no mobile quando a tabela não é a melhor experiência.
+
+O Dashboard inicial oferece uma visão operacional com indicadores clicáveis de
 pessoas confirmadas, capacidade planejada, convidados pagantes, RSVPs
 pendentes, presentes informados e reservados e valor confirmado. Também resume
 visualmente a distribuição dos RSVPs e a situação da lista de presentes.
@@ -430,7 +437,11 @@ pessoa; os resumos por convite mantêm apenas informações do convite e da mesa
 As páginas de gestão possuem filtros e ordenação local nas tabelas principais.
 Em convidados, o admin também controla se cada convite já foi enviado e se o
 convite é da Noiva, do Noivo ou do Casal, com filtros dedicados, colunas na
-tabela, campos no cadastro/edição e ações rápidas nos detalhes.
+tabela, campos no cadastro/edição e ações rápidas nos detalhes. Em RSVP, convites
+de casal indicam a presença de cada membro diretamente no nome do convite,
+preservando complementos cadastrados como "e Família". Em Presentes, a listagem
+administrativa também indica discretamente o modo de compra cadastrado:
+Dinheiro/PIX/Cartão, Compra Externa ou Híbrida.
 
 Filtros disponíveis:
 
@@ -526,7 +537,9 @@ PixPayment.getQrCodeUrl(payload);
 - `docs/operations/smtp_email_notifications_setup.md`: configuração SMTP, Gmail, Outlook/Hotmail, deploy e testes das notificações por e-mail.
 - `docs/releases/release_v4.4.md`: notas da versão 4.4, com melhorias visuais
   e de experiência administrativa, Dashboard inicial refinado, navegação mobile
-  em estilo aplicativo e cabeçalhos administrativos padronizados.
+  em estilo aplicativo, cabeçalhos administrativos padronizados, filtros
+  recolhíveis, cards mobile, toggles, paginação e indicadores visuais nas
+  páginas de gestão.
 - `docs/releases/release_v4.3.md`: notas da versão 4.3, com melhorias visuais
   da experiência pública, identidade do casal, menu público, páginas públicas,
   logins e pequenos refinamentos administrativos.

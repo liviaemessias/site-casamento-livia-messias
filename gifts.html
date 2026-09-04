@@ -128,6 +128,23 @@
         <div id="giftsGrid" class="gifts-grid"></div>
       </div>
     </section>
+
+    <!-- Modal Detalhes do Presente -->
+    <div class="modal" id="giftCatalogDetailsModal">
+      <div class="modal-content gift-catalog-details-modal-content">
+        <button
+          type="button"
+          class="close-modal"
+          id="closeGiftCatalogDetailsModal"
+          aria-label="Fechar"
+        >
+          ×
+        </button>
+
+        <div id="giftCatalogDetailsContent"></div>
+      </div>
+    </div>
+
     <!-- Modal Reserva -->
     <div class="modal" id="reserveModal">
       <div class="modal-content">
@@ -204,6 +221,15 @@
           class="modal-description"
         ></p>
 
+        <p
+          id="reservationConfirmationQuotaNotice"
+          class="quota-payment-note is-hidden"
+        >
+          As contribuições por cotas são feitas via PIX. Se desejarem parcelar,
+          vocês podem fazer isso pelo próprio banco, caso ele ofereça essa
+          opção.
+        </p>
+
         <div class="confirmation-actions">
           <button
             type="button"
@@ -274,6 +300,10 @@
                   <span class="pix-copy-icon" aria-hidden="true">⧉</span>
                 </button>
               </div>
+
+              <p id="pixInstallmentHint" class="pix-installment-hint">
+                Se o seu banco permitir, o PIX pode ser parcelado no app.
+              </p>
             </div>
 
             <div id="cardPaymentBlock">

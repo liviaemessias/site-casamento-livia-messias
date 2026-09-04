@@ -197,6 +197,43 @@ function getGiftTypeLabel(gift) {
   return isQuotaGift(gift) ? "Por cotas" : "Individual";
 }
 
+function getGiftPurchaseModeInfo(gift) {
+  const mode = isQuotaGift(gift) ? "money" : gift.purchase_mode || "money";
+  const modes = {
+    external: {
+      icon: "shopping-bag",
+      label: "Compra externa",
+      modifier: "external",
+    },
+    hybrid: {
+      icon: "shuffle",
+      label: "Híbrida",
+      modifier: "hybrid",
+    },
+    money: {
+      icon: "wallet",
+      label: "Dinheiro / PIX / Cartão",
+      modifier: "money",
+    },
+  };
+
+  return modes[mode] || modes.money;
+}
+
+function renderGiftPurchaseModeIndicator(gift) {
+  const mode = getGiftPurchaseModeInfo(gift);
+
+  return `
+    <span
+      class="gift-purchase-mode-indicator ${escapeAttribute(mode.modifier)}"
+      title="Modo de compra: ${escapeAttribute(mode.label)}"
+      aria-label="Modo de compra: ${escapeAttribute(mode.label)}"
+    >
+      ${renderTableActionIcon(mode.icon)}
+    </span>
+  `;
+}
+
 function getGiftDisplayStatus(gift) {
   if (!isQuotaGift(gift)) {
     return gift.status;
@@ -1234,7 +1271,10 @@ function renderGiftsTable(gifts, guests) {
       return `
         <tr data-gift-row-id="${escapeAttribute(gift.id)}" tabindex="0">
           <td>
-            <strong class="gift-table-name">${safeText(gift.name)}</strong>
+            <span class="gift-table-title">
+              <strong class="gift-table-name">${safeText(gift.name)}</strong>
+              ${renderGiftPurchaseModeIndicator(gift)}
+            </span>
             <span class="admin-muted gift-table-type">
               ${safeText(getGiftTypeLabel(gift))}
             </span>
@@ -1345,7 +1385,10 @@ function renderGiftsMobileList(gifts, guestMap) {
         <article class="admin-mobile-list-card gift-mobile-card" data-gift-card-id="${escapeAttribute(gift.id)}" tabindex="0">
           <div class="admin-mobile-card-main">
             <div>
-              <strong>${safeText(gift.name)}</strong>
+              <span class="gift-mobile-title">
+                <strong>${safeText(gift.name)}</strong>
+                ${renderGiftPurchaseModeIndicator(gift)}
+              </span>
               <span>${safeText(gift.category || "-")} · ${safeText(getGiftTypeLabel(gift))}</span>
             </div>
             ${renderStatusBadge(getGiftDisplayStatus(gift))}
