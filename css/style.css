@@ -601,6 +601,11 @@ body {
   transition: transform 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
 }
 
+.event-card#ceremony,
+.event-card#reception {
+  scroll-margin-top: 6.75rem;
+}
+
 .event-card:hover {
   transform: translateY(-6px);
   border-color: rgba(var(--color-primary-rgb), 0.22);
@@ -1154,6 +1159,11 @@ body {
   .event-card {
     padding: 0.9rem 0.9rem 1.35rem;
     border-radius: 22px;
+  }
+
+  .event-card#ceremony,
+  .event-card#reception {
+    scroll-margin-top: 5.75rem;
   }
 
   .event-card p {

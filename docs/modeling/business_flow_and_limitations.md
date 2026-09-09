@@ -45,7 +45,8 @@ Scripts compartilhados:
 - `guest-auth.js`: sessão, login por convite e logout dos convidados.
 - `guest-bootstrap.js`: validação do convidado antes de carregar páginas
   protegidas.
-- `public-common.js`: navbar, logout e saudação das páginas públicas autenticadas.
+- `public-common.js`: navbar, painel do menu público, logout e saudação das
+  páginas públicas autenticadas.
 - `admin-bootstrap.js`: proteção das páginas administrativas por Supabase Auth
   e `is_admin()`.
 - `admin-common.js`: autenticação admin, logout, toast, utilitários do painel,
@@ -56,6 +57,8 @@ Scripts compartilhados:
 CSS compartilhado:
 
 - `tokens.css`: tokens globais de cores, fontes, sombras, raios e espaçamentos.
+- `public-nav.css`: painel lateral reutilizável da navegação pública, com
+  fechamento por botão, clique externo, links e tecla Esc.
 
 ## Fluxo De Autenticação
 
@@ -149,6 +152,12 @@ gift_contributions.payment_reported_at = data atual
 
 Presentes por cotas não usam `gifts.reserved_guest_id`, porque vários convidados podem contribuir para o mesmo presente.
 
+Na página pública, cotas aparecem em cards compactos junto dos demais
+presentes. O card informa o valor por cota, quantidade disponível quando
+aplicável, status agregado e, quando a contribuição pertence ao convite logado,
+um selo discreto indicando se está comprada, aguardando confirmação ou pendente
+de ação do convidado.
+
 O status agregado do presente por cotas é sincronizado a partir das contribuições:
 
 ```text
@@ -186,6 +195,11 @@ Regras de valor:
 - `hybrid`: exige valor maior que zero, pois o convidado pode escolher PIX/cartão.
 - `quota`: exige valor total maior que zero e quantidade de cotas maior que zero.
 
+Na lista pública, os cards indicam discretamente quais formas estão disponíveis:
+PIX, cartão quando houver checkout configurado e compra externa quando o
+presente permitir loja online/física. Presentes externos sem valor cadastrado
+aparecem como "Presente combinado", evitando exibição de `R$ 0,00`.
+
 ### PIX
 
 1. O convidado seleciona PIX.
@@ -194,6 +208,11 @@ Regras de valor:
 4. `pix.js` gera a URL do QR-Code.
 5. O modal exibe QR-Code e PIX Copia e Cola.
 6. O convidado informa que realizou o pagamento.
+
+O modal de PIX exibe uma frase curta sobre parcelamento pelo aplicativo do
+banco, com concordância para convite individual ou de casal. No desktop, o
+QR-Code e o PIX Copia e Cola podem aparecer lado a lado para reduzir altura do
+modal; no mobile, a disposição permanece empilhada.
 
 Atualização:
 
@@ -610,6 +629,9 @@ Concluído:
 - RSVP individual e casal.
 - Acompanhantes e crianças.
 - Lista de presentes.
+- Lista pública de presentes compacta, com filtros expansíveis, indicação de
+  formas de pagamento, selos de status e tratamento visual para presentes por
+  cotas, presentes combinados e ações pendentes do convite logado.
 - Página e seção de Pré-Wedding com galeria responsiva e lightbox.
 - Mural de Recados com página pública, envio/edição pelo convidado logado,
   prévia na página inicial, aprovação, ocultação, filtros e resposta dos
@@ -635,10 +657,12 @@ Concluído:
 - Fornecedores e Programação do casamento com páginas públicas/protegidas,
   estados vazios amigáveis e gestão administrativa por RPCs seguras.
 - Helpers `admin-common.js` e `public-common.js`.
+- Painel lateral reutilizável da navegação pública via `public-nav.css`, com
+  fechamento por X, links, clique externo e tecla Esc.
 - Navegação administrativa desktop/mobile e cabeçalhos padronizados via
   `admin-common.js`.
 - Módulo `pix.js`.
-- CSS com tokens globais.
+- CSS com tokens globais e padrões compartilhados de navegação pública.
 
 Em aberto:
 

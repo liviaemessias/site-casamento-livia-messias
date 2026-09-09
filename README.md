@@ -2,7 +2,7 @@
 
 Site de casamento personalizado para centralizar informações do evento, RSVP, lista de presentes e administração dos noivos.
 
-Versão atual: **4.4**.
+Versão atual: **4.5**.
 
 ## Desenvolvimento
 
@@ -26,8 +26,10 @@ GitHub: [messiasfl10](https://github.com/messiasfl10/)
   convidado principal, membros do casal e acompanhantes.
 - Idade das crianças padronizada até 12 anos, conforme a data do casamento.
 - Regra configurável de idade mínima pagante para o buffet.
-- Lista de presentes com reserva.
-- Seção da lista de presentes na página inicial.
+- Lista de presentes com reserva, filtros públicos, cards compactos, selos de
+  status e indicação das formas de pagamento disponíveis.
+- Atalhos rápidos na hero da página inicial para RSVP, Presentes, Local,
+  Recados, Nossa História e Menu.
 - Presentes por cotas para contribuições financeiras via PIX.
 - Área de acompanhamento dos presentes do convite que ainda possuem ações pendentes.
 - Dica na lista de presentes para informar e-mail no RSVP e receber confirmações, novidades e avisos.
@@ -49,7 +51,8 @@ GitHub: [messiasfl10](https://github.com/messiasfl10/)
   vínculo entre gasto e item previsto, alertas de vencimento e relatórios.
 - Experiência pública refinada com identidade visual do casal, logo em pontos
   estratégicos, tom roxo principal atualizado, tipografia romântica nos heros,
-  menu desktop agrupado e melhorias responsivas nas páginas públicas.
+  atalhos na Home, menu público em painel lateral reutilizável e melhorias
+  responsivas nas páginas públicas.
 - Filtros, ordenação, contadores de resultado e limpeza de filtros no admin.
 - Alertas compactos no menu administrativo para recados pendentes, presentes
   ou cotas com pagamento informado, tarefas atrasadas e parcelas financeiras
@@ -76,7 +79,10 @@ GitHub: [messiasfl10](https://github.com/messiasfl10/)
 - Definição administrativa de Mesas, com ocupação Planejada, Confirmada e
   Híbrida, atribuição de convidados, gestão pelo detalhe do convidado, atalho
   via RSVP, filtros, métricas e exportação CSV.
-- Referências visuais personalizadas nos logins e nas páginas públicas, adaptadas para desktop e mobile.
+- Referências visuais personalizadas nos logins e nas páginas públicas,
+  adaptadas para desktop e mobile.
+- Logins de convidados e administrador compactados para melhor aproveitamento
+  de espaço no desktop e no mobile.
 - Footer público padronizado com logo do casal e atalho para voltar à página
   inicial.
 - Textos de saudação, reserva e pagamento adaptados para convites individuais e de casal.
@@ -111,11 +117,11 @@ GitHub: [messiasfl10](https://github.com/messiasfl10/)
 
 ### Públicas
 
-- `index.html`: página inicial, informações do casamento, contagem regressiva, metadados, identidade visual do casal e acesso à lista de presentes.
+- `index.html`: página inicial, informações do casamento, contagem regressiva, metadados, identidade visual do casal e atalhos rápidos para áreas importantes.
 - `our-story.html`: linha do tempo da história do casal, notas pessoais e seção da jornada.
 - `login.html`: entrada por código de convite.
 - `rsvp.html`: confirmação de presença.
-- `gifts.html`: lista de presentes, filtros públicos e fluxo de reserva/pagamento.
+- `gifts.html`: lista de presentes, filtros públicos, cards compactos e fluxo de reserva/pagamento.
 - `photos.html`: galeria do Pré-Wedding.
 - `messages.html`: Mural de Recados.
 - `vendors.html`: fornecedores do casamento.
@@ -164,13 +170,14 @@ alertas compactos do menu e padronização dos cabeçalhos das páginas.
 - `js/admin-login.js`: login administrativo com e-mail e senha.
 - `js/admin-bootstrap.js`: proteção e carregamento das páginas administrativas.
 - `js/public-common.js`: comportamento comum das páginas públicas autenticadas,
-  como navbar, dropdown do menu público, logout e saudação do convidado.
+  como navbar, painel do menu público, dropdowns, logout e saudação do convidado.
 - `js/captcha-config.js`: ativação e Site Key pública do Cloudflare Turnstile.
 - `js/turnstile-captcha.js`: carregamento, token, expiração e reset do CAPTCHA compartilhado pelos logins.
 - `js/reference-decorations.js`: referências visuais aleatórias dos logins, laterais desktop e divisores mobile.
 - `js/photo-gallery-data.js`: lista compartilhada das fotos exibidas na seção e na página de Pré-Wedding.
 - `js/script.js`: comportamento específico da página inicial, incluindo navbar,
-  menu público, contagem regressiva e interações da Home.
+  painel do menu público, atalhos da hero, contagem regressiva e interações da
+  Home.
 - `js/home-photos.js`: renderização da prévia do Pré-Wedding na página inicial.
 - `js/home-messages.js`: renderização da prévia do Mural de Recados na página
   inicial.
@@ -218,6 +225,7 @@ alertas compactos do menu e padronização dos cabeçalhos das páginas.
 
 - `css/tokens.css`: tokens globais de cores, fontes, raios, sombras e espaçamentos.
 - `css/style.css`: estilos base e página inicial.
+- `css/public-nav.css`: painel lateral reutilizável da navegação pública.
 - `css/login.css`: tela de login.
 - `css/rsvp.css`: página de RSVP.
 - `css/gifts.css`: lista de presentes e modais de pagamento.
@@ -334,6 +342,12 @@ principal, membro do casal ou acompanhante com restrição.
 
 ## Fluxo De Presentes
 
+Na página pública, os presentes são exibidos em cards compactos, com foto ou
+placeholder visual, categoria, valor ou indicação de presente combinado, formas
+de pagamento disponíveis, status e ações principais. O convidado pode abrir um
+painel discreto de filtros para buscar por disponibilidade, categoria, tipo,
+valor, nome e itens reservados ou comprados pelo próprio convite.
+
 1. O convidado escolhe um presente disponível.
 2. O presente é reservado para o convidado.
 3. O convidado escolhe uma forma de presentear.
@@ -348,6 +362,12 @@ Presentes por cotas seguem um fluxo separado:
 3. O site registra a contribuição em `gift_contributions`.
 4. O PIX é gerado com o valor total das cotas escolhidas.
 5. O convidado informa o pagamento e os noivos confirmam depois.
+
+Presentes por cotas são tratados visualmente como contribuições via PIX. O
+modal de pagamento informa de forma curta que, se o banco permitir, o
+parcelamento deve ser feito pelo aplicativo escolhido pelo convidado. No
+desktop, o QR-Code e o PIX Copia e Cola ficam lado a lado para aproveitar melhor
+o espaço.
 
 Reservas, pagamentos informados, confirmações administrativas e liberações de
 presentes/cotas criam eventos em `notification_events`. O admin recebe e-mail
@@ -535,6 +555,10 @@ PixPayment.getQrCodeUrl(payload);
 
 - `docs/operations/captcha_turnstile_setup.md`: ativação, testes e rollback do Cloudflare Turnstile nos logins.
 - `docs/operations/smtp_email_notifications_setup.md`: configuração SMTP, Gmail, Outlook/Hotmail, deploy e testes das notificações por e-mail.
+- `docs/releases/release_v4.5.md`: notas da versão 4.5, com refinamentos da
+  experiência pública, atalhos rápidos na Home, novo painel de menu público,
+  lista de presentes compacta, filtros públicos, ícones de pagamento, melhorias
+  nos modais PIX e logins mais enxutos.
 - `docs/releases/release_v4.4.md`: notas da versão 4.4, com melhorias visuais
   e de experiência administrativa, Dashboard inicial refinado, navegação mobile
   em estilo aplicativo, cabeçalhos administrativos padronizados, filtros
@@ -653,7 +677,8 @@ Concluído:
 - Cadastro e gestão de acompanhantes.
 - Idade das crianças padronizada até 12 anos e regra configurável de idade pagante do buffet.
 - Lista de presentes.
-- Seção da lista de presentes na página inicial.
+- Atalhos rápidos na página inicial para RSVP, Presentes, Local, Recados, Nossa
+  História e Menu.
 - Página e seção de Pré-Wedding com galeria responsiva e lightbox.
 - Mural de Recados com página pública, envio/edição pelo convidado logado,
   prévia na página inicial, aprovação, ocultação, resposta dos noivos, remoção
@@ -714,12 +739,20 @@ Concluído:
 - Row Level Security para isolamento dos dados de convidados e administradores.
 - Helpers comuns para admin e páginas públicas.
 - Referências visuais responsivas nas páginas públicas.
+- Lista pública de presentes compacta, com filtros expansíveis, cards mais
+  consistentes no desktop/mobile, selos de status, indicação das formas de
+  pagamento, suporte visual para presentes combinados sem valor e seção de
+  presentes para concluir alinhada ao novo padrão.
+- Menu público em painel lateral reutilizável, com fechamento por X, clique
+  externo, links e tecla Esc, aplicado às páginas públicas conforme as opções de
+  cada página.
+- Logins de convidados e administrador mais compactos no desktop e no mobile.
 - Tokens globais de CSS.
-- Identidade visual pública da v4.3, com logo do casal, heros com tipografia
-  romântica, roxo principal atualizado, menu público agrupado no desktop,
-  rodapés públicos com logo clicável e refinamentos mobile/desktop em Home,
-  RSVP, Presentes, Nossa História, Pré-Wedding, Recados, Programação e
-  Fornecedores.
+- Identidade visual pública refinada nas releases v4.3 e v4.5, com logo do
+  casal, heros com tipografia romântica, roxo principal atualizado, menu público
+  agrupado/painel lateral, rodapés públicos com logo clicável e refinamentos
+  mobile/desktop em Home, RSVP, Presentes, Nossa História, Pré-Wedding, Recados,
+  Programação e Fornecedores.
 
 Em aberto:
 
