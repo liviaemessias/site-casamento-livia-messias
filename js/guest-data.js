@@ -132,6 +132,29 @@
     };
   }
 
+  async function loadCurrentWallMessageStatus() {
+    if (!isSecureMode()) {
+      return {
+        data: {
+          has_message: false,
+          status: null,
+          submitted_at: null,
+          updated_at: null,
+        },
+        error: null,
+      };
+    }
+
+    const { data, error } = await supabaseClient.rpc(
+      "current_guest_has_wall_message",
+    );
+
+    return {
+      data: data?.[0] || null,
+      error,
+    };
+  }
+
   async function saveCurrentWallMessage(message) {
     if (!isSecureMode()) {
       return { data: null, error: new Error("Fluxo indisponível.") };
@@ -296,6 +319,7 @@
     loadGiftCatalog,
     listApprovedWallMessages,
     loadCurrentWallMessage,
+    loadCurrentWallMessageStatus,
     loadRSVP,
     loadSettings,
     markGuestConfirmed,

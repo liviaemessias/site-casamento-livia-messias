@@ -23,6 +23,7 @@ Exemplos recentes:
 - `notification_delivery_sorting.sql` + `notification_delivery_sorting_verify.sql`
 - `notification_delivery_summary.sql` + `notification_delivery_summary_verify.sql`
 - `wall_messages.sql` + `wall_messages_verify.sql`
+- `current_guest_wall_message_status.sql` + `current_guest_wall_message_status_verify.sql`
 - `wall_message_email_notifications.sql` + `wall_message_email_notifications_verify.sql`
 - `admin_nav_alerts.sql` + `admin_nav_alerts_verify.sql`
 - `admin_nav_financial_overdue_payments.sql` + `admin_nav_financial_overdue_payments_verify.sql`
@@ -72,6 +73,10 @@ item do orçamento com o valor planejado.
 Observação: `admin_nav_financial_overdue_payments.sql` atualiza
 `admin_get_nav_alerts()` para sinalizar parcelas financeiras vencidas ou com
 vencimento no dia atual no menu administrativo.
+
+Observação: `current_guest_wall_message_status.sql` adiciona uma RPC leve para
+o RSVP identificar se o convidado logado já possui recado no Mural, sem expor o
+texto do recado.
 
 ## O Que Não Fazer
 

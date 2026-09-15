@@ -55,17 +55,17 @@
   background: transparent;
 }
 
-.public-nav-close-item {
+.nav-links > .public-nav-close-item {
   position: absolute;
   top: 1.25rem;
   right: 1.25rem;
-  display: none;
+  display: none !important;
   list-style: none;
 }
 
-.nav-links.active .public-nav-close-item,
-.nav-links.hero-shortcut-open .public-nav-close-item {
-  display: block;
+.nav-links.active > .public-nav-close-item,
+.nav-links.hero-shortcut-open > .public-nav-close-item {
+  display: block !important;
 }
 
 .public-nav-close {

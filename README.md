@@ -321,6 +321,9 @@ O RSVP permite:
 - Informar e-mail, telefone, restrição alimentar por pessoa do convite e
   mensagem. Quando houver restrição, o campo de detalhe é liberado somente para
   aquela pessoa.
+- Enviar opcionalmente a mensagem do RSVP também para o Mural de Recados. Se o
+  convite já possuir recado, o sistema informa que o recado atual será
+  substituído e voltará para aprovação.
 - Adicionar acompanhantes dentro do limite do convite.
 - Confirmar membros de convite de casal individualmente.
 
@@ -660,6 +663,10 @@ PixPayment.getQrCodeUrl(payload);
 - `docs/migrations/wedding_tables_verify.sql`: verificação incremental das tabelas, RLS e permissões de Mesas.
 - `docs/migrations/wall_messages.sql`: migração incremental do Mural de Recados, com envio do convidado, listagem pública aprovada e moderação administrativa.
 - `docs/migrations/wall_messages_verify.sql`: verificação incremental da tabela, RLS, grants e RPCs do Mural de Recados.
+- `docs/migrations/current_guest_wall_message_status.sql` e
+  `docs/migrations/current_guest_wall_message_status_verify.sql`: RPC e
+  verificação para o RSVP identificar se o convidado logado já possui recado no
+  Mural, sem expor o texto do recado.
 - `docs/migrations/wall_message_email_notifications.sql`: migração incremental dos eventos de e-mail do Mural de Recados.
 - `docs/migrations/wall_message_email_notifications_verify.sql`: verificação incremental dos eventos de e-mail do Mural de Recados.
 - `docs/operations/supabase_data_cleanup_runbook.md`: limpeza segura dos dados de teste, preservando administrador e configurações.

@@ -238,6 +238,7 @@ from (
     ('public.get_current_guest_profile()'),
     ('public.list_approved_wall_messages(integer,integer)'),
     ('public.get_current_guest_wall_message()'),
+    ('public.current_guest_has_wall_message()'),
     ('public.save_current_guest_wall_message(text)'),
     ('public.get_gift_catalog()'),
     ('public.save_current_rsvp(text,text,text,text,boolean,text,jsonb)'),
@@ -363,6 +364,16 @@ select
   and has_function_privilege(
     'authenticated',
     'public.get_current_guest_wall_message()',
+    'execute'
+  )
+  and not has_function_privilege(
+    'anon',
+    'public.current_guest_has_wall_message()',
+    'execute'
+  )
+  and has_function_privilege(
+    'authenticated',
+    'public.current_guest_has_wall_message()',
     'execute'
   )
   and not has_function_privilege(

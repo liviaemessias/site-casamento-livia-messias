@@ -163,6 +163,27 @@
                 name="message"
                 placeholder="Se quiser, deixe uma mensagem carinhosa para nós 💜"
               ></textarea>
+              <div
+                id="rsvpWallMessageOption"
+                class="rsvp-wall-message-option is-hidden"
+                hidden
+              >
+                <label class="rsvp-wall-message-toggle">
+                  <input
+                    type="checkbox"
+                    id="shareRsvpMessageToWall"
+                    name="shareRsvpMessageToWall"
+                    value="yes"
+                  />
+                  <span class="rsvp-wall-message-switch" aria-hidden="true"></span>
+                  <span id="shareRsvpMessageToWallLabel">
+                    Também quero enviar esta mensagem para o Mural de Recados
+                  </span>
+                </label>
+                <p id="rsvpWallMessageHelper">
+                  O recado ficará visível no mural somente após aprovação dos noivos.
+                </p>
+              </div>
             </div>
             <button type="submit" class="submit-button">
               Confirmar presença

@@ -824,10 +824,24 @@ body {
 }
 
 @media (max-width: 520px) {
-  .guest-message-actions,
-  .guest-message-meta {
+  .guest-message-actions {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .guest-message-meta {
+    align-items: center;
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+
+  .guest-message-status {
+    align-self: center;
+    margin-left: auto;
+    width: fit-content;
+    max-width: 100%;
+    text-align: right;
   }
 
   .message-button {

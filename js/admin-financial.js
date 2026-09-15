@@ -3145,8 +3145,10 @@ function createFinancialDetailsLink(url) {
   const link = document.createElement("a");
 
   link.href = url;
+  link.className = "financial-details-reference-link";
   link.target = "_blank";
   link.rel = "noopener noreferrer";
+  link.title = url;
   link.textContent = url;
 
   return link;

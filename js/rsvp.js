@@ -27,6 +27,13 @@ const coupleMembersSectionLabel = document.getElementById(
   "coupleMembersSectionLabel",
 );
 const successMessage = document.getElementById("successMessage");
+const rsvpWallMessageOption = document.getElementById("rsvpWallMessageOption");
+const shareRsvpMessageToWall = document.getElementById("shareRsvpMessageToWall");
+const shareRsvpMessageToWallLabel = document.getElementById(
+  "shareRsvpMessageToWallLabel",
+);
+const rsvpWallMessageHelper = document.getElementById("rsvpWallMessageHelper");
+const RSVP_WALL_MESSAGE_MAX_LENGTH = 800;
 
 const knownEmailDomains = [
   "gmail.com",
@@ -72,8 +79,91 @@ function setElementVisibility(element, visible) {
   element.classList.toggle("is-hidden", !visible);
 }
 
+function getRsvpMessageText() {
+  return document.querySelector('textarea[name="message"]')?.value.trim() || "";
+}
+
+function hasCurrentWallMessage() {
+  return Boolean(currentWallMessageStatus?.has_message);
+}
+
+function updateRsvpWallMessageCopy() {
+  if (!shareRsvpMessageToWallLabel || !rsvpWallMessageHelper) {
+    return;
+  }
+
+  if (hasCurrentWallMessage()) {
+    shareRsvpMessageToWallLabel.textContent = isCoupleInvite
+      ? "Atualizar nosso recado no Mural com esta mensagem"
+      : "Atualizar meu recado no Mural com esta mensagem";
+    rsvpWallMessageHelper.textContent =
+      "O recado atual será substituído e voltará para aprovação dos noivos.";
+    return;
+  }
+
+  shareRsvpMessageToWallLabel.textContent = isCoupleInvite
+    ? "Também queremos enviar esta mensagem para o Mural de Recados"
+    : "Também quero enviar esta mensagem para o Mural de Recados";
+  rsvpWallMessageHelper.textContent =
+    "O recado ficará visível no mural somente após aprovação dos noivos.";
+}
+
+function updateRsvpWallMessageOption() {
+  if (
+    !rsvpWallMessageOption ||
+    !shareRsvpMessageToWall ||
+    !rsvpWallMessageHelper
+  ) {
+    return;
+  }
+
+  const message = getRsvpMessageText();
+  const hasMessage = Boolean(message);
+  const isTooLong = message.length > RSVP_WALL_MESSAGE_MAX_LENGTH;
+
+  setElementVisibility(rsvpWallMessageOption, hasMessage);
+  rsvpWallMessageOption.dataset.state = isTooLong ? "warning" : "default";
+
+  if (!hasMessage) {
+    shareRsvpMessageToWall.checked = false;
+    shareRsvpMessageToWall.disabled = false;
+    return;
+  }
+
+  shareRsvpMessageToWall.disabled = isTooLong;
+
+  if (isTooLong) {
+    shareRsvpMessageToWall.checked = false;
+    rsvpWallMessageHelper.textContent =
+      `Para ir ao mural, o recado precisa ter até ${RSVP_WALL_MESSAGE_MAX_LENGTH} caracteres.`;
+    return;
+  }
+
+  updateRsvpWallMessageCopy();
+}
+
+async function loadCurrentWallMessageStatus() {
+  if (!GuestData.loadCurrentWallMessageStatus) {
+    return;
+  }
+
+  try {
+    const { data, error } = await GuestData.loadCurrentWallMessageStatus();
+
+    if (error) {
+      throw error;
+    }
+
+    currentWallMessageStatus = data || null;
+    updateRsvpWallMessageOption();
+  } catch (error) {
+    console.warn("Não foi possível verificar o recado atual do mural.", error);
+  }
+}
+
 let existingRSVP = null;
 let cachedCompanions = [];
+let currentWallMessageStatus = null;
 
 function hasDietaryRestriction(rsvp) {
   if (typeof rsvp?.food_restriction === "boolean") {
@@ -335,7 +425,10 @@ if (messageField) {
   messageField.placeholder = isCoupleInvite
     ? "Se quiserem, deixem uma mensagem carinhosa para nós 💜"
     : "Se quiser, deixe uma mensagem carinhosa para nós 💜";
+  messageField.addEventListener("input", updateRsvpWallMessageOption);
 }
+
+updateRsvpWallMessageOption();
 
 primaryFoodRestrictionInput?.addEventListener("change", () => {
   updatePersonFoodVisibility(
@@ -992,6 +1085,7 @@ async function loadExistingRSVP() {
 
   document.querySelector('textarea[name="message"]').value =
     existingRSVP.message || "";
+  updateRsvpWallMessageOption();
 
   const companions = existingRSVP.guest_data?.companions || [];
 
@@ -1039,6 +1133,12 @@ form.addEventListener("submit", async (e) => {
     formData.forEach((value, key) => {
       data[key] = value;
     });
+
+    const rsvpMessageForWall = String(data.message || "").trim();
+    const shouldShareMessageToWall =
+      data.shareRsvpMessageToWall === "yes" &&
+      rsvpMessageForWall.length > 0 &&
+      rsvpMessageForWall.length <= RSVP_WALL_MESSAGE_MAX_LENGTH;
 
     const companions = [];
 
@@ -1181,15 +1281,70 @@ form.addEventListener("submit", async (e) => {
       console.error(guestError);
     }
 
+    let wallMessageShared = false;
+    let wallMessageShareFailed = false;
+
+    if (shouldShareMessageToWall) {
+      try {
+        const { data: wallMessage, error: wallMessageError } =
+          await GuestData.saveCurrentWallMessage(rsvpMessageForWall);
+
+        if (wallMessageError) {
+          throw wallMessageError;
+        }
+
+        if (!wallMessage?.id) {
+          throw new Error("O recado do mural não foi retornado pelo banco.");
+        }
+
+        wallMessageShared = true;
+        currentWallMessageStatus = {
+          has_message: true,
+          status: wallMessage?.status || "pending",
+          submitted_at: wallMessage?.submitted_at || null,
+          updated_at: wallMessage?.updated_at || null,
+        };
+
+        GuestData.notifyPendingNotifications(
+          "wall_message_submitted",
+          wallMessage?.id,
+        ).catch((notificationError) => {
+          console.warn(
+            "Não foi possível disparar a notificação do recado.",
+            notificationError,
+          );
+        });
+      } catch (wallMessageError) {
+        wallMessageShareFailed = true;
+        console.warn(
+          "Não foi possível salvar a mensagem do RSVP no mural.",
+          wallMessageError,
+        );
+      }
+    }
+
     setElementVisibility(document.getElementById("successMessage"), true);
+    updateRsvpWallMessageOption();
 
     button.innerText = "Atualizar confirmação";
 
-    showToast(
-      wasEditing
-        ? "❤️ Confirmação atualizada com sucesso!"
-        : "❤️ Presença confirmada com sucesso!",
-    );
+    if (wallMessageShareFailed) {
+      showToast(
+        "❤️ RSVP salvo! Não foi possível enviar a mensagem para o mural agora.",
+      );
+    } else if (wallMessageShared) {
+      showToast(
+        isCoupleInvite
+          ? "❤️ RSVP salvo e recado enviado para aprovação!"
+          : "❤️ RSVP salvo e seu recado foi enviado para aprovação!",
+      );
+    } else {
+      showToast(
+        wasEditing
+          ? "❤️ Confirmação atualizada com sucesso!"
+          : "❤️ Presença confirmada com sucesso!",
+      );
+    }
 
     GuestData.notifyRSVP().catch((notificationError) => {
       console.warn("Não foi possível disparar a notificação do RSVP.", notificationError);
@@ -1241,3 +1396,4 @@ if (phoneInput) {
 ========================= */
 
 loadExistingRSVP();
+loadCurrentWallMessageStatus();

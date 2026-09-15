@@ -103,7 +103,10 @@ administrativos.
    `Menos de 1 ano` até `12 anos`, evitando respostas livres inconsistentes.
 8. O RSVP é criado ou atualizado na tabela `rsvps`.
 9. O campo `guests.confirmed` é atualizado.
-10. Se já existir RSVP para o convite, o fluxo atualiza o registro existente em vez de criar outro.
+10. Se a mensagem do RSVP também for enviada para o Mural de Recados, o sistema
+    usa uma RPC leve para verificar se já existe recado do convite e deixa claro
+    se está criando um novo recado ou substituindo o recado atual.
+11. Se já existir RSVP para o convite, o fluxo atualiza o registro existente em vez de criar outro.
 
 ## Fluxo RSVP Casal
 

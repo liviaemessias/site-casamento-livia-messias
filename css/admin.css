@@ -5130,6 +5130,26 @@
   stroke: currentColor;
 }
 
+.financial-details-reference-link {
+  display: block;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--color-primary);
+  font-size: 0.92rem;
+  font-weight: 650;
+  line-height: 1.55;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.financial-details-reference-link:hover,
+.financial-details-reference-link:focus-visible {
+  color: var(--color-primary-dark);
+  text-decoration: underline;
+  outline: none;
+}
+
 .financial-base-card {
   align-self: stretch;
 }
