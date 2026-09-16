@@ -165,8 +165,6 @@ increaseQuotaButton?.addEventListener("click", () => {
   updateQuotaSelectionSummary();
 });
 
-quotaQuantityInput?.addEventListener("input", updateQuotaSelectionSummary);
-
 giftsFilterToggle?.addEventListener("click", () => {
   const expanded = giftsFilterToggle.getAttribute("aria-expanded") === "true";
 
@@ -1083,7 +1081,13 @@ function renderPendingGifts(gifts) {
       ${pendingItems
         .map(
           (item) => `
-            <div class="pending-gift-card">
+            <div
+              class="pending-gift-card"
+              data-gift-card-details-id="${escapeAttribute(item.gift.id)}"
+              role="button"
+              tabindex="0"
+              aria-label="Ver detalhes de ${escapeAttribute(item.gift.name || "presente")}"
+            >
               <div class="pending-gift-content">
                 <span>
                   ${item.type === "quota" ? "Presente por cotas" : "Presente individual"}
@@ -1342,7 +1346,9 @@ function renderGiftCatalogDetailsButton(gift) {
   `;
 }
 
-function renderCompactQuotaActions(gift) {
+function renderCompactQuotaActions(gift, options = {}) {
+  const includeDetails = options.includeDetails !== false;
+
   if (!isQuotaGift(gift)) {
     return "";
   }
@@ -1368,12 +1374,12 @@ function renderCompactQuotaActions(gift) {
       >
         Ver PIX
       </button>
-      ${renderGiftCatalogDetailsButton(gift)}
+      ${includeDetails ? renderGiftCatalogDetailsButton(gift) : ""}
     `;
   }
 
   if (gift.own_contributions?.length) {
-    return renderGiftCatalogDetailsButton(gift);
+    return includeDetails ? renderGiftCatalogDetailsButton(gift) : "";
   }
 
   if (canCurrentGuestContributeToQuotaGift(gift)) {
@@ -1385,21 +1391,22 @@ function renderCompactQuotaActions(gift) {
       >
         Contribuir
       </button>
-      ${renderGiftCatalogDetailsButton(gift)}
+      ${includeDetails ? renderGiftCatalogDetailsButton(gift) : ""}
     `;
   }
 
   return isQuotaGiftFullyConfirmed(gift)
-    ? renderGiftCatalogDetailsButton(gift)
+    ? includeDetails ? renderGiftCatalogDetailsButton(gift) : ""
     : `
       <button class="gift-button disabled quota-unavailable-button" disabled>
         Indisponível
       </button>
-      ${renderGiftCatalogDetailsButton(gift)}
+      ${includeDetails ? renderGiftCatalogDetailsButton(gift) : ""}
     `;
 }
 
-function renderCompactSingleGiftActions(gift) {
+function renderCompactSingleGiftActions(gift, options = {}) {
+  const includeDetails = options.includeDetails !== false;
   const isReservedByCurrentGuest = gift.reserved_guest_id === guest.id;
 
   if (gift.status === "Disponível") {
@@ -1411,13 +1418,13 @@ function renderCompactSingleGiftActions(gift) {
       >
         Presentear
       </button>
-      ${renderGiftCatalogDetailsButton(gift)}
+      ${includeDetails ? renderGiftCatalogDetailsButton(gift) : ""}
     `;
   }
 
   if (gift.status === "Reservado" && isReservedByCurrentGuest) {
     if (gift.payment_status === "Informado") {
-      return renderGiftCatalogDetailsButton(gift);
+      return includeDetails ? renderGiftCatalogDetailsButton(gift) : "";
     }
 
     return `
@@ -1442,11 +1449,11 @@ function renderCompactSingleGiftActions(gift) {
       >
         Forma
       </button>
-      ${renderGiftCatalogDetailsButton(gift)}
+      ${includeDetails ? renderGiftCatalogDetailsButton(gift) : ""}
     `;
   }
 
-  return renderGiftCatalogDetailsButton(gift);
+  return includeDetails ? renderGiftCatalogDetailsButton(gift) : "";
 }
 
 function renderGiftCards(gifts) {
@@ -1458,7 +1465,13 @@ function renderGiftCards(gifts) {
         : "";
 
       return `
-        <div class="gift-card ${getGiftCardClass(gift)}">
+        <div
+          class="gift-card ${getGiftCardClass(gift)}"
+          data-gift-card-details-id="${escapeAttribute(gift.id)}"
+          role="button"
+          tabindex="0"
+          aria-label="Ver detalhes de ${escapeAttribute(gift.name || "presente")}"
+        >
           ${renderOwnGiftCardBadge(gift)}
 
           <div class="gift-card-media ${safeImageUrl ? "" : "without-image"}">
@@ -1514,21 +1527,21 @@ function renderGiftCatalogDetails(gift) {
     ? renderQuotaInfo(gift)
     : "";
   const price = renderGiftTotalPrice(gift);
-
-  return `
-    <div class="gift-catalog-details">
-      ${
-        gift.image_url?.trim()
-          ? `
-            <img
-              src="${escapeAttribute(getSafeUrl(gift.image_url))}"
-              class="gift-catalog-details-image"
-              alt="${escapeAttribute(gift.name || "Presente")}"
-            />
-          `
-          : ""
-      }
-
+  const actions = isQuotaGift(gift)
+    ? renderCompactQuotaActions(gift, { includeDetails: false })
+    : renderCompactSingleGiftActions(gift, { includeDetails: false });
+  const hasImage = Boolean(gift.image_url?.trim());
+  const imageContent = hasImage
+    ? `
+      <img
+        src="${escapeAttribute(getSafeUrl(gift.image_url))}"
+        class="gift-catalog-details-image"
+        alt="${escapeAttribute(gift.name || "Presente")}"
+      />
+    `
+    : "";
+  const mainContent = `
+    <div class="gift-catalog-details-main">
       <span class="gift-card-category">${safeText(normalizeGiftCategory(gift))}</span>
 
       <h2>${safeText(gift.name)}</h2>
@@ -1540,7 +1553,7 @@ function renderGiftCatalogDetails(gift) {
               ${safeText(price)}
             </div>
           `
-          : ""
+          : '<div class="gift-price is-combined">Presente combinado</div>'
       }
 
       ${
@@ -1548,44 +1561,78 @@ function renderGiftCatalogDetails(gift) {
           ? `<p class="gift-catalog-details-description">${safeText(description)}</p>`
           : '<p class="gift-catalog-details-description muted">Sem descrição adicional.</p>'
       }
-
-      <div class="gift-catalog-details-section">
-        <span>Formas disponíveis</span>
-        ${
-          paymentMethods.length
-            ? `
-              <div class="gift-payment-methods">
-                ${paymentMethods
-                  .map(
-                    (method) => `
-                      <span class="gift-catalog-method">
-                        <span
-                          class="gift-payment-method-icon ${escapeAttribute(method.modifier)}"
-                          aria-hidden="true"
-                        >
-                          ${renderGiftPaymentMethodIconSvg(method.modifier)}
-                        </span>
-                        ${safeText(method.label)}
-                      </span>
-                    `,
-                  )
-                  .join("")}
-              </div>
-            `
-            : '<p class="gift-catalog-details-description muted">Nenhuma forma disponível no momento.</p>'
-        }
-      </div>
-
+    </div>
+  `;
+  const paymentMethodsSection = `
+    <div class="gift-catalog-details-section">
+      <span>Formas disponíveis</span>
       ${
-        quotaDetails
+        paymentMethods.length
           ? `
-            <div class="gift-catalog-details-section">
-              <span>Resumo das cotas</span>
-              ${quotaDetails}
+            <div class="gift-payment-methods">
+              ${paymentMethods
+                .map(
+                  (method) => `
+                    <span class="gift-catalog-method">
+                      <span
+                        class="gift-payment-method-icon ${escapeAttribute(method.modifier)}"
+                        aria-hidden="true"
+                      >
+                        ${renderGiftPaymentMethodIconSvg(method.modifier)}
+                      </span>
+                      ${safeText(method.label)}
+                    </span>
+                  `,
+                )
+                .join("")}
             </div>
           `
-          : ""
+          : '<p class="gift-catalog-details-description muted">Nenhuma forma disponível no momento.</p>'
       }
+    </div>
+  `;
+  const quotaSection = quotaDetails
+    ? `
+      <div class="gift-catalog-details-section">
+        <span>Resumo das cotas</span>
+        ${quotaDetails}
+      </div>
+    `
+    : "";
+  const actionsSection = actions.trim()
+    ? `
+      <div class="gift-catalog-details-section gift-catalog-details-actions">
+        <span>Ações</span>
+        <div class="gift-card-actions">
+          ${actions}
+        </div>
+      </div>
+    `
+    : "";
+
+  if (isQuotaGift(gift)) {
+    return `
+      <div class="gift-catalog-details is-quota ${hasImage ? "has-image" : ""}">
+        <div class="gift-catalog-details-overview">
+          ${imageContent}
+          ${mainContent}
+        </div>
+
+        <div class="gift-catalog-details-side">
+          ${paymentMethodsSection}
+          ${quotaSection}
+          ${actionsSection}
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="gift-catalog-details ${hasImage ? "has-image" : ""}">
+      ${imageContent}
+      ${mainContent}
+      ${paymentMethodsSection}
+      ${actionsSection}
     </div>
   `;
 }
@@ -2680,6 +2727,27 @@ function handlePublicGiftAction(action, giftId, contributionId = "") {
   }
 }
 
+function shouldIgnoreGiftCardDetailsClick(target) {
+  return Boolean(
+    target.closest(
+      "button, a, input, select, textarea, label, [data-gift-action]",
+    ),
+  );
+}
+
+function openGiftCardDetailsFromElement(element) {
+  const giftId = element?.dataset?.giftCardDetailsId;
+  const gift = findGiftById(giftId);
+
+  if (!gift) {
+    showToast("⚠️ Este presente foi atualizado. Recarregue a lista e tente novamente.");
+    loadGifts();
+    return;
+  }
+
+  openGiftCatalogDetails(gift);
+}
+
 document
   .getElementById("confirmPaymentButton")
   .addEventListener("click", () => {
@@ -2723,10 +2791,47 @@ document
 giftsGrid?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-gift-action]");
 
+  if (button) {
+    handlePublicGiftAction(
+      button.dataset.giftAction,
+      button.dataset.giftId,
+      button.dataset.contributionId,
+    );
+    return;
+  }
+
+  const card = event.target.closest("[data-gift-card-details-id]");
+
+  if (!card || shouldIgnoreGiftCardDetailsClick(event.target)) {
+    return;
+  }
+
+  openGiftCardDetailsFromElement(card);
+});
+
+giftsGrid?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  const card = event.target.closest("[data-gift-card-details-id]");
+
+  if (!card || shouldIgnoreGiftCardDetailsClick(event.target)) {
+    return;
+  }
+
+  event.preventDefault();
+  openGiftCardDetailsFromElement(card);
+});
+
+giftCatalogDetailsContent?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-gift-action]");
+
   if (!button) {
     return;
   }
 
+  giftCatalogDetailsModal?.classList.remove("active");
   handlePublicGiftAction(
     button.dataset.giftAction,
     button.dataset.giftId,
@@ -2737,15 +2842,37 @@ giftsGrid?.addEventListener("click", (event) => {
 giftsPendingSection?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-gift-action]");
 
-  if (!button) {
+  if (button) {
+    handlePublicGiftAction(
+      button.dataset.giftAction,
+      button.dataset.giftId,
+      button.dataset.contributionId,
+    );
     return;
   }
 
-  handlePublicGiftAction(
-    button.dataset.giftAction,
-    button.dataset.giftId,
-    button.dataset.contributionId,
-  );
+  const card = event.target.closest("[data-gift-card-details-id]");
+
+  if (!card || shouldIgnoreGiftCardDetailsClick(event.target)) {
+    return;
+  }
+
+  openGiftCardDetailsFromElement(card);
+});
+
+giftsPendingSection?.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") {
+    return;
+  }
+
+  const card = event.target.closest("[data-gift-card-details-id]");
+
+  if (!card || shouldIgnoreGiftCardDetailsClick(event.target)) {
+    return;
+  }
+
+  event.preventDefault();
+  openGiftCardDetailsFromElement(card);
 });
 
 purchaseMethodOptions?.addEventListener("click", (event) => {
