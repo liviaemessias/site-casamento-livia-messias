@@ -522,9 +522,9 @@ function renderQuotaProgress(gift) {
 
   return `
     <div class="quota-admin-summary">
-      <strong>${reserved}/${total} cotas reservadas</strong>
-      <span>${confirmed}/${total} cotas confirmadas</span>
-      <span>R$ ${getQuotaValue(gift).toFixed(2)} por cota</span>
+      <strong>${reserved}/${total} reservadas</strong>
+      <span>${confirmed}/${total} confirmadas</span>
+      <span>${formatCurrency(getQuotaValue(gift))} por cota</span>
     </div>
   `;
 }
@@ -1337,19 +1337,19 @@ function renderGiftMobileActions(gift) {
       ${reminderButton}
       <button
         class="admin-action-button icon-action"
-        data-gift-action="details"
-        data-gift-id="${escapeAttribute(gift.id)}"
-      >
-        ${renderTableActionIcon("eye")}
-        Detalhes
-      </button>
-      <button
-        class="admin-action-button icon-action"
         data-gift-action="edit"
         data-gift-id="${escapeAttribute(gift.id)}"
       >
         ${renderTableActionIcon("edit")}
         Editar
+      </button>
+      <button
+        class="admin-action-button danger icon-action"
+        data-gift-action="delete"
+        data-gift-id="${escapeAttribute(gift.id)}"
+      >
+        ${renderTableActionIcon("trash")}
+        Remover
       </button>
     </div>
   `;
@@ -1892,22 +1892,22 @@ function renderGiftActions(gift) {
       <div class="admin-actions compact-actions">
         <button
           class="admin-action-button icon-action"
-          data-gift-action="details"
-          data-gift-id="${escapeAttribute(gift.id)}"
-          title="Ver detalhes"
-        >
-          ${renderTableActionIcon("eye")}
-          Detalhes
-        </button>
-
-        <button
-          class="admin-action-button icon-action"
           data-gift-action="edit"
           data-gift-id="${escapeAttribute(gift.id)}"
           title="Editar presente"
         >
           ${renderTableActionIcon("edit")}
           Editar
+        </button>
+
+        <button
+          class="admin-action-button danger icon-action"
+          data-gift-action="delete"
+          data-gift-id="${escapeAttribute(gift.id)}"
+          title="Remover presente"
+        >
+          ${renderTableActionIcon("trash")}
+          Remover
         </button>
       </div>
     `;
@@ -1945,22 +1945,22 @@ function renderGiftActions(gift) {
 
         <button
           class="admin-action-button icon-action"
-          data-gift-action="details"
-          data-gift-id="${escapeAttribute(gift.id)}"
-          title="Ver detalhes"
-        >
-          ${renderTableActionIcon("eye")}
-          Detalhes
-        </button>
-
-        <button
-          class="admin-action-button icon-action"
           data-gift-action="edit"
           data-gift-id="${escapeAttribute(gift.id)}"
           title="Editar presente"
         >
           ${renderTableActionIcon("edit")}
           Editar
+        </button>
+
+        <button
+          class="admin-action-button danger icon-action"
+          data-gift-action="delete"
+          data-gift-id="${escapeAttribute(gift.id)}"
+          title="Remover presente"
+        >
+          ${renderTableActionIcon("trash")}
+          Remover
         </button>
       </div>
     `;
@@ -1970,22 +1970,22 @@ function renderGiftActions(gift) {
     <div class="admin-actions compact-actions">
       <button
         class="admin-action-button icon-action"
-        data-gift-action="details"
-        data-gift-id="${escapeAttribute(gift.id)}"
-        title="Ver detalhes"
-      >
-        ${renderTableActionIcon("eye")}
-        Detalhes
-      </button>
-
-      <button
-        class="admin-action-button icon-action"
         data-gift-action="edit"
         data-gift-id="${escapeAttribute(gift.id)}"
         title="Editar presente"
       >
         ${renderTableActionIcon("edit")}
         Editar
+      </button>
+
+      <button
+        class="admin-action-button danger icon-action"
+        data-gift-action="delete"
+        data-gift-id="${escapeAttribute(gift.id)}"
+        title="Remover presente"
+      >
+        ${renderTableActionIcon("trash")}
+        Remover
       </button>
     </div>
   `;

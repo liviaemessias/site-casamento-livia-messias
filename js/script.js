@@ -13,6 +13,7 @@ window.addEventListener("scroll", () => {
 const mobileMenu = document.getElementById("mobileMenu");
 const navLinks = document.getElementById("navLinks");
 const heroMenuShortcut = document.getElementById("heroMenuShortcut");
+const heroScrollIndicator = document.querySelector(".hero-scroll-indicator");
 const navDropdowns = Array.from(document.querySelectorAll(".nav-dropdown"));
 const navDropdownCloseTimers = new WeakMap();
 const desktopNavDropdownQuery = window.matchMedia(
@@ -187,6 +188,38 @@ document.addEventListener("keydown", (event) => {
     closeNavDropdowns();
     closeNavigationPanel();
   }
+});
+
+function scrollToSectionWithNavbarOffset(target) {
+  if (!target) {
+    return;
+  }
+
+  const navbarOffset = navbar?.getBoundingClientRect().height || 0;
+  const targetTop =
+    target.getBoundingClientRect().top +
+    window.scrollY -
+    navbarOffset -
+    16;
+
+  window.scrollTo({
+    top: Math.max(0, targetTop),
+    behavior: "smooth",
+  });
+}
+
+heroScrollIndicator?.addEventListener("click", (event) => {
+  const targetId = heroScrollIndicator.getAttribute("href");
+  const target = targetId?.startsWith("#")
+    ? document.querySelector(targetId)
+    : null;
+
+  if (!target) {
+    return;
+  }
+
+  event.preventDefault();
+  scrollToSectionWithNavbarOffset(target);
 });
 
 // Countdown

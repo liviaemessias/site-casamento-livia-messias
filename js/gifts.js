@@ -69,6 +69,12 @@ function setElementVisibility(element, visible) {
 const giftsGrid = document.getElementById("giftsGrid");
 const giftEmailHint = document.getElementById("giftEmailHint");
 const giftsPendingSection = document.getElementById("giftsPendingSection");
+const pendingGiftsFloatingButton = document.getElementById(
+  "pendingGiftsFloatingButton",
+);
+const pendingGiftsFloatingText = document.getElementById(
+  "pendingGiftsFloatingText",
+);
 const giftCatalogDetailsModal = document.getElementById("giftCatalogDetailsModal");
 const giftCatalogDetailsContent = document.getElementById("giftCatalogDetailsContent");
 const giftsFilterPanel = document.getElementById("giftsFilterPanel");
@@ -204,6 +210,11 @@ clearGiftFilters?.addEventListener("click", () => {
   renderGifts(cachedGiftCatalog);
 });
 
+pendingGiftsFloatingButton?.addEventListener(
+  "click",
+  scrollToPendingGiftsSection,
+);
+
 /* Toast */
 function showToast(message, duration = 3000) {
   toast.textContent = message;
@@ -299,6 +310,7 @@ function hideGiftEmailHint() {
   giftEmailHint.replaceChildren();
   giftEmailHint.hidden = true;
   giftEmailHint.classList.remove("active");
+  syncPendingGiftsFloatingPosition();
 }
 
 function dismissGiftEmailHint() {
@@ -356,6 +368,7 @@ function showGiftEmailHint() {
   giftEmailHint.replaceChildren(message, actions);
   giftEmailHint.hidden = false;
   giftEmailHint.classList.add("active");
+  requestAnimationFrame(syncPendingGiftsFloatingPosition);
 }
 
 async function updateGiftEmailHint() {
@@ -381,6 +394,7 @@ async function updateGiftEmailHint() {
 }
 
 window.addEventListener("focus", refreshGiftCatalogIfStale);
+window.addEventListener("resize", syncPendingGiftsFloatingPosition);
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") {
     refreshGiftCatalogIfStale();
@@ -1057,6 +1071,7 @@ function renderPendingGifts(gifts) {
   }
 
   const pendingItems = getPendingGiftItems(gifts);
+  updatePendingGiftsFloatingButton(pendingItems.length);
 
   if (!pendingItems.length) {
     giftsPendingSection.replaceChildren();
@@ -1109,6 +1124,84 @@ function renderPendingGifts(gifts) {
         .join("")}
     </div>
   `);
+}
+
+function updatePendingGiftsFloatingButton(pendingCount) {
+  if (!pendingGiftsFloatingButton || !pendingGiftsFloatingText) {
+    return;
+  }
+
+  const hasPendingItems = pendingCount > 0;
+
+  pendingGiftsFloatingButton.hidden = !hasPendingItems;
+  pendingGiftsFloatingButton.classList.toggle("active", hasPendingItems);
+
+  if (!hasPendingItems) {
+    return;
+  }
+
+  const label =
+    pendingCount === 1
+      ? "1 ação pendente"
+      : `${pendingCount} ações pendentes`;
+
+  pendingGiftsFloatingText.textContent = label;
+  pendingGiftsFloatingButton.setAttribute(
+    "aria-label",
+    `Ir para ${label} em presentes`,
+  );
+  syncPendingGiftsFloatingPosition();
+}
+
+function scrollToPendingGiftsSection() {
+  if (!giftsPendingSection || !giftsPendingSection.classList.contains("active")) {
+    return;
+  }
+
+  const navbarOffset =
+    document.querySelector(".navbar")?.getBoundingClientRect().height || 0;
+  const targetTop =
+    giftsPendingSection.getBoundingClientRect().top +
+    window.scrollY -
+    navbarOffset -
+    18;
+
+  window.scrollTo({
+    top: Math.max(0, targetTop),
+    behavior: "smooth",
+  });
+}
+
+function syncPendingGiftsFloatingPosition() {
+  if (!pendingGiftsFloatingButton) {
+    return;
+  }
+
+  const shouldFloatAboveEmailHint =
+    giftEmailHint &&
+    !giftEmailHint.hidden &&
+    giftEmailHint.classList.contains("active");
+
+  pendingGiftsFloatingButton.classList.toggle(
+    "above-email-hint",
+    Boolean(shouldFloatAboveEmailHint),
+  );
+
+  if (!shouldFloatAboveEmailHint) {
+    pendingGiftsFloatingButton.style.removeProperty(
+      "--pending-gifts-floating-bottom",
+    );
+    return;
+  }
+
+  const hintStyle = window.getComputedStyle(giftEmailHint);
+  const hintBottom = Number.parseFloat(hintStyle.bottom) || 0;
+  const offset = hintBottom + giftEmailHint.offsetHeight + 12;
+
+  pendingGiftsFloatingButton.style.setProperty(
+    "--pending-gifts-floating-bottom",
+    `${Math.ceil(offset)}px`,
+  );
 }
 
 function canCurrentGuestContributeToQuotaGift(gift) {

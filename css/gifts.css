@@ -227,6 +227,70 @@
   line-height: 1.5;
 }
 
+.pending-gifts-floating-button {
+  position: fixed;
+  right: 1.25rem;
+  bottom: var(--pending-gifts-floating-bottom, 1.35rem);
+  z-index: 1100;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  max-width: min(280px, calc(100vw - 2rem));
+  min-height: 46px;
+  padding: 0.55rem 0.78rem 0.55rem 0.58rem;
+  border: 1px solid rgba(var(--color-primary-rgb), 0.16);
+  border-radius: var(--radius-pill);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(250, 247, 252, 0.94));
+  color: var(--color-primary);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 750;
+  box-shadow: 0 16px 38px rgba(35, 24, 42, 0.16);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(12px);
+  transition:
+    opacity 0.24s ease,
+    transform 0.24s ease,
+    bottom 0.3s ease,
+    border-color 0.24s ease,
+    box-shadow 0.24s ease;
+}
+
+.pending-gifts-floating-button.active {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.pending-gifts-floating-button:hover,
+.pending-gifts-floating-button:focus-visible {
+  border-color: rgba(var(--color-primary-rgb), 0.28);
+  outline: none;
+  box-shadow:
+    0 0 0 3px rgba(var(--color-primary-rgb), 0.1),
+    0 18px 44px rgba(35, 24, 42, 0.18);
+  transform: translateY(-2px);
+}
+
+.pending-gifts-floating-icon {
+  display: inline-grid;
+  width: 1.8rem;
+  height: 1.8rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: var(--color-inverse);
+  font-size: 0.92rem;
+  font-weight: 850;
+  line-height: 1;
+}
+
 .pending-gift-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2223,6 +2287,21 @@
   .pending-gift-actions .payment-confirm-button {
     min-height: 36px;
     font-size: 0.62rem;
+  }
+
+  .pending-gifts-floating-button {
+    right: 0.85rem;
+    bottom: var(--pending-gifts-floating-bottom, 0.9rem);
+    max-width: calc(100vw - 1.7rem);
+    min-height: 42px;
+    padding: 0.48rem 0.66rem 0.48rem 0.48rem;
+    font-size: 0.76rem;
+  }
+
+  .pending-gifts-floating-icon {
+    width: 1.62rem;
+    height: 1.62rem;
+    font-size: 0.82rem;
   }
 
   #giftsGrid {

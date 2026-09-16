@@ -6209,19 +6209,41 @@
   justify-content: flex-start;
 }
 
-.gifts-table th:nth-child(5),
-.gifts-table td:nth-child(5) {
-  width: 148px;
+.gifts-table th:nth-child(1),
+.gifts-table td:nth-child(1) {
+  width: 260px;
 }
 
-.gifts-table th:nth-child(7),
-.gifts-table td:nth-child(7) {
-  width: 144px;
+.gifts-table th:nth-child(3),
+.gifts-table td:nth-child(3) {
+  width: 96px;
+  padding-left: 0.65rem;
+  padding-right: 0.65rem;
+}
+
+.gifts-table td:nth-child(3) .quota-admin-summary {
+  min-width: 0;
+  max-width: 96px;
 }
 
 .gifts-table th:nth-child(4),
 .gifts-table td:nth-child(4) {
   width: 150px;
+}
+
+.gifts-table th:nth-child(5),
+.gifts-table td:nth-child(5) {
+  width: 148px;
+}
+
+.gifts-table th:nth-child(6),
+.gifts-table td:nth-child(6) {
+  width: 112px;
+}
+
+.gifts-table th:nth-child(7),
+.gifts-table td:nth-child(7) {
+  width: 144px;
 }
 
 .gifts-table .admin-actions.compact-actions {
@@ -6749,6 +6771,12 @@
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 1rem;
+}
+
+.quota-contribution-header > .admin-badge {
+  flex: 0 0 auto;
+  width: fit-content;
+  max-width: max-content;
 }
 
 .quota-contribution-header > div {

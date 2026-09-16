@@ -2,7 +2,7 @@
 
 Site de casamento personalizado para centralizar informações do evento, RSVP, lista de presentes e administração dos noivos.
 
-Versão atual: **4.5**.
+Versão atual: **4.6**.
 
 ## Desenvolvimento
 
@@ -28,6 +28,8 @@ GitHub: [messiasfl10](https://github.com/messiasfl10/)
 - Regra configurável de idade mínima pagante para o buffet.
 - Lista de presentes com reserva, filtros públicos, cards compactos, selos de
   status e indicação das formas de pagamento disponíveis.
+- Cards públicos de presentes clicáveis, modal de detalhes com ações
+  contextuais e botão flutuante para ações pendentes do convite.
 - Atalhos rápidos na hero da página inicial para RSVP, Presentes, Local,
   Recados, Nossa História e Menu.
 - Presentes por cotas para contribuições financeiras via PIX.
@@ -36,6 +38,9 @@ GitHub: [messiasfl10](https://github.com/messiasfl10/)
 - Formas de presentear por PIX, cartão via checkout externo, compra online e loja física.
 - QR-Code e PIX Copia e Cola gerados no frontend.
 - Confirmação antes de reservar presentes ou informar pagamentos e compras.
+- Integração opcional entre mensagem do RSVP e Mural de Recados, com aprovação
+  dos noivos antes da publicação.
+- Saudação visual de sessão para convidados logados nas páginas públicas.
 - Painel administrativo repaginado com navegação lateral desktop, navbar
   inferior mobile em estilo aplicativo e páginas especializadas.
 - Dashboard operacional refinado com indicadores clicáveis, resumos visuais de
@@ -558,6 +563,11 @@ PixPayment.getQrCodeUrl(payload);
 
 - `docs/operations/captcha_turnstile_setup.md`: ativação, testes e rollback do Cloudflare Turnstile nos logins.
 - `docs/operations/smtp_email_notifications_setup.md`: configuração SMTP, Gmail, Outlook/Hotmail, deploy e testes das notificações por e-mail.
+- `docs/releases/release_v4.6.md`: notas da versão 4.6, com integração entre
+  RSVP e Mural de Recados, melhorias nos detalhes e ações da Lista de Presentes,
+  botão flutuante de pendências, saudação visual de sessão para convidados,
+  ajuste de scroll da Home, seed de presentes para testes e correção de links
+  longos nos detalhes de Gastos Reais.
 - `docs/releases/release_v4.5.md`: notas da versão 4.5, com refinamentos da
   experiência pública, atalhos rápidos na Home, novo painel de menu público,
   lista de presentes compacta, filtros públicos, ícones de pagamento, melhorias
@@ -749,13 +759,16 @@ Concluído:
 - Lista pública de presentes compacta, com filtros expansíveis, cards mais
   consistentes no desktop/mobile, selos de status, indicação das formas de
   pagamento, suporte visual para presentes combinados sem valor e seção de
-  presentes para concluir alinhada ao novo padrão.
+  presentes para concluir alinhada ao novo padrão, incluindo modal de detalhes
+  com ações contextuais e botão flutuante para pendências.
 - Menu público em painel lateral reutilizável, com fechamento por X, clique
   externo, links e tecla Esc, aplicado às páginas públicas conforme as opções de
   cada página.
 - Logins de convidados e administrador mais compactos no desktop e no mobile.
+- Integração entre mensagem de RSVP e Mural de Recados, usando RPC dedicada
+  para verificar se o convite já possui recado sem expor dados desnecessários.
 - Tokens globais de CSS.
-- Identidade visual pública refinada nas releases v4.3 e v4.5, com logo do
+- Identidade visual pública refinada nas releases v4.3, v4.5 e v4.6, com logo do
   casal, heros com tipografia romântica, roxo principal atualizado, menu público
   agrupado/painel lateral, rodapés públicos com logo clicável e refinamentos
   mobile/desktop em Home, RSVP, Presentes, Nossa História, Pré-Wedding, Recados,
@@ -769,5 +782,4 @@ Em aberto:
 - Upload interno de comprovantes.
 - Relatórios avançados por período ou fornecedor.
 - Indicadores financeiros avançados por período ou forma de pagamento.
-- Adicionar ou substituir as fotos oficiais do Pré-Wedding após o ensaio.
 - Código de Vestimenta.

@@ -1,4 +1,7 @@
 (function () {
+  const GUEST_WELCOME_STORAGE_KEY = "guest_welcome_shown";
+  let guestWelcomeDismissTimer = null;
+
   function setupNavbar() {
     const navbar = document.querySelector(".navbar");
     const mobileMenu = document.querySelector(".mobile-menu");
@@ -205,9 +208,97 @@
 
     logoutButton.addEventListener("click", async () => {
       logoutButton.disabled = true;
+      clearGuestWelcomeShown();
       await GuestAuth.logoutGuest();
       window.location.replace("index.html");
     });
+  }
+
+  function getGuestPronounText(guest) {
+    return guest?.invite_type === "couple" ? "vocês" : "você";
+  }
+
+  function wasGuestWelcomeShown() {
+    try {
+      return sessionStorage.getItem(GUEST_WELCOME_STORAGE_KEY) === "true";
+    } catch (error) {
+      console.warn("Não foi possível ler a saudação da sessão.", error);
+      return false;
+    }
+  }
+
+  function markGuestWelcomeShown() {
+    try {
+      sessionStorage.setItem(GUEST_WELCOME_STORAGE_KEY, "true");
+    } catch (error) {
+      console.warn("Não foi possível salvar a saudação da sessão.", error);
+    }
+  }
+
+  function clearGuestWelcomeShown() {
+    try {
+      sessionStorage.removeItem(GUEST_WELCOME_STORAGE_KEY);
+    } catch (error) {
+      console.warn("Não foi possível limpar a saudação da sessão.", error);
+    }
+  }
+
+  function dismissGuestWelcomeCard(card) {
+    if (!card) {
+      return;
+    }
+
+    window.clearTimeout(guestWelcomeDismissTimer);
+    card.classList.remove("active");
+
+    window.setTimeout(() => {
+      card.remove();
+    }, 260);
+  }
+
+  function showGuestWelcomeCard(guest) {
+    if (!guest || wasGuestWelcomeShown()) {
+      return;
+    }
+
+    markGuestWelcomeShown();
+
+    const existingCard = document.querySelector(".guest-welcome-card");
+    existingCard?.remove();
+
+    const card = document.createElement("aside");
+    const content = document.createElement("div");
+    const greeting = document.createElement("strong");
+    const message = document.createElement("span");
+    const closeButton = document.createElement("button");
+
+    card.className = "guest-welcome-card";
+    card.setAttribute("role", "status");
+    card.setAttribute("aria-live", "polite");
+
+    content.className = "guest-welcome-card-content";
+    greeting.textContent = `Olá, ${guest.name}! 💜`;
+    message.textContent = `Que bom ter ${getGuestPronounText(guest)} por aqui.`;
+
+    closeButton.type = "button";
+    closeButton.className = "guest-welcome-card-close";
+    closeButton.setAttribute("aria-label", "Fechar saudação");
+    closeButton.textContent = "×";
+    closeButton.addEventListener("click", () => {
+      dismissGuestWelcomeCard(card);
+    });
+
+    content.append(greeting, message);
+    card.append(content, closeButton);
+    document.body.appendChild(card);
+
+    requestAnimationFrame(() => {
+      card.classList.add("active");
+    });
+
+    guestWelcomeDismissTimer = window.setTimeout(() => {
+      dismissGuestWelcomeCard(card);
+    }, 4600);
   }
 
   function showGuestName(guest, elementId = "guestNameDisplay") {
@@ -216,6 +307,8 @@
     if (guest && guestNameDisplay) {
       guestNameDisplay.textContent = `Olá, ${guest.name}!`;
     }
+
+    showGuestWelcomeCard(guest);
   }
 
   function setupModalScrollLock() {
