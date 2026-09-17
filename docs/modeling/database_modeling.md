@@ -33,6 +33,7 @@ create table public.guests (
   max_guests integer null default 0,
   confirmed boolean null default false,
   invite_sent boolean not null default false,
+  save_the_date_sent boolean not null default false,
   active boolean null default true,
   access_count integer null default 0,
   last_access timestamp with time zone null,
@@ -54,7 +55,8 @@ Campos principais:
   administrativa `create_guest_with_invite_code()`.
 - `max_guests`: limite de acompanhantes.
 - `confirmed`: indica se já existe RSVP confirmado/registrado.
-- `invite_sent`: indica se o convite já foi enviado ao convidado.
+- `save_the_date_sent`: indica se o Save the Date já foi enviado ao convidado.
+- `invite_sent`: indica se o convite oficial já foi enviado ao convidado.
 - `active`: convidados inativos não acessam e não entram nas métricas.
 - `access_count`: quantidade de acessos.
 - `last_access`: último acesso.

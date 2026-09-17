@@ -463,7 +463,8 @@ Permite:
 - Exportar CSV dos convidados filtrados e ordenados, incluindo o status de envio do convite, convidado de e mesa.
 - Filtrar por busca textual, status, RSVP, envio do convite, tipo de convite,
   convidado de e mesa, incluindo `Com mesa`, `Sem mesa` e mesa específica.
-- Ordenar por nome, tipo, acompanhantes, confirmado, convite enviado, status, código, último acesso e acessos.
+- Ordenar por nome, tipo, acompanhantes, confirmado, Save the Date enviado,
+  convite oficial enviado, status, código, último acesso e acessos.
 - Ver contador de resultados e limpar filtros.
 
 ### Gestão De RSVP

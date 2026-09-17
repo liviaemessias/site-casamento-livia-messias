@@ -6176,6 +6176,11 @@
   max-width: 260px;
 }
 
+.admin-summary-status-list.gift-situation-stack {
+  align-items: center;
+  max-width: none;
+}
+
 .gifts-mobile-list {
   gap: 0.75rem;
 }
@@ -6969,6 +6974,9 @@
 }
 
 .quota-contributor-status-icon {
+  border: 0;
+  padding: 0;
+  background: transparent;
   display: inline-grid;
   width: 18px;
   height: 18px;
@@ -6977,6 +6985,26 @@
   border-radius: 999px;
   color: var(--color-text-muted);
   vertical-align: middle;
+}
+
+button.quota-contributor-status-icon {
+  cursor: pointer;
+  transition:
+    transform var(--transition-fast),
+    color var(--transition-fast),
+    background var(--transition-fast);
+}
+
+button.quota-contributor-status-icon:hover,
+button.quota-contributor-status-icon:focus-visible {
+  background: rgba(var(--color-primary-rgb), 0.08);
+  color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+button.quota-contributor-status-icon:focus-visible {
+  outline: 2px solid rgba(var(--color-primary-rgb), 0.26);
+  outline-offset: 2px;
 }
 
 .quota-contributor-status-icon svg {

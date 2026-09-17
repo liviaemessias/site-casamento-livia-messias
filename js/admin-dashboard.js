@@ -18,6 +18,8 @@ const dashboardMetricLinks = {
   totalCoupleSideGuests: "./admin-guests.html?side=couple",
   totalIndividualInvites: "./admin-guests.html?type=individual",
   totalCoupleInvites: "./admin-guests.html?type=couple",
+  totalSaveTheDateSentGuests: "./admin-guests.html?save_the_date_sent=sent",
+  totalSaveTheDatePendingGuests: "./admin-guests.html?save_the_date_sent=not_sent",
   totalInviteSentGuests: "./admin-guests.html?invite_sent=sent",
   totalInvitePendingGuests: "./admin-guests.html?invite_sent=not_sent",
   totalTables: "./admin-tables.html",
@@ -569,6 +571,14 @@ async function loadDashboard() {
   setText(
     "totalCoupleInvites",
     activeGuests.filter((guest) => guest.invite_type === "couple").length,
+  );
+  setText(
+    "totalSaveTheDateSentGuests",
+    activeGuests.filter((guest) => guest.save_the_date_sent).length,
+  );
+  setText(
+    "totalSaveTheDatePendingGuests",
+    activeGuests.filter((guest) => !guest.save_the_date_sent).length,
   );
   setText(
     "totalInviteSentGuests",

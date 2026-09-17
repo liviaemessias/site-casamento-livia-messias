@@ -13,7 +13,8 @@ GitHub: [messiasfl10](https://github.com/messiasfl10/)
 ## Funcionalidades
 
 - Acesso por código de convite.
-- Controle administrativo de convites enviados ou ainda pendentes de envio.
+- Controle administrativo de Save the Date e convites oficiais enviados ou ainda
+  pendentes de envio.
 - Classificação administrativa de convidados como convidados da Noiva, do Noivo
   ou do Casal.
 - Notificações transacionais por e-mail para RSVP público, reservas,
@@ -62,9 +63,9 @@ GitHub: [messiasfl10](https://github.com/messiasfl10/)
 - Alertas compactos no menu administrativo para recados pendentes, presentes
   ou cotas com pagamento informado, tarefas atrasadas e parcelas financeiras
   vencidas ou vencendo no dia atual.
-- Exportação CSV de convidados, RSVPs e presentes respeitando filtros e ordenação atuais, incluindo convite enviado, convidado de e totais planejados de convidados e acompanhantes.
+- Exportação CSV de convidados, RSVPs e presentes respeitando filtros e ordenação atuais, incluindo Save the Date enviado, convite oficial enviado, convidado de e totais planejados de convidados e acompanhantes.
 - Página de Relatórios com exportações CSV/XLSX/PDF, seleção de colunas,
-  convite enviado, convidado de, mesa, observação do convidado na mesa,
+  Save the Date enviado, convite oficial enviado, convidado de, mesa, observação do convidado na mesa,
   restrições alimentares por pessoa e opções resumidas ou detalhadas conforme o
   relatório.
 - Mural de Recados com página pública, prévia na página inicial, moderação
@@ -636,6 +637,9 @@ PixPayment.getQrCodeUrl(payload);
   menu administrativo para parcelas vencidas ou vencendo no dia.
 - `docs/migrations/guest_invite_sent_migration.sql`: migração incremental para adicionar o controle de convite enviado aos convidados.
 - `docs/migrations/guest_invite_sent_verify.sql`: verificação incremental do campo de convite enviado.
+- `docs/migrations/guest_save_the_date_sent.sql` e
+  `docs/migrations/guest_save_the_date_sent_verify.sql`: campo e RPCs para
+  controlar o envio do Save the Date por convidado.
 - `docs/migrations/guest_side_migration.sql`: migração incremental para classificar convidados como convidados da Noiva, do Noivo ou do Casal.
 - `docs/migrations/guest_side_verify.sql`: verificação incremental do campo `guest_side` e sua constraint.
 - `docs/migrations/wedding_event_settings_migration.sql` e
@@ -726,14 +730,15 @@ Concluído:
 - Filtros administrativos com ordenação, contadores e limpeza.
 - Alertas compactos no menu administrativo para indicar recados pendentes e
   presentes/cotas com pagamento informado.
-- Exportação CSV de convidados, RSVPs e presentes respeitando filtros e ordenação atuais, incluindo convite enviado e convidado de.
+- Exportação CSV de convidados, RSVPs e presentes respeitando filtros e ordenação atuais, incluindo Save the Date enviado, convite oficial enviado e convidado de.
 - Página de Relatórios Consolidados de presença/buffet, Relatório Final do Buffet, financeiro, ações pendentes, mapa de mesas, lista para recepção e Checklist Operacional Final, com CSV/XLSX, seleção de colunas e PDFs operacionais. O relatório do buffet usa somente confirmados, consolida totais por categoria, pessoas, mesas e restrições alimentares e sinaliza RSVPs pendentes e confirmados sem mesa; as ações pendentes auditam convites e RSVPs, confirmados sem mesa, capacidade e uso das mesas, crianças sem idade, reservas e pagamentos; no checklist final, é possível gerar tudo consolidado, somente essas pendências automáticas ou somente as tarefas não concluídas do Checklist do Casamento.
 - Módulo Financeiro administrativo com Visão Geral, Orçamento Previsto, Gastos
   Reais, Parcelas, Cadastros Base, vínculos entre gasto e item previsto,
   alertas de parcelas vencidas/vencendo no dia e relatórios CSV/XLSX/PDF.
 - Login e proteção das páginas administrativas com Supabase Auth.
 - Criação administrativa de convidados com código de convite gerado no banco.
-- Controle de convites enviados no cadastro de convidados, detalhes, filtros e exportações.
+- Controle de Save the Date e convite oficial enviados no cadastro de
+  convidados, detalhes, filtros, indicadores e exportações.
 - Confirmação e liberação de presentes e cotas processadas atomicamente no banco.
 - RSVPs administrativos salvos e removidos atomicamente no banco.
 - RSVP dos convidados validado contra os dados oficiais do convite.

@@ -650,7 +650,7 @@ function openWallMessageDetailsModal(messageId) {
     `
       <section class="admin-details-section">
         <span class="admin-details-label">Resumo</span>
-        <div class="gift-situation-stack">
+        <div class="gift-situation-stack admin-summary-status-list">
           ${renderStatusBadge(message)}
         </div>
       </section>

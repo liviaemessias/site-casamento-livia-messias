@@ -101,7 +101,16 @@
             </div>
 
             <div class="admin-filter-field">
-              <label for="guestInviteSentFilter">Convite</label>
+              <label for="guestSaveTheDateSentFilter">Save the Date</label>
+              <select id="guestSaveTheDateSentFilter">
+                <option value="">Todos</option>
+                <option value="sent">Enviados</option>
+                <option value="not_sent">Não enviados</option>
+              </select>
+            </div>
+
+            <div class="admin-filter-field">
+              <label for="guestInviteSentFilter">Convite oficial</label>
               <select id="guestInviteSentFilter">
                 <option value="">Todos</option>
                 <option value="sent">Enviados</option>
@@ -169,8 +178,13 @@
                   </button>
                 </th>
                 <th>
+                  <button class="admin-sort-button" data-guest-sort="saveTheDateSent">
+                    Save
+                  </button>
+                </th>
+                <th>
                   <button class="admin-sort-button" data-guest-sort="inviteSent">
-                    Enviado
+                    Convite
                   </button>
                 </th>
                 <th>
@@ -264,8 +278,13 @@
           </div>
 
           <label class="admin-checkbox">
+            <input type="checkbox" id="guestSaveTheDateSentInput" />
+            <span>Save the Date enviado</span>
+          </label>
+
+          <label class="admin-checkbox">
             <input type="checkbox" id="guestInviteSentInput" />
-            <span>Convite enviado</span>
+            <span>Convite oficial enviado</span>
           </label>
 
           <button type="submit" class="admin-save-button">

@@ -176,6 +176,7 @@ insert into public.guests (
   max_guests,
   confirmed,
   invite_sent,
+  save_the_date_sent,
   active,
   invite_type,
   guest_side
@@ -185,6 +186,7 @@ values (
   upper(substr(replace(gen_random_uuid()::text, '-', ''), 1, 8)),
   0,
   false,
+  true,
   true,
   true,
   'individual',
@@ -339,9 +341,11 @@ Valide, nesta ordem:
 2. carregamento do dashboard e das tabelas administrativas;
 3. criação e edição de convidados, confirmando que o código possui oito
    caracteres e foi retornado pelo Supabase;
-4. filtros, colunas, checkbox e ação rápida de convite enviado/não enviado;
+4. filtros, colunas, checkbox e ação rápida de Save the Date e convite oficial
+   enviado/não enviado;
 5. criação/edição de convidados com `Convidado de` como Noiva, Noivo ou Casal;
-6. exportação de convidados e relatórios com as colunas de convite enviado e
+6. exportação de convidados e relatórios com as colunas de Save the Date
+   enviado, convite oficial enviado e
    convidado de;
 7. geração da mensagem personalizada do convite;
 8. login de convidado com código válido;

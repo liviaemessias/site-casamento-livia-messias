@@ -98,6 +98,28 @@ administrativos e documentação de apoio para testes.
   "Pendente", deixaram de ocupar a largura inteira e passaram a respeitar o
   tamanho do conteúdo.
 
+### Administração De Convidados
+
+- O cadastro de convidados passou a controlar separadamente o envio do Save the
+  Date e do convite oficial.
+- A página administrativa de Convidados recebeu filtro, coluna, ordenação,
+  toggle e ação rápida para "Save the Date enviado".
+- O campo antigo de convite enviado foi mantido, mas passou a ser tratado
+  visualmente como "Convite oficial enviado".
+- O modal de criação/edição de convidados passou a permitir marcar Save the Date
+  e convite oficial separadamente.
+- O modal de detalhes do convidado passou a exibir os dois status de envio e
+  ações independentes para marcar ou desmarcar cada um.
+- Os cards mobile de convidados também receberam o controle rápido do Save the
+  Date, mantendo o padrão visual dos toggles atuais.
+- A exportação CSV de convidados e os relatórios de presença/buffet passaram a
+  incluir "Save the Date enviado" e "Convite oficial enviado".
+- A página de Indicadores passou a separar métricas de Save the Date enviados,
+  Save the Date pendentes, convites oficiais enviados e convites oficiais
+  pendentes.
+- As ações pendentes passaram a listar Save the Date pendente separadamente de
+  convite oficial pendente.
+
 ## Banco De Dados, Rebuild E Scripts
 
 - Adicionada a migração `docs/migrations/current_guest_wall_message_status.sql`
@@ -108,6 +130,14 @@ administrativos e documentação de apoio para testes.
   do zero.
 - A verificação final do rebuild foi atualizada para validar a existência e as
   permissões da RPC.
+- Adicionada a migração `docs/migrations/guest_save_the_date_sent.sql` com o
+  campo `guests.save_the_date_sent`, a RPC
+  `admin_set_guest_save_the_date_sent(...)` e as assinaturas atualizadas das
+  RPCs administrativas de criação/edição de convidados.
+- Adicionado o verificador
+  `docs/migrations/guest_save_the_date_sent_verify.sql`.
+- O rebuild completo foi atualizado para criar projetos novos já com o controle
+  de Save the Date.
 - O seed `docs/seeds/gift_test_catalog_50.sql` é opcional e voltado apenas para
   massa de testes da Lista de Presentes.
 
@@ -116,8 +146,11 @@ administrativos e documentação de apoio para testes.
 - Para projetos existentes, rodar a migração
   `docs/migrations/current_guest_wall_message_status.sql` e, em seguida, o
   verificador correspondente.
+- Para habilitar o controle de Save the Date em projetos existentes, rodar
+  `docs/migrations/guest_save_the_date_sent.sql` e, em seguida,
+  `docs/migrations/guest_save_the_date_sent_verify.sql`.
 - Para projetos novos criados a partir do rebuild completo, a RPC já entra no
-  setup principal.
+  setup principal, assim como o controle de Save the Date.
 - O seed de presentes não é obrigatório para produção.
 - As demais mudanças se concentram em HTML, CSS e JavaScript da experiência
   pública e em ajustes visuais pontuais do Admin.

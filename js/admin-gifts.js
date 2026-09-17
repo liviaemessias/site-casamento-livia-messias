@@ -556,17 +556,27 @@ function getQuotaContributionStatusMeta(status) {
   };
 }
 
-function renderQuotaContributionStatusIndicator(status) {
+function renderQuotaContributionStatusIndicator(status, options = {}) {
   const meta = getQuotaContributionStatusMeta(status);
+  const contributionAttribute = options.contributionId
+    ? `data-gift-contribution-action-id="${escapeAttribute(options.contributionId)}"`
+    : "";
+  const tagName = options.contributionId ? "button" : "span";
+  const typeAttribute = options.contributionId ? 'type="button"' : "";
+  const title = options.contributionId
+    ? `Abrir ações da cota · ${meta.label}`
+    : meta.label;
 
   return `
-    <span
+    <${tagName}
+      ${typeAttribute}
       class="quota-contributor-status-icon is-${safeText(meta.modifier)}"
-      title="${escapeAttribute(meta.label)}"
-      aria-label="${escapeAttribute(meta.label)}"
+      ${contributionAttribute}
+      title="${escapeAttribute(title)}"
+      aria-label="${escapeAttribute(title)}"
     >
       ${renderTableActionIcon(meta.icon)}
-    </span>
+    </${tagName}>
   `;
 }
 
@@ -591,7 +601,9 @@ function renderQuotaContributors(gift, guestMap) {
             <div class="quota-contributor-item">
               <span class="quota-contributor-name">
                 ${safeText(guestName)} (${quantity})
-                ${renderQuotaContributionStatusIndicator(contribution.payment_status)}
+                ${renderQuotaContributionStatusIndicator(contribution.payment_status, {
+                  contributionId: contribution.id,
+                })}
                 ${renderGiftMessageIndicator(contribution.message, {
                   contributionId: contribution.id,
                 })}
@@ -717,6 +729,94 @@ function renderGiftDetailsMessage(gift) {
   return `<p>${safeText(gift.reservation_message, "")}</p>`;
 }
 
+function renderQuotaContributionActionGroups(contribution) {
+  const paymentStatus = safeText(contribution.payment_status, "Pendente");
+  const isPending = paymentStatus === "Pendente";
+  const isConfirmed = paymentStatus === "Confirmado";
+  const communicationActions = [
+    isPending
+      ? renderGiftDetailActionCard({
+          action: "remind-contribution",
+          body: "Envia um lembrete para o convidado informar o pagamento desta cota.",
+          contributionId: contribution.id,
+          icon: "mail",
+          title: "Enviar Lembrete",
+        })
+      : "",
+    renderGiftDetailActionCard({
+      action: "manual-notification",
+      body: "Reenvia o e-mail de reserva desta cota.",
+      contributionId: contribution.id,
+      icon: "mail",
+      notificationEventType: "gift_contribution_reserved",
+      title: "Reenviar Reserva",
+    }),
+    !isPending
+      ? renderGiftDetailActionCard({
+          action: "manual-notification",
+          body: "Reenvia o aviso de pagamento informado para esta cota.",
+          contributionId: contribution.id,
+          icon: "mail",
+          notificationEventType: "gift_contribution_payment_reported",
+          title: "Reenviar Pagamento",
+        })
+      : "",
+    isConfirmed
+      ? renderGiftDetailActionCard({
+          action: "manual-notification",
+          body: "Reenvia a confirmação desta cota para o convidado.",
+          contributionId: contribution.id,
+          icon: "mail",
+          notificationEventType: "gift_contribution_confirmed",
+          title: "Reenviar Confirmação",
+        })
+      : "",
+  ].join("");
+  const reservationActions = !isConfirmed
+    ? `
+      ${renderGiftDetailActionCard({
+        action: "confirm-contribution",
+        body: "Confirma o pagamento ou a compra desta cota.",
+        className: "success",
+        contributionId: contribution.id,
+        icon: "check",
+        title: "Confirmar Cota",
+      })}
+
+      ${renderGiftDetailActionCard({
+        action: "release-contribution",
+        body: "Libera esta cota para que outra pessoa possa reservar.",
+        className: "warning",
+        contributionId: contribution.id,
+        icon: "rotate-ccw",
+        title: "Liberar Cota",
+      })}
+    `
+    : `
+      <span class="quota-action-confirmed">
+        Compra confirmada
+      </span>
+    `;
+
+  return `
+    <div class="quota-contribution-action-groups">
+      <div class="quota-contribution-action-group">
+        <span class="quota-action-label">Comunicação</span>
+        <div class="admin-detail-action-grid quota-detail-action-grid quota-resend-actions">
+          ${communicationActions}
+        </div>
+      </div>
+
+      <div class="quota-contribution-action-group">
+        <span class="quota-action-label">Gestão da Reserva</span>
+        <div class="admin-detail-action-grid quota-detail-action-grid">
+          ${reservationActions}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function renderGiftDetailsContributionSummary(gift) {
   if (!isQuotaGift(gift)) {
     return "";
@@ -738,72 +838,6 @@ function renderGiftDetailsContributionSummary(gift) {
               "Pendente",
             );
             const quantity = Number(contribution.quota_quantity || 0);
-            const isPending = paymentStatus === "Pendente";
-            const isConfirmed = paymentStatus === "Confirmado";
-            const communicationActions = [
-              isPending
-                ? renderGiftDetailActionCard({
-                    action: "remind-contribution",
-                    body: "Envia um lembrete para o convidado informar o pagamento desta cota.",
-                    contributionId: contribution.id,
-                    icon: "mail",
-                    title: "Enviar Lembrete",
-                  })
-                : "",
-              renderGiftDetailActionCard({
-                action: "manual-notification",
-                body: "Reenvia o e-mail de reserva desta cota.",
-                contributionId: contribution.id,
-                icon: "mail",
-                notificationEventType: "gift_contribution_reserved",
-                title: "Reenviar Reserva",
-              }),
-              !isPending
-                ? renderGiftDetailActionCard({
-                    action: "manual-notification",
-                    body: "Reenvia o aviso de pagamento informado para esta cota.",
-                    contributionId: contribution.id,
-                    icon: "mail",
-                    notificationEventType: "gift_contribution_payment_reported",
-                    title: "Reenviar Pagamento",
-                  })
-                : "",
-              isConfirmed
-                ? renderGiftDetailActionCard({
-                    action: "manual-notification",
-                    body: "Reenvia a confirmação desta cota para o convidado.",
-                    contributionId: contribution.id,
-                    icon: "mail",
-                    notificationEventType: "gift_contribution_confirmed",
-                    title: "Reenviar Confirmação",
-                  })
-                : "",
-            ].join("");
-            const reservationActions = !isConfirmed
-              ? `
-                ${renderGiftDetailActionCard({
-                  action: "confirm-contribution",
-                  body: "Confirma o pagamento ou a compra desta cota.",
-                  className: "success",
-                  contributionId: contribution.id,
-                  icon: "check",
-                  title: "Confirmar Cota",
-                })}
-
-                ${renderGiftDetailActionCard({
-                  action: "release-contribution",
-                  body: "Libera esta cota para que outra pessoa possa reservar.",
-                  className: "warning",
-                  contributionId: contribution.id,
-                  icon: "rotate-ccw",
-                  title: "Liberar Cota",
-                })}
-              `
-              : `
-                <span class="quota-action-confirmed">
-                  Compra confirmada
-                </span>
-              `;
 
             return `
               <div class="admin-details-item quota-contribution-card">
@@ -818,21 +852,7 @@ function renderGiftDetailsContributionSummary(gift) {
                   ${renderPaymentBadge(paymentStatus)}
                 </div>
 
-                <div class="quota-contribution-action-groups">
-                  <div class="quota-contribution-action-group">
-                    <span class="quota-action-label">Comunicação</span>
-                    <div class="admin-detail-action-grid quota-detail-action-grid quota-resend-actions">
-                      ${communicationActions}
-                    </div>
-                  </div>
-
-                  <div class="quota-contribution-action-group">
-                    <span class="quota-action-label">Gestão da Reserva</span>
-                    <div class="admin-detail-action-grid quota-detail-action-grid">
-                      ${reservationActions}
-                    </div>
-                  </div>
-                </div>
+                ${renderQuotaContributionActionGroups(contribution)}
               </div>
             `;
           },
@@ -1690,6 +1710,74 @@ function openGiftContributionMessageModal(contributionId) {
   giftDetailsModal.classList.add("active");
 }
 
+function openGiftContributionQuickActionModal(contributionId) {
+  const { contribution, gift } = findCachedContributionById(contributionId);
+
+  if (!contribution || !gift) {
+    showAdminToast("⚠️ Contribuição não encontrada. Atualize a lista e tente novamente");
+    return;
+  }
+
+  const quantity = Number(contribution.quota_quantity || 0);
+  const paymentStatus = safeText(contribution.payment_status, "Pendente");
+
+  giftDetailsTitle.textContent = "Ações da Cota";
+
+  replaceSafeContent(giftDetailsContent, `
+    <section class="admin-details-section">
+      <span class="admin-details-label">Resumo</span>
+      <div class="admin-details-meta-grid">
+        <div class="admin-details-meta-item">
+          <span>Convidado</span>
+          <strong>${safeText(contribution.contributor_name || "Convidado")}</strong>
+        </div>
+        <div class="admin-details-meta-item">
+          <span>Presente</span>
+          <strong>${safeText(gift.name || "Presente")}</strong>
+        </div>
+        <div class="admin-details-meta-item">
+          <span>Cotas</span>
+          <strong>${quantity} cota${quantity === 1 ? "" : "s"}</strong>
+        </div>
+        <div class="admin-details-meta-item">
+          <span>Valor</span>
+          <strong>${safeText(formatCurrency(Number(contribution.total_value || 0)))}</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="admin-details-section">
+      <span class="admin-details-label">Situação</span>
+      <div class="gift-situation-stack admin-summary-status-list">
+        ${renderPaymentBadge(paymentStatus)}
+      </div>
+    </section>
+
+    ${
+      String(contribution.message || "").trim()
+        ? `
+          <section class="admin-details-section">
+            <span class="admin-details-label">Mensagem informada</span>
+            <p>${safeText(contribution.message)}</p>
+          </section>
+        `
+        : ""
+    }
+
+    <section class="admin-details-section">
+      <span class="admin-details-label">Ações</span>
+      <div class="admin-details-list quota-contribution-list">
+        <div class="admin-details-item quota-contribution-card">
+          ${renderQuotaContributionActionGroups(contribution)}
+        </div>
+      </div>
+    </section>
+  `);
+
+  giftDetailsModal.classList.add("active");
+  window.lucide?.createIcons();
+}
+
 function handleGiftAction(action, giftId, eventType = "") {
   const gift = giftId ? findCachedGiftById(giftId) : null;
 
@@ -1786,7 +1874,7 @@ function clearGiftFilters() {
 function shouldIgnoreGiftItemClick(target) {
   return Boolean(
     target.closest(
-      "button, a, input, select, textarea, label, [data-gift-action], [data-gift-message-id], [data-gift-message-contribution-id], .admin-action-button",
+      "button, a, input, select, textarea, label, [data-gift-action], [data-gift-message-id], [data-gift-message-contribution-id], [data-gift-contribution-action-id], .admin-action-button",
     ),
   );
 }
@@ -2457,6 +2545,17 @@ refreshGiftsButton?.addEventListener("click", loadGiftsAdmin);
 exportGiftsButton?.addEventListener("click", exportGiftsCSV);
 
 giftsTableBody?.addEventListener("click", (event) => {
+  const contributionActionButton = event.target.closest(
+    "[data-gift-contribution-action-id]",
+  );
+
+  if (contributionActionButton) {
+    openGiftContributionQuickActionModal(
+      contributionActionButton.dataset.giftContributionActionId,
+    );
+    return;
+  }
+
   const giftMessageButton = event.target.closest("[data-gift-message-id]");
 
   if (giftMessageButton) {
@@ -2506,6 +2605,17 @@ giftsTableBody?.addEventListener("keydown", (event) => {
 });
 
 giftsMobileList?.addEventListener("click", (event) => {
+  const contributionActionButton = event.target.closest(
+    "[data-gift-contribution-action-id]",
+  );
+
+  if (contributionActionButton) {
+    openGiftContributionQuickActionModal(
+      contributionActionButton.dataset.giftContributionActionId,
+    );
+    return;
+  }
+
   const giftMessageButton = event.target.closest("[data-gift-message-id]");
 
   if (giftMessageButton) {

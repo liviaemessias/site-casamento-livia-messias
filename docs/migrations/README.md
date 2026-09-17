@@ -13,6 +13,7 @@ arquivo `*_verify.sql` relacionado, quando existir.
 
 Exemplos recentes:
 
+- `guest_save_the_date_sent.sql` + `guest_save_the_date_sent_verify.sql`
 - `guest_invite_sent_migration.sql` + `guest_invite_sent_verify.sql`
 - `guest_side_migration.sql` + `guest_side_verify.sql`
 - `email_notifications_schema.sql` + `email_notifications_schema_verify.sql`
@@ -77,6 +78,10 @@ vencimento no dia atual no menu administrativo.
 Observação: `current_guest_wall_message_status.sql` adiciona uma RPC leve para
 o RSVP identificar se o convidado logado já possui recado no Mural, sem expor o
 texto do recado.
+
+Observação: `guest_save_the_date_sent.sql` adiciona o controle de envio do Save
+the Date em `guests.save_the_date_sent` e atualiza as RPCs administrativas de
+criação, edição e marcação de envio de convidados.
 
 ## O Que Não Fazer
 

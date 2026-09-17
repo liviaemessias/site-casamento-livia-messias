@@ -39,6 +39,7 @@ create table if not exists public.guests (
   max_guests integer null default 0,
   confirmed boolean null default false,
   invite_sent boolean not null default false,
+  save_the_date_sent boolean not null default false,
   active boolean null default true,
   access_count integer null default 0,
   last_access timestamp with time zone null,
@@ -313,6 +314,7 @@ create table if not exists public.guests (
   max_guests integer null default 0,
   confirmed boolean null default false,
   invite_sent boolean not null default false,
+  save_the_date_sent boolean not null default false,
   active boolean null default true,
   access_count integer null default 0,
   last_access timestamp with time zone null,
@@ -2483,12 +2485,23 @@ drop function if exists public.create_guest_with_invite_code(
   text
 );
 
+drop function if exists public.create_guest_with_invite_code(
+  text,
+  text,
+  jsonb,
+  integer,
+  boolean,
+  boolean,
+  text
+);
+
 create or replace function public.create_guest_with_invite_code(
   p_name text,
   p_invite_type text default 'individual',
   p_couple_members jsonb default null,
   p_max_guests integer default 0,
   p_invite_sent boolean default false,
+  p_save_the_date_sent boolean default false,
   p_guest_side text default 'couple'
 )
 returns public.guests
@@ -2517,6 +2530,7 @@ begin
   p_invite_type := lower(nullif(btrim(p_invite_type), ''));
   p_max_guests := coalesce(p_max_guests, 0);
   p_invite_sent := coalesce(p_invite_sent, false);
+  p_save_the_date_sent := coalesce(p_save_the_date_sent, false);
   p_guest_side := lower(coalesce(nullif(btrim(p_guest_side), ''), 'couple'));
 
   if p_name is null then
@@ -2579,6 +2593,7 @@ begin
         max_guests,
         confirmed,
         invite_sent,
+        save_the_date_sent,
         active,
         access_count,
         invite_type,
@@ -2591,6 +2606,7 @@ begin
         p_max_guests,
         false,
         p_invite_sent,
+        p_save_the_date_sent,
         true,
         0,
         p_invite_type,
@@ -2618,6 +2634,7 @@ comment on function public.create_guest_with_invite_code(
   jsonb,
   integer,
   boolean,
+  boolean,
   text
 ) is
   'Creates a guest as an authenticated administrator and generates a secure invitation code.';
@@ -2628,6 +2645,7 @@ revoke all on function public.create_guest_with_invite_code(
   jsonb,
   integer,
   boolean,
+  boolean,
   text
 ) from public;
 
@@ -2637,6 +2655,7 @@ revoke all on function public.create_guest_with_invite_code(
   jsonb,
   integer,
   boolean,
+  boolean,
   text
 ) from anon;
 
@@ -2645,6 +2664,7 @@ grant execute on function public.create_guest_with_invite_code(
   text,
   jsonb,
   integer,
+  boolean,
   boolean,
   text
 ) to authenticated;
@@ -3211,7 +3231,18 @@ drop function if exists public.admin_update_guest(
   boolean,
   text
 );
+drop function if exists public.admin_update_guest(
+  uuid,
+  text,
+  text,
+  jsonb,
+  integer,
+  boolean,
+  boolean,
+  text
+);
 drop function if exists public.admin_set_guest_invite_sent(uuid, boolean);
+drop function if exists public.admin_set_guest_save_the_date_sent(uuid, boolean);
 
 create or replace function public.admin_update_guest(
   target_guest_id uuid,
@@ -3220,6 +3251,7 @@ create or replace function public.admin_update_guest(
   p_couple_members jsonb,
   p_max_guests integer,
   p_invite_sent boolean,
+  p_save_the_date_sent boolean,
   p_guest_side text default 'couple'
 )
 returns boolean
@@ -3244,6 +3276,7 @@ begin
   p_invite_type := lower(nullif(btrim(p_invite_type), ''));
   p_max_guests := coalesce(p_max_guests, 0);
   p_invite_sent := coalesce(p_invite_sent, false);
+  p_save_the_date_sent := coalesce(p_save_the_date_sent, false);
   p_guest_side := lower(coalesce(nullif(btrim(p_guest_side), ''), 'couple'));
 
   if p_name is null
@@ -3278,6 +3311,7 @@ begin
     couple_members = p_couple_members,
     max_guests = p_max_guests,
     invite_sent = p_invite_sent,
+    save_the_date_sent = p_save_the_date_sent,
     guest_side = p_guest_side
   where id = target_guest_id;
 
@@ -3380,6 +3414,41 @@ begin
 end;
 $$;
 
+create or replace function public.admin_set_guest_save_the_date_sent(
+  target_guest_id uuid,
+  next_save_the_date_sent boolean
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  updated_count integer;
+begin
+  if not exists (
+    select 1
+    from public.admin_users as administrator
+    where administrator.user_id = (select auth.uid())
+      and administrator.active is true
+  ) then
+    raise exception 'Administrator access required.'
+      using errcode = '42501';
+  end if;
+
+  if next_save_the_date_sent is null then
+    return false;
+  end if;
+
+  update public.guests
+  set save_the_date_sent = next_save_the_date_sent
+  where id = target_guest_id;
+
+  get diagnostics updated_count = row_count;
+  return updated_count = 1;
+end;
+$$;
+
 comment on function public.admin_update_guest(
   uuid,
   text,
@@ -3387,12 +3456,15 @@ comment on function public.admin_update_guest(
   jsonb,
   integer,
   boolean,
+  boolean,
   text
 ) is
   'Validates and updates a guest without exposing direct table writes.';
 
 comment on function public.admin_set_guest_active(uuid, boolean) is
   'Changes guest access and synchronizes invitation sessions atomically.';
+comment on function public.admin_set_guest_save_the_date_sent(uuid, boolean) is
+  'Marks whether a guest Save the Date has been sent.';
 comment on function public.admin_set_guest_invite_sent(uuid, boolean) is
   'Marks whether a guest invitation has been sent.';
 
@@ -3403,9 +3475,12 @@ revoke all on function public.admin_update_guest(
   jsonb,
   integer,
   boolean,
+  boolean,
   text
 ) from public, anon;
 revoke all on function public.admin_set_guest_active(uuid, boolean)
+  from public, anon;
+revoke all on function public.admin_set_guest_save_the_date_sent(uuid, boolean)
   from public, anon;
 revoke all on function public.admin_set_guest_invite_sent(uuid, boolean)
   from public, anon;
@@ -3417,9 +3492,12 @@ grant execute on function public.admin_update_guest(
   jsonb,
   integer,
   boolean,
+  boolean,
   text
 ) to authenticated;
 grant execute on function public.admin_set_guest_active(uuid, boolean)
+  to authenticated;
+grant execute on function public.admin_set_guest_save_the_date_sent(uuid, boolean)
   to authenticated;
 grant execute on function public.admin_set_guest_invite_sent(uuid, boolean)
   to authenticated;

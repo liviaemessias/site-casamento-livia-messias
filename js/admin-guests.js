@@ -25,6 +25,9 @@ let guestSortState = {
 const guestSearchInput = document.getElementById("guestSearchInput");
 const guestStatusFilter = document.getElementById("guestStatusFilter");
 const guestConfirmedFilter = document.getElementById("guestConfirmedFilter");
+const guestSaveTheDateSentFilter = document.getElementById(
+  "guestSaveTheDateSentFilter",
+);
 const guestInviteSentFilter = document.getElementById("guestInviteSentFilter");
 const guestTypeFilter = document.getElementById("guestTypeFilter");
 const guestSideFilter = document.getElementById("guestSideFilter");
@@ -45,6 +48,9 @@ const guestForm = document.getElementById("guestForm");
 const guestModalTitle = document.getElementById("guestModalTitle");
 const guestInviteTypeInput = document.getElementById("guestInviteTypeInput");
 const guestSideInput = document.getElementById("guestSideInput");
+const guestSaveTheDateSentInput = document.getElementById(
+  "guestSaveTheDateSentInput",
+);
 const guestInviteSentInput = document.getElementById("guestInviteSentInput");
 const coupleFields = document.getElementById("coupleFields");
 const invitationMessageModal = document.getElementById(
@@ -236,6 +242,11 @@ function applyGuestFiltersFromUrl() {
   setFilterValueFromParam(guestSearchInput, params, "search");
   setFilterValueFromParam(guestStatusFilter, params, "status");
   setFilterValueFromParam(guestConfirmedFilter, params, "confirmed");
+  setFilterValueFromParam(
+    guestSaveTheDateSentFilter,
+    params,
+    "save_the_date_sent",
+  );
   setFilterValueFromParam(guestInviteSentFilter, params, "invite_sent");
   setFilterValueFromParam(guestTypeFilter, params, "type");
   setFilterValueFromParam(guestSideFilter, params, "side");
@@ -292,6 +303,8 @@ function renderInviteTypeBadge(type) {
 
 function renderAdminIcon(name) {
   const icons = {
+    "calendar-heart":
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 2v4"/><path d="M16 2v4"/><path d="M3 10h18"/><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M12 18s-3.2-1.9-3.2-4.1A1.9 1.9 0 0 1 12 12.5a1.9 1.9 0 0 1 3.2 1.4C15.2 16.1 12 18 12 18z"/></svg>',
     clipboard:
       '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5h8"/><path d="M9 3h6v4H9z"/><path d="M7 5H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1"/></svg>',
     edit:
@@ -373,7 +386,8 @@ function renderGuestInviteMeta(guest) {
     { label: "Código", value: guest.invite_code, isCode: true },
     { label: "Convidado de", value: getGuestSideLabel(guest.guest_side) },
     { label: "Mesa", value: getGuestTableLabel(guest) },
-    { label: "Convite enviado", value: getInviteSentLabel(guest) },
+    { label: "Save the Date", value: getSaveTheDateSentLabel(guest) },
+    { label: "Convite oficial", value: getInviteSentLabel(guest) },
     { label: "Acompanhantes", value: guest.max_guests || 0 },
     { label: "Último acesso", value: formatDate(guest.last_access) },
     { label: "Acessos", value: guest.access_count || 0 },
@@ -451,10 +465,20 @@ function getInviteSentLabel(guest) {
   return guest.invite_sent ? "Enviado" : "Não enviado";
 }
 
+function getSaveTheDateSentLabel(guest) {
+  return guest.save_the_date_sent ? "Enviado" : "Não enviado";
+}
+
 function renderInviteSentBadge(guest) {
   return guest.invite_sent
-    ? '<span class="admin-badge badge-available">Enviado</span>'
-    : '<span class="admin-badge badge-muted">Não enviado</span>';
+    ? '<span class="admin-badge badge-available">Convite enviado</span>'
+    : '<span class="admin-badge badge-muted">Convite não enviado</span>';
+}
+
+function renderSaveTheDateSentBadge(guest) {
+  return guest.save_the_date_sent
+    ? '<span class="admin-badge badge-available">Save enviado</span>'
+    : '<span class="admin-badge badge-muted">Save não enviado</span>';
 }
 
 function renderInviteSentToggle(guest) {
@@ -468,6 +492,23 @@ function renderInviteSentToggle(guest) {
         data-guest-id="${escapeAttribute(guest.id)}"
         ${sent ? "checked" : ""}
         aria-label="${sent ? "Convite enviado" : "Convite não enviado"}"
+      />
+      <span aria-hidden="true"></span>
+    </label>
+  `;
+}
+
+function renderSaveTheDateSentToggle(guest) {
+  const sent = Boolean(guest.save_the_date_sent);
+
+  return `
+    <label class="admin-toggle-switch guest-invite-toggle" title="${sent ? "Marcar Save the Date como não enviado" : "Marcar Save the Date como enviado"}">
+      <input
+        type="checkbox"
+        data-guest-action="toggle-save-the-date-sent"
+        data-guest-id="${escapeAttribute(guest.id)}"
+        ${sent ? "checked" : ""}
+        aria-label="${sent ? "Save the Date enviado" : "Save the Date não enviado"}"
       />
       <span aria-hidden="true"></span>
     </label>
@@ -520,11 +561,17 @@ function renderGuestDetailsActions(guest) {
     ? "Impede o acesso do convite sem remover o cadastro."
     : "Reativa o acesso deste convite.";
   const inviteSentActionLabel = guest.invite_sent
-    ? "Marcar como não enviado"
-    : "Marcar como enviado";
+    ? "Marcar convite como não enviado"
+    : "Marcar convite como enviado";
   const inviteSentActionDescription = guest.invite_sent
-    ? "Retorna este convite para o controle de envios pendentes."
-    : "Registra que este convite já foi enviado.";
+    ? "Retorna o convite oficial para o controle de envios pendentes."
+    : "Registra que o convite oficial já foi enviado.";
+  const saveTheDateSentActionLabel = guest.save_the_date_sent
+    ? "Marcar Save como não enviado"
+    : "Marcar Save como enviado";
+  const saveTheDateSentActionDescription = guest.save_the_date_sent
+    ? "Retorna o Save the Date para o controle de envios pendentes."
+    : "Registra que o Save the Date já foi enviado.";
 
   return `
     <div class="admin-detail-action-grid">
@@ -550,6 +597,19 @@ function renderGuestDetailsActions(guest) {
         <span>
           <strong>${activeActionLabel}</strong>
           <small>${activeActionDescription}</small>
+        </span>
+      </button>
+
+      <button
+        class="admin-detail-action-card ${guest.save_the_date_sent ? "warning" : "success"}"
+        data-guest-detail-action="toggle-save-the-date-sent"
+        data-guest-id="${escapeAttribute(guest.id)}"
+        data-next-save-the-date-sent="${guest.save_the_date_sent ? "false" : "true"}"
+      >
+        <span class="admin-detail-action-icon">${renderAdminIcon("calendar-heart")}</span>
+        <span>
+          <strong>${saveTheDateSentActionLabel}</strong>
+          <small>${saveTheDateSentActionDescription}</small>
         </span>
       </button>
 
@@ -675,13 +735,14 @@ window.openGuestDetailsModal = function (guest) {
   replaceSafeContent(guestDetailsContent, `
     <section class="admin-details-section">
       <span class="admin-details-label">Resumo</span>
-      <div class="gift-situation-stack">
+      <div class="gift-situation-stack admin-summary-status-list">
         ${renderInviteTypeBadge(guest.invite_type)}
         ${
           guest.confirmed
             ? '<span class="admin-badge badge-available">RSVP confirmado</span>'
             : '<span class="admin-badge badge-muted">RSVP pendente</span>'
         }
+        ${renderSaveTheDateSentBadge(guest)}
         ${renderInviteSentBadge(guest)}
         ${
           guest.active
@@ -838,7 +899,7 @@ function renderGuestsTable(guests) {
   if (!guests.length) {
     replaceSafeContent(guestsTableBody, `
       <tr>
-        <td colspan="9" class="admin-empty-state">
+        <td colspan="10" class="admin-empty-state">
           Nenhum convidado encontrado para os filtros selecionados.
         </td>
       </tr>
@@ -875,6 +936,7 @@ function renderGuestsTable(guests) {
                 : '<span class="admin-badge badge-muted">Não</span>'
             }
           </td>
+          <td>${renderSaveTheDateSentToggle(guest)}</td>
           <td>${renderInviteSentToggle(guest)}</td>
           <td>
             ${
@@ -922,8 +984,13 @@ function renderGuestsMobileList(guests) {
   replaceSafeContent(guestsMobileList, guests
     .map((guest) => {
       const inviteSentLabel = getInviteSentLabel(guest);
-      const shortInviteSentLabel = guest.invite_sent ? "Enviado" : "Pendente";
+      const saveTheDateSentLabel = getSaveTheDateSentLabel(guest);
+      const shortInviteSentLabel = guest.invite_sent ? "Convite OK" : "Convite pend.";
+      const shortSaveTheDateSentLabel = guest.save_the_date_sent
+        ? "Save OK"
+        : "Save pend.";
       const nextInviteSent = !Boolean(guest.invite_sent);
+      const nextSaveTheDateSent = !Boolean(guest.save_the_date_sent);
 
       return `
         <article class="admin-mobile-list-card guest-mobile-card" data-guest-card-id="${escapeAttribute(guest.id)}" tabindex="0">
@@ -947,6 +1014,7 @@ function renderGuestsMobileList(guests) {
                 ? '<span class="admin-badge badge-available">RSVP Sim</span>'
                 : '<span class="admin-badge badge-muted">RSVP pendente</span>'
             }
+            ${renderSaveTheDateSentBadge(guest)}
             ${renderInviteSentBadge(guest)}
             ${
               guest.active
@@ -1000,6 +1068,19 @@ function renderGuestsMobileList(guests) {
             </button>
             <button
               class="admin-action-button icon-action guest-mobile-invite-toggle-button"
+              data-guest-action="toggle-save-the-date-sent"
+              data-guest-id="${escapeAttribute(guest.id)}"
+              data-next-save-the-date-sent="${String(nextSaveTheDateSent)}"
+              aria-pressed="${String(Boolean(guest.save_the_date_sent))}"
+              title="${safeText(saveTheDateSentLabel)}"
+            >
+              <span class="admin-toggle-switch is-readonly ${guest.save_the_date_sent ? "is-on" : ""}" aria-hidden="true">
+                <span></span>
+              </span>
+              <span>${safeText(shortSaveTheDateSentLabel)}</span>
+            </button>
+            <button
+              class="admin-action-button icon-action guest-mobile-invite-toggle-button"
               data-guest-action="toggle-invite-sent"
               data-guest-id="${escapeAttribute(guest.id)}"
               data-next-invite-sent="${String(nextInviteSent)}"
@@ -1022,6 +1103,7 @@ function applyGuestFilters() {
   const search = normalizeText(guestSearchInput?.value);
   const status = guestStatusFilter?.value || "";
   const confirmed = guestConfirmedFilter?.value || "";
+  const saveTheDateSent = guestSaveTheDateSentFilter?.value || "";
   const inviteSent = guestInviteSentFilter?.value || "";
   const type = guestTypeFilter?.value || "";
   const side = guestSideFilter?.value || "";
@@ -1046,6 +1128,11 @@ function applyGuestFilters() {
     const matchesConfirmed =
       !confirmed ||
       (confirmed === "confirmed" ? guest.confirmed : !guest.confirmed);
+    const matchesSaveTheDateSent =
+      !saveTheDateSent ||
+      (saveTheDateSent === "sent"
+        ? guest.save_the_date_sent
+        : !guest.save_the_date_sent);
     const matchesInviteSent =
       !inviteSent ||
       (inviteSent === "sent" ? guest.invite_sent : !guest.invite_sent);
@@ -1063,6 +1150,7 @@ function applyGuestFilters() {
       matchesSearch &&
       matchesStatus &&
       matchesConfirmed &&
+      matchesSaveTheDateSent &&
       matchesInviteSent &&
       matchesType &&
       matchesSide &&
@@ -1105,7 +1193,14 @@ function exportGuestsCSV() {
       value: (guest) => getGuestPlanningCounts(guest).total,
     },
     { label: "RSVP confirmado", value: (guest) => formatBoolean(guest.confirmed) },
-    { label: "Convite enviado", value: (guest) => formatBoolean(guest.invite_sent) },
+    {
+      label: "Save the Date enviado",
+      value: (guest) => formatBoolean(guest.save_the_date_sent),
+    },
+    {
+      label: "Convite oficial enviado",
+      value: (guest) => formatBoolean(guest.invite_sent),
+    },
     { label: "Ativo", value: (guest) => formatBoolean(guest.active) },
     { label: "Codigo", value: "invite_code" },
     { label: "Ultimo acesso", value: (guest) => formatDate(guest.last_access) },
@@ -1134,6 +1229,7 @@ function getGuestSortValue(guest) {
     companions: Number(guest.max_guests || 0),
     confirmed: guest.confirmed ? 1 : 0,
     inviteSent: guest.invite_sent ? 1 : 0,
+    saveTheDateSent: guest.save_the_date_sent ? 1 : 0,
     side: getGuestSideLabel(guest.guest_side),
     lastAccess: guest.last_access ? new Date(guest.last_access).getTime() : 0,
     name: guest.name,
@@ -1204,6 +1300,7 @@ function clearGuestFilters() {
   [
     guestStatusFilter,
     guestConfirmedFilter,
+    guestSaveTheDateSentFilter,
     guestInviteSentFilter,
     guestTypeFilter,
     guestSideFilter,
@@ -1224,6 +1321,7 @@ function openGuestModal() {
   setElementVisibility(coupleFields, false);
   document.getElementById("guestMaxGuestsInput").value = 0;
   guestSideInput.value = "couple";
+  guestSaveTheDateSentInput.checked = false;
   guestInviteSentInput.checked = false;
   guestModal.classList.add("active");
 }
@@ -1239,6 +1337,7 @@ window.openEditGuestModal = function (guest) {
   guestInviteTypeInput.value = guest.invite_type || "individual";
   guestSideInput.value = guest.guest_side || "couple";
   document.getElementById("guestMaxGuestsInput").value = guest.max_guests || 0;
+  guestSaveTheDateSentInput.checked = Boolean(guest.save_the_date_sent);
   guestInviteSentInput.checked = Boolean(guest.invite_sent);
   if (guest.invite_type === "couple") {
     setElementVisibility(coupleFields, true);
@@ -1508,6 +1607,33 @@ window.toggleGuestInviteSent = async function (guestId, nextInviteSent) {
   await loadGuestsAdmin();
 };
 
+window.toggleGuestSaveTheDateSent = async function (
+  guestId,
+  nextSaveTheDateSent,
+) {
+  const { data, error } = await supabaseClient.rpc(
+    "admin_set_guest_save_the_date_sent",
+    {
+      target_guest_id: guestId,
+      next_save_the_date_sent: nextSaveTheDateSent,
+    },
+  );
+
+  if (error || data !== true) {
+    console.error(error);
+    showAdminToast("⚠️ Não foi possível atualizar o envio do Save the Date");
+    return;
+  }
+
+  showAdminToast(
+    nextSaveTheDateSent
+      ? "💜 Save the Date marcado como enviado!"
+      : "💜 Save the Date marcado como não enviado!",
+  );
+
+  await loadGuestsAdmin();
+};
+
 async function saveGuestTable(event) {
   event.preventDefault();
 
@@ -1580,6 +1706,7 @@ function handleGuestAction(action, guestId, button) {
       action === "rsvp" ||
       action === "manage-table" ||
       action === "remove-table" ||
+      action === "toggle-save-the-date-sent" ||
       action === "toggle-invite-sent" ||
       action === "invitation-message") &&
     !guest
@@ -1602,6 +1729,17 @@ function handleGuestAction(action, guestId, button) {
   if (action === "toggle-active") {
     closeGuestDetailsModal();
     toggleGuestActive(guestId, button.dataset.nextActive === "true");
+    return;
+  }
+
+  if (action === "toggle-save-the-date-sent") {
+    closeGuestDetailsModal();
+    toggleGuestSaveTheDateSent(
+      guestId,
+      button.matches('input[type="checkbox"]')
+        ? button.checked
+        : button.dataset.nextSaveTheDateSent === "true",
+    );
     return;
   }
 
@@ -2089,6 +2227,7 @@ guestForm.addEventListener("submit", async (event) => {
     couple_members: coupleMembers,
     max_guests: maxGuests,
     invite_sent: guestInviteSentInput.checked,
+    save_the_date_sent: guestSaveTheDateSentInput.checked,
   };
 
   const result = editingGuest
@@ -2099,6 +2238,7 @@ guestForm.addEventListener("submit", async (event) => {
         p_couple_members: payload.couple_members,
         p_max_guests: payload.max_guests,
         p_invite_sent: payload.invite_sent,
+        p_save_the_date_sent: payload.save_the_date_sent,
         p_guest_side: payload.guest_side,
       })
     : await supabaseClient.rpc("create_guest_with_invite_code", {
@@ -2107,6 +2247,7 @@ guestForm.addEventListener("submit", async (event) => {
         p_couple_members: payload.couple_members,
         p_max_guests: payload.max_guests,
         p_invite_sent: payload.invite_sent,
+        p_save_the_date_sent: payload.save_the_date_sent,
         p_guest_side: payload.guest_side,
       });
 
@@ -2296,6 +2437,7 @@ closeAdminRSVPModalButton.addEventListener("click", closeAdminRSVPModal);
   guestSearchInput,
   guestStatusFilter,
   guestConfirmedFilter,
+  guestSaveTheDateSentFilter,
   guestInviteSentFilter,
   guestTypeFilter,
   guestSideFilter,

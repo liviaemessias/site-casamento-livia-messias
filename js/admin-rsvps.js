@@ -1082,7 +1082,7 @@ window.openRSVPDetailsModal = function (rsvp) {
   replaceSafeContent(rsvpDetailsContent, `
     <section class="admin-details-section">
       <span class="admin-details-label">Resumo</span>
-      <div class="gift-situation-stack">
+      <div class="gift-situation-stack admin-summary-status-list">
         ${renderPresenceBadge(rsvp.presence)}
         ${renderInviteTypeBadge(guest?.invite_type)}
         ${

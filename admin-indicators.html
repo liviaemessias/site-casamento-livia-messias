@@ -312,12 +312,42 @@
 
           <div class="admin-card">
             <div class="admin-card-header">
-              <span>Convites Enviados</span>
+              <span>Save Enviados</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre Save the Date enviados"
+                data-tooltip="Convites ativos com Save the Date marcado como enviado."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalSaveTheDateSentGuests">0</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Save Pendentes</span>
+              <button
+                type="button"
+                class="metric-help"
+                aria-label="Ajuda sobre Save the Date pendentes"
+                data-tooltip="Convites ativos ainda sem Save the Date marcado como enviado."
+              >
+                ?
+              </button>
+            </div>
+            <strong id="totalSaveTheDatePendingGuests">0</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Convites Oficiais Enviados</span>
               <button
                 type="button"
                 class="metric-help"
                 aria-label="Ajuda sobre convites enviados"
-                data-tooltip="Convites ativos marcados como enviados."
+                data-tooltip="Convites ativos com convite oficial marcado como enviado."
               >
                 ?
               </button>
@@ -327,12 +357,12 @@
 
           <div class="admin-card">
             <div class="admin-card-header">
-              <span>Não Enviados</span>
+              <span>Convites Oficiais Pendentes</span>
               <button
                 type="button"
                 class="metric-help"
                 aria-label="Ajuda sobre convites não enviados"
-                data-tooltip="Convites ativos ainda não marcados como enviados."
+                data-tooltip="Convites ativos ainda sem convite oficial marcado como enviado."
               >
                 ?
               </button>
@@ -1148,7 +1178,8 @@
           <div class="admin-report-column-grid">
             <label><input type="checkbox" data-attendance-column="invite" checked /> Convite</label>
             <label><input type="checkbox" data-attendance-column="code" checked /> Código</label>
-            <label><input type="checkbox" data-attendance-column="inviteSent" checked /> Convite enviado</label>
+            <label><input type="checkbox" data-attendance-column="saveTheDateSent" checked /> Save the Date enviado</label>
+            <label><input type="checkbox" data-attendance-column="inviteSent" checked /> Convite oficial enviado</label>
             <label><input type="checkbox" data-attendance-column="people" checked /> Pessoas</label>
             <label><input type="checkbox" data-attendance-column="companions" checked /> Acompanhantes</label>
             <label><input type="checkbox" data-attendance-column="type" checked /> Tipo</label>

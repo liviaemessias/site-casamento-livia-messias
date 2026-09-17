@@ -19,6 +19,7 @@ create table if not exists public.guests (
   max_guests integer null default 0,
   confirmed boolean null default false,
   invite_sent boolean not null default false,
+  save_the_date_sent boolean not null default false,
   active boolean null default true,
   access_count integer null default 0,
   last_access timestamp with time zone null,

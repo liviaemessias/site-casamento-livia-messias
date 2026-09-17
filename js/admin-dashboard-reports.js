@@ -679,7 +679,8 @@
         label: "Observação do convidado na mesa",
         value: "guestTableGuestNote",
       },
-      { key: "inviteSent", label: "Convite enviado", value: "inviteSent" },
+      { key: "saveTheDateSent", label: "Save the Date enviado", value: "saveTheDateSent" },
+      { key: "inviteSent", label: "Convite oficial enviado", value: "inviteSent" },
       { key: "people", label: "Pessoas do convite", value: "people" },
       { key: "companions", label: "Acompanhantes", value: "companions" },
       { key: "expectedCount", label: "Total esperado", value: "expectedCount" },
@@ -724,6 +725,7 @@
       guestSide: getGuestSideLabel(row.guest.guest_side),
       guestTable: row.guestTable,
       guestTableGuestNote: row.guestTableGuestNote,
+      saveTheDateSent: formatBoolean(row.guest.save_the_date_sent),
       inviteSent: formatBoolean(row.guest.invite_sent),
       people: getAttendingNames(row.guest, row.rsvp),
       companions: getCompanionNames(row.rsvp),
@@ -774,7 +776,8 @@
         label: "Observação do convidado na mesa",
         value: "guestTableGuestNote",
       },
-      { key: "inviteSent", label: "Convite enviado", value: "inviteSent" },
+      { key: "saveTheDateSent", label: "Save the Date enviado", value: "saveTheDateSent" },
+      { key: "inviteSent", label: "Convite oficial enviado", value: "inviteSent" },
       { key: "people", label: "Pessoa", value: "person" },
       { key: "type", label: "Tipo", value: "type" },
       { key: "child", label: "Criança", value: "child" },
@@ -831,6 +834,7 @@
         guestSide: getGuestSideLabel(row.guest.guest_side),
         guestTable: row.guestTable,
         guestTableGuestNote: row.guestTableGuestNote,
+        saveTheDateSent: formatBoolean(row.guest.save_the_date_sent),
         inviteSent: formatBoolean(row.guest.invite_sent),
         person: person.name,
         type: person.type,
@@ -877,6 +881,7 @@
       "guestSide",
       "guestTable",
       "guestTableGuestNote",
+      "saveTheDateSent",
       "inviteSent",
       "expectedCount",
       "childCount",
@@ -907,6 +912,9 @@
           guestSide: index === 0 ? getGuestSideLabel(row.guest.guest_side) : "",
           guestTable: index === 0 ? row.guestTable : "",
           guestTableGuestNote: index === 0 ? row.guestTableGuestNote : "",
+          saveTheDateSent: index === 0
+            ? formatBoolean(row.guest.save_the_date_sent)
+            : "",
           inviteSent: index === 0 ? formatBoolean(row.guest.invite_sent) : "",
           expectedCount: index === 0 ? row.expectedCount : "",
           childCount: index === 0 ? childCount : "",
@@ -2731,7 +2739,17 @@
   }
 
   function getPendingInviteRows() {
-    return reportData.activeGuests
+    const saveTheDateRows = reportData.activeGuests
+      .filter((guest) => !guest.save_the_date_sent)
+      .map((guest) => ({
+        type: "Save the Date pendente",
+        item: guest.name,
+        guestSide: getGuestSideLabel(guest.guest_side),
+        owner: guest.invite_code,
+        status: "Não enviado",
+        action: "Enviar Save the Date e marcar como enviado",
+      }));
+    const officialInviteRows = reportData.activeGuests
       .filter((guest) => !guest.invite_sent)
       .map((guest) => ({
         type: "Convite pendente",
@@ -2741,6 +2759,8 @@
         status: "Não enviado",
         action: "Enviar convite e marcar como enviado",
       }));
+
+    return [...saveTheDateRows, ...officialInviteRows];
   }
 
   function getPendingTableRows(rsvpMap, guestTableMap) {
