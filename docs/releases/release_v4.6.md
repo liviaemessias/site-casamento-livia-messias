@@ -97,6 +97,11 @@ administrativos e documentação de apoio para testes.
 - No modal de detalhes de presentes por cota, os status das contribuições, como
   "Pendente", deixaram de ocupar a largura inteira e passaram a respeitar o
   tamanho do conteúdo.
+- Na coluna "Convidado", o ícone de situação de cada contribuição por cota
+  passou a abrir um modal rápido focado naquela cota, com resumo do convidado,
+  presente, quantidade, valor, situação, mensagem e ações possíveis.
+- O modal rápido reaproveita as mesmas ações da seção "Contribuições" do modal
+  completo, incluindo lembrete, reenvios, confirmação e liberação da cota.
 
 ### Administração De Convidados
 
@@ -110,6 +115,8 @@ administrativos e documentação de apoio para testes.
   e convite oficial separadamente.
 - O modal de detalhes do convidado passou a exibir os dois status de envio e
   ações independentes para marcar ou desmarcar cada um.
+- Os status do resumo do modal de detalhes de Convidados passaram a ficar lado a
+  lado e quebrar linha somente quando não houver espaço.
 - Os cards mobile de convidados também receberam o controle rápido do Save the
   Date, mantendo o padrão visual dos toggles atuais.
 - A exportação CSV de convidados e os relatórios de presença/buffet passaram a
@@ -119,6 +126,8 @@ administrativos e documentação de apoio para testes.
   pendentes.
 - As ações pendentes passaram a listar Save the Date pendente separadamente de
   convite oficial pendente.
+- O mesmo comportamento de resumo com status lado a lado foi aplicado aos
+  modais administrativos de RSVPs e Recados que usam badges de situação.
 
 ## Banco De Dados, Rebuild E Scripts
 

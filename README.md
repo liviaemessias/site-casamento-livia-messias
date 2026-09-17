@@ -566,9 +566,10 @@ PixPayment.getQrCodeUrl(payload);
 - `docs/operations/smtp_email_notifications_setup.md`: configuração SMTP, Gmail, Outlook/Hotmail, deploy e testes das notificações por e-mail.
 - `docs/releases/release_v4.6.md`: notas da versão 4.6, com integração entre
   RSVP e Mural de Recados, melhorias nos detalhes e ações da Lista de Presentes,
-  botão flutuante de pendências, saudação visual de sessão para convidados,
-  ajuste de scroll da Home, seed de presentes para testes e correção de links
-  longos nos detalhes de Gastos Reais.
+  modal rápido para ações de contribuições por cota, botão flutuante de
+  pendências, saudação visual de sessão para convidados, ajuste de scroll da
+  Home, seed de presentes para testes, controle de Save the Date e correção de
+  links longos nos detalhes de Gastos Reais.
 - `docs/releases/release_v4.5.md`: notas da versão 4.5, com refinamentos da
   experiência pública, atalhos rápidos na Home, novo painel de menu público,
   lista de presentes compacta, filtros públicos, ícones de pagamento, melhorias
