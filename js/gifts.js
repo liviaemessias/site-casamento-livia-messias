@@ -75,6 +75,7 @@ const pendingGiftsFloatingButton = document.getElementById(
 const pendingGiftsFloatingText = document.getElementById(
   "pendingGiftsFloatingText",
 );
+const giftHelpFloatingButton = document.getElementById("giftHelpFloatingButton");
 const giftCatalogDetailsModal = document.getElementById("giftCatalogDetailsModal");
 const giftCatalogDetailsContent = document.getElementById("giftCatalogDetailsContent");
 const giftsFilterPanel = document.getElementById("giftsFilterPanel");
@@ -135,6 +136,22 @@ const confirmPaymentConfirmation = document.getElementById(
   "confirmPaymentConfirmation",
 );
 let pendingPaymentConfirmation = null;
+const cancelReservationModal = document.getElementById("cancelReservationModal");
+const cancelReservationTitle = document.getElementById("cancelReservationTitle");
+const cancelReservationDescription = document.getElementById(
+  "cancelReservationDescription",
+);
+const confirmCancelReservation = document.getElementById(
+  "confirmCancelReservation",
+);
+let pendingReservationCancellation = null;
+const contactCoupleModal = document.getElementById("contactCoupleModal");
+const contactCoupleTitle = document.getElementById("contactCoupleTitle");
+const contactCoupleDescription = document.getElementById(
+  "contactCoupleDescription",
+);
+const confirmContactCouple = document.getElementById("confirmContactCouple");
+let pendingCoupleContact = null;
 
 const paymentModalFooterText = document.getElementById(
   "paymentModalFooterText",
@@ -214,6 +231,10 @@ pendingGiftsFloatingButton?.addEventListener(
   "click",
   scrollToPendingGiftsSection,
 );
+
+giftHelpFloatingButton?.addEventListener("click", () => {
+  openContactCoupleModal(null, null, { mode: "help" });
+});
 
 /* Toast */
 function showToast(message, duration = 3000) {
@@ -912,13 +933,14 @@ function renderOwnQuotaContributions(gift) {
 
         ${
           isConfirmed
-            ? ""
+            ? renderContactCoupleButton(gift, contribution, { fullRow: true })
             : isInformed
             ? `
               <div class="payment-informed">
                 <strong>💜 Pagamento informado</strong>
                 <span>Aguardando confirmação dos noivos</span>
               </div>
+              ${renderContactCoupleButton(gift, contribution, { fullRow: true })}
             `
             : `
               <button
@@ -938,6 +960,7 @@ function renderOwnQuotaContributions(gift) {
               >
                 Ver PIX
               </button>
+              ${renderCancelReservationButton(gift, contribution, { fullRow: true })}
             `
         }
       `;
@@ -954,10 +977,38 @@ function isGiftPendingGuestAction(gift) {
   );
 }
 
+function canCancelGiftReservation(gift) {
+  return (
+    gift.reserved_guest_id === guest.id &&
+    gift.status === "Reservado" &&
+    (gift.payment_status || "Pendente") === "Pendente"
+  );
+}
+
+function shouldContactCoupleForGift(gift) {
+  return (
+    gift.reserved_guest_id === guest.id &&
+    (gift.payment_status === "Informado" ||
+      gift.payment_status === "Confirmado" ||
+      gift.status === "Comprado")
+  );
+}
+
 function isContributionPendingGuestAction(contribution) {
   return (
     contribution.payment_status !== "Informado" &&
     contribution.payment_status !== "Confirmado"
+  );
+}
+
+function canCancelGiftContribution(contribution) {
+  return (contribution?.payment_status || "Pendente") === "Pendente";
+}
+
+function shouldContactCoupleForContribution(contribution) {
+  return (
+    contribution?.payment_status === "Informado" ||
+    contribution?.payment_status === "Confirmado"
   );
 }
 
@@ -1041,7 +1092,7 @@ function renderPendingGiftActions(item) {
       <div class="pending-gift-actions">
         <button
           type="button"
-          class="gift-button"
+          class="gift-button full-row"
           data-gift-action="open-purchase-method"
           data-gift-id="${escapeAttribute(item.gift.id)}"
         >
@@ -1083,6 +1134,110 @@ function renderPendingGiftActions(item) {
   `;
 }
 
+function renderFloatingReservationAction({
+  gift,
+  contribution = null,
+  action,
+  label,
+  icon,
+}) {
+  const contributionAttribute = contribution
+    ? ` data-contribution-id="${escapeAttribute(contribution.id)}"`
+    : "";
+
+  return `
+    <button
+      type="button"
+      class="gift-card-floating-action ${escapeAttribute(action)}"
+      data-gift-action="${escapeAttribute(action)}"
+      data-gift-id="${escapeAttribute(gift.id)}"
+      ${contributionAttribute}
+    >
+      <span aria-hidden="true">${icon}</span>
+      ${safeText(label)}
+    </button>
+  `;
+}
+
+function renderGiftCardFloatingAction(gift) {
+  if (isQuotaGift(gift)) {
+    const pendingContribution = gift.own_contributions?.find(
+      canCancelGiftContribution,
+    );
+
+    if (pendingContribution) {
+      return renderFloatingReservationAction({
+        gift,
+        contribution: pendingContribution,
+        action: "cancel-reservation",
+        label: "Cancelar",
+        icon: "×",
+      });
+    }
+
+    const contactableContribution = gift.own_contributions?.find(
+      shouldContactCoupleForContribution,
+    );
+
+    if (contactableContribution) {
+      return renderFloatingReservationAction({
+        gift,
+        contribution: contactableContribution,
+        action: "contact-couple",
+        label: "Falar",
+        icon: "💬",
+      });
+    }
+
+    return "";
+  }
+
+  if (canCancelGiftReservation(gift)) {
+    return renderFloatingReservationAction({
+      gift,
+      action: "cancel-reservation",
+      label: "Cancelar",
+      icon: "×",
+    });
+  }
+
+  if (shouldContactCoupleForGift(gift)) {
+    return renderFloatingReservationAction({
+      gift,
+      action: "contact-couple",
+      label: "Falar",
+      icon: "💬",
+    });
+  }
+
+  return "";
+}
+
+function renderPendingGiftFloatingAction(item) {
+  if (item.type === "quota") {
+    if (!canCancelGiftContribution(item.contribution)) {
+      return "";
+    }
+
+    return renderFloatingReservationAction({
+      gift: item.gift,
+      contribution: item.contribution,
+      action: "cancel-reservation",
+      label: "Cancelar",
+      icon: "×",
+    });
+  }
+
+  return canCancelGiftReservation(item.gift)
+    ? renderFloatingReservationAction({
+        gift: item.gift,
+        action: "cancel-reservation",
+        label: "Cancelar",
+        icon: "×",
+      })
+    : "";
+}
+
 function renderPendingGifts(gifts) {
   if (!giftsPendingSection) {
     return;
@@ -1115,12 +1270,18 @@ function renderPendingGifts(gifts) {
         .map(
           (item) => `
             <div
-              class="pending-gift-card"
+              class="pending-gift-card ${
+                item.type === "single" && !item.gift.selected_purchase_method
+                  ? "pending-gift-card--choose-method"
+                  : ""
+              }"
               data-gift-card-details-id="${escapeAttribute(item.gift.id)}"
               role="button"
               tabindex="0"
               aria-label="Ver detalhes de ${escapeAttribute(item.gift.name || "presente")}"
             >
+              ${renderPendingGiftFloatingAction(item)}
+
               <div class="pending-gift-content">
                 <span>
                   ${item.type === "quota" ? "Presente por cotas" : "Presente individual"}
@@ -1155,6 +1316,7 @@ function updatePendingGiftsFloatingButton(pendingCount) {
   pendingGiftsFloatingButton.classList.toggle("active", hasPendingItems);
 
   if (!hasPendingItems) {
+    syncPendingGiftsFloatingPosition();
     return;
   }
 
@@ -1191,7 +1353,7 @@ function scrollToPendingGiftsSection() {
 }
 
 function syncPendingGiftsFloatingPosition() {
-  if (!pendingGiftsFloatingButton) {
+  if (!pendingGiftsFloatingButton && !giftHelpFloatingButton) {
     return;
   }
 
@@ -1200,25 +1362,40 @@ function syncPendingGiftsFloatingPosition() {
     !giftEmailHint.hidden &&
     giftEmailHint.classList.contains("active");
 
-  pendingGiftsFloatingButton.classList.toggle(
+  pendingGiftsFloatingButton?.classList.toggle(
+    "above-email-hint",
+    Boolean(shouldFloatAboveEmailHint),
+  );
+  giftHelpFloatingButton?.classList.toggle(
     "above-email-hint",
     Boolean(shouldFloatAboveEmailHint),
   );
 
-  if (!shouldFloatAboveEmailHint) {
-    pendingGiftsFloatingButton.style.removeProperty(
-      "--pending-gifts-floating-bottom",
-    );
-    return;
+  let baseOffset = window.matchMedia("(max-width: 768px)").matches
+    ? 14
+    : 22;
+
+  if (shouldFloatAboveEmailHint) {
+    const hintStyle = window.getComputedStyle(giftEmailHint);
+    const hintBottom = Number.parseFloat(hintStyle.bottom) || 0;
+    baseOffset = hintBottom + giftEmailHint.offsetHeight + 12;
   }
 
-  const hintStyle = window.getComputedStyle(giftEmailHint);
-  const hintBottom = Number.parseFloat(hintStyle.bottom) || 0;
-  const offset = hintBottom + giftEmailHint.offsetHeight + 12;
+  const hasPendingFloatingButton =
+    pendingGiftsFloatingButton &&
+    !pendingGiftsFloatingButton.hidden &&
+    pendingGiftsFloatingButton.classList.contains("active");
+  const helpOffset = hasPendingFloatingButton
+    ? baseOffset + pendingGiftsFloatingButton.offsetHeight + 10
+    : baseOffset;
 
-  pendingGiftsFloatingButton.style.setProperty(
+  pendingGiftsFloatingButton?.style.setProperty(
     "--pending-gifts-floating-bottom",
-    `${Math.ceil(offset)}px`,
+    `${Math.ceil(baseOffset)}px`,
+  );
+  giftHelpFloatingButton?.style.setProperty(
+    "--gift-help-floating-bottom",
+    `${Math.ceil(helpOffset)}px`,
   );
 }
 
@@ -1457,8 +1634,49 @@ function renderGiftCatalogDetailsButton(gift) {
   `;
 }
 
+function renderCancelReservationButton(gift, contribution = null, options = {}) {
+  const label = contribution ? "Cancelar cota" : "Cancelar reserva";
+  const fullRowClass = options.fullRow ? " full-row" : "";
+  const contributionAttribute = contribution
+    ? ` data-contribution-id="${escapeAttribute(contribution.id)}"`
+    : "";
+
+  return `
+    <button
+      type="button"
+      class="gift-button secondary danger${fullRowClass}"
+      data-gift-action="cancel-reservation"
+      data-gift-id="${escapeAttribute(gift.id)}"
+      ${contributionAttribute}
+    >
+      ${label}
+    </button>
+  `;
+}
+
+function renderContactCoupleButton(gift, contribution = null, options = {}) {
+  const fullRowClass = options.fullRow ? " full-row" : "";
+  const contributionAttribute = contribution
+    ? ` data-contribution-id="${escapeAttribute(contribution.id)}"`
+    : "";
+
+  return `
+    <button
+      type="button"
+      class="gift-button secondary${fullRowClass}"
+      data-gift-action="contact-couple"
+      data-gift-id="${escapeAttribute(gift.id)}"
+      ${contributionAttribute}
+    >
+      Falar com os noivos
+    </button>
+  `;
+}
+
 function renderCompactQuotaActions(gift, options = {}) {
   const includeDetails = options.includeDetails !== false;
+  const includeReservationManagement =
+    options.includeReservationManagement === true;
 
   if (!isQuotaGift(gift)) {
     return "";
@@ -1485,12 +1703,27 @@ function renderCompactQuotaActions(gift, options = {}) {
       >
         Ver PIX
       </button>
+      ${includeReservationManagement && canCancelGiftContribution(contribution)
+        ? renderCancelReservationButton(gift, contribution, { fullRow: true })
+        : ""}
       ${includeDetails ? renderGiftCatalogDetailsButton(gift) : ""}
     `;
   }
 
   if (gift.own_contributions?.length) {
-    return includeDetails ? renderGiftCatalogDetailsButton(gift) : "";
+    const contactableContribution = gift.own_contributions.find(
+      shouldContactCoupleForContribution,
+    );
+
+    return `
+      ${
+        contactableContribution
+        && includeReservationManagement
+          ? renderContactCoupleButton(gift, contactableContribution, { fullRow: true })
+          : ""
+      }
+      ${includeDetails ? renderGiftCatalogDetailsButton(gift) : ""}
+    `;
   }
 
   if (canCurrentGuestContributeToQuotaGift(gift)) {
@@ -1518,6 +1751,8 @@ function renderCompactQuotaActions(gift, options = {}) {
 
 function renderCompactSingleGiftActions(gift, options = {}) {
   const includeDetails = options.includeDetails !== false;
+  const includeReservationManagement =
+    options.includeReservationManagement === true;
   const isReservedByCurrentGuest = gift.reserved_guest_id === guest.id;
 
   if (gift.status === "Disponível") {
@@ -1535,7 +1770,14 @@ function renderCompactSingleGiftActions(gift, options = {}) {
 
   if (gift.status === "Reservado" && isReservedByCurrentGuest) {
     if (gift.payment_status === "Informado") {
-      return includeDetails ? renderGiftCatalogDetailsButton(gift) : "";
+      return `
+        ${
+          includeReservationManagement
+            ? renderContactCoupleButton(gift, null, { fullRow: true })
+            : ""
+        }
+        ${includeDetails ? renderGiftCatalogDetailsButton(gift) : ""}
+      `;
     }
 
     return `
@@ -1560,6 +1802,20 @@ function renderCompactSingleGiftActions(gift, options = {}) {
       >
         Forma
       </button>
+      ${includeReservationManagement && canCancelGiftReservation(gift)
+        ? renderCancelReservationButton(gift, null, { fullRow: true })
+        : ""}
+      ${includeDetails ? renderGiftCatalogDetailsButton(gift) : ""}
+    `;
+  }
+
+  if (shouldContactCoupleForGift(gift)) {
+    return `
+      ${
+        includeReservationManagement
+          ? renderContactCoupleButton(gift, null, { fullRow: true })
+          : ""
+      }
       ${includeDetails ? renderGiftCatalogDetailsButton(gift) : ""}
     `;
   }
@@ -1585,6 +1841,7 @@ function renderGiftCards(gifts) {
           aria-label="Ver detalhes de ${escapeAttribute(gift.name || "presente")}"
         >
           ${renderOwnGiftCardBadge(gift)}
+          ${renderGiftCardFloatingAction(gift)}
 
           <div class="gift-card-media ${safeImageUrl ? "" : "without-image"}">
             ${
@@ -1641,8 +1898,14 @@ function renderGiftCatalogDetails(gift) {
   const price = renderGiftTotalPrice(gift);
   const isCombinedGift = isCombinedExternalGift(gift);
   const actions = isQuotaGift(gift)
-    ? renderCompactQuotaActions(gift, { includeDetails: false })
-    : renderCompactSingleGiftActions(gift, { includeDetails: false });
+    ? renderCompactQuotaActions(gift, {
+        includeDetails: false,
+        includeReservationManagement: true,
+      })
+    : renderCompactSingleGiftActions(gift, {
+        includeDetails: false,
+        includeReservationManagement: true,
+      });
   const hasImage = Boolean(gift.image_url?.trim());
   const imageContent = hasImage
     ? `
@@ -2809,6 +3072,140 @@ function closePaymentConfirmationModal() {
   pendingPaymentConfirmation = null;
 }
 
+function getCoupleWhatsAppNumber() {
+  return String(settings?.whatsapp_number || "").replace(/\D/g, "");
+}
+
+function getContactCoupleMessage(gift = null, contribution = null) {
+  if (!gift) {
+    return isCoupleInvite()
+      ? "Olá! Gostaríamos de tirar uma dúvida sobre a lista de presentes."
+      : "Olá! Gostaria de tirar uma dúvida sobre a lista de presentes.";
+  }
+
+  const isCouple = isCoupleInvite();
+  const verb = isCouple ? "Gostaríamos" : "Gostaria";
+  const subject = contribution
+    ? `nossa contribuição por cota do presente "${gift.name}"`
+    : `nossa reserva do presente "${gift.name}"`;
+
+  if (!isCouple) {
+    return contribution
+      ? `Olá! Gostaria de ajustar minha contribuição por cota do presente "${gift.name}".`
+      : `Olá! Gostaria de ajustar minha reserva do presente "${gift.name}".`;
+  }
+
+  return `Olá! ${verb} de ajustar ${subject}.`;
+}
+
+function contactCoupleAboutGift(gift = null, contribution = null) {
+  const whatsappNumber = getCoupleWhatsAppNumber();
+
+  if (!whatsappNumber) {
+    const targetLabel = contribution ? "esta cota" : "este presente";
+
+    showToast(
+      isCoupleInvite()
+        ? `💜 Falem com os noivos para ajustar ${targetLabel}.`
+        : `💜 Fale com os noivos para ajustar ${targetLabel}.`,
+      5000,
+    );
+    return;
+  }
+
+  const message = getContactCoupleMessage(gift, contribution);
+  const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+  window.open(url, "_blank", "noopener,noreferrer");
+}
+
+function closeContactCoupleModal() {
+  contactCoupleModal.classList.remove("active");
+  pendingCoupleContact = null;
+}
+
+function openContactCoupleModal(gift = null, contribution = null, options = {}) {
+  const isCouple = isCoupleInvite();
+  const isHelp = options.mode === "help" || !gift;
+  const contactSubject = isCouple ? "vocês enviarem" : "você enviar";
+  const reservationType = contribution ? "esta cota" : "este presente";
+  const reservationStatus = contribution
+    ? "informada ou confirmada"
+    : "informado ou confirmado";
+  const hasWhatsAppNumber = Boolean(getCoupleWhatsAppNumber());
+
+  pendingCoupleContact = { gift, contribution };
+  contactCoupleTitle.textContent = isHelp
+    ? "Dúvidas sobre os presentes?"
+    : "Falar com os noivos?";
+  contactCoupleDescription.textContent = isHelp
+    ? hasWhatsAppNumber
+      ? `Se ${isCouple ? "vocês tiverem" : "você tiver"} alguma dúvida sobre reserva, pagamento, cotas ou formas de presentear, ${isCouple ? "podem" : "pode"} falar diretamente com os noivos. Ao continuar, abriremos o WhatsApp com uma mensagem pronta para ${contactSubject}.`
+      : `Se ${isCouple ? "vocês tiverem" : "você tiver"} alguma dúvida sobre reserva, pagamento, cotas ou formas de presentear, ${isCouple ? "falem" : "fale"} diretamente com os noivos.`
+    : hasWhatsAppNumber
+      ? `Como ${reservationType} já foi ${reservationStatus}, qualquer ajuste precisa ser combinado diretamente com os noivos. Ao continuar, abriremos o WhatsApp com uma mensagem pronta para ${contactSubject}.`
+      : `Como ${reservationType} já foi ${reservationStatus}, qualquer ajuste precisa ser combinado diretamente com os noivos.`;
+  confirmContactCouple.textContent = hasWhatsAppNumber
+    ? "Abrir WhatsApp"
+    : "Entendi";
+  contactCoupleModal.classList.add("active");
+}
+
+function closeCancelReservationModal() {
+  cancelReservationModal.classList.remove("active");
+  pendingReservationCancellation = null;
+}
+
+function openCancelReservationModal(gift, contribution = null) {
+  const subject = isCoupleInvite() ? "Vocês desejam" : "Você deseja";
+
+  pendingReservationCancellation = { gift, contribution };
+  cancelReservationTitle.textContent = contribution
+    ? "Cancelar cota?"
+    : "Cancelar reserva?";
+  cancelReservationDescription.textContent = contribution
+    ? `${subject} cancelar esta contribuição? As cotas reservadas voltarão a ficar disponíveis.`
+    : `${subject} cancelar esta reserva? O presente voltará a ficar disponível para outros convidados.`;
+  confirmCancelReservation.textContent = contribution
+    ? "Sim, cancelar cota"
+    : "Sim, cancelar reserva";
+  cancelReservationModal.classList.add("active");
+}
+
+async function cancelPendingReservation(gift, contribution = null) {
+  const { data, error } = contribution
+    ? await GuestData.cancelGiftContribution(contribution.id)
+    : await GuestData.cancelGiftReservation(gift.id);
+
+  if (error || (GuestAuth.isSecureMode() && data !== true)) {
+    console.error(error);
+    showToast(
+      contribution
+        ? "Não foi possível cancelar esta cota."
+        : "Não foi possível cancelar esta reserva.",
+      5000,
+    );
+    return false;
+  }
+
+  closeCancelReservationModal();
+  pixModal.classList.remove("active");
+  closeGiftCatalogDetailsModal();
+
+  showToast(
+    contribution
+      ? "💜 Cota cancelada. Ela voltou a ficar disponível."
+      : "💜 Reserva cancelada. O presente voltou a ficar disponível.",
+    5000,
+  );
+
+  if (contribution && !GuestAuth.isSecureMode()) {
+    await syncQuotaGiftStatus(gift.id);
+  }
+
+  await loadGifts();
+  return true;
+}
+
 window.requestPaymentConfirmation = function (gift, contribution = null) {
   const isPurchase = !contribution && isGiftPurchase(gift);
   const action = isPurchase ? "compra" : "pagamento";
@@ -2862,6 +3259,29 @@ function handlePublicGiftAction(action, giftId, contributionId = "") {
     return;
   }
 
+  if (action === "cancel-reservation") {
+    if (contribution) {
+      if (canCancelGiftContribution(contribution)) {
+        openCancelReservationModal(gift, contribution);
+      } else {
+        openContactCoupleModal(gift, contribution);
+      }
+      return;
+    }
+
+    if (canCancelGiftReservation(gift)) {
+      openCancelReservationModal(gift);
+    } else {
+      openContactCoupleModal(gift);
+    }
+    return;
+  }
+
+  if (action === "contact-couple") {
+    openContactCoupleModal(gift, contribution);
+    return;
+  }
+
   if (action === "confirm-gift-payment") {
     requestPaymentConfirmation(gift);
     return;
@@ -2879,6 +3299,7 @@ function handlePublicGiftAction(action, giftId, contributionId = "") {
 
   if (action === "open-contribution-pix") {
     openPixModalForContribution(gift, contribution);
+    return;
   }
 }
 
@@ -2942,6 +3363,54 @@ document
 document
   .getElementById("cancelPaymentConfirmation")
   .addEventListener("click", closePaymentConfirmationModal);
+
+confirmCancelReservation.addEventListener("click", async () => {
+  if (!pendingReservationCancellation) {
+    return;
+  }
+
+  const { gift, contribution } = pendingReservationCancellation;
+  confirmCancelReservation.disabled = true;
+
+  try {
+    await cancelPendingReservation(gift, contribution);
+  } finally {
+    confirmCancelReservation.disabled = false;
+  }
+});
+
+document
+  .getElementById("closeCancelReservationModal")
+  .addEventListener("click", closeCancelReservationModal);
+
+document
+  .getElementById("backCancelReservation")
+  .addEventListener("click", closeCancelReservationModal);
+
+confirmContactCouple.addEventListener("click", () => {
+  if (!pendingCoupleContact) {
+    closeContactCoupleModal();
+    return;
+  }
+
+  const { gift, contribution } = pendingCoupleContact;
+
+  if (!getCoupleWhatsAppNumber()) {
+    closeContactCoupleModal();
+    return;
+  }
+
+  contactCoupleAboutGift(gift, contribution);
+  closeContactCoupleModal();
+});
+
+document
+  .getElementById("closeContactCoupleModal")
+  .addEventListener("click", closeContactCoupleModal);
+
+document
+  .getElementById("backContactCouple")
+  .addEventListener("click", closeContactCoupleModal);
 
 giftsGrid?.addEventListener("click", (event) => {
   const button = event.target.closest("[data-gift-action]");
@@ -3118,6 +3587,14 @@ window.addEventListener("click", (e) => {
   if (e.target === paymentConfirmationModal) {
     closePaymentConfirmationModal();
   }
+
+  if (e.target === cancelReservationModal) {
+    closeCancelReservationModal();
+  }
+
+  if (e.target === contactCoupleModal) {
+    closeContactCoupleModal();
+  }
 });
 
 document.addEventListener("keydown", (e) => {
@@ -3128,6 +3605,8 @@ document.addEventListener("keydown", (e) => {
     purchaseMethodModal.classList.remove("active");
     pixModal.classList.remove("active");
     closePaymentConfirmationModal();
+    closeCancelReservationModal();
+    closeContactCoupleModal();
   }
 });
 

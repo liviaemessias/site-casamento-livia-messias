@@ -161,7 +161,7 @@
   background: var(--white);
   box-shadow: 0 14px 34px rgba(35, 24, 42, 0.07);
   cursor: pointer;
-  overflow: hidden;
+  overflow: visible;
   transition:
     border-color 0.3s ease,
     box-shadow 0.3s ease,
@@ -227,10 +227,10 @@
   line-height: 1.5;
 }
 
-.pending-gifts-floating-button {
+.gift-floating-button {
   position: fixed;
   right: 1.25rem;
-  bottom: var(--pending-gifts-floating-bottom, 1.35rem);
+  bottom: 1.35rem;
   z-index: 1100;
   display: inline-flex;
   align-items: center;
@@ -261,14 +261,22 @@
     box-shadow 0.24s ease;
 }
 
-.pending-gifts-floating-button.active {
+.pending-gifts-floating-button {
+  bottom: var(--pending-gifts-floating-bottom, 1.35rem);
+}
+
+.gift-help-floating-button {
+  bottom: var(--gift-help-floating-bottom, 1.35rem);
+}
+
+.gift-floating-button.active {
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
 }
 
-.pending-gifts-floating-button:hover,
-.pending-gifts-floating-button:focus-visible {
+.gift-floating-button:hover,
+.gift-floating-button:focus-visible {
   border-color: rgba(var(--color-primary-rgb), 0.28);
   outline: none;
   box-shadow:
@@ -277,7 +285,7 @@
   transform: translateY(-2px);
 }
 
-.pending-gifts-floating-icon {
+.gift-floating-icon {
   display: inline-grid;
   width: 1.8rem;
   height: 1.8rem;
@@ -289,6 +297,12 @@
   font-size: 0.92rem;
   font-weight: 850;
   line-height: 1;
+}
+
+.gift-help-floating-button .gift-floating-icon {
+  background: var(--color-primary-extra-faint);
+  color: var(--color-primary);
+  border: 1px solid rgba(var(--color-primary-rgb), 0.16);
 }
 
 .pending-gift-actions {
@@ -303,6 +317,7 @@
   justify-content: center;
   width: 100%;
   min-width: 0;
+  min-height: 38px;
   margin-top: 0;
   padding: 0.62rem 0.58rem;
   border-radius: 12px;
@@ -699,7 +714,7 @@
 .gift-card-owner-badge {
   position: absolute;
   top: -0.42rem;
-  right: -0.34rem;
+  left: -0.34rem;
   z-index: 4;
   display: inline-grid;
   width: 1.35rem;
@@ -730,6 +745,97 @@
 .gift-card-owner-badge.pending {
   border-color: rgba(123, 66, 90, 0.24);
   color: #7b425a;
+}
+
+.gift-card-floating-action {
+  position: absolute;
+  right: -0.34rem;
+  top: -0.42rem;
+  z-index: 6;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  max-width: calc(100% - 1.44rem);
+  min-height: 30px;
+  padding: 0.34rem 0.56rem 0.34rem 0.42rem;
+  border: 1px solid rgba(var(--color-primary-rgb), 0.14);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--color-primary);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.68rem;
+  font-weight: 750;
+  line-height: 1;
+  box-shadow: 0 10px 22px rgba(35, 24, 42, 0.14);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition:
+    border-color 0.24s ease,
+    box-shadow 0.24s ease,
+    transform 0.24s ease,
+    background 0.24s ease;
+}
+
+.gift-card-floating-action span {
+  display: inline-grid;
+  width: 1.05rem;
+  height: 1.05rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(var(--color-primary-rgb), 0.1);
+  color: inherit;
+  font-size: 0.72rem;
+  font-weight: 850;
+  line-height: 1;
+}
+
+.gift-card-floating-action.cancel-reservation {
+  border-color: rgba(160, 72, 72, 0.18);
+  color: #8b3a3a;
+}
+
+.gift-card-floating-action.cancel-reservation span {
+  background: rgba(160, 72, 72, 0.1);
+}
+
+.gift-card-floating-action.contact-couple {
+  border-color: rgba(var(--color-primary-rgb), 0.16);
+  color: var(--color-primary);
+}
+
+.gift-card-floating-action:hover,
+.gift-card-floating-action:focus-visible {
+  border-color: rgba(var(--color-primary-rgb), 0.28);
+  outline: none;
+  background: #ffffff;
+  box-shadow:
+    0 0 0 3px rgba(var(--color-primary-rgb), 0.08),
+    0 12px 26px rgba(35, 24, 42, 0.16);
+  transform: translateY(-1px);
+}
+
+.gift-card-floating-action.cancel-reservation:hover,
+.gift-card-floating-action.cancel-reservation:focus-visible {
+  border-color: rgba(160, 72, 72, 0.32);
+  box-shadow:
+    0 0 0 3px rgba(160, 72, 72, 0.08),
+    0 12px 26px rgba(35, 24, 42, 0.16);
+}
+
+.pending-gift-card .gift-card-floating-action {
+  top: auto;
+  right: auto;
+  bottom: -0.42rem;
+  left: -0.34rem;
+}
+
+.pending-gift-card--choose-method .gift-card-floating-action {
+  top: -0.42rem;
+  right: -0.34rem;
+  bottom: auto;
+  left: auto;
 }
 
 .gift-card-body {
@@ -1142,7 +1248,7 @@
 
 .gift-catalog-details.has-image {
   grid-template-columns: minmax(190px, 240px) minmax(0, 1fr);
-  align-items: start;
+  align-items: stretch;
   column-gap: 1.15rem;
 }
 
@@ -1174,13 +1280,17 @@
 
 .gift-catalog-details.has-image .gift-catalog-details-image {
   grid-row: span 4;
+  align-self: stretch;
+  max-height: none;
+  min-height: 100%;
 }
 
 .gift-catalog-details.is-quota.has-image .gift-catalog-details-image {
   grid-row: auto;
-  height: 100%;
+  height: auto;
+  max-height: 260px;
   min-height: 160px;
-  aspect-ratio: auto;
+  aspect-ratio: 4 / 3;
 }
 
 .gift-catalog-details.is-quota.has-image .gift-catalog-details-overview,
@@ -1189,11 +1299,12 @@
 }
 
 .gift-catalog-details.is-quota.has-image .gift-catalog-details-overview {
-  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-rows: minmax(180px, 1fr) auto;
 }
 
 .gift-catalog-details.is-quota.has-image .gift-catalog-details-side {
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: minmax(0, 0.9fr) minmax(0, 1.1fr) auto;
+  align-content: stretch;
 }
 
 .gift-catalog-details h2 {
@@ -1241,6 +1352,12 @@
   grid-column: auto;
 }
 
+.gift-catalog-details.is-quota.has-image .gift-catalog-details-section {
+  display: grid;
+  align-content: start;
+  min-height: 0;
+}
+
 .gift-catalog-details.is-quota .quota-card-info {
   margin: 0;
   padding: 0.85rem;
@@ -1248,7 +1365,11 @@
 
 .gift-catalog-details.is-quota.has-image .quota-card-info {
   height: 100%;
-  align-content: center;
+  align-content: space-between;
+}
+
+.gift-catalog-details.is-quota.has-image .gift-catalog-details-actions {
+  align-self: end;
 }
 
 .gift-catalog-details-section > span {
@@ -1289,7 +1410,36 @@
 .gift-catalog-details-actions .gift-button,
 .gift-catalog-details-actions .gift-card-details-button {
   flex: 1 1 150px;
+  box-sizing: border-box;
   min-height: 38px;
+  margin-top: 0;
+}
+
+.gift-catalog-details-actions .gift-button.secondary {
+  height: 38px;
+  min-height: 38px;
+  max-height: 38px;
+  padding-block: 0;
+  margin-top: 0;
+}
+
+.gift-catalog-details-actions .gift-button.danger {
+  border-color: rgba(160, 72, 72, 0.24);
+  background: rgba(160, 72, 72, 0.1);
+  color: #8b3a3a;
+  box-shadow: none;
+}
+
+.gift-catalog-details-actions .gift-button.danger:hover,
+.gift-catalog-details-actions .gift-button.danger:focus-visible {
+  border-color: rgba(160, 72, 72, 0.36);
+  background: rgba(160, 72, 72, 0.16);
+  color: #743030;
+  box-shadow: var(--shadow-sm);
+}
+
+.gift-catalog-details-actions .payment-confirm-button {
+  flex-basis: 100%;
 }
 
 .gift-catalog-method {
@@ -1993,6 +2143,22 @@
   transform: translateY(-1px);
 }
 
+.gift-button.danger {
+  border: 1px solid rgba(160, 72, 72, 0.2);
+  background: rgba(160, 72, 72, 0.08);
+  color: #8b3a3a;
+  box-shadow: none;
+}
+
+.gift-button.danger:hover,
+.gift-button.danger:focus-visible {
+  border-color: rgba(160, 72, 72, 0.32);
+  background: rgba(160, 72, 72, 0.13);
+  color: #743030;
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
 .payment-button {
   margin-top: 0.8rem;
 }
@@ -2068,6 +2234,18 @@
   color: var(--color-primary);
   font-size: 1.5rem;
   font-weight: 700;
+}
+
+.confirmation-icon.cancel-icon {
+  border-color: rgba(160, 72, 72, 0.18);
+  background: rgba(160, 72, 72, 0.1);
+  color: #8b3a3a;
+}
+
+.confirmation-icon.contact-icon {
+  border-color: rgba(var(--color-primary-rgb), 0.16);
+  background: var(--color-primary-extra-faint);
+  color: var(--color-primary);
 }
 
 .confirmation-actions {
@@ -2362,16 +2540,23 @@
     font-size: 0.62rem;
   }
 
-  .pending-gifts-floating-button {
+  .gift-floating-button {
     right: 0.85rem;
-    bottom: var(--pending-gifts-floating-bottom, 0.9rem);
     max-width: calc(100vw - 1.7rem);
     min-height: 42px;
     padding: 0.48rem 0.66rem 0.48rem 0.48rem;
     font-size: 0.76rem;
   }
 
-  .pending-gifts-floating-icon {
+  .pending-gifts-floating-button {
+    bottom: var(--pending-gifts-floating-bottom, 0.9rem);
+  }
+
+  .gift-help-floating-button {
+    bottom: var(--gift-help-floating-bottom, 0.9rem);
+  }
+
+  .gift-floating-icon {
     width: 1.62rem;
     height: 1.62rem;
     font-size: 0.82rem;
@@ -2405,6 +2590,29 @@
 
   .gift-card:hover {
     transform: none;
+  }
+
+  .gift-card-floating-action {
+    right: -0.24rem;
+    top: -0.34rem;
+    bottom: auto;
+    left: auto;
+    min-height: 28px;
+    padding: 0.3rem 0.48rem 0.3rem 0.36rem;
+    font-size: 0.62rem;
+  }
+
+  .pending-gift-card .gift-card-floating-action {
+    right: -0.24rem;
+    top: -0.34rem;
+    bottom: auto;
+    left: auto;
+  }
+
+  .gift-card-floating-action span {
+    width: 0.96rem;
+    height: 0.96rem;
+    font-size: 0.66rem;
   }
 
   .gift-card-media {
@@ -2463,7 +2671,7 @@
 
   .gift-card-owner-badge {
     top: -0.34rem;
-    right: -0.26rem;
+    left: -0.26rem;
     width: 1.16rem;
     height: 1.16rem;
     font-size: 0.66rem;
@@ -2615,7 +2823,9 @@
   }
 
   .gift-catalog-details-image {
+    height: auto;
     max-height: 150px;
+    min-height: 0;
   }
 
   .gift-catalog-details.is-quota.has-image .gift-catalog-details-image {
@@ -2633,6 +2843,12 @@
   .gift-catalog-details.is-quota.has-image .gift-catalog-details-overview,
   .gift-catalog-details.is-quota.has-image .gift-catalog-details-side {
     grid-template-rows: auto;
+  }
+
+  .gift-catalog-details.is-quota.has-image .gift-catalog-details-section,
+  .gift-catalog-details.is-quota.has-image .quota-card-info {
+    height: auto;
+    align-content: start;
   }
 
   .gift-catalog-details-description {
@@ -2655,7 +2871,21 @@
   .gift-catalog-details-actions .gift-button,
   .gift-catalog-details-actions .gift-card-details-button {
     flex-basis: 130px;
+    box-sizing: border-box;
     min-height: 36px;
+    margin-top: 0;
+  }
+
+  .gift-catalog-details-actions .gift-button.secondary {
+    height: 36px;
+    min-height: 36px;
+    max-height: 36px;
+    padding-block: 0;
+    margin-top: 0;
+  }
+
+  .gift-catalog-details-actions .payment-confirm-button {
+    flex-basis: 100%;
   }
 
   .modal-description {

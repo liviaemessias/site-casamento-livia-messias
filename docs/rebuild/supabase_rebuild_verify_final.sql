@@ -1497,5 +1497,28 @@ select
       and pg_get_functiondef(pg_proc.oid) like '%public.financial_expenses%'
       and pg_get_functiondef(pg_proc.oid) like '%Vendor is linked to financial expenses and cannot be deleted.%'
   ) as check_passed
+union all
+select
+  'guest gift cancellation RPCs exist and enforce pending ownership' as check_name,
+  exists (
+    select 1
+    from pg_proc
+    join pg_namespace
+      on pg_namespace.oid = pg_proc.pronamespace
+    where pg_namespace.nspname = 'public'
+      and pg_proc.proname = 'cancel_my_gift_reservation'
+      and pg_get_functiondef(pg_proc.oid) like '%reserved_guest_id = current_guest%'
+      and pg_get_functiondef(pg_proc.oid) like '%coalesce(payment_status, ''Pendente'') = ''Pendente''%'
+  )
+  and exists (
+    select 1
+    from pg_proc
+    join pg_namespace
+      on pg_namespace.oid = pg_proc.pronamespace
+    where pg_namespace.nspname = 'public'
+      and pg_proc.proname = 'cancel_my_gift_contribution'
+      and pg_get_functiondef(pg_proc.oid) like '%guest_id = current_guest%'
+      and pg_get_functiondef(pg_proc.oid) like '%coalesce(payment_status, ''Pendente'') = ''Pendente''%'
+  ) as check_passed
 ) as rebuild_checks
 order by check_passed asc, check_name asc;

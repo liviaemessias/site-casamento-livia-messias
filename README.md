@@ -2,7 +2,7 @@
 
 Site de casamento personalizado para centralizar informações do evento, RSVP, lista de presentes e administração dos noivos.
 
-Versão atual: **4.6**.
+Versão atual: **4.7**.
 
 ## Desenvolvimento
 
@@ -564,6 +564,10 @@ PixPayment.getQrCodeUrl(payload);
 
 - `docs/operations/captcha_turnstile_setup.md`: ativação, testes e rollback do Cloudflare Turnstile nos logins.
 - `docs/operations/smtp_email_notifications_setup.md`: configuração SMTP, Gmail, Outlook/Hotmail, deploy e testes das notificações por e-mail.
+- `docs/releases/release_v4.7.md`: notas da versão 4.7, com ajustes nos
+  logins, refinamentos nos modais de compra/pagamento da Lista de Presentes,
+  textos de presentes externos, "A consultar na loja" e cancelamento de reservas
+  pendentes pelo convidado.
 - `docs/releases/release_v4.6.md`: notas da versão 4.6, com integração entre
   RSVP e Mural de Recados, melhorias nos detalhes e ações da Lista de Presentes,
   modal rápido para ações de contribuições por cota, botão flutuante de
@@ -682,6 +686,9 @@ PixPayment.getQrCodeUrl(payload);
   `docs/migrations/current_guest_wall_message_status_verify.sql`: RPC e
   verificação para o RSVP identificar se o convidado logado já possui recado no
   Mural, sem expor o texto do recado.
+- `docs/migrations/guest_cancel_gift_reservation.sql` e
+  `docs/migrations/guest_cancel_gift_reservation_verify.sql`: RPCs para o
+  convidado cancelar reservas pendentes de presentes individuais ou cotas.
 - `docs/migrations/wall_message_email_notifications.sql`: migração incremental dos eventos de e-mail do Mural de Recados.
 - `docs/migrations/wall_message_email_notifications_verify.sql`: verificação incremental dos eventos de e-mail do Mural de Recados.
 - `docs/operations/supabase_data_cleanup_runbook.md`: limpeza segura dos dados de teste, preservando administrador e configurações.
@@ -718,6 +725,9 @@ Concluído:
 - Dica pública para completar o e-mail do RSVP antes de reservar presentes.
 - PIX com QR-Code e copia e cola.
 - Presentes por cotas com contribuições via PIX.
+- Cancelamento pelo convidado de reservas pendentes de presentes individuais e
+  cotas, com direcionamento aos noivos quando já houver informação ou
+  confirmação.
 - Cartão via checkout externo e compras externas.
 - Painel administrativo repaginado com navegação lateral desktop, navbar
   inferior mobile em estilo aplicativo, topbar dinâmica e páginas especializadas.
@@ -774,7 +784,7 @@ Concluído:
 - Integração entre mensagem de RSVP e Mural de Recados, usando RPC dedicada
   para verificar se o convite já possui recado sem expor dados desnecessários.
 - Tokens globais de CSS.
-- Identidade visual pública refinada nas releases v4.3, v4.5 e v4.6, com logo do
+- Identidade visual pública refinada nas releases v4.3, v4.5, v4.6 e v4.7, com logo do
   casal, heros com tipografia romântica, roxo principal atualizado, menu público
   agrupado/painel lateral, rodapés públicos com logo clicável e refinamentos
   mobile/desktop em Home, RSVP, Presentes, Nossa História, Pré-Wedding, Recados,

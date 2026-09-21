@@ -403,6 +403,88 @@
       </div>
     </div>
 
+    <!-- Modal Contato com os Noivos -->
+    <div class="modal confirmation-modal" id="contactCoupleModal">
+      <div class="modal-content confirmation-modal-content">
+        <button
+          type="button"
+          class="close-modal"
+          id="closeContactCoupleModal"
+          aria-label="Fechar"
+        >
+          ×
+        </button>
+
+        <div class="confirmation-icon contact-icon">💬</div>
+
+        <h2 id="contactCoupleTitle">Falar com os noivos?</h2>
+
+        <p
+          id="contactCoupleDescription"
+          class="modal-description"
+        ></p>
+
+        <div class="confirmation-actions">
+          <button
+            type="button"
+            id="backContactCouple"
+            class="gift-button secondary"
+          >
+            Voltar
+          </button>
+
+          <button
+            type="button"
+            id="confirmContactCouple"
+            class="gift-button"
+          >
+            Abrir WhatsApp
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Cancelamento de Reserva -->
+    <div class="modal confirmation-modal" id="cancelReservationModal">
+      <div class="modal-content confirmation-modal-content">
+        <button
+          type="button"
+          class="close-modal"
+          id="closeCancelReservationModal"
+          aria-label="Fechar"
+        >
+          ×
+        </button>
+
+        <div class="confirmation-icon cancel-icon">×</div>
+
+        <h2 id="cancelReservationTitle">Cancelar reserva?</h2>
+
+        <p
+          id="cancelReservationDescription"
+          class="modal-description"
+        ></p>
+
+        <div class="confirmation-actions">
+          <button
+            type="button"
+            id="backCancelReservation"
+            class="gift-button secondary"
+          >
+            Voltar
+          </button>
+
+          <button
+            type="button"
+            id="confirmCancelReservation"
+            class="gift-button danger"
+          >
+            Sim, cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+
     <footer class="footer">
       <a href="./index.html" class="footer-couple-logo-link" aria-label="Voltar para o início">
         <img
@@ -431,12 +513,22 @@
     <div id="giftEmailHint" class="gift-email-hint" hidden></div>
     <button
       type="button"
+      id="giftHelpFloatingButton"
+      class="gift-floating-button gift-help-floating-button active"
+      aria-label="Tirar dúvidas com os noivos sobre a lista de presentes"
+    >
+      <span class="gift-floating-icon" aria-hidden="true">?</span>
+      <span>Dúvidas sobre presentes?</span>
+    </button>
+
+    <button
+      type="button"
       id="pendingGiftsFloatingButton"
-      class="pending-gifts-floating-button"
+      class="gift-floating-button pending-gifts-floating-button"
       hidden
       aria-label="Ir para presentes com ações pendentes"
     >
-      <span class="pending-gifts-floating-icon" aria-hidden="true">!</span>
+      <span class="gift-floating-icon pending-gifts-floating-icon" aria-hidden="true">!</span>
       <span id="pendingGiftsFloatingText">Ações pendentes</span>
     </button>
     <div id="toast" class="toast"></div>

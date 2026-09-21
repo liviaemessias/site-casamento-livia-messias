@@ -315,7 +315,50 @@
       .eq("guest_id", window.currentGuest.id);
   }
 
+  async function cancelGiftReservation(giftId) {
+    if (isSecureMode()) {
+      return supabaseClient.rpc("cancel_my_gift_reservation", {
+        target_gift_id: giftId,
+      });
+    }
+
+    return supabaseClient
+      .from("gifts")
+      .update({
+        status: "Disponível",
+        reserved_guest_id: null,
+        reserved_name: null,
+        reservation_message: null,
+        reserved_at: null,
+        payment_status: null,
+        payment_reported_at: null,
+        selected_purchase_method: null,
+        selected_purchase_details: null,
+      })
+      .eq("id", giftId)
+      .eq("reserved_guest_id", window.currentGuest.id)
+      .eq("status", "Reservado")
+      .or("payment_status.is.null,payment_status.eq.Pendente");
+  }
+
+  async function cancelGiftContribution(contributionId) {
+    if (isSecureMode()) {
+      return supabaseClient.rpc("cancel_my_gift_contribution", {
+        target_contribution_id: contributionId,
+      });
+    }
+
+    return supabaseClient
+      .from("gift_contributions")
+      .delete()
+      .eq("id", contributionId)
+      .eq("guest_id", window.currentGuest.id)
+      .or("payment_status.is.null,payment_status.eq.Pendente");
+  }
+
   window.GuestData = {
+    cancelGiftContribution,
+    cancelGiftReservation,
     loadGiftCatalog,
     listApprovedWallMessages,
     loadCurrentWallMessage,

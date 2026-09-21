@@ -28,6 +28,7 @@ Exemplos recentes:
 - `wall_message_email_notifications.sql` + `wall_message_email_notifications_verify.sql`
 - `admin_nav_alerts.sql` + `admin_nav_alerts_verify.sql`
 - `admin_nav_financial_overdue_payments.sql` + `admin_nav_financial_overdue_payments_verify.sql`
+- `guest_cancel_gift_reservation.sql` + `guest_cancel_gift_reservation_verify.sql`
 - `wedding_vendors.sql` + `wedding_vendors_verify.sql`
 - `wedding_schedule.sql` + `wedding_schedule_verify.sql`
 - `rsvp_food_restriction_choice.sql` + `rsvp_food_restriction_choice_verify.sql`
@@ -82,6 +83,10 @@ texto do recado.
 Observação: `guest_save_the_date_sent.sql` adiciona o controle de envio do Save
 the Date em `guests.save_the_date_sent` e atualiza as RPCs administrativas de
 criação, edição e marcação de envio de convidados.
+
+Observação: `guest_cancel_gift_reservation.sql` adiciona RPCs para o convidado
+cancelar reservas pendentes de presentes individuais ou cotas. Reservas já
+informadas ou confirmadas não são canceladas diretamente pelo convidado.
 
 ## O Que Não Fazer
 
