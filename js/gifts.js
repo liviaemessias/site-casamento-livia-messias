@@ -488,6 +488,15 @@ function hasExternalOptions(gift) {
   );
 }
 
+function isCombinedExternalGift(gift) {
+  return (
+    !isQuotaGift(gift) &&
+    getPurchaseMode(gift) === "external" &&
+    !hasGiftPrice(gift) &&
+    !hasExternalOptions(gift)
+  );
+}
+
 function isQuotaGift(gift) {
   return gift.gift_type === "quota";
 }
@@ -718,11 +727,12 @@ function getCompletedActionLabel(action) {
 function getGiftPaymentModalCopy(method) {
   const isCouple = isCoupleInvite();
   const paymentFooter = isCouple
-    ? "Após realizarem o pagamento, informem para que possamos confirmar depois."
-    : "Após realizar o pagamento, informe para que possamos confirmar depois.";
+    ? "Após realizarem o pagamento, nos informem, clicando no botão acima."
+    : "Após realizar o pagamento, nos informe, clicando no botão acima.";
   const purchaseFooter = isCouple
-    ? "Após realizarem a compra, informem para que possamos confirmar depois."
-    : "Após realizar a compra, informe para que possamos confirmar depois.";
+    ? "Após realizarem a compra, nos informem, clicando no botão acima."
+    : "Após realizar a compra, nos informe, clicando no botão acima.";
+  const purchaseButtonLabel = getCompletedActionLabel("a compra");
   const descriptions = {
     pix: isCouple
       ? "Usem o QR-Code ou copiem o código PIX abaixo para realizar o pagamento."
@@ -731,11 +741,11 @@ function getGiftPaymentModalCopy(method) {
       ? "Cliquem no botão abaixo para abrir a página de pagamento com cartão."
       : "Clique no botão abaixo para abrir a página de pagamento com cartão.",
     online: isCouple
-      ? "Vejam abaixo as opções de lojas online para comprar este presente."
-      : "Veja abaixo as opções de lojas online para comprar este presente.",
+      ? `Selecionem uma das opções, comprem pelo site externo e depois retornem aqui para nos informar, clicando no botão "${purchaseButtonLabel}". Assim, ficamos sabendo.`
+      : `Selecione uma das opções, compre pelo site externo e depois retorne aqui para nos informar, clicando no botão "${purchaseButtonLabel}". Assim, ficamos sabendo.`,
     physical: isCouple
-      ? "Vejam abaixo as informações para comprar este presente presencialmente."
-      : "Veja abaixo as informações para comprar este presente presencialmente.",
+      ? `Vejam abaixo as informações das lojas físicas, realizem a compra presencialmente e depois retornem aqui para nos informar, clicando no botão "${purchaseButtonLabel}". Assim, ficamos sabendo.`
+      : `Veja abaixo as informações das lojas físicas, realize a compra presencialmente e depois retorne aqui para nos informar, clicando no botão "${purchaseButtonLabel}". Assim, ficamos sabendo.`,
     default: isCouple
       ? "Sigam as instruções abaixo para concluir o presente."
       : "Siga as instruções abaixo para concluir o presente.",
@@ -801,12 +811,20 @@ function renderGiftPrice(gift) {
     return `${formatCurrency(getQuotaValue(gift))} por cota`;
   }
 
+  if (canUseExternalPurchase(gift) && !hasGiftPrice(gift) && hasExternalOptions(gift)) {
+    return "A consultar na loja";
+  }
+
   return hasGiftPrice(gift) ? formatCurrency(gift.price) : "";
 }
 
 function renderGiftTotalPrice(gift) {
   if (isQuotaGift(gift)) {
     return `${formatCurrency(gift.price)} no total`;
+  }
+
+  if (canUseExternalPurchase(gift) && !hasGiftPrice(gift) && hasExternalOptions(gift)) {
+    return "A consultar na loja";
   }
 
   return hasGiftPrice(gift) ? formatCurrency(gift.price) : "";
@@ -1553,6 +1571,7 @@ function renderGiftCards(gifts) {
   return gifts
     .map((gift) => {
       const giftPrice = renderGiftPrice(gift);
+      const isCombinedGift = isCombinedExternalGift(gift);
       const safeImageUrl = gift.image_url?.trim()
         ? getSafeUrl(gift.image_url)
         : "";
@@ -1592,8 +1611,8 @@ function renderGiftCards(gifts) {
             </h3>
 
             <div class="gift-card-meta-row">
-              <div class="gift-price ${giftPrice ? "" : "is-combined"}">
-                ${giftPrice || "Presente combinado"}
+              <div class="gift-price ${giftPrice ? "" : isCombinedGift ? "is-combined" : "is-empty"}">
+                ${giftPrice || (isCombinedGift ? "Presente combinado" : "&nbsp;")}
               </div>
 
               ${renderGiftPaymentMethodIndicators(gift)}
@@ -1620,6 +1639,7 @@ function renderGiftCatalogDetails(gift) {
     ? renderQuotaInfo(gift)
     : "";
   const price = renderGiftTotalPrice(gift);
+  const isCombinedGift = isCombinedExternalGift(gift);
   const actions = isQuotaGift(gift)
     ? renderCompactQuotaActions(gift, { includeDetails: false })
     : renderCompactSingleGiftActions(gift, { includeDetails: false });
@@ -1646,7 +1666,9 @@ function renderGiftCatalogDetails(gift) {
               ${safeText(price)}
             </div>
           `
-          : '<div class="gift-price is-combined">Presente combinado</div>'
+          : isCombinedGift
+            ? '<div class="gift-price is-combined">Presente combinado</div>'
+            : ""
       }
 
       ${
@@ -2038,13 +2060,19 @@ function renderExternalPurchaseOptions(gift) {
   }
 
   externalPurchaseOptions.replaceChildren();
+  externalPurchaseSection?.classList.toggle(
+    "external-purchase-empty-section",
+    !options.length,
+  );
 
   if (!options.length) {
     const empty = document.createElement("p");
 
-    empty.className = "external-option-empty";
+    empty.className = "external-option-empty external-purchase-empty";
     empty.textContent =
-      "Nenhuma loja sugerida para esta forma de compra. A compra também pode ser feita em outro local.";
+      `Nenhuma loja sugerida para esta forma de compra. A compra pode ser feita em qualquer local ${
+        isCoupleInvite() ? "da preferência de vocês" : "de sua preferência"
+      }.`;
     externalPurchaseOptions.appendChild(empty);
 
     return;
@@ -2056,8 +2084,9 @@ function renderExternalPurchaseOptions(gift) {
     const content = document.createElement("span");
     const store = document.createElement("strong");
     const action = document.createElement("em");
+    const actionLabel = document.createElement("span");
     const button = document.createElement("button");
-    const actionText = isOnline ? "Comprar online" : "Selecionar loja física";
+    const actionText = isOnline ? "Ir para site" : "Selecionar loja física";
     const isSelected =
       gift.selected_purchase_details?.store === option.store &&
       gift.selected_purchase_method === option.type;
@@ -2069,7 +2098,35 @@ function renderExternalPurchaseOptions(gift) {
     icon.textContent = isOnline ? "🛒" : "🏬";
     content.className = "external-store-content";
     store.textContent = option.store || "Opção de compra";
-    action.textContent = isSelected ? "✓ Opção selecionada" : actionText;
+    actionLabel.textContent = isSelected ? "✓ Opção selecionada" : actionText;
+    action.appendChild(actionLabel);
+
+    if (isOnline && !isSelected) {
+      const externalIcon = document.createElement("span");
+      const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      const paths = [
+        "M14 5h5v5",
+        "M10 14 19 5",
+        "M19 14v4.5a.5.5 0 0 1-.5.5h-13a.5.5 0 0 1-.5-.5v-13a.5.5 0 0 1 .5-.5H10",
+      ];
+
+      externalIcon.className = "external-store-link-icon";
+      externalIcon.setAttribute("aria-hidden", "true");
+      svg.setAttribute("viewBox", "0 0 24 24");
+      svg.setAttribute("focusable", "false");
+      paths.forEach((pathDefinition) => {
+        const path = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "path",
+        );
+
+        path.setAttribute("d", pathDefinition);
+        svg.appendChild(path);
+      });
+      externalIcon.appendChild(svg);
+      action.appendChild(externalIcon);
+    }
+
     content.appendChild(store);
 
     if (option.notes) {
@@ -2305,6 +2362,7 @@ window.openPixModalForContribution = function (gift, contribution) {
 
   if (moneyPaymentSection) {
     setElementVisibility(moneyPaymentSection, true);
+    moneyPaymentSection.classList.remove("card-payment-standalone");
   }
 
   if (pixPaymentBlock) {
@@ -2362,6 +2420,10 @@ window.openPixModalForGift = function (gift) {
 
   if (moneyPaymentSection) {
     setElementVisibility(moneyPaymentSection, showMoney);
+    moneyPaymentSection.classList.toggle(
+      "card-payment-standalone",
+      showCard && !showPix,
+    );
   }
 
   if (pixPaymentBlock) {

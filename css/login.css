@@ -12,7 +12,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 104px 20px 28px;
   background: linear-gradient(
     135deg,
     var(--color-background) 0%,
@@ -21,6 +21,33 @@ body {
   font-family: var(--font-body);
   color: var(--color-text);
   overflow-x: hidden;
+}
+
+.navbar-light {
+  background: rgba(255, 255, 255, 0.76);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  box-shadow: var(--shadow-sm);
+}
+
+.navbar-light .logo {
+  color: var(--color-primary);
+  letter-spacing: 0.015em;
+  text-shadow: none;
+}
+
+.navbar-light .nav-links a {
+  color: var(--color-text);
+}
+
+.navbar-light .nav-links a:hover {
+  color: var(--color-primary);
+}
+
+.navbar-light .mobile-menu {
+  border-color: var(--color-primary-muted);
+  background: var(--color-surface-strong);
+  color: var(--color-primary);
 }
 
 .login-watermark-layer {
@@ -291,7 +318,7 @@ body {
   body {
     align-items: center;
     min-height: 100svh;
-    padding: 14px 14px;
+    padding: 88px 14px 18px;
   }
 
   .login-container {

@@ -21,6 +21,8 @@
   const feedback = document.getElementById("loginError");
   const reason = new URLSearchParams(window.location.search).get("reason");
 
+  window.PublicCommon?.setupNavbar();
+
   function getRedirectPage() {
     const requestedPage = new URLSearchParams(window.location.search).get(
       "redirect",

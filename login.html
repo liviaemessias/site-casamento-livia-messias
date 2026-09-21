@@ -11,9 +11,41 @@
       href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap"
       rel="stylesheet"
     />
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/public-nav.css" />
     <link rel="stylesheet" href="css/login.css" />
   </head>
   <body class="guest-login-page">
+    <header class="navbar navbar-light" id="navbar">
+      <div class="container nav-content">
+        <a href="index.html" class="logo" data-wedding-names>Livia & Messias</a>
+
+        <nav>
+          <ul class="nav-links" id="navLinks">
+            <li><a href="index.html">Início</a></li>
+            <li><a href="index.html#ceremony">Cerimônia</a></li>
+            <li><a href="index.html#reception">Recepção</a></li>
+            <li><a href="login.html?redirect=rsvp">RSVP</a></li>
+            <li><a href="login.html?redirect=gifts">Presentes</a></li>
+            <li><a href="our-story.html">Nossa História</a></li>
+            <li class="nav-dropdown">
+              <button type="button" class="nav-dropdown-toggle" aria-expanded="false">
+                Mais
+              </button>
+              <ul class="nav-dropdown-menu">
+                <li><a href="login.html?redirect=schedule">Programação</a></li>
+                <li><a href="photos.html">Pré-Wedding</a></li>
+                <li><a href="messages.html">Recados</a></li>
+                <li><a href="vendors.html">Fornecedores</a></li>
+              </ul>
+            </li>
+          </ul>
+        </nav>
+
+        <button type="button" class="mobile-menu" id="mobileMenu" aria-label="Abrir menu" aria-expanded="false">☰</button>
+      </div>
+    </header>
+
     <div class="login-container">
       <a class="login-logo-link" href="./index.html" aria-label="Voltar para o início">
         <img
@@ -52,6 +84,7 @@
     <script src="js/guest-auth-config.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/guest-auth.js"></script>
+    <script src="js/public-common.js"></script>
     <script src="js/reference-decorations.js"></script>
     <script src="js/login.js"></script>
   </body>

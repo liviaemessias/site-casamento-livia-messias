@@ -2,6 +2,8 @@ const form = document.getElementById("loginForm");
 const errorDiv = document.getElementById("loginError");
 const redirect = GuestAuth.getRedirectPage();
 
+window.PublicCommon?.setupNavbar();
+
 CaptchaProtection.initialize("guestCaptcha").catch((error) => {
   console.error(error);
   errorDiv.textContent =
