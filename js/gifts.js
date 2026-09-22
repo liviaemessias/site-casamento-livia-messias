@@ -57,6 +57,7 @@ let selectedContribution = null;
 let lastGiftCatalogLoadAt = 0;
 let cachedGiftCatalog = [];
 let currentExternalPurchaseOptions = [];
+let currentRSVPHasValidEmail = false;
 const { escapeAttribute, getSafeUrl, replaceSafeContent, safeText } =
   SecurityUtils;
 
@@ -237,13 +238,64 @@ giftHelpFloatingButton?.addEventListener("click", () => {
 });
 
 /* Toast */
-function showToast(message, duration = 3000) {
+let toastTimeout = null;
+let toastSequenceTimers = [];
+
+function clearToastSequence() {
+  toastSequenceTimers.forEach((timer) => clearTimeout(timer));
+  toastSequenceTimers = [];
+}
+
+function displayToast(message, duration = 3000) {
+  if (toastTimeout) {
+    clearTimeout(toastTimeout);
+  }
+
   toast.textContent = message;
   toast.classList.add("show");
 
-  setTimeout(() => {
+  toastTimeout = setTimeout(() => {
     toast.classList.remove("show");
+    toastTimeout = null;
   }, duration);
+}
+
+function showToast(message, duration = 3000) {
+  clearToastSequence();
+  displayToast(message, duration);
+}
+
+function showToastSequence(items, pause = 300) {
+  clearToastSequence();
+
+  let delay = 0;
+
+  items.forEach(({ message, duration = 3000 }) => {
+    const timer = setTimeout(() => {
+      displayToast(message, duration);
+    }, delay);
+
+    toastSequenceTimers.push(timer);
+    delay += duration + pause;
+  });
+}
+
+function getEmailSpamHint() {
+  return guest?.invite_type === "couple"
+    ? "Enviamos um e-mail para vocês. Se ele não aparecer na caixa de entrada, confiram também o Spam ou Lixo eletrônico 💜"
+    : "Enviamos um e-mail para você. Se ele não aparecer na caixa de entrada, confira também o Spam ou Lixo eletrônico 💜";
+}
+
+function showEmailNotificationToast(message, baseDuration = 3000) {
+  if (!currentRSVPHasValidEmail) {
+    showToast(message, baseDuration);
+    return;
+  }
+
+  showToastSequence([
+    { duration: baseDuration, message },
+    { duration: 5500, message: getEmailSpamHint() },
+  ]);
 }
 
 /* Settings */
@@ -393,7 +445,7 @@ function showGiftEmailHint() {
 }
 
 async function updateGiftEmailHint() {
-  if (!giftEmailHint || !guest?.id || wasGiftEmailHintDismissed()) {
+  if (!guest?.id) {
     hideGiftEmailHint();
     return;
   }
@@ -402,11 +454,14 @@ async function updateGiftEmailHint() {
 
   if (error) {
     console.error(error);
+    currentRSVPHasValidEmail = false;
     hideGiftEmailHint();
     return;
   }
 
-  if (hasValidRSVPEmail(data?.email)) {
+  currentRSVPHasValidEmail = hasValidRSVPEmail(data?.email);
+
+  if (!giftEmailHint || currentRSVPHasValidEmail || wasGiftEmailHintDismissed()) {
     hideGiftEmailHint();
     return;
   }
@@ -2904,7 +2959,7 @@ async function completeReservation(reservationData) {
 
     closeReservationConfirmationModal();
     reserveModal.classList.remove("active");
-    showToast("💜 Cotas reservadas!");
+    showEmailNotificationToast("💜 Cotas reservadas!");
     reserveForm.reset();
 
     await loadGifts();
@@ -2923,7 +2978,7 @@ async function completeReservation(reservationData) {
   closeReservationConfirmationModal();
   reserveModal.classList.remove("active");
 
-  showToast("💜 Presente reservado!");
+  showEmailNotificationToast("💜 Presente reservado!");
 
   reserveForm.reset();
 
@@ -3021,7 +3076,7 @@ async function reportContributionPayment(gift, contribution) {
     return false;
   }
 
-  showToast("💜 Pagamento informado com sucesso!");
+  showEmailNotificationToast("💜 Pagamento informado com sucesso!");
 
   if (!GuestAuth.isSecureMode()) {
     await syncQuotaGiftStatus(gift.id);
@@ -3058,7 +3113,7 @@ window.markPaymentAsDone = async function (gift) {
     return false;
   }
 
-  showToast(`💜 ${informedAction} com sucesso!`);
+  showEmailNotificationToast(`💜 ${informedAction} com sucesso!`);
   GuestData.notifyPendingNotifications?.(
     "gift_payment_reported",
     gift.id,
@@ -3191,7 +3246,7 @@ async function cancelPendingReservation(gift, contribution = null) {
   pixModal.classList.remove("active");
   closeGiftCatalogDetailsModal();
 
-  showToast(
+  showEmailNotificationToast(
     contribution
       ? "💜 Cota cancelada. Ela voltou a ficar disponível."
       : "💜 Reserva cancelada. O presente voltou a ficar disponível.",

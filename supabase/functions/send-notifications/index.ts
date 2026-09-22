@@ -669,7 +669,10 @@ function renderEmailShell(title: string, body: string) {
       <div style="max-width:640px;margin:0 auto;background:#ffffff;border-radius:12px;padding:24px;border:1px solid #eadff3;">
         <h1 style="margin:0 0 16px;color:${EMAIL_BRAND_COLOR};font-size:24px;line-height:1.25;">${escapeHtml(title)}</h1>
         ${body}
-        <p style="margin:24px 0 0;color:#6b6473;font-size:13px;">Livia & Messias 💜❤️</p>
+        <p style="margin:24px 0 0;padding-top:14px;border-top:1px solid #eadff3;color:#7d7583;font-size:12px;line-height:1.5;">
+          Se este e-mail tiver ido para o Spam ou Lixo eletrônico, marque-o como confiável para receber nossos próximos avisos.
+        </p>
+        <p style="margin:10px 0 0;color:#6b6473;font-size:13px;">Livia & Messias 💜❤️</p>
       </div>
     </div>
   `;

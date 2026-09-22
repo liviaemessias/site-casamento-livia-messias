@@ -485,14 +485,77 @@ if (guestCountGroup) {
    Toast
 ========================= */
 
-function showToast(message) {
+let toastTimeout = null;
+let toastSequenceTimers = [];
+
+function clearToastSequence() {
+  toastSequenceTimers.forEach((timer) => clearTimeout(timer));
+  toastSequenceTimers = [];
+}
+
+function displayToast(message, duration = 4000) {
+  if (toastTimeout) {
+    clearTimeout(toastTimeout);
+  }
+
   toastMessage.innerText = message;
 
   toast.classList.add("show");
 
-  setTimeout(() => {
+  toastTimeout = setTimeout(() => {
     toast.classList.remove("show");
-  }, 4000);
+    toastTimeout = null;
+  }, duration);
+}
+
+function showToast(message, duration = 4000) {
+  clearToastSequence();
+  displayToast(message, duration);
+}
+
+function showToastSequence(items, pause = 300) {
+  clearToastSequence();
+
+  let delay = 0;
+
+  items.forEach(({ message, duration = 4000 }) => {
+    const timer = setTimeout(() => {
+      displayToast(message, duration);
+    }, delay);
+
+    toastSequenceTimers.push(timer);
+    delay += duration + pause;
+  });
+}
+
+function isValidEmailForNotification(email) {
+  if (!email || typeof email !== "string") {
+    return false;
+  }
+
+  const input = document.createElement("input");
+  input.type = "email";
+  input.required = true;
+  input.value = email.trim();
+  return input.checkValidity();
+}
+
+function getEmailSpamHint() {
+  return isCoupleInvite
+    ? "Enviamos um e-mail de confirmação para vocês. Se ele não aparecer na caixa de entrada, confiram também o Spam ou Lixo eletrônico 💜"
+    : "Enviamos um e-mail de confirmação para você. Se ele não aparecer na caixa de entrada, confira também o Spam ou Lixo eletrônico 💜";
+}
+
+function showEmailNotificationToast(message, email) {
+  if (!isValidEmailForNotification(email)) {
+    showToast(message);
+    return;
+  }
+
+  showToastSequence([
+    { duration: 4000, message },
+    { duration: 5500, message: getEmailSpamHint() },
+  ]);
 }
 
 function getCoupleWhatsAppNumber() {
@@ -1425,23 +1488,16 @@ form.addEventListener("submit", async (e) => {
 
     button.innerText = "Atualizar confirmação";
 
-    if (wallMessageShareFailed) {
-      showToast(
-        "❤️ RSVP salvo! Não foi possível enviar a mensagem para o mural agora.",
-      );
-    } else if (wallMessageShared) {
-      showToast(
-        isCoupleInvite
+    const successMessage = wallMessageShareFailed
+      ? "❤️ RSVP salvo! Não foi possível enviar a mensagem para o mural agora."
+      : wallMessageShared
+        ? isCoupleInvite
           ? "❤️ RSVP salvo e recado enviado para aprovação!"
-          : "❤️ RSVP salvo e seu recado foi enviado para aprovação!",
-      );
-    } else {
-      showToast(
-        wasEditing
+          : "❤️ RSVP salvo e seu recado foi enviado para aprovação!"
+        : wasEditing
           ? "❤️ Confirmação atualizada com sucesso!"
-          : "❤️ Presença confirmada com sucesso!",
-      );
-    }
+          : "❤️ Presença confirmada com sucesso!";
+    showEmailNotificationToast(successMessage, data.email);
 
     GuestData.notifyRSVP().catch((notificationError) => {
       console.warn("Não foi possível disparar a notificação do RSVP.", notificationError);

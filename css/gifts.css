@@ -1872,9 +1872,11 @@
   color: var(--color-inverse);
   padding: 1rem 1.5rem;
   border-radius: var(--radius-lg);
+  max-width: min(360px, calc(100vw - 2rem));
   opacity: 0;
   pointer-events: none;
   transition: 0.3s ease;
+  white-space: pre-line;
 }
 
 .toast.show {

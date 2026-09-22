@@ -41,6 +41,12 @@ logins e no controle pelo convidado das reservas ainda pendentes.
 - O botão abre o modal de contato com texto adaptado para convite individual ou
   de casal e, quando houver WhatsApp configurado, prepara uma mensagem de
   dúvida sobre a Lista de Presentes.
+- As ações de presentes que disparam e-mail passaram a exibir uma orientação
+  discreta para conferir Spam ou Lixo eletrônico quando o convite possui e-mail
+  válido no RSVP.
+- O rodapé dos e-mails transacionais passou a incluir uma orientação discreta
+  para marcar o e-mail como confiável caso ele tenha ido para Spam ou Lixo
+  eletrônico.
 
 ### RSVP Público
 
@@ -51,6 +57,9 @@ logins e no controle pelo convidado das reservas ainda pendentes.
   acompanhantes, crianças ou restrições alimentares.
 - O texto do modal e a mensagem pronta do WhatsApp respeitam convite individual
   ou de casal.
+- Após salvar o RSVP com e-mail válido, o toast de sucesso passou a orientar o
+  convidado a conferir Spam ou Lixo eletrônico caso não encontre o e-mail de
+  confirmação.
 
 ### Cancelamento De Reservas Pelo Convidado
 
