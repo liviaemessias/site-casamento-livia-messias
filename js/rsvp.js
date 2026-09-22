@@ -33,7 +33,14 @@ const shareRsvpMessageToWallLabel = document.getElementById(
   "shareRsvpMessageToWallLabel",
 );
 const rsvpWallMessageHelper = document.getElementById("rsvpWallMessageHelper");
+const rsvpHelpFloatingButton = document.getElementById("rsvpHelpFloatingButton");
+const rsvpHelpModal = document.getElementById("rsvpHelpModal");
+const rsvpHelpModalDescription = document.getElementById(
+  "rsvpHelpModalDescription",
+);
+const confirmRsvpHelpModal = document.getElementById("confirmRsvpHelpModal");
 const RSVP_WALL_MESSAGE_MAX_LENGTH = 800;
+let settings = null;
 
 const knownEmailDomains = [
   "gmail.com",
@@ -486,6 +493,63 @@ function showToast(message) {
   setTimeout(() => {
     toast.classList.remove("show");
   }, 4000);
+}
+
+function getCoupleWhatsAppNumber() {
+  return String(settings?.whatsapp_number || "").replace(/\D/g, "");
+}
+
+function getRsvpHelpMessage() {
+  return isCoupleInvite
+    ? "Olá! Gostaríamos de tirar uma dúvida sobre o RSVP do casamento."
+    : "Olá! Gostaria de tirar uma dúvida sobre o RSVP do casamento.";
+}
+
+function closeRsvpHelpModal() {
+  rsvpHelpModal?.classList.remove("active");
+}
+
+function openRsvpHelpModal() {
+  const hasWhatsAppNumber = Boolean(getCoupleWhatsAppNumber());
+
+  if (rsvpHelpModalDescription) {
+    rsvpHelpModalDescription.textContent = hasWhatsAppNumber
+      ? `Se ${
+          isCoupleInvite ? "vocês tiverem" : "você tiver"
+        } alguma dúvida sobre confirmação de presença, acompanhantes, crianças ou restrições alimentares, ${
+          isCoupleInvite ? "podem" : "pode"
+        } falar diretamente com os noivos. Ao continuar, abriremos o WhatsApp com uma mensagem pronta para ${
+          isCoupleInvite ? "vocês enviarem" : "você enviar"
+        }.`
+      : `Se ${
+          isCoupleInvite ? "vocês tiverem" : "você tiver"
+        } alguma dúvida sobre confirmação de presença, acompanhantes, crianças ou restrições alimentares, ${
+          isCoupleInvite ? "falem" : "fale"
+        } diretamente com os noivos.`;
+  }
+
+  if (confirmRsvpHelpModal) {
+    confirmRsvpHelpModal.textContent = hasWhatsAppNumber
+      ? "Abrir WhatsApp"
+      : "Entendi";
+  }
+
+  rsvpHelpModal?.classList.add("active");
+}
+
+function contactCoupleAboutRsvp() {
+  const whatsappNumber = getCoupleWhatsAppNumber();
+
+  if (!whatsappNumber) {
+    closeRsvpHelpModal();
+    return;
+  }
+
+  const url = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
+    getRsvpHelpMessage(),
+  )}`;
+  window.open(url, "_blank", "noopener,noreferrer");
+  closeRsvpHelpModal();
 }
 
 /* =========================
@@ -965,9 +1029,42 @@ function setupCoupleInvite() {
 
 setupCoupleInvite();
 
+rsvpHelpFloatingButton?.addEventListener("click", openRsvpHelpModal);
+confirmRsvpHelpModal?.addEventListener("click", contactCoupleAboutRsvp);
+document
+  .getElementById("closeRsvpHelpModal")
+  ?.addEventListener("click", closeRsvpHelpModal);
+document
+  .getElementById("backRsvpHelpModal")
+  ?.addEventListener("click", closeRsvpHelpModal);
+
+rsvpHelpModal?.addEventListener("click", (event) => {
+  if (event.target === rsvpHelpModal) {
+    closeRsvpHelpModal();
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    closeRsvpHelpModal();
+  }
+});
+
 /* =========================
    Load Existing RSVP
 ========================= */
+
+async function loadSettings() {
+  const { data, error } = await GuestData.loadSettings();
+
+  if (error) {
+    console.error(error);
+    settings = {};
+    return;
+  }
+
+  settings = data || {};
+}
 
 async function loadExistingRSVP() {
   const { data, error } = await GuestData.loadRSVP(guest.id);
@@ -1395,5 +1492,10 @@ if (phoneInput) {
    Init
 ========================= */
 
-loadExistingRSVP();
-loadCurrentWallMessageStatus();
+async function init() {
+  await loadSettings();
+  await loadExistingRSVP();
+  await loadCurrentWallMessageStatus();
+}
+
+init();

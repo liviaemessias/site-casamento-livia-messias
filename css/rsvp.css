@@ -809,6 +809,218 @@ textarea {
 }
 
 /* =========================
+   Ajuda RSVP
+========================= */
+
+.rsvp-help-floating-button {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.35rem;
+  z-index: 1100;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  max-width: min(280px, calc(100vw - 2rem));
+  min-height: 46px;
+  padding: 0.55rem 0.78rem 0.55rem 0.58rem;
+  border: 1px solid rgba(var(--color-primary-rgb), 0.16);
+  border-radius: var(--radius-pill);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(250, 247, 252, 0.94));
+  color: var(--color-primary);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 750;
+  box-shadow: 0 16px 38px rgba(35, 24, 42, 0.16);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition:
+    border-color 0.24s ease,
+    box-shadow 0.24s ease,
+    transform 0.24s ease;
+}
+
+.rsvp-help-floating-button:hover,
+.rsvp-help-floating-button:focus-visible {
+  border-color: rgba(var(--color-primary-rgb), 0.28);
+  outline: none;
+  box-shadow:
+    0 0 0 3px rgba(var(--color-primary-rgb), 0.1),
+    0 18px 44px rgba(35, 24, 42, 0.18);
+  transform: translateY(-2px);
+}
+
+.rsvp-help-floating-icon {
+  display: inline-grid;
+  width: 1.8rem;
+  height: 1.8rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(var(--color-primary-rgb), 0.16);
+  border-radius: 50%;
+  background: var(--color-primary-extra-faint);
+  color: var(--color-primary);
+  font-size: 0.92rem;
+  font-weight: 850;
+  line-height: 1;
+}
+
+.rsvp-help-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 2100;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  overflow-y: auto;
+  background: rgba(35, 24, 42, 0.5);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+.rsvp-help-modal.active {
+  display: flex;
+}
+
+.rsvp-help-modal-content {
+  position: relative;
+  width: 100%;
+  max-width: 460px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border: 1px solid rgba(var(--color-primary-rgb), 0.12);
+  border-radius: var(--radius-3xl);
+  padding: 2rem;
+  background:
+    linear-gradient(180deg, rgba(var(--color-primary-rgb), 0.035), transparent 120px),
+    #ffffff;
+  box-shadow: 0 24px 70px rgba(28, 18, 34, 0.24);
+  scrollbar-gutter: stable;
+  text-align: center;
+}
+
+.rsvp-help-modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid rgba(var(--color-primary-rgb), 0.12);
+  border-radius: 50%;
+  background: #faf8fc;
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: 1.45rem;
+  line-height: 1;
+  z-index: 10;
+  transition:
+    border-color 0.24s ease,
+    background 0.24s ease,
+    color 0.24s ease,
+    transform 0.24s ease;
+}
+
+.rsvp-help-modal-close:hover,
+.rsvp-help-modal-close:focus-visible {
+  border-color: rgba(var(--color-primary-rgb), 0.22);
+  outline: none;
+  background: var(--color-primary-extra-faint);
+  color: var(--color-primary);
+  transform: translateY(-1px);
+}
+
+.rsvp-help-modal-icon {
+  display: inline-grid;
+  width: 3.5rem;
+  height: 3.5rem;
+  margin: 0 auto 1rem;
+  place-items: center;
+  border: 1px solid rgba(var(--color-primary-rgb), 0.16);
+  border-radius: 50%;
+  background: var(--color-primary-extra-faint);
+  color: var(--color-primary);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.rsvp-help-modal h2 {
+  max-width: calc(100% - 48px);
+  margin: 0 auto 0.75rem;
+  color: var(--color-primary);
+  font-family: var(--font-heading);
+  font-size: 2rem;
+  line-height: 1.05;
+}
+
+.rsvp-help-modal p {
+  margin: 0;
+  color: var(--color-text-muted);
+  line-height: 1.6;
+}
+
+.rsvp-help-modal-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem;
+  margin-top: 1.35rem;
+}
+
+.rsvp-help-secondary-button,
+.rsvp-help-primary-button {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 0;
+  padding: 0.85rem 1rem;
+  border: none;
+  border-radius: var(--radius-xl);
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
+  transition:
+    background 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease,
+    color 0.3s ease,
+    transform 0.3s ease;
+}
+
+.rsvp-help-secondary-button {
+  border: 1px solid var(--color-primary-muted);
+  background: var(--color-surface-strong);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.rsvp-help-secondary-button:hover,
+.rsvp-help-secondary-button:focus-visible {
+  border-color: var(--color-primary-light);
+  outline: none;
+  background: var(--color-primary-extra-faint);
+  color: var(--color-primary-hover);
+  box-shadow: var(--shadow-interactive);
+  transform: translateY(-1px);
+}
+
+.rsvp-help-primary-button {
+  border: 1px solid var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-inverse);
+  box-shadow: var(--shadow-primary);
+}
+
+.rsvp-help-primary-button:hover,
+.rsvp-help-primary-button:focus-visible {
+  outline: none;
+  background: var(--color-primary-hover);
+  box-shadow: var(--shadow-primary-strong);
+  transform: translateY(-1px);
+}
+
+/* =========================
    Toast
 ========================= */
 
@@ -843,6 +1055,59 @@ textarea {
 /* Mobile */
 
 @media (max-width: 768px) {
+  .rsvp-help-floating-button {
+    right: 0.85rem;
+    bottom: 0.9rem;
+    max-width: calc(100vw - 1.7rem);
+    min-height: 42px;
+    padding: 0.48rem 0.66rem 0.48rem 0.48rem;
+    font-size: 0.76rem;
+  }
+
+  .rsvp-help-floating-icon {
+    width: 1.62rem;
+    height: 1.62rem;
+    font-size: 0.82rem;
+  }
+
+  .rsvp-help-modal {
+    align-items: flex-end;
+    padding: 0.75rem 0 0;
+  }
+
+  .rsvp-help-modal-content {
+    width: 100%;
+    max-width: none;
+    max-height: 92dvh;
+    margin: 0;
+    padding: 1.25rem 1rem max(1.25rem, env(safe-area-inset-bottom));
+    overscroll-behavior: contain;
+    border-right: none;
+    border-bottom: none;
+    border-left: none;
+    border-radius: 14px 14px 0 0;
+    background: #ffffff;
+    box-shadow: 0 -18px 50px rgba(28, 18, 34, 0.2);
+    scrollbar-gutter: auto;
+  }
+
+  .rsvp-help-modal-close {
+    top: 0.9rem;
+    right: 0.9rem;
+    width: 34px;
+    height: 34px;
+    background: #f7f3f9;
+  }
+
+  .rsvp-help-modal h2 {
+    font-size: 1.7rem;
+    line-height: 1.1;
+  }
+
+  .rsvp-help-modal-actions {
+    gap: 0.55rem;
+  }
+
   .toast {
     left: 20px;
     right: 20px;
@@ -851,6 +1116,12 @@ textarea {
 
   .toast-content {
     min-width: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .rsvp-help-modal-actions {
+    grid-template-columns: 1fr;
   }
 }
 

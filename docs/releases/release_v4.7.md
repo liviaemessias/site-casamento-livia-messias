@@ -42,6 +42,16 @@ logins e no controle pelo convidado das reservas ainda pendentes.
   de casal e, quando houver WhatsApp configurado, prepara uma mensagem de
   dúvida sobre a Lista de Presentes.
 
+### RSVP Público
+
+- A página pública de RSVP recebeu um botão flutuante de dúvidas para contato
+  com os noivos via WhatsApp.
+- O botão abre um modal explicativo antes de direcionar o convidado, deixando
+  claro que o contato serve para dúvidas sobre confirmação de presença,
+  acompanhantes, crianças ou restrições alimentares.
+- O texto do modal e a mensagem pronta do WhatsApp respeitam convite individual
+  ou de casal.
+
 ### Cancelamento De Reservas Pelo Convidado
 
 - Convidados podem cancelar reservas pendentes diretamente na Lista de

@@ -222,6 +222,56 @@
       </p>
     </footer>
 
+    <div class="modal rsvp-help-modal" id="rsvpHelpModal">
+      <div class="rsvp-help-modal-content">
+        <button
+          type="button"
+          class="rsvp-help-modal-close"
+          id="closeRsvpHelpModal"
+          aria-label="Fechar"
+        >
+          ×
+        </button>
+
+        <div class="rsvp-help-modal-icon" aria-hidden="true">?</div>
+
+        <h2>Dúvidas sobre o RSVP?</h2>
+
+        <p id="rsvpHelpModalDescription">
+          Se tiver alguma dúvida sobre confirmação de presença, acompanhantes,
+          crianças ou restrições alimentares, fale diretamente com os noivos.
+        </p>
+
+        <div class="rsvp-help-modal-actions">
+          <button
+            type="button"
+            class="rsvp-help-secondary-button"
+            id="backRsvpHelpModal"
+          >
+            Voltar
+          </button>
+
+          <button
+            type="button"
+            class="rsvp-help-primary-button"
+            id="confirmRsvpHelpModal"
+          >
+            Abrir WhatsApp
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <button
+      type="button"
+      id="rsvpHelpFloatingButton"
+      class="rsvp-help-floating-button"
+      aria-label="Tirar dúvidas com os noivos sobre o RSVP"
+    >
+      <span class="rsvp-help-floating-icon" aria-hidden="true">?</span>
+      <span>Dúvidas sobre o RSVP?</span>
+    </button>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
     <script src="./js/supabase.js"></script>
     <script src="./js/event-config.js"></script>
