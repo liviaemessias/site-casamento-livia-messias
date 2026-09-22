@@ -2822,14 +2822,17 @@
     grid-row: auto;
   }
 
-  .gift-catalog-details-image {
+  .gift-catalog-details-image,
+  .gift-catalog-details.has-image .gift-catalog-details-image {
     height: auto;
     max-height: 150px;
     min-height: 0;
+    aspect-ratio: 16 / 9;
   }
 
   .gift-catalog-details.is-quota.has-image .gift-catalog-details-image {
     height: auto;
+    max-height: 150px;
     min-height: 0;
     aspect-ratio: 16 / 9;
   }
