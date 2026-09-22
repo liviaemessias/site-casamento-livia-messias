@@ -70,26 +70,40 @@ logins e no controle pelo convidado das reservas ainda pendentes.
   cotas voltam a ficar disponíveis.
 - A experiência também foi integrada à seção "Presentes para concluir", aos
   cards públicos e ao modal de detalhes do presente.
+- O cancelamento de reservas pendentes passou a enfileirar notificações
+  transacionais para admin e convidado.
+- Os novos eventos `gift_reservation_cancelled` e
+  `gift_contribution_cancelled` são processados pela Edge Function
+  `send-notifications`, seguindo o mesmo padrão dos demais e-mails de presentes.
+- Os e-mails de cancelamento mantêm a identidade visual existente, títulos com
+  coração e textos com concordância para convite individual ou de casal.
+- O e-mail de cancelamento de presente individual preserva a forma de presentear
+  selecionada pelo convidado antes de limpar a reserva.
 
 ## Banco De Dados, Rebuild E Scripts
 
 - Adicionada a migração `docs/migrations/guest_cancel_gift_reservation.sql` com
   as RPCs `cancel_my_gift_reservation(...)` e
   `cancel_my_gift_contribution(...)`.
+- A mesma migração adiciona as preferências dos eventos de cancelamento em
+  `notification_preferences`, com envio automático para admin e convidado.
 - Adicionado o verificador
   `docs/migrations/guest_cancel_gift_reservation_verify.sql`.
 - O rebuild completo foi atualizado para criar projetos novos já com as RPCs de
-  cancelamento de reservas pendentes de presentes.
+  cancelamento de reservas pendentes de presentes e suas notificações.
 - A verificação final do rebuild foi atualizada para validar a presença das RPCs
-  de cancelamento e as regras principais de propriedade e status pendente.
+  de cancelamento, as regras principais de propriedade e status pendente e as
+  preferências de notificação dos novos eventos.
 
 ## Observações De Fechamento
 
 - Para projetos existentes, rodar
   `docs/migrations/guest_cancel_gift_reservation.sql` e, em seguida,
   `docs/migrations/guest_cancel_gift_reservation_verify.sql`.
+- A Edge Function `send-notifications` precisa ser redeployada para aplicar os
+  novos títulos e textos dos e-mails de cancelamento.
 - Para projetos novos criados a partir do rebuild completo, as RPCs de
-  cancelamento de presentes já entram no setup principal.
+  cancelamento de presentes e suas notificações já entram no setup principal.
 - O cancelamento direto é propositalmente restrito ao estado pendente. Qualquer
   ajuste após compra/pagamento informado ou confirmado deve ser tratado com os
   noivos.

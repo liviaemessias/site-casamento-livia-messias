@@ -10,6 +10,8 @@ eventos relevantes de presentes/cotas e do Mural de Recados:
 - RSVP manual feito no painel administrativo não dispara e-mail automaticamente.
 - seleção de forma de pagamento, loja ou método de compra não dispara e-mail
   por si só.
+- cancelamentos de reservas ou cotas pendentes feitos pelo convidado disparam
+  e-mails transacionais para admin e convidado, quando houver e-mail válido.
 - recado enviado/editado avisa o admin; recado aprovado ou respondido avisa o
   convidado quando houver e-mail válido no RSVP.
 

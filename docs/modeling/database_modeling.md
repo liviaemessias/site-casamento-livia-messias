@@ -413,9 +413,11 @@ Campos principais:
 
 - `event_type`: tipo do evento, como `rsvp_saved`, `gift_reserved`,
   `gift_payment_reported`, `gift_purchase_confirmed`,
-  `gift_reservation_released`, `gift_contribution_reserved`,
+  `gift_reservation_released`, `gift_reservation_cancelled`,
+  `gift_contribution_reserved`,
   `gift_contribution_payment_reported`, `gift_contribution_confirmed` ou
-  `gift_contribution_released`. Lembretes manuais usam
+  `gift_contribution_released`. Cancelamentos de cotas pendentes usam
+  `gift_contribution_cancelled`. Lembretes manuais usam
   `gift_reservation_reminder` e `gift_contribution_reminder`. Recados usam
   `wall_message_submitted`, `wall_message_approved` e
   `wall_message_replied`.

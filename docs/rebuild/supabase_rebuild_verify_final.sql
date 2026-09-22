@@ -1519,6 +1519,39 @@ select
       and pg_proc.proname = 'cancel_my_gift_contribution'
       and pg_get_functiondef(pg_proc.oid) like '%guest_id = current_guest%'
       and pg_get_functiondef(pg_proc.oid) like '%coalesce(payment_status, ''Pendente'') = ''Pendente''%'
+  )
+  and exists (
+    select 1
+    from pg_proc
+    join pg_namespace
+      on pg_namespace.oid = pg_proc.pronamespace
+    where pg_namespace.nspname = 'public'
+      and pg_proc.proname = 'cancel_my_gift_reservation'
+      and pg_get_functiondef(pg_proc.oid) like '%gift_reservation_cancelled%'
+      and pg_get_functiondef(pg_proc.oid) like '%''purchase_method'', cancelled_gift.selected_purchase_method%'
+  )
+  and exists (
+    select 1
+    from pg_proc
+    join pg_namespace
+      on pg_namespace.oid = pg_proc.pronamespace
+    where pg_namespace.nspname = 'public'
+      and pg_proc.proname = 'cancel_my_gift_contribution'
+      and pg_get_functiondef(pg_proc.oid) like '%gift_contribution_cancelled%'
+  ) as check_passed
+union all
+select
+  'guest gift cancellation notification preferences exist' as check_name,
+  (
+    select count(*) = 2
+    from public.notification_preferences
+    where event_type in (
+      'gift_reservation_cancelled',
+      'gift_contribution_cancelled'
+    )
+    and automatic_enabled is true
+    and admin_enabled is true
+    and guest_enabled is true
   ) as check_passed
 ) as rebuild_checks
 order by check_passed asc, check_name asc;

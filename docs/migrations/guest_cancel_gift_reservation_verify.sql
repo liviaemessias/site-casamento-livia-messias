@@ -22,3 +22,20 @@ where oid in (
   'public.cancel_my_gift_contribution(uuid)'::regprocedure
 )
 and prosecdef is true;
+
+select
+  'guest reservation cancellation keeps selected purchase method in notification payload' as check_name,
+  pg_get_functiondef('public.cancel_my_gift_reservation(uuid)'::regprocedure)
+    like '%''purchase_method'', cancelled_gift.selected_purchase_method%' as check_passed;
+
+select
+  'guest cancellation notification preferences exist' as check_name,
+  count(*) = 2 as check_passed
+from public.notification_preferences
+where event_type in (
+  'gift_reservation_cancelled',
+  'gift_contribution_cancelled'
+)
+and automatic_enabled is true
+and admin_enabled is true
+and guest_enabled is true;

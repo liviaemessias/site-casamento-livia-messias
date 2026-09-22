@@ -85,8 +85,11 @@ the Date em `guests.save_the_date_sent` e atualiza as RPCs administrativas de
 criação, edição e marcação de envio de convidados.
 
 Observação: `guest_cancel_gift_reservation.sql` adiciona RPCs para o convidado
-cancelar reservas pendentes de presentes individuais ou cotas. Reservas já
-informadas ou confirmadas não são canceladas diretamente pelo convidado.
+cancelar reservas pendentes de presentes individuais ou cotas e também cadastra
+os eventos transacionais `gift_reservation_cancelled` e
+`gift_contribution_cancelled` para envio pela Edge Function
+`send-notifications`. Reservas já informadas ou confirmadas não são canceladas
+diretamente pelo convidado.
 
 ## O Que Não Fazer
 

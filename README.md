@@ -378,10 +378,11 @@ parcelamento deve ser feito pelo aplicativo escolhido pelo convidado. No
 desktop, o QR-Code e o PIX Copia e Cola ficam lado a lado para aproveitar melhor
 o espaço.
 
-Reservas, pagamentos informados, confirmações administrativas e liberações de
-presentes/cotas criam eventos em `notification_events`. O admin recebe e-mail
-sempre; o convidado recebe quando possui e-mail válido no RSVP. A seleção de
-forma de pagamento, loja ou método de compra não dispara e-mail isoladamente.
+Reservas, cancelamentos pendentes, pagamentos informados, confirmações
+administrativas e liberações de presentes/cotas criam eventos em
+`notification_events`. O admin recebe e-mail sempre; o convidado recebe quando
+possui e-mail válido no RSVP. A seleção de forma de pagamento, loja ou método
+de compra não dispara e-mail isoladamente.
 No painel administrativo, confirmações e liberações atualizam a tabela antes de
 o envio por SMTP terminar.
 
@@ -658,6 +659,8 @@ PixPayment.getQrCodeUrl(payload);
 - `docs/migrations/security_admin_notification_operations_verify.sql`: verificação da RPC administrativa de notificações.
 - `docs/migrations/gift_email_notifications.sql`: migração incremental para criar eventos de e-mail em reservas, pagamentos, confirmações e liberações de presentes/cotas.
 - `docs/migrations/gift_email_notifications_verify.sql`: verificação incremental dos eventos de e-mail de presentes/cotas.
+- `docs/migrations/guest_cancel_gift_reservation.sql`: migração incremental para permitir cancelamento de reservas pendentes pelo convidado e criar os eventos de e-mail de cancelamento.
+- `docs/migrations/guest_cancel_gift_reservation_verify.sql`: verificação incremental das RPCs e preferências de notificação de cancelamento.
 - `docs/migrations/notification_preferences.sql`: migração incremental das preferências por tipo de notificação.
 - `docs/migrations/notification_preferences_verify.sql`: verificação incremental das preferências de notificação.
 - `docs/migrations/security_admin_notification_preferences.sql`: RPCs administrativas para listar e atualizar preferências de notificação.

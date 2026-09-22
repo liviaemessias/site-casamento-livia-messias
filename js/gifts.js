@@ -3202,6 +3202,11 @@ async function cancelPendingReservation(gift, contribution = null) {
     await syncQuotaGiftStatus(gift.id);
   }
 
+  GuestData.notifyPendingNotifications?.(
+    contribution ? "gift_contribution_cancelled" : "gift_reservation_cancelled",
+    contribution ? contribution.id : gift.id,
+  ).catch(console.error);
+
   await loadGifts();
   return true;
 }

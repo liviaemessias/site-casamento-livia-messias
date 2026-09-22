@@ -314,6 +314,7 @@ function formatCurrency(value: unknown) {
 
 function getGiftEventTitle(eventType: string, recipientType: "admin" | "guest") {
   const titles: Record<string, string> = {
+    gift_contribution_cancelled: "Cota Cancelada",
     gift_contribution_confirmed: "Cota Confirmada",
     gift_contribution_payment_reported: "Pagamento Informado",
     gift_contribution_released: "Cota Liberada",
@@ -321,6 +322,7 @@ function getGiftEventTitle(eventType: string, recipientType: "admin" | "guest") 
     gift_contribution_reserved: "Cota Reservada",
     gift_payment_reported: "Pagamento Informado",
     gift_purchase_confirmed: "Presente Confirmado",
+    gift_reservation_cancelled: "Reserva Cancelada",
     gift_reservation_reminder: "Lembrete de Presente",
     gift_reservation_released: "Presente Liberado",
     gift_reserved: "Presente Reservado",
@@ -399,6 +401,10 @@ function getGiftGuestIntro(
       "Recebemos sua informação de pagamento do presente. Ficamos muito felizes e agradecemos de coração! Vamos verificar tudo logo logo! 💜❤️",
     ];
   const messages: Record<string, [string, string]> = {
+    gift_contribution_cancelled: [
+      "A reserva de cota de vocês foi cancelada com sucesso. Se quiserem, vocês podem escolher outra cota ou outro presente na nossa lista. 💜",
+      "Sua reserva de cota foi cancelada com sucesso. Se quiser, você pode escolher outra cota ou outro presente na nossa lista. 💜",
+    ],
     gift_contribution_confirmed: [
       "Confirmamos a contribuição de vocês para o nosso presente! Muito obrigado pelo carinho e por fazerem parte desse momento com a gente! 💜❤️",
       "Confirmamos sua contribuição para o nosso presente! Muito obrigado pelo carinho e por fazer parte desse momento com a gente! 💜❤️",
@@ -423,6 +429,10 @@ function getGiftGuestIntro(
     gift_purchase_confirmed: [
       "Confirmamos o presente de vocês! Muito obrigado pelo carinho e por fazerem parte desse momento com a gente! 💜❤️",
       "Confirmamos seu presente! Muito obrigado pelo carinho e por fazer parte desse momento com a gente! 💜❤️",
+    ],
+    gift_reservation_cancelled: [
+      "A reserva de presente de vocês foi cancelada com sucesso. Se quiserem, vocês podem escolher outro presente na nossa lista. 💜",
+      "Sua reserva de presente foi cancelada com sucesso. Se quiser, você pode escolher outro presente na nossa lista. 💜",
     ],
     gift_reservation_released: [
       "A reserva de presente de vocês foi liberada, mas está tudo bem! Se quiserem, vocês podem escolher outro presente na nossa lista. 💜",
@@ -451,12 +461,14 @@ function getGiftAdminIntro(eventType: string, purchaseMethod: unknown) {
   }
 
   const messages: Record<string, string> = {
+    gift_contribution_cancelled: "Um convidado cancelou uma reserva de cota pendente.",
     gift_contribution_confirmed: "Uma contribuição de cota foi confirmada pelo admin.",
     gift_contribution_payment_reported: "Um convidado informou pagamento de cota.",
     gift_contribution_released: "Uma reserva de cota foi liberada pelo admin.",
     gift_contribution_reminder: "Um lembrete manual de cota pendente foi enviado.",
     gift_contribution_reserved: "Um convidado reservou cota de presente.",
     gift_purchase_confirmed: "Um presente foi confirmado pelo admin.",
+    gift_reservation_cancelled: "Um convidado cancelou uma reserva de presente pendente.",
     gift_reservation_reminder: "Um lembrete manual de presente pendente foi enviado.",
     gift_reservation_released: "Uma reserva de presente foi liberada pelo admin.",
     gift_reserved: "Um convidado reservou um presente.",
@@ -499,7 +511,10 @@ function renderGiftDetails(
 ) {
   const quotaQuantity = normalizeText(payload.quota_quantity);
   const totalValue = payload.total_value || payload.price;
-  const method = payload.purchase_method || payload.payment_method;
+  const method =
+    payload.purchase_method ||
+    payload.payment_method ||
+    payload.selected_purchase_method;
   const inviteTypeRow = recipientType === "admin"
     ? renderKeyValue(
       "Tipo do convite",

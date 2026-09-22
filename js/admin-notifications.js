@@ -114,6 +114,7 @@ function getPeriodStart(period) {
 
 function getNotificationTypeLabel(type) {
   const labels = {
+    gift_contribution_cancelled: "Cota cancelada",
     gift_contribution_confirmed: "Cota confirmada",
     gift_contribution_payment_reported: "Pagamento de cota informado",
     gift_contribution_released: "Cota liberada",
@@ -121,6 +122,7 @@ function getNotificationTypeLabel(type) {
     gift_contribution_reserved: "Cota reservada",
     gift_payment_reported: "Pagamento informado",
     gift_purchase_confirmed: "Presente confirmado",
+    gift_reservation_cancelled: "Reserva cancelada",
     gift_reservation_reminder: "Lembrete de presente",
     gift_reservation_released: "Presente liberado",
     gift_reserved: "Presente reservado",
