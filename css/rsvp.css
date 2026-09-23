@@ -1051,6 +1051,10 @@ textarea {
   font-weight: 500;
   max-width: min(360px, calc(100vw - 2rem));
   min-width: 280px;
+}
+
+#toastMessage {
+  display: block;
   white-space: pre-line;
 }
 

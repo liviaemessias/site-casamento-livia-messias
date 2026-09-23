@@ -498,7 +498,7 @@ function displayToast(message, duration = 4000) {
     clearTimeout(toastTimeout);
   }
 
-  toastMessage.innerText = message;
+  toastMessage.textContent = String(message || "").trim();
 
   toast.classList.add("show");
 
