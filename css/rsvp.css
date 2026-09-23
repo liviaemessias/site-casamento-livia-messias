@@ -1118,10 +1118,18 @@ textarea {
     left: 20px;
     right: 20px;
     bottom: 20px;
+    display: flex;
+    justify-content: center;
   }
 
   .toast-content {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 420px;
     min-width: auto;
+    padding: 0.85rem 1rem;
+    font-size: 0.9rem;
+    line-height: 1.45;
   }
 }
 

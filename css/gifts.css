@@ -2479,6 +2479,19 @@
 }
 
 @media (max-width: 768px) {
+  .toast {
+    right: 1rem;
+    bottom: 1rem;
+    left: 1rem;
+    box-sizing: border-box;
+    width: auto;
+    max-width: 420px;
+    margin-inline: auto;
+    padding: 0.85rem 1rem;
+    font-size: 0.9rem;
+    line-height: 1.45;
+  }
+
   .gifts-hero {
     padding: 9rem 0 3.5rem;
   }

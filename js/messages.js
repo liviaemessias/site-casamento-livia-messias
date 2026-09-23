@@ -57,7 +57,7 @@
       return;
     }
 
-    toastMessage.textContent = message;
+    toastMessage.textContent = String(message || "").trim();
     toast.classList.add("show");
 
     setTimeout(() => {
