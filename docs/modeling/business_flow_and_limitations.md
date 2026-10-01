@@ -284,16 +284,19 @@ admin-dashboard.html
 
 Exibe uma visão resumida com:
 
-- Pessoas esperadas.
+- Pessoas esperadas e planejadas.
 - Convidados pagantes.
 - Valor confirmado.
 - Presentes informados aguardando confirmação.
 - Recados pendentes.
 - Falhas de e-mail.
-- Gráfico de rosca da situação dos convites.
-- Barra de distribuição dos presentes.
-- Atalhos para as áreas operacionais, Indicadores e Relatórios.
-
+- Gráfico de rosca clicável da situação dos convites: comparecerão, não
+  comparecerão e pendentes.
+- Indicador gráfico da capacidade atual: pessoas esperadas nos RSVPs Sim,
+  incluindo acompanhantes, em relação ao total planejado dos convites ativos.
+- Barra clicável de distribuição dos presentes, com links para cada situação.
+- Os cards visuais aparecem na ordem Presença, Planejamento e Presentes; no
+  mobile, os gráficos de Presença e Planejamento ficam ao lado dos dados.
 ### Indicadores
 
 Arquivo:
@@ -342,7 +345,8 @@ admin-reports.html
 
 Centraliza os relatórios exportáveis de presença/buffet, Resumo Final do Buffet,
 financeiro, ações pendentes, mapa de mesas e lista para recepção, com formatos CSV/XLSX e seleção
-de colunas. A lista para recepção também possui PDF paginado, pode ser ordenada
+de colunas. O relatório de Presença e Buffet permite incluir a coluna `Save the Date enviado`
+nas exportações CSV e XLSX. A lista para recepção também possui PDF paginado, pode ser ordenada
 alfabeticamente ou agrupada por mesa e inclui somente pessoas confirmadas. O
 código de convite, as restrições alimentares e os dados financeiros não fazem
 parte dessa lista operacional. A categoria calculada pelo buffet pode ser
@@ -460,12 +464,11 @@ Permite:
   atribuição.
 - Copiar código de convite.
 - Preencher RSVP manual.
-- Exportar CSV dos convidados filtrados e ordenados, incluindo o status de envio do convite, convidado de e mesa.
-- Filtrar por busca textual, status, RSVP, envio do convite, tipo de convite,
-  convidado de e mesa, incluindo `Com mesa`, `Sem mesa` e mesa específica.
-- Ordenar por nome, tipo, acompanhantes, confirmado, Save the Date enviado,
+- Exportar CSV dos convites filtrados e ordenados, incluindo o status de envio do convite, convidado de e mesa.
+- Filtrar por busca textual, status, resposta (respondido ou sem resposta), presença (comparecerão ou não), envio do convite, tipo de convite, convidado de e mesa, incluindo `Com mesa`, `Sem mesa` e mesa específica.
+- Ordenar por nome, tipo, acompanhantes, RSVP respondido, Save the Date enviado,
   convite oficial enviado, status, código, último acesso e acessos.
-- Ver contador de resultados e limpar filtros.
+- Ver contagens separadas de convites e pessoas planejadas, respeitando os filtros ativos, e limpar filtros.
 
 ### Gestão De RSVP
 
@@ -490,7 +493,7 @@ Permite:
 - Filtrar por busca textual, presença, acompanhantes, categorias do buffet e
   mesa, incluindo `Com mesa`, `Sem mesa` e mesa específica.
 - Ordenar por convidado, presença, quantidade de acompanhantes e data de atualização.
-- Ver contador de resultados e limpar filtros.
+- Ver a quantidade de RSVPs e de pessoas esperadas nos resultados filtrados e limpar filtros.
 
 ### Gestão De Mesas
 
@@ -644,12 +647,12 @@ Concluído:
 - PIX com payload e QR-Code.
 - Compra online e loja física.
 - Painel administrativo separado.
-- Dashboard administrativo com gráfico de distribuição de RSVPs.
+- Dashboard administrativo com gráficos clicáveis de RSVP e presentes e indicador de capacidade atual.
 - Dashboard com métricas de pagantes e crianças para o buffet.
 - Dashboard financeiro com valores da lista, reservados, disponíveis, informados, confirmados e pendentes, incluindo gráficos de distribuição.
 - Filtros administrativos com ordenação, contadores e limpeza.
 - Exportação CSV de presentes, convidados e RSVPs.
-- Relatórios consolidados no dashboard.
+- Relatórios consolidados na página administrativa de Relatórios.
 - Login administrativo com e-mail e senha pelo Supabase Auth.
 - Login de convidados com sessão anônima e Edge Function.
 - RLS e RPCs restritas para isolamento por convite.

@@ -69,7 +69,10 @@
               <i data-lucide="sliders-horizontal" aria-hidden="true"></i>
               Filtros
             </span>
-            <small id="guestFilterCount" class="admin-filter-count"></small>
+            <span class="guest-filter-count-group">
+              <small id="guestFilterCount" class="admin-filter-count"></small>
+              <small id="guestPeopleFilterCount" class="admin-filter-count"></small>
+            </span>
           </summary>
 
           <div class="admin-filters" aria-label="Filtros de convidados">
@@ -92,11 +95,20 @@
             </div>
 
             <div class="admin-filter-field">
-              <label for="guestConfirmedFilter">RSVP</label>
-              <select id="guestConfirmedFilter">
+              <label for="guestResponseFilter">Resposta ao convite</label>
+              <select id="guestResponseFilter">
                 <option value="">Todos</option>
-                <option value="confirmed">Confirmados</option>
-                <option value="pending">Pendentes</option>
+                <option value="responded">Respondidos</option>
+                <option value="pending">Sem resposta</option>
+              </select>
+            </div>
+
+            <div class="admin-filter-field">
+              <label for="guestPresenceFilter">Presença</label>
+              <select id="guestPresenceFilter">
+                <option value="">Todas</option>
+                <option value="Sim">Comparecerão</option>
+                <option value="Não">Não comparecerão</option>
               </select>
             </div>
 
@@ -174,7 +186,7 @@
                 </th>
                 <th>
                   <button class="admin-sort-button" data-guest-sort="confirmed">
-                    Confirmado
+                    Respondido
                   </button>
                 </th>
                 <th>

@@ -15,6 +15,9 @@ const rsvpRestrictionFilter = document.getElementById("rsvpRestrictionFilter");
 const rsvpBuffetFilter = document.getElementById("rsvpBuffetFilter");
 const rsvpTableFilter = document.getElementById("rsvpTableFilter");
 const rsvpFilterCount = document.getElementById("rsvpFilterCount");
+const rsvpExpectedPeopleCount = document.getElementById(
+  "rsvpExpectedPeopleCount",
+);
 const rsvpFiltersPanel = document.getElementById("rsvpFiltersPanel");
 const refreshRSVPsButton = document.getElementById("refreshRSVPsButton");
 const exportRSVPsButton = document.getElementById("exportRSVPsButton");
@@ -1892,7 +1895,7 @@ function applyRSVPFilters() {
   const sortedRSVPs = sortRSVPs(filteredRSVPs, guestMap);
   visibleRSVPs = sortedRSVPs;
 
-  updateRSVPFilterCount(sortedRSVPs.length);
+  updateRSVPFilterCount(sortedRSVPs);
   updateRSVPSortButtons();
   renderRSVPTable(sortedRSVPs, cachedRSVPGuests);
 }
@@ -1950,19 +1953,50 @@ function setRSVPSort(key) {
   applyRSVPFilters();
 }
 
-function updateRSVPFilterCount(count) {
-  if (!rsvpFilterCount) {
-    return;
+function getRSVPExpectedPeopleCount(rsvp) {
+  if (rsvp.presence !== "Sim") {
+    return 0;
   }
 
-  const total = cachedRSVPs.length;
-  rsvpFilterCount.textContent =
-    count === total
-      ? `${total} RSVP${total === 1 ? "" : "s"}`
-      : `${count} de ${total} RSVP${total === 1 ? "" : "s"}`;
+  const members = rsvp.guest_data?.members || [];
+  const invitedPeople = members.length
+    ? members.filter((member) => member.presence === "Sim").length
+    : 1;
+  const companions = Number(rsvp.guest_data?.guest_count || 0);
+
+  return invitedPeople + companions;
+}
+
+function updateRSVPFilterCount(filteredRSVPs) {
+  const filteredCount = filteredRSVPs.length;
+  const totalRSVPs = cachedRSVPs.length;
+  const filteredPeople = filteredRSVPs.reduce(
+    (total, rsvp) => total + getRSVPExpectedPeopleCount(rsvp),
+    0,
+  );
+  const totalPeople = cachedRSVPs.reduce(
+    (total, rsvp) => total + getRSVPExpectedPeopleCount(rsvp),
+    0,
+  );
+
+  if (rsvpFilterCount) {
+    rsvpFilterCount.textContent =
+      filteredCount === totalRSVPs
+        ? `${totalRSVPs} RSVP${totalRSVPs === 1 ? "" : "s"}`
+        : `${filteredCount} de ${totalRSVPs} RSVP${totalRSVPs === 1 ? "" : "s"}`;
+  }
+
+  if (rsvpExpectedPeopleCount) {
+    rsvpExpectedPeopleCount.textContent =
+      filteredPeople === totalPeople
+        ? `${totalPeople} pessoa${totalPeople === 1 ? "" : "s"} esperada${totalPeople === 1 ? "" : "s"}`
+        : `${filteredPeople} de ${totalPeople} pessoas esperadas`;
+  }
 
   if (rsvpFiltersPanel) {
-    rsvpFiltersPanel.dataset.hasActiveFilters = String(count !== total);
+    rsvpFiltersPanel.dataset.hasActiveFilters = String(
+      filteredCount !== totalRSVPs,
+    );
   }
 }
 

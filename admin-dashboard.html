@@ -74,13 +74,35 @@
               <div><strong id="overviewInviteTotal">0</strong><span>Convites</span></div>
             </div>
             <div class="overview-legend">
-              <div><i class="confirmed"></i><span>Confirmados</span><strong id="overviewYesRSVPs">0</strong></div>
-              <div><i class="declined"></i><span>Não Comparecerão</span><strong id="overviewNoRSVPs">0</strong></div>
-              <div><i class="pending"></i><span>Pendentes</span><strong id="overviewPendingLegend">0</strong></div>
+              <a class="overview-legend-link" href="./admin-rsvps.html?presence=Sim" aria-label="Ver RSVPs com presença confirmada"><i class="confirmed"></i><span>Comparecerão</span><strong id="overviewYesRSVPs">0</strong></a>
+              <a class="overview-legend-link" href="./admin-rsvps.html?presence=N%C3%A3o" aria-label="Ver RSVPs com presença não confirmada"><i class="declined"></i><span>Não Comparecerão</span><strong id="overviewNoRSVPs">0</strong></a>
+              <a class="overview-legend-link" href="./admin-guests.html?status=active&response=pending" aria-label="Ver convites pendentes de RSVP"><i class="pending"></i><span>Pendentes</span><strong id="overviewPendingLegend">0</strong></a>
             </div>
           </div>
         </article>
-
+        <article class="overview-visual-panel">
+          <div class="overview-panel-header">
+            <div><span>Planejamento</span><h3>Capacidade atual</h3></div>
+            <a href="./admin-rsvps.html?presence=Sim" aria-label="Ver pessoas esperadas nos RSVPs">
+              <i data-lucide="arrow-up-right" aria-hidden="true"></i>
+              Ver RSVPs
+            </a>
+          </div>
+          <div class="overview-capacity-layout">
+            <div
+              id="overviewCapacityDonut"
+              class="overview-donut overview-capacity-donut"
+              role="img"
+              aria-label="Capacidade atual da recepção"
+            >
+              <div><strong id="overviewCapacityPercent">0%</strong><span>da capacidade</span></div>
+            </div>
+            <div class="overview-capacity-stats">
+              <div><span>Pessoas esperadas</span><strong id="overviewCapacityExpected">0</strong></div>
+              <div><span>Pessoas planejadas</span><strong id="overviewCapacityPlanned">0</strong></div>
+            </div>
+          </div>
+        </article>
         <article class="overview-visual-panel">
           <div class="overview-panel-header">
             <div><span>Presentes</span><h3>Situação da Lista</h3></div>
@@ -94,19 +116,12 @@
               <span class="available"></span><span class="reserved"></span><span class="confirmed"></span>
             </div>
             <div class="overview-legend gift-legend">
-              <div><i class="available"></i><span>Disponíveis</span><strong id="overviewAvailableGifts">0</strong></div>
-              <div><i class="reserved"></i><span>Reservados</span><strong id="overviewReservedLegend">0</strong></div>
-              <div><i class="confirmed"></i><span>Comprados</span><strong id="overviewConfirmedGifts">0</strong></div>
+              <a class="overview-legend-link" href="./admin-gifts.html?status=Dispon%C3%ADvel" aria-label="Ver presentes disponíveis"><i class="available"></i><span>Disponíveis</span><strong id="overviewAvailableGifts">0</strong></a>
+              <a class="overview-legend-link" href="./admin-gifts.html?status=Reservado" aria-label="Ver presentes reservados"><i class="reserved"></i><span>Reservados</span><strong id="overviewReservedLegend">0</strong></a>
+              <a class="overview-legend-link" href="./admin-gifts.html?status=Comprado" aria-label="Ver presentes comprados"><i class="confirmed"></i><span>Comprados</span><strong id="overviewConfirmedGifts">0</strong></a>
             </div>
           </div>
         </article>
-      </section>
-
-      <section class="admin-overview-actions" aria-label="Acessos rápidos">
-        <a href="./admin-guests.html"><i data-lucide="users" aria-hidden="true"></i>Gerenciar Convidados</a>
-        <a href="./admin-guests.html?confirmed=pending"><i data-lucide="clipboard-list" aria-hidden="true"></i>Ver RSVPs Pendentes</a>
-        <a href="./admin-reports.html"><i data-lucide="file-chart-column" aria-hidden="true"></i>Abrir Relatórios</a>
-        <a href="./admin-indicators.html"><i data-lucide="chart-no-axes-combined" aria-hidden="true"></i>Ver Todos os Indicadores</a>
       </section>
     </main>
 

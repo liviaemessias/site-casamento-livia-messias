@@ -180,6 +180,26 @@ function updateGiftBar(metrics) {
   );
 }
 
+function updateCapacityGauge(expectedPeople, plannedPeople) {
+  const gauge = document.getElementById("overviewCapacityDonut");
+  const percentage = plannedPeople
+    ? Math.round((expectedPeople / plannedPeople) * 100)
+    : 0;
+  const visualPercentage = Math.max(0, Math.min(100, percentage));
+
+  if (gauge) {
+    gauge.style.setProperty("--capacity-percentage", `${visualPercentage}%`);
+    gauge.setAttribute(
+      "aria-label",
+      `${expectedPeople} pessoas esperadas de ${plannedPeople} planejadas, ${percentage}% da capacidade`,
+    );
+  }
+
+  setText("overviewCapacityPercent", `${percentage}%`);
+  setText("overviewCapacityExpected", expectedPeople);
+  setText("overviewCapacityPlanned", plannedPeople);
+}
+
 async function loadOverview() {
   const [
     guestsResult,
@@ -252,8 +272,11 @@ async function loadOverview() {
     contributionsResult.data || [],
   );
 
-  setText("overviewExpectedPeople", getExpectedPeople(activeRSVPs));
-  setText("overviewPlannedPeople", getPlannedPeople(activeGuests));
+  const expectedPeople = getExpectedPeople(activeRSVPs);
+  const plannedPeople = getPlannedPeople(activeGuests);
+
+  setText("overviewExpectedPeople", expectedPeople);
+  setText("overviewPlannedPeople", plannedPeople);
   setText("overviewPendingRSVPs", pending);
   setText("overviewPayingGuests", buffetMetrics.payingPeople);
   setText("overviewReportedGifts", giftMetrics.reported);
@@ -278,6 +301,7 @@ async function loadOverview() {
 
   updateAttendanceDonut({ yes, no, pending });
   updateGiftBar(giftMetrics);
+  updateCapacityGauge(expectedPeople, plannedPeople);
 }
 
 loadOverview();

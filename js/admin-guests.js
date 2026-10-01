@@ -24,7 +24,8 @@ let guestSortState = {
 
 const guestSearchInput = document.getElementById("guestSearchInput");
 const guestStatusFilter = document.getElementById("guestStatusFilter");
-const guestConfirmedFilter = document.getElementById("guestConfirmedFilter");
+const guestResponseFilter = document.getElementById("guestResponseFilter");
+const guestPresenceFilter = document.getElementById("guestPresenceFilter");
 const guestSaveTheDateSentFilter = document.getElementById(
   "guestSaveTheDateSentFilter",
 );
@@ -33,6 +34,9 @@ const guestTypeFilter = document.getElementById("guestTypeFilter");
 const guestSideFilter = document.getElementById("guestSideFilter");
 const guestTableFilter = document.getElementById("guestTableFilter");
 const guestFilterCount = document.getElementById("guestFilterCount");
+const guestPeopleFilterCount = document.getElementById(
+  "guestPeopleFilterCount",
+);
 const refreshGuestsButton = document.getElementById("refreshGuestsButton");
 const exportGuestsButton = document.getElementById("exportGuestsButton");
 const clearGuestFiltersButton = document.getElementById(
@@ -241,7 +245,23 @@ function applyGuestFiltersFromUrl() {
 
   setFilterValueFromParam(guestSearchInput, params, "search");
   setFilterValueFromParam(guestStatusFilter, params, "status");
-  setFilterValueFromParam(guestConfirmedFilter, params, "confirmed");
+  if (params.has("response")) {
+    setFilterValueFromParam(guestResponseFilter, params, "response");
+  } else if (params.has("rsvp")) {
+    const rsvpFilter = params.get("rsvp");
+
+    if (rsvpFilter === "confirmed") {
+      guestPresenceFilter.value = "Sim";
+    } else if (rsvpFilter === "declined") {
+      guestPresenceFilter.value = "Não";
+    } else {
+      guestResponseFilter.value = rsvpFilter || "";
+    }
+  } else if (params.has("confirmed") && guestResponseFilter) {
+    guestResponseFilter.value =
+      params.get("confirmed") === "pending" ? "pending" : "responded";
+  }
+  setFilterValueFromParam(guestPresenceFilter, params, "presence");
   setFilterValueFromParam(
     guestSaveTheDateSentFilter,
     params,
@@ -739,7 +759,7 @@ window.openGuestDetailsModal = function (guest) {
         ${renderInviteTypeBadge(guest.invite_type)}
         ${
           guest.confirmed
-            ? '<span class="admin-badge badge-available">RSVP confirmado</span>'
+            ? '<span class="admin-badge badge-available">RSVP respondido</span>'
             : '<span class="admin-badge badge-muted">RSVP pendente</span>'
         }
         ${renderSaveTheDateSentBadge(guest)}
@@ -841,16 +861,21 @@ function openGuestDetailsFromUrl() {
 async function loadGuestsAdmin() {
   const [
     guestsResult,
+    rsvpsResult,
     tablesResult,
     assignmentsResult,
   ] = await Promise.all([
     supabaseClient.from("guests").select("*").order("name"),
+    supabaseClient.from("rsvps").select("guest_id, presence"),
     supabaseClient.rpc("admin_list_wedding_tables"),
     supabaseClient.rpc("admin_list_wedding_table_assignments"),
   ]);
 
   const error =
-    guestsResult.error || tablesResult.error || assignmentsResult.error;
+    guestsResult.error ||
+    rsvpsResult.error ||
+    tablesResult.error ||
+    assignmentsResult.error;
 
   if (error) {
     console.error(error);
@@ -858,7 +883,13 @@ async function loadGuestsAdmin() {
     return;
   }
 
-  cachedGuests = guestsResult.data || [];
+  const rsvpPresenceByGuestId = new Map(
+    (rsvpsResult.data || []).map((rsvp) => [rsvp.guest_id, rsvp.presence]),
+  );
+  cachedGuests = (guestsResult.data || []).map((guest) => ({
+    ...guest,
+    rsvp_presence: rsvpPresenceByGuestId.get(guest.id) || "",
+  }));
   cachedGuestTables = tablesResult.data || [];
   cachedGuestTableAssignments = assignmentsResult.data || [];
   updateGuestTableFilter();
@@ -1011,7 +1042,7 @@ function renderGuestsMobileList(guests) {
           <div class="admin-mobile-card-badges">
             ${
               guest.confirmed
-                ? '<span class="admin-badge badge-available">RSVP Sim</span>'
+                ? '<span class="admin-badge badge-available">RSVP respondido</span>'
                 : '<span class="admin-badge badge-muted">RSVP pendente</span>'
             }
             ${renderSaveTheDateSentBadge(guest)}
@@ -1102,7 +1133,8 @@ function renderGuestsMobileList(guests) {
 function applyGuestFilters() {
   const search = normalizeText(guestSearchInput?.value);
   const status = guestStatusFilter?.value || "";
-  const confirmed = guestConfirmedFilter?.value || "";
+  const response = guestResponseFilter?.value || "";
+  const presence = guestPresenceFilter?.value || "";
   const saveTheDateSent = guestSaveTheDateSentFilter?.value || "";
   const inviteSent = guestInviteSentFilter?.value || "";
   const type = guestTypeFilter?.value || "";
@@ -1125,9 +1157,12 @@ function applyGuestFilters() {
     const matchesSearch = !search || searchable.includes(search);
     const matchesStatus =
       !status || (status === "active" ? guest.active : !guest.active);
-    const matchesConfirmed =
-      !confirmed ||
-      (confirmed === "confirmed" ? guest.confirmed : !guest.confirmed);
+    const matchesResponse =
+      !response ||
+      (response === "responded" && Boolean(guest.confirmed)) ||
+      (response === "pending" && !guest.confirmed);
+    const matchesPresence =
+      !presence || guest.rsvp_presence === presence;
     const matchesSaveTheDateSent =
       !saveTheDateSent ||
       (saveTheDateSent === "sent"
@@ -1149,7 +1184,8 @@ function applyGuestFilters() {
     return (
       matchesSearch &&
       matchesStatus &&
-      matchesConfirmed &&
+      matchesResponse &&
+      matchesPresence &&
       matchesSaveTheDateSent &&
       matchesInviteSent &&
       matchesType &&
@@ -1161,7 +1197,7 @@ function applyGuestFilters() {
   const sortedGuests = sortGuests(filteredGuests);
   visibleGuests = sortedGuests;
 
-  updateGuestFilterCount(sortedGuests.length);
+  updateGuestFilterCount(sortedGuests);
   updateGuestSortButtons();
   renderGuestsTable(sortedGuests);
 }
@@ -1192,7 +1228,7 @@ function exportGuestsCSV() {
       label: "Total planejado",
       value: (guest) => getGuestPlanningCounts(guest).total,
     },
-    { label: "RSVP confirmado", value: (guest) => formatBoolean(guest.confirmed) },
+    { label: "RSVP respondido", value: (guest) => formatBoolean(guest.confirmed) },
     {
       label: "Save the Date enviado",
       value: (guest) => formatBoolean(guest.save_the_date_sent),
@@ -1272,19 +1308,30 @@ function setGuestSort(key) {
   applyGuestFilters();
 }
 
-function updateGuestFilterCount(count) {
-  if (!guestFilterCount) {
-    return;
+function updateGuestFilterCount(filteredGuests) {
+  const invitationCount = filteredGuests.length;
+  const totalInvitations = cachedGuests.length;
+  const guestCount = calculateGuestPlanningSummary(filteredGuests).total;
+  const totalGuests = calculateGuestPlanningSummary(cachedGuests).total;
+
+  if (guestFilterCount) {
+    guestFilterCount.textContent =
+      invitationCount === totalInvitations
+        ? `${totalInvitations} convite${totalInvitations === 1 ? "" : "s"}`
+        : `${invitationCount} de ${totalInvitations} convite${totalInvitations === 1 ? "" : "s"}`;
   }
 
-  const total = cachedGuests.length;
-  guestFilterCount.textContent =
-    count === total
-      ? `${total} convidado${total === 1 ? "" : "s"}`
-      : `${count} de ${total} convidado${total === 1 ? "" : "s"}`;
+  if (guestPeopleFilterCount) {
+    guestPeopleFilterCount.textContent =
+      guestCount === totalGuests
+        ? `${totalGuests} convidado${totalGuests === 1 ? "" : "s"}`
+        : `${guestCount} de ${totalGuests} convidado${totalGuests === 1 ? "" : "s"}`;
+  }
 
   if (guestFiltersPanel) {
-    guestFiltersPanel.dataset.hasActiveFilters = String(count !== total);
+    guestFiltersPanel.dataset.hasActiveFilters = String(
+      invitationCount !== totalInvitations,
+    );
   }
 }
 
@@ -1299,7 +1346,8 @@ function clearGuestFilters() {
 
   [
     guestStatusFilter,
-    guestConfirmedFilter,
+    guestResponseFilter,
+    guestPresenceFilter,
     guestSaveTheDateSentFilter,
     guestInviteSentFilter,
     guestTypeFilter,
@@ -2436,7 +2484,8 @@ closeAdminRSVPModalButton.addEventListener("click", closeAdminRSVPModal);
 [
   guestSearchInput,
   guestStatusFilter,
-  guestConfirmedFilter,
+  guestResponseFilter,
+  guestPresenceFilter,
   guestSaveTheDateSentFilter,
   guestInviteSentFilter,
   guestTypeFilter,

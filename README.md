@@ -2,7 +2,7 @@
 
 Site de casamento personalizado para centralizar informações do evento, RSVP, lista de presentes e administração dos noivos.
 
-Versão atual: **4.7**.
+Versão atual: **4.8**.
 
 ## Desenvolvimento
 
@@ -44,9 +44,7 @@ GitHub: [messiasfl10](https://github.com/messiasfl10/)
 - Saudação visual de sessão para convidados logados nas páginas públicas.
 - Painel administrativo repaginado com navegação lateral desktop, navbar
   inferior mobile em estilo aplicativo e páginas especializadas.
-- Dashboard operacional refinado com indicadores clicáveis, resumos visuais de
-  RSVP e presentes, atalhos para as principais pendências e cabeçalhos
-  administrativos padronizados.
+- Dashboard operacional refinado com indicadores clicáveis, gráficos de RSVP, capacidade e presentes e cabeçalhos administrativos padronizados.
 - Páginas administrativas refinadas com cabeçalhos compactos, filtros
   recolhíveis, tabelas desktop, cards mobile, toggles elegantes, ações discretas
   e indicadores visuais para estados importantes.
@@ -412,10 +410,9 @@ curta e detalhe ornamental discreto. As páginas de gestão usam uma abordagem
 mais compacta, com filtros recolhíveis, ações discretas, tabelas otimizadas no
 desktop e cards/listas no mobile quando a tabela não é a melhor experiência.
 
-O Dashboard inicial oferece uma visão operacional com indicadores clicáveis de
-pessoas confirmadas, capacidade planejada, convidados pagantes, RSVPs
-pendentes, presentes informados e reservados e valor confirmado. Também resume
-visualmente a distribuição dos RSVPs e a situação da lista de presentes.
+O Dashboard inicial oferece indicadores operacionais clicáveis e gráficos de
+Presença, Planejamento e Presentes. A capacidade atual compara as pessoas que
+confirmaram presença, incluindo acompanhantes, com o total planejado.
 
 A página de Indicadores concentra a análise detalhada em áreas operacionais:
 
@@ -565,6 +562,10 @@ PixPayment.getQrCodeUrl(payload);
 
 - `docs/operations/captcha_turnstile_setup.md`: ativação, testes e rollback do Cloudflare Turnstile nos logins.
 - `docs/operations/smtp_email_notifications_setup.md`: configuração SMTP, Gmail, Outlook/Hotmail, deploy e testes das notificações por e-mail.
+- `docs/operations/guest_spreadsheet_import.md` e `docs/operations/gift_spreadsheet_import.md`: preparação e uso dos geradores SQL para importar convidados e presentes a partir de planilhas.
+- `docs/releases/release_v4.8.md`: notas da versão 4.8, com importação por
+  planilhas, melhorias nos filtros e contagens de convidados/RSVPs, relatórios
+  consolidados e Dashboard.
 - `docs/releases/release_v4.7.md`: notas da versão 4.7, com ajustes nos
   logins, refinamentos nos modais de compra/pagamento da Lista de Presentes,
   textos de presentes externos, "A consultar na loja" e cancelamento de reservas
@@ -734,10 +735,10 @@ Concluído:
 - Cartão via checkout externo e compras externas.
 - Painel administrativo repaginado com navegação lateral desktop, navbar
   inferior mobile em estilo aplicativo, topbar dinâmica e páginas especializadas.
-- Dashboard operacional refinado com indicadores clicáveis, resumos visuais,
-  atalhos para pendências e cabeçalhos administrativos padronizados.
+- Dashboard operacional refinado com indicadores clicáveis, gráficos de RSVP, capacidade e presentes e cabeçalhos administrativos padronizados.
 - Página de Indicadores com análises detalhadas de presença, buffet, presentes e financeiro.
-- Dashboard administrativo com gráfico de distribuição de RSVPs.
+- Dashboard administrativo com gráficos clicáveis de RSVP e presentes e
+  indicador percentual de capacidade planejada, incluindo acompanhantes.
 - Dashboard com convidados pagantes, total de crianças, crianças pagantes, não pagantes e sem idade válida.
 - Atalhos nas métricas do Dashboard com filtros administrativos aplicados.
 - Dashboard financeiro com valores da lista, reservados, disponíveis, informados, confirmados e pendentes, incluindo gráficos de distribuição.
@@ -787,7 +788,7 @@ Concluído:
 - Integração entre mensagem de RSVP e Mural de Recados, usando RPC dedicada
   para verificar se o convite já possui recado sem expor dados desnecessários.
 - Tokens globais de CSS.
-- Identidade visual pública refinada nas releases v4.3, v4.5, v4.6 e v4.7, com logo do
+- Identidade visual pública refinada nas releases v4.3, v4.5, v4.6, v4.7 e v4.8, com logo do
   casal, heros com tipografia romântica, roxo principal atualizado, menu público
   agrupado/painel lateral, rodapés públicos com logo clicável e refinamentos
   mobile/desktop em Home, RSVP, Presentes, Nossa História, Pré-Wedding, Recados,

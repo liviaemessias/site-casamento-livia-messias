@@ -648,7 +648,9 @@ function renderPurchaseMethodBadge(gift, options = {}) {
   }
 
   const method = gift.selected_purchase_method;
-  const store = gift.selected_purchase_details?.store;
+  const store = options.includeStore === false
+    ? ""
+    : gift.selected_purchase_details?.store;
 
   if (!method && options.omitEmpty) {
     return "";
@@ -682,7 +684,10 @@ function renderPurchaseMethodBadge(gift, options = {}) {
 function renderSituationCell(gift) {
   const situationBadges = [
     renderStatusBadge(getGiftDisplayStatus(gift)),
-    renderPurchaseMethodBadge(gift, { omitEmpty: true }),
+    renderPurchaseMethodBadge(gift, {
+      omitEmpty: true,
+      includeStore: false,
+    }),
     renderPaymentBadge(getGiftDisplayPaymentStatus(gift), { omitEmpty: true }),
   ].filter((badge) => String(badge || "").trim());
 
@@ -970,6 +975,34 @@ function renderGiftDetailsReservationSummary(gift) {
     ["Pagamento", gift.payment_status || "Pendente"],
     ["Forma", getGiftMethodLabel(gift) || "-"],
   ];
+  const purchaseDetails = gift.selected_purchase_details || {};
+  const isExternalPurchase =
+    gift.selected_purchase_method === "online" ||
+    gift.selected_purchase_method === "physical";
+  const storeName = String(purchaseDetails.store || "").trim();
+  const purchaseUrl = String(purchaseDetails.url || "").trim();
+  const safePurchaseUrl = /^https?:\/\//i.test(purchaseUrl)
+    ? purchaseUrl
+    : "";
+  const purchaseNotes = String(purchaseDetails.notes || "").trim();
+  const selectedOptionName =
+    storeName ||
+    (gift.selected_purchase_method === "online" ? "Compra online" : "Loja física");
+  const selectedOptionDetails =
+    isExternalPurchase && (storeName || safePurchaseUrl || purchaseNotes)
+      ? `
+        <div class="admin-details-meta-item admin-details-selected-option">
+          <span>Opção selecionada</span>
+          <strong>${safeText(selectedOptionName)}</strong>
+          ${
+            safePurchaseUrl
+              ? `<a href="${escapeAttribute(safePurchaseUrl)}" target="_blank" rel="noopener noreferrer">Abrir link da opção</a>`
+              : ""
+          }
+          ${purchaseNotes ? `<small>${safeText(purchaseNotes)}</small>` : ""}
+        </div>
+      `
+      : "";
 
   return `
     <div class="admin-details-meta-grid">
@@ -983,6 +1016,7 @@ function renderGiftDetailsReservationSummary(gift) {
           `,
         )
         .join("")}
+      ${selectedOptionDetails}
     </div>
   `;
 }
@@ -1394,7 +1428,10 @@ function renderGiftsMobileList(gifts, guestMap) {
       const reservedNames = getGiftReservedNames(gift, guestMap);
       const paymentStatus = getGiftDisplayPaymentStatus(gift);
       const mobileBadges = [
-        renderPurchaseMethodBadge(gift, { omitEmpty: true }),
+        renderPurchaseMethodBadge(gift, {
+          omitEmpty: true,
+          includeStore: false,
+        }),
         renderPaymentBadge(paymentStatus, { omitEmpty: true }),
         isQuotaGift(gift)
           ? `<span class="admin-badge badge-payment">${Number(gift.quota_reserved_count || 0)}/${Number(gift.quota_count || 0)} cotas</span>`

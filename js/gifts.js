@@ -533,6 +533,24 @@ function getSelectedPurchaseMethodLabel(gift) {
   return "";
 }
 
+function getSelectedPurchaseMethodDetailsActionLabel(gift) {
+  const method = gift.selected_purchase_method;
+
+  if (method === "pix") {
+    return "Ver PIX";
+  }
+
+  if (method === "card") {
+    return "Ver cartão";
+  }
+
+  if (method === "online" || method === "physical") {
+    return "Ver lojas";
+  }
+
+  return "Ver opções";
+}
+
 function getPurchaseMode(gift) {
   return gift.purchase_mode || "money";
 }
@@ -1174,7 +1192,7 @@ function renderPendingGiftActions(item) {
         data-gift-action="open-purchase-method"
         data-gift-id="${escapeAttribute(item.gift.id)}"
       >
-        Forma
+        Formas
       </button>
 
       <button
@@ -1183,7 +1201,7 @@ function renderPendingGiftActions(item) {
         data-gift-action="open-gift-details"
         data-gift-id="${escapeAttribute(item.gift.id)}"
       >
-        Ver forma
+        ${getSelectedPurchaseMethodDetailsActionLabel(item.gift)}
       </button>
     </div>
   `;
@@ -1436,21 +1454,19 @@ function syncPendingGiftsFloatingPosition() {
     baseOffset = hintBottom + giftEmailHint.offsetHeight + 12;
   }
 
-  const hasPendingFloatingButton =
-    pendingGiftsFloatingButton &&
-    !pendingGiftsFloatingButton.hidden &&
-    pendingGiftsFloatingButton.classList.contains("active");
-  const helpOffset = hasPendingFloatingButton
-    ? baseOffset + pendingGiftsFloatingButton.offsetHeight + 10
+  const hasHelpFloatingButton =
+    giftHelpFloatingButton?.classList.contains("active");
+  const pendingOffset = hasHelpFloatingButton
+    ? baseOffset + giftHelpFloatingButton.offsetHeight + 10
     : baseOffset;
 
   pendingGiftsFloatingButton?.style.setProperty(
     "--pending-gifts-floating-bottom",
-    `${Math.ceil(baseOffset)}px`,
+    `${Math.ceil(pendingOffset)}px`,
   );
   giftHelpFloatingButton?.style.setProperty(
     "--gift-help-floating-bottom",
-    `${Math.ceil(helpOffset)}px`,
+    `${Math.ceil(baseOffset)}px`,
   );
 }
 
@@ -1689,6 +1705,19 @@ function renderGiftCatalogDetailsButton(gift) {
   `;
 }
 
+function renderSelectedPurchaseMethodDetailsButton(gift) {
+  return `
+    <button
+      type="button"
+      class="gift-card-details-button"
+      data-gift-action="open-gift-details"
+      data-gift-id="${escapeAttribute(gift.id)}"
+    >
+      ${safeText(getSelectedPurchaseMethodDetailsActionLabel(gift))}
+    </button>
+  `;
+}
+
 function renderCancelReservationButton(gift, contribution = null, options = {}) {
   const label = contribution ? "Cancelar cota" : "Cancelar reserva";
   const fullRowClass = options.fullRow ? " full-row" : "";
@@ -1855,12 +1884,23 @@ function renderCompactSingleGiftActions(gift, options = {}) {
         data-gift-action="open-purchase-method"
         data-gift-id="${escapeAttribute(gift.id)}"
       >
-        Forma
+        Formas
       </button>
+      ${
+        includeReservationManagement && gift.selected_purchase_method
+          ? renderSelectedPurchaseMethodDetailsButton(gift)
+          : ""
+      }
       ${includeReservationManagement && canCancelGiftReservation(gift)
         ? renderCancelReservationButton(gift, null, { fullRow: true })
         : ""}
-      ${includeDetails ? renderGiftCatalogDetailsButton(gift) : ""}
+      ${
+        includeDetails
+          ? gift.selected_purchase_method
+            ? renderSelectedPurchaseMethodDetailsButton(gift)
+            : renderGiftCatalogDetailsButton(gift)
+          : ""
+      }
     `;
   }
 
@@ -2622,7 +2662,7 @@ function configurePaymentModalTexts(gift) {
     return;
   }
 
-  paymentModalTitle.textContent = "💜 Forma de presentear";
+  paymentModalTitle.textContent = "💜 Formas de presentear";
 
   paymentModalDescription.textContent = copy.description;
 
