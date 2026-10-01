@@ -254,7 +254,7 @@ body {
 
 .hero-couple-logo {
   display: block;
-  width: clamp(64px, 7vw, 92px);
+  width: clamp(56px, 6vw, 82px);
   height: auto;
   margin: 0 auto 1rem;
   opacity: 0.9;
@@ -272,7 +272,7 @@ body {
 
 .hero h1 {
   font-family: var(--font-romantic);
-  font-size: clamp(4.35rem, 7.8vw, 6.75rem);
+  font-size: clamp(3.9rem, 7vw, 6rem);
   font-weight: 400;
   line-height: 0.82;
   margin-bottom: 1rem;
@@ -1036,7 +1036,7 @@ body {
   }
 
   .hero h1 {
-    font-size: 5rem;
+    font-size: 4.5rem;
   }
 }
 
