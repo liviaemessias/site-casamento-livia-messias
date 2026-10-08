@@ -27,6 +27,18 @@ Convidados.
 - Ajustados o menu suspenso no desktop, o botão de navegação para a primeira
   seção do manual e os tamanhos do hero para acompanhar a página Nossa História.
 
+- Aplicada aos cards do manual uma elevação e uma sombra suaves ao passar o
+  mouse, respeitando a preferência do sistema por movimento reduzido.
+
+### Boas-vindas Na Página Inicial
+
+- Incluído na seção Bem-vindos o trecho de Mateus 19:5b–6, com apresentação
+  discreta abaixo da mensagem principal.
+- Atualizada a mensagem de boas-vindas para: “Depois de tantos sonhos, orações
+  e momentos especiais, chegou o dia de celebrar nossa união ao lado de pessoas
+  queridas. Estamos muito felizes por ter vocês conosco neste momento tão
+  especial.”
+
 ## Ainda Em Desenvolvimento
 
 - Registrar nesta seção as próximas funcionalidades e melhorias que entrarem

@@ -578,6 +578,28 @@ body {
   color: var(--text-light);
 }
 
+.welcome-verse {
+  max-width: 650px;
+  margin: 1.8rem auto 0;
+  color: var(--color-text-muted);
+  font-family: var(--font-heading);
+  font-size: 0.98rem;
+  font-style: italic;
+  line-height: 1.75;
+}
+
+.welcome-verse p {
+  margin-bottom: 0.45rem;
+}
+
+.welcome-verse cite {
+  color: var(--color-primary);
+  font-size: 0.78rem;
+  font-style: normal;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
 .welcome-ornament {
   display: block;
   margin-top: 2.15rem;
