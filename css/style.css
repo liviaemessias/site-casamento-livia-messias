@@ -408,6 +408,20 @@ body {
   background: rgba(255, 255, 255, 0.3);
 }
 
+.guest-guide-home-cta {
+  background:
+    radial-gradient(circle at 85% 20%, rgba(201, 164, 106, 0.1), transparent 30%),
+    rgba(var(--color-primary-rgb), 0.045);
+}
+
+.guest-guide-home-highlight {
+  max-width: 620px;
+  margin: 1rem auto 0;
+  color: var(--color-text-muted);
+  font-size: 0.92rem;
+  line-height: 1.65;
+}
+
 .home-info-cta-soft {
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.48), rgba(var(--color-primary-rgb), 0.045)),

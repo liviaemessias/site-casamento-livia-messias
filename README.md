@@ -70,6 +70,9 @@ GitHub: [messiasfl10](https://github.com/messiasfl10/)
   administrativa, respostas dos noivos e notificações por e-mail.
 - Página pública de Fornecedores, com cards visíveis para convidados e estado
   vazio amigável quando ainda não houver fornecedores cadastrados.
+- Página pública Manual dos Convidados, com orientação de traje esporte fino,
+  branco reservado à noiva e combinados para a celebração; acesso pelo menu
+  público e por uma seção própria na página inicial.
 - Administração de fornecedores com cadastro, edição, listagem, visibilidade,
   destaque, ordenação manual por modal e exclusão.
 - Página protegida de Programação do casamento, com etapas e atividades
@@ -121,8 +124,9 @@ GitHub: [messiasfl10](https://github.com/messiasfl10/)
 
 ### Públicas
 
-- `index.html`: página inicial, informações do casamento, contagem regressiva, metadados, identidade visual do casal e atalhos rápidos para áreas importantes.
+- `index.html`: página inicial, informações do casamento, contagem regressiva, metadados, identidade visual do casal, atalhos rápidos e seção do Manual dos Convidados.
 - `our-story.html`: linha do tempo da história do casal, notas pessoais e seção da jornada.
+- `guest-guide.html`: Manual dos Convidados público, com orientações de traje e combinados para o casamento.
 - `login.html`: entrada por código de convite.
 - `rsvp.html`: confirmação de presença.
 - `gifts.html`: lista de presentes, filtros públicos, cards compactos e fluxo de reserva/pagamento.
@@ -560,6 +564,9 @@ PixPayment.getQrCodeUrl(payload);
 
 ## Documentação Complementar
 
+- `docs/releases/release_v4.9.md`: documento de trabalho da próxima release,
+  iniciado com a página pública Manual dos Convidados; será atualizado até o
+  fechamento da versão.
 - `docs/operations/captcha_turnstile_setup.md`: ativação, testes e rollback do Cloudflare Turnstile nos logins.
 - `docs/operations/smtp_email_notifications_setup.md`: configuração SMTP, Gmail, Outlook/Hotmail, deploy e testes das notificações por e-mail.
 - `docs/operations/guest_spreadsheet_import.md` e `docs/operations/gift_spreadsheet_import.md`: preparação e uso dos geradores SQL para importar convidados e presentes a partir de planilhas.
@@ -784,6 +791,9 @@ Concluído:
 - Menu público em painel lateral reutilizável, com fechamento por X, clique
   externo, links e tecla Esc, aplicado às páginas públicas conforme as opções de
   cada página.
+- Manual dos Convidados público, acessível pelo menu de todas as páginas
+  públicas e por uma seção na Home, com traje esporte fino, orientação de branco
+  reservado à noiva, combinados, RSVP e acesso à lista de presentes.
 - Logins de convidados e administrador mais compactos no desktop e no mobile.
 - Integração entre mensagem de RSVP e Mural de Recados, usando RPC dedicada
   para verificar se o convite já possui recado sem expor dados desnecessários.
@@ -802,4 +812,3 @@ Em aberto:
 - Upload interno de comprovantes.
 - Relatórios avançados por período ou fornecedor.
 - Indicadores financeiros avançados por período ou forma de pagamento.
-- Código de Vestimenta.
