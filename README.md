@@ -49,7 +49,10 @@ GitHub: [messiasfl10](https://github.com/messiasfl10/)
   recolhíveis, tabelas desktop, cards mobile, toggles elegantes, ações discretas
   e indicadores visuais para estados importantes.
 - Página de Indicadores com métricas e gráficos detalhados de presença,
-  convidados, mesas, buffet, presentes e valores dos presentes.
+  convidados, mesas, buffet e presentes. Os valores da lista, reservados e
+  disponíveis mantêm o valor geral; valores informados, confirmados e pendentes
+  em dinheiro consideram PIX, cartão e cotas, enquanto compras online/físicas e
+  registros sem método aparecem em categorias próprias e clicáveis.
 - Módulo Financeiro administrativo para orçamento previsto, gastos reais,
   parcelas, cenários, categorias, pagadores, contextos de casamento/lua de mel,
   vínculo entre gasto e item previsto, alertas de vencimento e relatórios.
@@ -565,8 +568,9 @@ PixPayment.getQrCodeUrl(payload);
 ## Documentação Complementar
 
 - `docs/releases/release_v4.9.md`: documento de trabalho da próxima release,
-  iniciado com a página pública Manual dos Convidados; será atualizado até o
-  fechamento da versão.
+  com o Manual dos Convidados, a confirmação administrativa da forma de
+  presentear e a classificação financeira dos presentes; será atualizado até
+  o fechamento da versão.
 - `docs/operations/captcha_turnstile_setup.md`: ativação, testes e rollback do Cloudflare Turnstile nos logins.
 - `docs/operations/smtp_email_notifications_setup.md`: configuração SMTP, Gmail, Outlook/Hotmail, deploy e testes das notificações por e-mail.
 - `docs/operations/guest_spreadsheet_import.md` e `docs/operations/gift_spreadsheet_import.md`: preparação e uso dos geradores SQL para importar convidados e presentes a partir de planilhas.
@@ -667,6 +671,8 @@ PixPayment.getQrCodeUrl(payload);
 - `docs/migrations/security_admin_notification_operations_verify.sql`: verificação da RPC administrativa de notificações.
 - `docs/migrations/gift_email_notifications.sql`: migração incremental para criar eventos de e-mail em reservas, pagamentos, confirmações e liberações de presentes/cotas.
 - `docs/migrations/gift_email_notifications_verify.sql`: verificação incremental dos eventos de e-mail de presentes/cotas.
+- `docs/migrations/admin_gift_purchase_method_confirmation.sql` e
+  `docs/migrations/admin_gift_purchase_method_confirmation_verify.sql`: exigem e validam a forma de presentear ao confirmar uma compra pelo Admin.
 - `docs/migrations/guest_cancel_gift_reservation.sql`: migração incremental para permitir cancelamento de reservas pendentes pelo convidado e criar os eventos de e-mail de cancelamento.
 - `docs/migrations/guest_cancel_gift_reservation_verify.sql`: verificação incremental das RPCs e preferências de notificação de cancelamento.
 - `docs/migrations/notification_preferences.sql`: migração incremental das preferências por tipo de notificação.
@@ -811,4 +817,4 @@ Em aberto:
 - Rotação dos códigos de convite antes da publicação definitiva.
 - Upload interno de comprovantes.
 - Relatórios avançados por período ou fornecedor.
-- Indicadores financeiros avançados por período ou forma de pagamento.
+- Indicadores e relatórios financeiros avançados por período.

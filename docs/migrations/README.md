@@ -28,6 +28,7 @@ Exemplos recentes:
 - `wall_message_email_notifications.sql` + `wall_message_email_notifications_verify.sql`
 - `admin_nav_alerts.sql` + `admin_nav_alerts_verify.sql`
 - `admin_nav_financial_overdue_payments.sql` + `admin_nav_financial_overdue_payments_verify.sql`
+- `admin_gift_purchase_method_confirmation.sql` + `admin_gift_purchase_method_confirmation_verify.sql`
 - `guest_cancel_gift_reservation.sql` + `guest_cancel_gift_reservation_verify.sql`
 - `wedding_vendors.sql` + `wedding_vendors_verify.sql`
 - `wedding_schedule.sql` + `wedding_schedule_verify.sql`
@@ -90,6 +91,11 @@ os eventos transacionais `gift_reservation_cancelled` e
 `gift_contribution_cancelled` para envio pela Edge Function
 `send-notifications`. Reservas já informadas ou confirmadas não são canceladas
 diretamente pelo convidado.
+
+Observação: a migration `admin_gift_purchase_method_confirmation.sql` substitui a RPC de
+confirmação individual por uma assinatura que recebe a forma de compra. Em
+projetos existentes, aplique-a e execute o arquivo de verificação antes de
+publicar a versão atualizada do Admin.
 
 ## O Que Não Fazer
 

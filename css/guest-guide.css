@@ -200,6 +200,15 @@
   }
 }
 
+@media (max-width: 768px) {
+  .guest-guide-card:hover,
+  .guest-guide-tip-card:hover {
+    transform: none;
+    border-color: rgba(var(--color-primary-rgb), 0.18);
+    box-shadow: 0 20px 52px rgba(35, 24, 42, 0.12);
+  }
+}
+
 .guest-guide-tip-icon {
   display: grid;
   width: 2.35rem;

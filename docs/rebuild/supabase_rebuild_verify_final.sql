@@ -157,7 +157,7 @@ from (
     ('public.current_guest_id()'),
     ('public.is_admin()'),
     ('public.create_guest_with_invite_code(text,text,jsonb,integer,boolean,boolean,text)'),
-    ('public.admin_confirm_gift_purchase(uuid)'),
+    ('public.admin_confirm_gift_purchase(uuid,text)'),
     ('public.admin_release_gift_reservation(uuid)'),
     ('public.admin_confirm_gift_contribution(uuid)'),
     ('public.admin_release_gift_contribution(uuid)'),
@@ -734,7 +734,7 @@ select
     select 1
     from (
       values
-        ('public.admin_confirm_gift_purchase(uuid)'),
+        ('public.admin_confirm_gift_purchase(uuid,text)'),
         ('public.admin_release_gift_reservation(uuid)'),
         ('public.admin_confirm_gift_contribution(uuid)'),
         ('public.admin_release_gift_contribution(uuid)')

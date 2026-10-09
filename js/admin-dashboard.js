@@ -50,9 +50,16 @@ const dashboardMetricLinks = {
   totalGiftValue: "./admin-gifts.html",
   totalReservedValue: "./admin-gifts.html?status=Reservado",
   totalAvailableValue: "./admin-gifts.html?status=Dispon%C3%ADvel",
-  totalReportedValue: "./admin-gifts.html?payment=Informado",
-  totalConfirmedValue: "./admin-gifts.html?payment=Confirmado",
-  totalPendingValue: "./admin-gifts.html?payment=Pendente",
+  totalReportedValue:
+    "./admin-gifts.html?status=financial_tracked&payment=Informado&method=money",
+  totalConfirmedValue:
+    "./admin-gifts.html?status=financial_tracked&payment=Confirmado&method=money",
+  totalPendingValue:
+    "./admin-gifts.html?status=financial_tracked&payment=financial_pending&method=money",
+  totalNonMonetaryValue:
+    "./admin-gifts.html?status=financial_tracked&method=non_monetary",
+  totalMethodUnknownValue:
+    "./admin-gifts.html?status=financial_tracked&method=sem_metodo",
 };
 
 function formatCurrency(value) {
@@ -188,6 +195,8 @@ function getFinancialMetrics(gifts, contributions) {
     reportedValue: 0,
     confirmedValue: 0,
     pendingValue: 0,
+    nonMonetaryValue: 0,
+    methodUnknownValue: 0,
   };
 
   gifts.forEach((gift) => {
@@ -211,6 +220,20 @@ function getFinancialMetrics(gifts, contributions) {
     }
 
     metrics.reservedValue += price;
+
+    const purchaseMethod = String(gift.selected_purchase_method || "")
+      .trim()
+      .toLowerCase();
+
+    if (["online", "physical"].includes(purchaseMethod)) {
+      metrics.nonMonetaryValue += price;
+      return;
+    }
+
+    if (!["pix", "card"].includes(purchaseMethod)) {
+      metrics.methodUnknownValue += price;
+      return;
+    }
 
     if (isBought) {
       metrics.confirmedValue += price;
@@ -642,6 +665,14 @@ async function loadDashboard() {
     formatCurrency(financialMetrics.confirmedValue),
   );
   setText("totalPendingValue", formatCurrency(financialMetrics.pendingValue));
+  setText(
+    "totalNonMonetaryValue",
+    formatCurrency(financialMetrics.nonMonetaryValue),
+  );
+  setText(
+    "totalMethodUnknownValue",
+    formatCurrency(financialMetrics.methodUnknownValue),
+  );
   AdminDashboardCharts.updateFinancialChart(financialMetrics, formatCurrency);
 
 }

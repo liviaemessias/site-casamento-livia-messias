@@ -976,7 +976,7 @@
         </div>
       </section>
 
-      <section class="metrics-section dashboard-summary">
+      <section class="metrics-section dashboard-summary" id="gift-values">
         <div class="metrics-header">
           <h2>Valores dos Presentes</h2>
         </div>
@@ -1029,12 +1029,12 @@
 
           <div class="admin-card">
             <div class="admin-card-header">
-              <span>Pagamento Informado</span>
+              <span>Dinheiro Informado</span>
               <button
                 type="button"
                 class="metric-help"
-                aria-label="Ajuda sobre Pagamento Informado"
-                data-tooltip="Valores que os convidados marcaram como pagos/comprados e ainda aguardam confirmação dos noivos."
+                aria-label="Ajuda sobre Dinheiro Informado"
+                data-tooltip="Valores em PIX, cartão e cotas informados pelos convidados que ainda aguardam confirmação."
               >
                 ?
               </button>
@@ -1044,12 +1044,12 @@
 
           <div class="admin-card">
             <div class="admin-card-header">
-              <span>Valor Confirmado</span>
+              <span>Dinheiro Confirmado</span>
               <button
                 type="button"
                 class="metric-help"
-                aria-label="Ajuda sobre Valor Confirmado"
-                data-tooltip="Valores já confirmados pelos noivos em presentes individuais e contribuições por cotas."
+                aria-label="Ajuda sobre Dinheiro Confirmado"
+                data-tooltip="Valores recebidos em PIX, cartão e cotas já confirmados pelos noivos."
               >
                 ?
               </button>
@@ -1059,17 +1059,33 @@
 
           <div class="admin-card">
             <div class="admin-card-header">
-              <span>Valor Pendente</span>
+              <span>Dinheiro Pendente</span>
               <button
                 type="button"
                 class="metric-help"
-                aria-label="Ajuda sobre Valor Pendente"
-                data-tooltip="Valor reservado que ainda não foi informado nem confirmado."
+                aria-label="Ajuda sobre Dinheiro Pendente"
+                data-tooltip="Valores em PIX, cartão e cotas reservados que ainda não foram informados nem confirmados."
               >
                 ?
               </button>
             </div>
             <strong id="totalPendingValue" class="dashboard-money">R$ 0,00</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Presentes não monetários</span>
+              <button type="button" class="metric-help" aria-label="Ajuda sobre Presentes não monetários" data-tooltip="Valor dos presentes reservados, informados ou confirmados por compra online ou em loja. Não representa dinheiro recebido.">?</button>
+            </div>
+            <strong id="totalNonMonetaryValue" class="dashboard-money">R$ 0,00</strong>
+          </div>
+
+          <div class="admin-card">
+            <div class="admin-card-header">
+              <span>Forma não informada</span>
+              <button type="button" class="metric-help" aria-label="Ajuda sobre Forma não informada" data-tooltip="Valor de presentes reservados, informados ou confirmados sem forma de presentear registrada. Não entra nos totais em dinheiro.">?</button>
+            </div>
+            <strong id="totalMethodUnknownValue" class="dashboard-money">R$ 0,00</strong>
           </div>
         </div>
 
@@ -1077,7 +1093,7 @@
           <div class="dashboard-chart-header">
             <div>
               <h3 id="financialChartTitle">Distribuição dos Valores dos Presentes</h3>
-              <p>Comparativo visual entre valores disponíveis, pendentes, informados e confirmados.</p>
+              <p>Valores disponíveis, dinheiro pendente/informado/confirmado, presentes não monetários e forma não informada.</p>
             </div>
 
             <span id="financialChartTotal">R$ 0,00</span>
@@ -1093,6 +1109,8 @@
             <span class="chart-segment pending" id="financialPendingSegment"></span>
             <span class="chart-segment reported" id="financialReportedSegment"></span>
             <span class="chart-segment confirmed" id="financialConfirmedSegment"></span>
+            <span class="chart-segment non-monetary" id="financialNonMonetarySegment"></span>
+            <span class="chart-segment unknown-method" id="financialMethodUnknownSegment"></span>
           </div>
 
           <div class="dashboard-chart-legend">
@@ -1107,7 +1125,7 @@
             <div class="chart-legend-item">
               <span class="chart-dot pending"></span>
               <div>
-                <strong>Pendente</strong>
+                <strong>Dinheiro pendente</strong>
                 <small id="financialPendingLegend">R$ 0,00 · 0%</small>
               </div>
             </div>
@@ -1115,7 +1133,7 @@
             <div class="chart-legend-item">
               <span class="chart-dot reported"></span>
               <div>
-                <strong>Informado</strong>
+                <strong>Dinheiro informado</strong>
                 <small id="financialReportedLegend">R$ 0,00 · 0%</small>
               </div>
             </div>
@@ -1123,9 +1141,23 @@
             <div class="chart-legend-item">
               <span class="chart-dot confirmed"></span>
               <div>
-                <strong>Confirmado</strong>
+                <strong>Dinheiro confirmado</strong>
                 <small id="financialConfirmedLegend">R$ 0,00 · 0%</small>
               </div>
+            </div>
+            <div class="chart-legend-item">
+              <span class="chart-dot non-monetary"></span>
+              <div>
+                <strong>Presentes não monetários</strong>
+                <small id="financialNonMonetaryLegend">R$ 0,00 · 0%</small>
+                </div>
+            </div>
+            <div class="chart-legend-item">
+              <span class="chart-dot unknown-method"></span>
+              <div>
+                <strong>Forma não informada</strong>
+                <small id="financialMethodUnknownLegend">R$ 0,00 · 0%</small>
+                </div>
             </div>
           </div>
         </div>

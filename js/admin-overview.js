@@ -97,7 +97,11 @@ function getGiftOverview(gifts, contributions) {
 
     if (isConfirmed) {
       metrics.confirmed += 1;
-      metrics.confirmedValue += Number(gift.price || 0);
+      const purchaseMethod = String(gift.selected_purchase_method || "")
+        .toLowerCase();
+      if (["pix", "card"].includes(purchaseMethod)) {
+        metrics.confirmedValue += Number(gift.price || 0);
+      }
     } else if (isReserved) {
       metrics.reserved += 1;
       if (gift.payment_status === "Informado") {

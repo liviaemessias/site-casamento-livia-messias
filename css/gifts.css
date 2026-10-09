@@ -1257,6 +1257,32 @@
   align-items: stretch;
 }
 
+.gift-catalog-details.is-quota.has-image .gift-catalog-details-overview {
+  display: contents;
+}
+
+.gift-catalog-details.is-quota.has-image .gift-catalog-details-image {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  height: 100%;
+  max-height: none;
+  min-height: 100%;
+  aspect-ratio: auto;
+}
+
+.gift-catalog-details.is-quota.has-image .gift-catalog-details-main {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.gift-catalog-details.is-quota.has-image .gift-catalog-details-side {
+  grid-column: 2;
+  grid-row: 2;
+  height: auto;
+  grid-template-rows: auto;
+  align-content: start;
+}
+
 .gift-catalog-details-overview,
 .gift-catalog-details-side {
   display: grid;
@@ -1283,28 +1309,6 @@
   align-self: stretch;
   max-height: none;
   min-height: 100%;
-}
-
-.gift-catalog-details.is-quota.has-image .gift-catalog-details-image {
-  grid-row: auto;
-  height: auto;
-  max-height: 260px;
-  min-height: 160px;
-  aspect-ratio: 4 / 3;
-}
-
-.gift-catalog-details.is-quota.has-image .gift-catalog-details-overview,
-.gift-catalog-details.is-quota.has-image .gift-catalog-details-side {
-  height: 100%;
-}
-
-.gift-catalog-details.is-quota.has-image .gift-catalog-details-overview {
-  grid-template-rows: minmax(180px, 1fr) auto;
-}
-
-.gift-catalog-details.is-quota.has-image .gift-catalog-details-side {
-  grid-template-rows: minmax(0, 0.9fr) minmax(0, 1.1fr) auto;
-  align-content: stretch;
 }
 
 .gift-catalog-details h2 {
@@ -1361,15 +1365,6 @@
 .gift-catalog-details.is-quota .quota-card-info {
   margin: 0;
   padding: 0.85rem;
-}
-
-.gift-catalog-details.is-quota.has-image .quota-card-info {
-  height: 100%;
-  align-content: space-between;
-}
-
-.gift-catalog-details.is-quota.has-image .gift-catalog-details-actions {
-  align-self: end;
 }
 
 .gift-catalog-details-section > span {
@@ -2829,6 +2824,18 @@
 
   .gift-catalog-details.is-quota.has-image {
     grid-template-columns: 1fr;
+  }
+
+  .gift-catalog-details.is-quota.has-image .gift-catalog-details-overview {
+    display: grid;
+    grid-template-rows: auto;
+  }
+
+  .gift-catalog-details.is-quota.has-image .gift-catalog-details-image,
+  .gift-catalog-details.is-quota.has-image .gift-catalog-details-main,
+  .gift-catalog-details.is-quota.has-image .gift-catalog-details-side {
+    grid-column: auto;
+    grid-row: auto;
   }
 
   .gift-catalog-details.has-image .gift-catalog-details-image,

@@ -286,7 +286,7 @@ Exibe uma visão resumida com:
 
 - Pessoas esperadas e planejadas.
 - Convidados pagantes.
-- Valor confirmado.
+- Dinheiro confirmado em PIX, cartão e contribuições por cotas.
 - Presentes informados aguardando confirmação.
 - Recados pendentes.
 - Falhas de e-mail.
@@ -333,7 +333,19 @@ Concentra as métricas e gráficos detalhados do casamento:
 - Gráfico de distribuição dos presentes por situação.
 - Configurações de PIX e WhatsApp.
 - Cotas disponíveis e cotas confirmadas.
-- Valores financeiros da lista, reservados, disponíveis, informados, confirmados e pendentes, incluindo gráfico de distribuição.
+- Valores gerais da lista, reservados e disponíveis, além de valores em dinheiro
+  informados, confirmados e pendentes. As métricas em dinheiro contam PIX,
+  cartão e cotas; compras online e em loja aparecem como presentes não
+  monetários. Presentes sem `selected_purchase_method` ficam em forma não
+  informada e não entram nos totais em dinheiro.
+- Gráfico financeiro com categorias proporcionais e largura mínima visível para
+  segmentos positivos pequenos; legenda com os valores e percentuais calculados.
+- Os cartões de dinheiro informado, confirmado e pendente abrem a gestão de
+  presentes com filtros de status e método PIX/cartão. A pendência inclui
+  presentes e cotas sem status final.
+- Os cartões de presentes não monetários e de forma não informada filtram também
+  os estados reservados, informados ou confirmados, para corresponder aos
+  valores incluídos nos indicadores.
 
 ### Relatórios Consolidados
 
@@ -424,6 +436,9 @@ Permite:
 - Confirmar ou liberar contribuições por cota.
 - Exportar CSV dos presentes filtrados e ordenados.
 - Filtrar por busca textual, status, tipo, cotas, pagamento e forma de presentear.
+- Filtrar conjuntamente compras online e em loja como formas não monetárias;
+  PIX e cartão como pagamentos em dinheiro; também é possível filtrar registros
+  sem forma informada e pagamentos/cotas pendentes.
 - Ordenar por presente, categoria, convidado, status, forma, pagamento e data de reserva.
 - Ver contador de resultados e limpar filtros.
 
@@ -624,7 +639,7 @@ O sistema usa:
 - Avaliar empacotamento local de dependências CDN restantes.
 - Upload de comprovantes no sistema.
 - Relatórios avançados por período ou fornecedor.
-- Indicadores financeiros avançados por período ou forma de pagamento.
+- Indicadores financeiros avançados por período.
 - Integração real com gateway de pagamento.
 - Adicionar ou substituir as fotos oficiais do Pré-Wedding após o ensaio.
 

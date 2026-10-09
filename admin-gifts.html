@@ -88,6 +88,7 @@
                 <option value="Parcial">Parcial</option>
                 <option value="Reservado">Reservado</option>
                 <option value="Comprado">Comprado</option>
+                <option value="financial_tracked">Reservado, informado ou confirmado</option>
               </select>
             </div>
 
@@ -105,6 +106,7 @@
               <select id="giftPaymentFilter">
                 <option value="">Todos</option>
                 <option value="Pendente">Pendente</option>
+                <option value="financial_pending">Dinheiro pendente</option>
                 <option value="Informado">Informado</option>
                 <option value="Parcialmente informado">Parcialmente informado</option>
                 <option value="Parcialmente confirmado">Parcialmente confirmado</option>
@@ -134,6 +136,8 @@
                 <option value="card">Cartão</option>
                 <option value="online">Compra online</option>
                 <option value="physical">Loja física</option>
+                <option value="money">Dinheiro (PIX ou cartão)</option>
+                <option value="non_monetary">Compra online ou física</option>
                 <option value="sem_metodo">Sem forma</option>
               </select>
             </div>
@@ -309,6 +313,46 @@
       </div>
     </div>
 
+    <div class="admin-modal" id="giftPurchaseConfirmationModal">
+      <div class="admin-modal-content">
+        <button
+          type="button"
+          class="admin-modal-close"
+          id="closeGiftPurchaseConfirmationModalButton"
+          aria-label="Fechar"
+        >
+          ×
+        </button>
+
+        <h2>Confirmar compra</h2>
+        <p id="giftPurchaseConfirmationDescription">
+          Informe como o presente foi recebido para concluir a confirmação.
+        </p>
+
+        <form id="giftPurchaseConfirmationForm">
+          <div class="admin-form-group">
+            <label for="giftPurchaseConfirmationMethod">
+              Forma de presentear
+            </label>
+            <select id="giftPurchaseConfirmationMethod" required>
+              <option value="">Selecione a forma utilizada</option>
+            </select>
+          </div>
+
+          <button type="submit" class="admin-save-button">
+            Confirmar compra
+          </button>
+        </form>
+
+        <button
+          type="button"
+          class="admin-action-button has-top-space"
+          id="cancelGiftPurchaseConfirmationButton"
+        >
+          Cancelar
+        </button>
+      </div>
+    </div>
     <div class="admin-modal" id="externalOptionModal">
       <div class="admin-modal-content">
         <button

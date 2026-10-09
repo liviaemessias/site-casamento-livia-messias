@@ -13,6 +13,7 @@ let editingExternalOptionIndex = null;
 let cachedGifts = [];
 let cachedGiftGuests = [];
 let visibleGifts = [];
+let pendingGiftPurchaseConfirmationId = null;
 let giftSortState = {
   key: "category",
   direction: "asc",
@@ -38,6 +39,24 @@ const closeGiftDetailsModalButton = document.getElementById(
 );
 const giftDetailsTitle = document.getElementById("giftDetailsTitle");
 const giftDetailsContent = document.getElementById("giftDetailsContent");
+const giftPurchaseConfirmationModal = document.getElementById(
+  "giftPurchaseConfirmationModal",
+);
+const giftPurchaseConfirmationForm = document.getElementById(
+  "giftPurchaseConfirmationForm",
+);
+const giftPurchaseConfirmationMethod = document.getElementById(
+  "giftPurchaseConfirmationMethod",
+);
+const giftPurchaseConfirmationDescription = document.getElementById(
+  "giftPurchaseConfirmationDescription",
+);
+const closeGiftPurchaseConfirmationModalButton = document.getElementById(
+  "closeGiftPurchaseConfirmationModalButton",
+);
+const cancelGiftPurchaseConfirmationButton = document.getElementById(
+  "cancelGiftPurchaseConfirmationButton",
+);
 const openGiftModalButton = document.getElementById("openGiftModalButton");
 const closeGiftModalButton = document.getElementById("closeGiftModalButton");
 const giftForm = document.getElementById("giftForm");
@@ -407,7 +426,37 @@ function matchesPaymentFilter(gift, paymentFilter) {
     return !displayPaymentStatus;
   }
 
+  if (paymentFilter === "financial_pending") {
+    if (!isQuotaGift(gift)) {
+      const isConfirmed =
+        gift.status === "Comprado" || gift.payment_status === "Confirmado";
+      const isReported = gift.payment_status === "Informado";
+
+      return !isConfirmed && !isReported;
+    }
+
+    return (gift.quota_contributions || []).some(
+      (contribution) =>
+        contribution.payment_status !== "Informado" &&
+        contribution.payment_status !== "Confirmado",
+    );
+  }
+
   if (!isQuotaGift(gift)) {
+    if (paymentFilter === "Confirmado") {
+      return (
+        gift.status === "Comprado" || gift.payment_status === "Confirmado"
+      );
+    }
+
+    if (paymentFilter === "Informado") {
+      return (
+        gift.status !== "Comprado" &&
+        gift.payment_status !== "Confirmado" &&
+        gift.payment_status === "Informado"
+      );
+    }
+
     return displayPaymentStatus === paymentFilter;
   }
 
@@ -1551,11 +1600,30 @@ function applyGiftFilters() {
       Number(gift.quota_count || 0) >
         Number(gift.quota_reserved_count || 0);
     const displayStatus = getGiftDisplayStatus(gift);
+    const hasTrackedQuotaValue =
+      isQuotaGift(gift) &&
+      (gift.quota_contributions || []).some(
+        (contribution) =>
+          Number(contribution.total_value || 0) > 0 ||
+          Number(contribution.quota_quantity || 0) *
+            Number(contribution.quota_value || 0) >
+            0,
+      );
+    const isFinanciallyTracked =
+      hasTrackedQuotaValue ||
+      (Number(gift.price || 0) > 0 &&
+        (gift.status === "Reservado" ||
+          Boolean(gift.reserved_guest_id) ||
+          gift.status === "Comprado" ||
+          gift.payment_status === "Informado" ||
+          gift.payment_status === "Confirmado"));
     const matchesStatus =
-      !status ||
-      displayStatus === status ||
-      (status === "Disponível" && hasAvailableQuota) ||
-      (status === "Reservado" && displayStatus === "Parcial");
+      status === "financial_tracked"
+        ? isFinanciallyTracked
+        : !status ||
+          displayStatus === status ||
+          (status === "Disponível" && hasAvailableQuota) ||
+          (status === "Reservado" && displayStatus === "Parcial");
     const matchesPayment = matchesPaymentFilter(gift, payment);
     const giftMethod = isQuotaGift(gift)
       ? "pix"
@@ -1564,7 +1632,11 @@ function applyGiftFilters() {
       !method ||
       (method === "sem_metodo"
         ? !giftMethod
-        : giftMethod === method);
+        : method === "non_monetary"
+          ? ["online", "physical"].includes(giftMethod)
+          : method === "money"
+            ? ["pix", "card"].includes(giftMethod)
+            : giftMethod === method);
     const matchesQuota = matchesQuotaFilter(gift, quota);
 
     return (
@@ -2116,34 +2188,137 @@ function renderGiftActions(gift) {
   `;
 }
 
-window.markGiftAsBought = async function (giftId) {
-  const confirmed = confirm("Confirmar que este presente foi comprado?");
+const GIFT_PURCHASE_METHOD_LABELS = {
+  pix: "PIX",
+  card: "Cartão",
+  online: "Compra online",
+  physical: "Loja física",
+};
 
-  if (!confirmed) {
+function getAllowedGiftPurchaseMethods(gift) {
+  const mode = gift.purchase_mode || "money";
+  const methods =
+    mode === "external"
+      ? ["online", "physical"]
+      : mode === "hybrid"
+        ? ["pix", "card", "online", "physical"]
+        : mode === "money"
+          ? ["pix", "card"]
+          : [];
+
+  return methods.filter((method) => {
+    if (method === "pix" || method === "card") {
+      if (Number(gift.price || 0) <= 0) {
+        return false;
+      }
+
+      if (method === "card" && !String(gift.card_payment_url || "").trim()) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+}
+
+function closeGiftPurchaseConfirmationModal() {
+  giftPurchaseConfirmationModal.classList.remove("active");
+  giftPurchaseConfirmationForm.reset();
+  pendingGiftPurchaseConfirmationId = null;
+}
+
+function openGiftPurchaseConfirmationModal(gift) {
+  const methods = getAllowedGiftPurchaseMethods(gift);
+
+  if (!methods.length) {
+    showAdminToast(
+      "⚠️ Este presente não possui uma forma de compra válida para confirmação",
+    );
     return;
   }
 
+  pendingGiftPurchaseConfirmationId = gift.id;
+  giftPurchaseConfirmationDescription.textContent =
+    "Selecione como o presente “" +
+    gift.name +
+    "” foi recebido. Essa informação será usada para separar valores em dinheiro de compras físicas ou online.";
+
+  giftPurchaseConfirmationMethod.replaceChildren();
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = "Selecione a forma utilizada";
+  giftPurchaseConfirmationMethod.append(placeholder);
+
+  methods.forEach((method) => {
+    const option = document.createElement("option");
+    option.value = method;
+    option.textContent = GIFT_PURCHASE_METHOD_LABELS[method];
+    giftPurchaseConfirmationMethod.append(option);
+  });
+
+  giftPurchaseConfirmationModal.classList.add("active");
+  giftPurchaseConfirmationMethod.focus();
+}
+
+async function submitGiftPurchaseConfirmation(gift, method) {
   const { data, error } = await supabaseClient.rpc(
     "admin_confirm_gift_purchase",
     {
-      target_gift_id: giftId,
+      target_gift_id: gift.id,
+      target_purchase_method: method,
     },
   );
 
   if (error || data !== true) {
     console.error(error);
     showAdminToast(
-      "⚠️ Não foi possível confirmar a compra. Atualize a lista e tente novamente",
+      "⚠️ Não foi possível confirmar. Verifique a forma escolhida, atualize a lista e tente novamente",
+    );
+    return false;
+  }
+
+  closeGiftPurchaseConfirmationModal();
+  closeGiftDetailsModal();
+  showAdminToast("💜 Presente marcado como comprado!");
+  queueGiftNotification("gift_purchase_confirmed", gift.id);
+  await loadGiftsAdmin();
+  return true;
+}
+
+window.markGiftAsBought = async function (giftId) {
+  const gift = findCachedGiftById(giftId);
+
+  if (!gift) {
+    showAdminToast("⚠️ Presente não encontrado. Atualize a lista e tente novamente");
+    return;
+  }
+
+  const selectedMethod = gift.selected_purchase_method;
+  const allowedMethods = getAllowedGiftPurchaseMethods(gift);
+
+  if (!selectedMethod) {
+    openGiftPurchaseConfirmationModal(gift);
+    return;
+  }
+
+  if (!allowedMethods.includes(selectedMethod)) {
+    showAdminToast(
+      "⚠️ A forma escolhida não é compatível com o modo de compra deste presente",
     );
     return;
   }
 
-  closeGiftDetailsModal();
-  showAdminToast("💜 Presente marcado como comprado!");
-  queueGiftNotification("gift_purchase_confirmed", giftId);
-  await loadGiftsAdmin();
-};
+  const methodLabel = GIFT_PURCHASE_METHOD_LABELS[selectedMethod];
+  const confirmed = confirm(
+    "Confirmar a compra deste presente? Forma registrada: " + methodLabel + ".",
+  );
 
+  if (!confirmed) {
+    return;
+  }
+
+  await submitGiftPurchaseConfirmation(gift, selectedMethod);
+};
 window.sendGiftReservationReminder = async function (giftId) {
   const confirmed = confirm(
     "Enviar lembrete manual para esta reserva de presente?",
@@ -2559,6 +2734,32 @@ window.deleteGift = async function (gift) {
   await loadGiftsAdmin();
 };
 
+closeGiftPurchaseConfirmationModalButton.addEventListener(
+  "click",
+  closeGiftPurchaseConfirmationModal,
+);
+cancelGiftPurchaseConfirmationButton.addEventListener(
+  "click",
+  closeGiftPurchaseConfirmationModal,
+);
+giftPurchaseConfirmationModal.addEventListener("click", (event) => {
+  if (event.target === giftPurchaseConfirmationModal) {
+    closeGiftPurchaseConfirmationModal();
+  }
+});
+giftPurchaseConfirmationForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  const gift = findCachedGiftById(pendingGiftPurchaseConfirmationId);
+  const method = giftPurchaseConfirmationMethod.value;
+
+  if (!gift || !getAllowedGiftPurchaseMethods(gift).includes(method)) {
+    showAdminToast("⚠️ Selecione uma forma válida para este presente");
+    return;
+  }
+
+  await submitGiftPurchaseConfirmation(gift, method);
+});
 openGiftModalButton.addEventListener("click", openGiftModal);
 closeGiftModalButton.addEventListener("click", closeGiftModal);
 closeGiftDetailsModalButton.addEventListener("click", () => {

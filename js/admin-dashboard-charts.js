@@ -9,11 +9,11 @@
     const element = document.getElementById(id);
 
     if (element) {
-      const step = Math.max(0, Math.min(20, Math.round(Number(value || 0) / 5)));
-      [...element.classList]
-        .filter((className) => className.startsWith("chart-size-"))
-        .forEach((className) => element.classList.remove(className));
-      element.classList.add(`chart-size-${step}`);
+      const percentage = Math.max(0, Math.min(100, Number(value || 0)));
+      element.style.width = `${percentage}%`;
+      element.style.flexBasis = `${percentage}%`;
+      element.style.flexGrow = "0";
+      element.style.flexShrink = "0";
     }
   }
 
@@ -179,25 +179,39 @@
           legendId: "financialAvailableLegend",
         },
         {
-          label: "Pendente",
+          label: "Dinheiro pendente",
           value: financialMetrics.pendingValue,
           formattedValue: formatCurrency(financialMetrics.pendingValue),
           segmentId: "financialPendingSegment",
           legendId: "financialPendingLegend",
         },
         {
-          label: "Informado",
+          label: "Dinheiro informado",
           value: financialMetrics.reportedValue,
           formattedValue: formatCurrency(financialMetrics.reportedValue),
           segmentId: "financialReportedSegment",
           legendId: "financialReportedLegend",
         },
         {
-          label: "Confirmado",
+          label: "Dinheiro confirmado",
           value: financialMetrics.confirmedValue,
           formattedValue: formatCurrency(financialMetrics.confirmedValue),
           segmentId: "financialConfirmedSegment",
           legendId: "financialConfirmedLegend",
+        },
+        {
+          label: "Presentes não monetários",
+          value: financialMetrics.nonMonetaryValue,
+          formattedValue: formatCurrency(financialMetrics.nonMonetaryValue),
+          segmentId: "financialNonMonetarySegment",
+          legendId: "financialNonMonetaryLegend",
+        },
+        {
+          label: "Forma não informada",
+          value: financialMetrics.methodUnknownValue,
+          formattedValue: formatCurrency(financialMetrics.methodUnknownValue),
+          segmentId: "financialMethodUnknownSegment",
+          legendId: "financialMethodUnknownLegend",
         },
       ],
     });
