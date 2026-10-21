@@ -18,8 +18,18 @@ function renderGiftsHeroTitle(title, text) {
 
 function updateGuestSpecificCopy() {
   const title = document.getElementById("giftsHeroTitle");
+  const tutorialContactButton = document.getElementById(
+    "giftTutorialContactButton",
+  );
+  const isCoupleInvite = guest?.invite_type === "couple";
 
-  if (guest?.invite_type !== "couple") {
+  if (tutorialContactButton) {
+    tutorialContactButton.textContent = isCoupleInvite
+      ? "Ainda têm dúvidas? Falem com os noivos"
+      : "Ainda tem dúvida? Fale com os noivos";
+  }
+
+  if (!isCoupleInvite) {
     renderGiftsHeroTitle(title, "Compartilhe esse momento conosco");
     return;
   }
@@ -77,8 +87,32 @@ const pendingGiftsFloatingText = document.getElementById(
   "pendingGiftsFloatingText",
 );
 const giftHelpFloatingButton = document.getElementById("giftHelpFloatingButton");
+const giftTutorialFloatingButton = document.getElementById(
+  "giftTutorialFloatingButton",
+);
 const giftCatalogDetailsModal = document.getElementById("giftCatalogDetailsModal");
 const giftCatalogDetailsContent = document.getElementById("giftCatalogDetailsContent");
+const giftTutorialModal = document.getElementById("giftTutorialModal");
+const giftTutorialProgressLabel = document.getElementById(
+  "giftTutorialProgressLabel",
+);
+const giftTutorialProgressTrack = giftTutorialModal?.querySelector(
+  ".gift-tutorial-progress-track",
+);
+const giftTutorialProgressBar = document.getElementById(
+  "giftTutorialProgressBar",
+);
+const giftTutorialTitle = document.getElementById("giftTutorialTitle");
+const giftTutorialBody = document.getElementById("giftTutorialBody");
+const giftTutorialBackButton = document.getElementById(
+  "giftTutorialBackButton",
+);
+const giftTutorialNextButton = document.getElementById(
+  "giftTutorialNextButton",
+);
+const giftTutorialContactButton = document.getElementById(
+  "giftTutorialContactButton",
+);
 const giftsFilterPanel = document.getElementById("giftsFilterPanel");
 const giftsFilterToggle = document.getElementById("giftsFilterToggle");
 const giftsFilterContent = document.getElementById("giftsFilterContent");
@@ -104,6 +138,7 @@ const confirmReservationConfirmation = document.getElementById(
   "confirmReservationConfirmation",
 );
 let pendingReservationData = null;
+let giftTutorialCurrentStep = 0;
 
 const toast = document.getElementById("toast");
 const cardPaymentButton = document.getElementById("cardPaymentButton");
@@ -179,6 +214,10 @@ document
     purchaseMethodModal.classList.remove("active");
   });
 
+document
+  .getElementById("closeGiftTutorialModal")
+  ?.addEventListener("click", closeGiftTutorial);
+
 decreaseQuotaButton?.addEventListener("click", () => {
   quotaQuantityInput.value = Math.max(1, Number(quotaQuantityInput.value || 1) - 1);
   updateQuotaSelectionSummary();
@@ -234,6 +273,29 @@ pendingGiftsFloatingButton?.addEventListener(
 );
 
 giftHelpFloatingButton?.addEventListener("click", () => {
+  openContactCoupleModal(null, null, { mode: "help" });
+});
+
+giftTutorialFloatingButton?.addEventListener("click", () => {
+  openGiftTutorial();
+});
+
+giftTutorialBackButton?.addEventListener("click", () => {
+  renderGiftTutorialStep(giftTutorialCurrentStep - 1);
+});
+
+giftTutorialNextButton?.addEventListener("click", () => {
+  const finalStep = getGiftTutorialSteps().length - 1;
+
+  if (giftTutorialCurrentStep >= finalStep) {
+    closeGiftTutorial();
+    return;
+  }
+
+  renderGiftTutorialStep(giftTutorialCurrentStep + 1);
+});
+
+giftTutorialContactButton?.addEventListener("click", () => {
   openContactCoupleModal(null, null, { mode: "help" });
 });
 
@@ -832,8 +894,8 @@ function getGiftPaymentModalCopy(method) {
       ? "Usem o QR-Code ou copiem o código PIX abaixo para realizar o pagamento."
       : "Use o QR-Code ou copie o código PIX abaixo para realizar o pagamento.",
     card: isCouple
-      ? "Cliquem no botão abaixo para abrir a página de pagamento com cartão."
-      : "Clique no botão abaixo para abrir a página de pagamento com cartão.",
+      ? "Cliquem no botão abaixo para abrir a página de pagamento com cartão. Parcelamento ou condições do checkout podem alterar o valor."
+      : "Clique no botão abaixo para abrir a página de pagamento com cartão. Parcelamento ou condições do checkout podem alterar o valor.",
     online: isCouple
       ? `Selecionem uma das opções, comprem pelo site externo e depois retornem aqui para nos informar, clicando no botão "${purchaseButtonLabel}". Assim, ficamos sabendo.`
       : `Selecione uma das opções, compre pelo site externo e depois retorne aqui para nos informar, clicando no botão "${purchaseButtonLabel}". Assim, ficamos sabendo.`,
@@ -898,6 +960,46 @@ function getGiftCardClass(gift) {
 
 function formatCurrency(value) {
   return `R$ ${Number(value || 0).toFixed(2)}`;
+}
+
+const MERCADO_PAGO_CARD_FEE_RATE = 0.0498;
+
+function formatPaymentCurrency(value) {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(Number(value || 0));
+}
+
+function calculateCardPaymentTotalCents(giftValue) {
+  const baseCents = Math.round(Number(giftValue || 0) * 100);
+
+  if (!Number.isFinite(baseCents) || baseCents <= 0) {
+    return 0;
+  }
+
+  return Math.round(
+    baseCents / (1 - MERCADO_PAGO_CARD_FEE_RATE),
+  );
+}
+
+function renderPaymentGiftPrice(gift) {
+  const giftPrice = renderGiftPrice(gift);
+
+  if (gift.selected_purchase_method !== "card" || !giftPrice) {
+    return giftPrice;
+  }
+
+  const baseValue = isQuotaGift(gift)
+    ? getQuotaValue(gift)
+    : Number(gift.price || 0);
+  const totalCents = calculateCardPaymentTotalCents(baseValue);
+  const quotaLabel = isQuotaGift(gift) ? " por cota" : "";
+
+  return (
+    `${formatPaymentCurrency(baseValue)}${quotaLabel} + taxa do cartão ` +
+    `(total aprox. ${formatPaymentCurrency(totalCents / 100)})`
+  );
 }
 
 function renderGiftPrice(gift) {
@@ -1426,7 +1528,11 @@ function scrollToPendingGiftsSection() {
 }
 
 function syncPendingGiftsFloatingPosition() {
-  if (!pendingGiftsFloatingButton && !giftHelpFloatingButton) {
+  if (
+    !pendingGiftsFloatingButton &&
+    !giftHelpFloatingButton &&
+    !giftTutorialFloatingButton
+  ) {
     return;
   }
 
@@ -1443,6 +1549,10 @@ function syncPendingGiftsFloatingPosition() {
     "above-email-hint",
     Boolean(shouldFloatAboveEmailHint),
   );
+  giftTutorialFloatingButton?.classList.toggle(
+    "above-email-hint",
+    Boolean(shouldFloatAboveEmailHint),
+  );
 
   let baseOffset = window.matchMedia("(max-width: 768px)").matches
     ? 14
@@ -1456,9 +1566,15 @@ function syncPendingGiftsFloatingPosition() {
 
   const hasHelpFloatingButton =
     giftHelpFloatingButton?.classList.contains("active");
-  const pendingOffset = hasHelpFloatingButton
-    ? baseOffset + giftHelpFloatingButton.offsetHeight + 10
-    : baseOffset;
+  const hasTutorialFloatingButton =
+    giftTutorialFloatingButton?.classList.contains("active");
+  const helpOffset = hasHelpFloatingButton
+    ? giftHelpFloatingButton.offsetHeight + 10
+    : 0;
+  const tutorialOffset = hasTutorialFloatingButton
+    ? giftTutorialFloatingButton.offsetHeight + 10
+    : 0;
+  const pendingOffset = baseOffset + helpOffset + tutorialOffset;
 
   pendingGiftsFloatingButton?.style.setProperty(
     "--pending-gifts-floating-bottom",
@@ -1467,6 +1583,10 @@ function syncPendingGiftsFloatingPosition() {
   giftHelpFloatingButton?.style.setProperty(
     "--gift-help-floating-bottom",
     `${Math.ceil(baseOffset)}px`,
+  );
+  giftTutorialFloatingButton?.style.setProperty(
+    "--gift-tutorial-floating-bottom",
+    `${Math.ceil(baseOffset + helpOffset)}px`,
   );
 }
 
@@ -1987,6 +2107,13 @@ function renderGiftCards(gifts) {
 function renderGiftCatalogDetails(gift) {
   const description = String(gift.description || "").trim();
   const paymentMethods = getGiftPaymentMethodOptions(gift);
+  const cardPaymentEstimate =
+    paymentMethods.some((method) => method.modifier === "card") &&
+    hasGiftPrice(gift)
+      ? formatPaymentCurrency(
+          calculateCardPaymentTotalCents(gift.price) / 100,
+        )
+      : "";
   const quotaDetails = isQuotaGift(gift)
     ? renderQuotaInfo(gift)
     : "";
@@ -2059,6 +2186,16 @@ function renderGiftCatalogDetails(gift) {
                 )
                 .join("")}
             </div>
+            ${
+              cardPaymentEstimate
+                ? `
+                  <p class="gift-catalog-details-description gift-catalog-card-estimate">
+                    No cartão, total aproximado com taxa:
+                    ${safeText(cardPaymentEstimate)}.
+                  </p>
+                `
+                : ""
+            }
           `
           : '<p class="gift-catalog-details-description muted">Nenhuma forma disponível no momento.</p>'
       }
@@ -2108,6 +2245,161 @@ function renderGiftCatalogDetails(gift) {
       ${actionsSection}
     </div>
   `;
+}
+
+function getGiftTutorialSteps() {
+  const isCouple = isCoupleInvite();
+
+  return [
+    {
+      title: isCouple ? "O presente, do jeito de vocês" : "O presente, do seu jeito",
+      blocks: [
+        {
+          type: "paragraph",
+          text: isCouple
+            ? "Cada presente tem seu jeitinho: alguns oferecem várias formas de presentear — PIX, cartão de crédito, compra online ou em loja física — e outros têm só uma ou duas opções. Vocês escolhem livremente a que preferirem."
+            : "Cada presente tem seu jeitinho: alguns oferecem várias formas de presentear — PIX, cartão de crédito, compra online ou em loja física — e outros têm só uma ou duas opções. Você escolhe livremente a que preferir.",
+        },
+        {
+          type: "paragraph",
+          text: isCouple
+            ? "Para começar, escolham um presente e toquem em “Presentear” (ou “Contribuir”, nas cotas). Depois da reserva, confiram as formas disponíveis e sigam as instruções."
+            : "Para começar, escolha um presente e toque em “Presentear” (ou “Contribuir”, nas cotas). Depois da reserva, confira as formas disponíveis e siga as instruções.",
+        },
+      ],
+    },
+    {
+      title: isCouple ? "Contribuam com o valor" : "Contribua com o valor",
+      blocks: [
+        {
+          type: "list",
+          items: [
+            isCouple
+              ? "PIX — nessa opção, os noivos recebem o valor do presente. Usem o QR Code ou copiem o código para pagar pelo aplicativo do banco de vocês. Se o banco oferecer essa opção, vocês também poderão parcelar o PIX pelo próprio aplicativo."
+              : "PIX — nessa opção, os noivos recebem o valor do presente. Use o QR Code ou copie o código para pagar pelo aplicativo do seu banco. Se o banco oferecer essa opção, você também poderá parcelar o PIX pelo próprio aplicativo.",
+            isCouple
+              ? "Cartão de crédito — os noivos recebem o valor do presente. Abram o checkout pelo botão indicado e confiram o total estimado com a taxa antes de concluir. Parcelamento ou condições do checkout podem alterar o valor."
+              : "Cartão de crédito — os noivos recebem o valor do presente. Abra o checkout pelo botão indicado e confira o total estimado com a taxa antes de concluir. Parcelamento ou condições do checkout podem alterar o valor.",
+          ],
+        },
+        {
+          type: "note",
+          text: isCouple
+            ? "Em presentes por cotas, vocês escolhem a quantidade. A contribuição é feita via PIX e, se o banco oferecer, pode ser parcelada pelo próprio aplicativo."
+            : "Em presentes por cotas, você escolhe a quantidade. A contribuição é feita via PIX e, se o banco oferecer, pode ser parcelada pelo próprio aplicativo.",
+        },
+      ],
+    },
+    {
+      title: isCouple ? "Comprem o produto" : "Compre o produto",
+      blocks: [
+        {
+          type: "list",
+          items: [
+            isCouple
+              ? "Online — escolham uma das lojas ou links disponíveis e comprem o produto diretamente no site da loja."
+              : "Online — escolha uma das lojas ou links disponíveis e compre o produto diretamente no site da loja.",
+            isCouple
+              ? "Loja física — sigam as informações exibidas e comprem o produto presencialmente."
+              : "Loja física — siga as informações exibidas e compre o produto presencialmente.",
+          ],
+        },
+        {
+          type: "paragraph",
+          text: isCouple
+            ? "Assim, vocês presenteiam os noivos com o produto físico. A entrega pode ser combinada para o dia do casamento, outra data ou para a casa dos noivos. Se quiserem enviar para casa, falem com a gente para combinar e pedir o endereço."
+            : "Assim, você presenteia os noivos com o produto físico. A entrega pode ser combinada para o dia do casamento, outra data ou para a casa dos noivos. Se quiser enviar para casa, fale com a gente para combinar e pedir o endereço.",
+        },
+      ],
+    },
+    {
+      title: isCouple ? "Avisem os noivos" : "Avise os noivos",
+      blocks: [
+        {
+          type: "paragraph",
+          text: isCouple
+            ? "Depois de pagarem via PIX ou cartão, toquem em “Já realizamos o pagamento”. Depois de comprarem em uma loja online ou física, toquem em “Já realizamos a compra”. Avisar pelo site ajuda os noivos a acompanhar o presente."
+            : "Depois de pagar via PIX ou cartão, toque em “Já realizei o pagamento”. Depois de comprar em uma loja online ou física, toque em “Já realizei a compra”. Avisar pelo site ajuda os noivos a acompanhar o presente.",
+        },
+        {
+          type: "note",
+          text: "O presente continuará reservado até a confirmação manual dos noivos.",
+        },
+      ],
+    },
+  ];
+}
+
+function renderGiftTutorialStep(stepIndex) {
+  if (!giftTutorialTitle || !giftTutorialBody) {
+    return;
+  }
+
+  const steps = getGiftTutorialSteps();
+  const safeIndex = Math.min(Math.max(stepIndex, 0), steps.length - 1);
+  const step = steps[safeIndex];
+  const stepNumber = safeIndex + 1;
+
+  giftTutorialCurrentStep = safeIndex;
+  giftTutorialTitle.textContent = step.title;
+  giftTutorialBody.replaceChildren();
+
+  step.blocks.forEach((block) => {
+    if (block.type === "list") {
+      const list = document.createElement("ul");
+      list.className = "gift-tutorial-list";
+
+      block.items.forEach((item) => {
+        const listItem = document.createElement("li");
+        listItem.textContent = item;
+        list.appendChild(listItem);
+      });
+
+      giftTutorialBody.appendChild(list);
+      return;
+    }
+
+    const paragraph = document.createElement("p");
+    paragraph.className = block.type === "note" ? "gift-tutorial-note" : "";
+    paragraph.textContent = block.text;
+    giftTutorialBody.appendChild(paragraph);
+  });
+
+  if (giftTutorialProgressLabel) {
+    giftTutorialProgressLabel.textContent = `Etapa ${stepNumber} de ${steps.length}`;
+  }
+
+  if (giftTutorialProgressTrack) {
+    giftTutorialProgressTrack.setAttribute("aria-valuenow", String(stepNumber));
+  }
+
+  if (giftTutorialProgressBar) {
+    giftTutorialProgressBar.style.width = `${(stepNumber / steps.length) * 100}%`;
+  }
+
+  if (giftTutorialBackButton) {
+    setElementVisibility(giftTutorialBackButton, safeIndex > 0);
+  }
+
+  if (giftTutorialNextButton) {
+    giftTutorialNextButton.textContent =
+      safeIndex === steps.length - 1 ? "Concluir" : "Próxima";
+  }
+}
+
+function openGiftTutorial() {
+  if (!giftTutorialModal) {
+    return;
+  }
+
+  renderGiftTutorialStep(0);
+  giftTutorialModal.classList.add("active");
+  giftTutorialNextButton?.focus({ preventScroll: true });
+}
+
+function closeGiftTutorial() {
+  giftTutorialModal?.classList.remove("active");
+  giftTutorialFloatingButton?.focus({ preventScroll: true });
 }
 
 function openGiftCatalogDetails(gift) {
@@ -2676,7 +2968,7 @@ function updatePaymentGiftSummary(gift) {
   const giftNameElement = document.getElementById("pixGiftName");
   const giftPriceElement = document.getElementById("pixGiftPrice");
   const giftPriceLabelElement = giftPriceElement?.previousElementSibling;
-  const giftPrice = renderGiftPrice(gift);
+  const giftPrice = renderPaymentGiftPrice(gift);
 
   if (giftNameElement) {
     giftNameElement.textContent = gift.name;
@@ -3668,6 +3960,10 @@ window.addEventListener("click", (e) => {
     closeGiftCatalogDetailsModal();
   }
 
+  if (e.target === giftTutorialModal) {
+    closeGiftTutorial();
+  }
+
   if (e.target === reserveModal) {
     reserveModal.classList.remove("active");
   }
@@ -3700,6 +3996,7 @@ window.addEventListener("click", (e) => {
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     closeGiftCatalogDetailsModal();
+    closeGiftTutorial();
     reserveModal.classList.remove("active");
     closeReservationConfirmationModal();
     purchaseMethodModal.classList.remove("active");

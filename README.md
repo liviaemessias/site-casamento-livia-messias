@@ -2,7 +2,7 @@
 
 Site de casamento personalizado para centralizar informações do evento, RSVP, lista de presentes e administração dos noivos.
 
-Versão atual: **4.8**.
+Versão atual: **5.0**.
 
 ## Desenvolvimento
 
@@ -37,6 +37,9 @@ GitHub: [messiasfl10](https://github.com/messiasfl10/)
 - Área de acompanhamento dos presentes do convite que ainda possuem ações pendentes.
 - Dica na lista de presentes para informar e-mail no RSVP e receber confirmações, novidades e avisos.
 - Formas de presentear por PIX, cartão via checkout externo, compra online e loja física.
+- Tutorial opcional em quatro etapas na Lista de Presentes, com orientações
+  sobre as formas de presentear e textos adaptados a convites individuais ou de
+  casal.
 - QR-Code e PIX Copia e Cola gerados no frontend.
 - Confirmação antes de reservar presentes ou informar pagamentos e compras.
 - Integração opcional entre mensagem do RSVP e Mural de Recados, com aprovação
@@ -567,10 +570,9 @@ PixPayment.getQrCodeUrl(payload);
 
 ## Documentação Complementar
 
-- `docs/releases/release_v4.9.md`: documento de trabalho da próxima release,
-  com o Manual dos Convidados, a confirmação administrativa da forma de
-  presentear e a classificação financeira dos presentes; será atualizado até
-  o fechamento da versão.
+- `docs/releases/release_v5.0.md`: notas da versão 5.0, com o Manual dos
+  Convidados, a confirmação administrativa da forma de presentear, a
+  classificação financeira dos presentes e o tutorial da Lista de Presentes.
 - `docs/operations/captcha_turnstile_setup.md`: ativação, testes e rollback do Cloudflare Turnstile nos logins.
 - `docs/operations/smtp_email_notifications_setup.md`: configuração SMTP, Gmail, Outlook/Hotmail, deploy e testes das notificações por e-mail.
 - `docs/operations/guest_spreadsheet_import.md` e `docs/operations/gift_spreadsheet_import.md`: preparação e uso dos geradores SQL para importar convidados e presentes a partir de planilhas.
