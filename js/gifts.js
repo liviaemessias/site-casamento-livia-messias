@@ -2266,6 +2266,48 @@ function getGiftTutorialSteps() {
             ? "Para começar, escolham um presente e toquem em “Presentear” (ou “Contribuir”, nas cotas). Depois da reserva, confiram as formas disponíveis e sigam as instruções."
             : "Para começar, escolha um presente e toque em “Presentear” (ou “Contribuir”, nas cotas). Depois da reserva, confira as formas disponíveis e siga as instruções.",
         },
+        {
+          type: "note",
+          text: isCouple
+            ? "Se mudarem de ideia, vocês podem cancelar a reserva do presente ou a contribuição por cotas enquanto ela ainda estiver pendente. Essa opção deixa de aparecer depois que avisarem os noivos pelo site que realizaram o pagamento ou a compra."
+            : "Se você mudar de ideia, pode cancelar a reserva do presente ou a contribuição por cotas enquanto ela ainda estiver pendente. Essa opção deixa de aparecer depois que avisar os noivos pelo site que realizou o pagamento ou a compra.",
+        },
+      ],
+    },
+    {
+      title: "O que os ícones contam",
+      blocks: [
+        {
+          type: "paragraph",
+          text: "Nos cards, os ícones mostram as formas disponíveis para cada presente:",
+        },
+        {
+          type: "payment-methods",
+          items: [
+            {
+              modifier: "pix",
+              label: "PIX",
+              description:
+                "Contribuição em dinheiro recebida pelos noivos; as cotas também são pagas via PIX.",
+            },
+            {
+              modifier: "card",
+              label: "Cartão de crédito",
+              description:
+                "Contribuição em dinheiro pelo checkout do cartão.",
+            },
+            {
+              modifier: "external",
+              label: "Compra externa",
+              description:
+                "Compra do produto online ou em loja física para presentear os noivos com o item.",
+            },
+          ],
+        },
+        {
+          type: "note",
+          text: "Cada presente mostra somente os ícones das opções disponíveis para ele.",
+        },
       ],
     },
     {
@@ -2345,6 +2387,36 @@ function renderGiftTutorialStep(stepIndex) {
   giftTutorialBody.replaceChildren();
 
   step.blocks.forEach((block) => {
+    if (block.type === "payment-methods") {
+      const methods = document.createElement("div");
+      methods.className = "gift-tutorial-methods";
+
+      block.items.forEach((item) => {
+        const row = document.createElement("div");
+        row.className = "gift-tutorial-method";
+
+        const icon = document.createElement("span");
+        icon.className = `gift-payment-method-icon ${item.modifier}`;
+        icon.setAttribute("aria-hidden", "true");
+        icon.innerHTML = renderGiftPaymentMethodIconSvg(item.modifier);
+
+        const copy = document.createElement("span");
+        copy.className = "gift-tutorial-method-copy";
+
+        const label = document.createElement("strong");
+        label.textContent = item.label;
+
+        const description = document.createElement("span");
+        description.textContent = item.description;
+        copy.append(label, description);
+        row.append(icon, copy);
+        methods.appendChild(row);
+      });
+
+      giftTutorialBody.appendChild(methods);
+      return;
+    }
+
     if (block.type === "list") {
       const list = document.createElement("ul");
       list.className = "gift-tutorial-list";
