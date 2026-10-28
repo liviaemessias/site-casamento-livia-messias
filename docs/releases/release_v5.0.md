@@ -14,8 +14,8 @@ interativo para orientar os convidados na Lista de Presentes.
 - Incluídas orientações gerais de traje esporte fino e a informação de que o
   branco fica reservado à noiva.
 - Reunidos combinados de confirmação de presença, pontualidade, convivência com
-  fotógrafos, mesa de doces, convite pessoal, decoração, despedida dos noivos e
-  aproveitamento da celebração.
+  fotógrafos, uso do celular no silencioso durante a missa, convite pessoal,
+  decoração, despedida dos noivos e aproveitamento da celebração.
 - Adicionados links para o RSVP e para a Lista de Presentes, seguindo os fluxos
   de acesso de convidados já existentes.
 - Incluído o acesso ao Manual dos Convidados no menu de todas as páginas
