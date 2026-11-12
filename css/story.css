@@ -225,6 +225,7 @@ body {
 .story-hero {
   height: 100vh;
   position: relative;
+  overflow: hidden;
   background-image: url("../assets/images/our-story/cover-story.jpg");
   background-size: cover;
   background-position: center;
@@ -237,6 +238,7 @@ body {
 
 .story-overlay {
   position: absolute;
+  z-index: 0;
   inset: 0;
   background:
     radial-gradient(circle at 50% 44%, rgba(255, 255, 255, 0.08), transparent 32%),

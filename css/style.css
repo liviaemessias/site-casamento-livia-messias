@@ -224,6 +224,7 @@ body {
 .hero {
   height: 100vh;
   position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -236,12 +237,91 @@ body {
 
 .hero-overlay {
   position: absolute;
+  z-index: 0;
   inset: 0;
   background: linear-gradient(
     to bottom,
     rgba(28, 14, 35, 0.46),
     rgba(var(--color-primary-rgb), 0.42)
   );
+}
+
+.scroll-fireworks-layer {
+  position: fixed;
+  z-index: 20;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.scroll-firework {
+  position: absolute;
+  top: 50%;
+  width: 1px;
+  height: 1px;
+  animation: scroll-firework-bloom 2s ease-out both;
+}
+
+.scroll-firework--left { left: 27%; }
+.scroll-firework--right { left: 73%; }
+.scroll-firework--center { left: 50%; }
+.scroll-firework--top { top: 28%; }
+.scroll-firework--middle { top: 48%; }
+.scroll-firework--bottom { top: 68%; }
+.scroll-firework--delay-0 { --firework-delay: 0s; }
+.scroll-firework--delay-1 { --firework-delay: 0.65s; }
+.scroll-firework--delay-2 { --firework-delay: 1.3s; }
+
+.scroll-firework span {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 6px;
+  height: 6px;
+  margin: -3px;
+  border-radius: 50%;
+  background: var(--firework-color, #ead7ff);
+  box-shadow: 0 0 16px 4px rgba(185, 113, 255, 0.95);
+  animation: scroll-firework-spark 1.9s cubic-bezier(.16, .7, .3, 1) var(--firework-delay, 0s) both;
+}
+
+.scroll-firework span:nth-child(3n) { --firework-color: #b767ff; }
+.scroll-firework span:nth-child(3n + 1) { --firework-color: #f8eaff; }
+.scroll-firework span:nth-child(3n + 2) { --firework-color: #8d42e8; }
+.scroll-firework span:nth-child(1) { --firework-angle: 0deg; }
+.scroll-firework span:nth-child(2) { --firework-angle: 30deg; }
+.scroll-firework span:nth-child(3) { --firework-angle: 60deg; }
+.scroll-firework span:nth-child(4) { --firework-angle: 90deg; }
+.scroll-firework span:nth-child(5) { --firework-angle: 120deg; }
+.scroll-firework span:nth-child(6) { --firework-angle: 150deg; }
+.scroll-firework span:nth-child(7) { --firework-angle: 180deg; }
+.scroll-firework span:nth-child(8) { --firework-angle: 210deg; }
+.scroll-firework span:nth-child(9) { --firework-angle: 240deg; }
+.scroll-firework span:nth-child(10) { --firework-angle: 270deg; }
+.scroll-firework span:nth-child(11) { --firework-angle: 300deg; }
+.scroll-firework span:nth-child(12) { --firework-angle: 330deg; }
+.scroll-firework span:nth-child(13) { --firework-angle: 15deg; }
+.scroll-firework span:nth-child(14) { --firework-angle: 195deg; }
+
+@keyframes scroll-firework-bloom {
+  0% { opacity: 0; transform: scale(.5); }
+  18% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.2); }
+}
+
+@keyframes scroll-firework-spark {
+  0% { opacity: 0; transform: rotate(var(--firework-angle)) translateY(0) scale(.45); }
+  20% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(var(--firework-angle)) translateY(-108px) scale(.12); }
+}
+
+.scroll-firework { animation-delay: var(--firework-delay, 0s); }
+
+.scroll-fireworks-layer--still .scroll-firework { animation: none; opacity: .82; }
+.scroll-fireworks-layer--still .scroll-firework span {
+  animation: none;
+  opacity: .75;
+  transform: rotate(var(--firework-angle)) translateY(-50px) scale(.68);
 }
 
 .hero-content {

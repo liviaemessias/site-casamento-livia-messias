@@ -180,7 +180,7 @@ function revealSections() {
     const windowHeight = window.innerHeight;
     const revealTop = section.getBoundingClientRect().top;
 
-    if (revealTop < windowHeight - 100) {
+    if (revealTop < windowHeight - 100 && !section.classList.contains("active")) {
       section.classList.add("active");
     }
   });

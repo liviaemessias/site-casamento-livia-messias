@@ -1,0 +1,75 @@
+.hero-atmosphere {
+  isolation: isolate;
+}
+
+.hero-atmosphere-mist,
+.hero-atmosphere .hero-particles {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  pointer-events: none;
+}
+
+.hero-atmosphere-mist {
+  inset: -16%;
+  opacity: 0.58;
+  background:
+    radial-gradient(ellipse 42% 25% at 12% 90%, rgba(240, 229, 255, .52), rgba(227, 212, 248, .2) 42%, transparent 78%),
+    radial-gradient(ellipse 38% 23% at 78% 84%, rgba(255, 247, 231, .48), rgba(235, 222, 246, .18) 45%, transparent 80%),
+    radial-gradient(ellipse 54% 28% at 48% 102%, rgba(230, 219, 250, .46), rgba(241, 232, 250, .16) 48%, transparent 82%),
+    radial-gradient(ellipse 34% 19% at 92% 98%, rgba(245, 233, 255, .34), transparent 78%);
+  animation: shared-hero-mist-drift 24s ease-in-out infinite alternate;
+}
+
+.hero-atmosphere .hero-particles {
+  overflow: hidden;
+}
+
+.hero-atmosphere .hero-particles span {
+  position: absolute;
+  bottom: -8px;
+  left: var(--particle-x);
+  width: var(--particle-size);
+  height: var(--particle-size);
+  border-radius: 50%;
+  background: var(--particle-color);
+  box-shadow: 0 0 7px 1px var(--particle-glow);
+  opacity: 0;
+  animation: shared-hero-particle-rise var(--particle-duration) linear var(--particle-delay) infinite;
+}
+
+.hero-atmosphere .hero-particles span:nth-child(1) { --particle-x: 8%; --particle-size: 3px; --particle-color: rgba(255, 244, 210, .9); --particle-glow: rgba(255, 231, 182, .45); --particle-duration: 9s; --particle-delay: -5s; }
+.hero-atmosphere .hero-particles span:nth-child(2) { --particle-x: 17%; --particle-size: 2px; --particle-color: rgba(255, 255, 255, .8); --particle-glow: rgba(255, 255, 255, .35); --particle-duration: 13s; --particle-delay: -10s; }
+.hero-atmosphere .hero-particles span:nth-child(3) { --particle-x: 27%; --particle-size: 3px; --particle-color: rgba(255, 231, 182, .88); --particle-glow: rgba(255, 231, 182, .4); --particle-duration: 7s; --particle-delay: -3s; }
+.hero-atmosphere .hero-particles span:nth-child(4) { --particle-x: 36%; --particle-size: 2px; --particle-color: rgba(241, 221, 255, .86); --particle-glow: rgba(241, 221, 255, .4); --particle-duration: 11s; --particle-delay: -8s; }
+.hero-atmosphere .hero-particles span:nth-child(5) { --particle-x: 45%; --particle-size: 3px; --particle-color: rgba(255, 255, 255, .9); --particle-glow: rgba(255, 255, 255, .42); --particle-duration: 8s; --particle-delay: -6s; }
+.hero-atmosphere .hero-particles span:nth-child(6) { --particle-x: 54%; --particle-size: 2px; --particle-color: rgba(255, 244, 210, .88); --particle-glow: rgba(255, 231, 182, .38); --particle-duration: 14s; --particle-delay: -12s; }
+.hero-atmosphere .hero-particles span:nth-child(7) { --particle-x: 63%; --particle-size: 3px; --particle-color: rgba(241, 221, 255, .88); --particle-glow: rgba(241, 221, 255, .42); --particle-duration: 10s; --particle-delay: -4s; }
+.hero-atmosphere .hero-particles span:nth-child(8) { --particle-x: 71%; --particle-size: 2px; --particle-color: rgba(255, 255, 255, .82); --particle-glow: rgba(255, 255, 255, .36); --particle-duration: 7.5s; --particle-delay: -6.5s; }
+.hero-atmosphere .hero-particles span:nth-child(9) { --particle-x: 79%; --particle-size: 3px; --particle-color: rgba(255, 231, 182, .9); --particle-glow: rgba(255, 231, 182, .4); --particle-duration: 12s; --particle-delay: -9s; }
+.hero-atmosphere .hero-particles span:nth-child(10) { --particle-x: 87%; --particle-size: 2px; --particle-color: rgba(255, 255, 255, .86); --particle-glow: rgba(255, 255, 255, .4); --particle-duration: 9.5s; --particle-delay: -7s; }
+.hero-atmosphere .hero-particles span:nth-child(11) { --particle-x: 94%; --particle-size: 3px; --particle-color: rgba(241, 221, 255, .86); --particle-glow: rgba(241, 221, 255, .4); --particle-duration: 13.5s; --particle-delay: -11s; }
+.hero-atmosphere .hero-particles span:nth-child(12) { --particle-x: 31%; --particle-size: 2px; --particle-color: rgba(255, 255, 255, .8); --particle-glow: rgba(255, 255, 255, .34); --particle-duration: 11.5s; --particle-delay: -2s; }
+.hero-atmosphere .hero-particles span:nth-child(13) { --particle-x: 13%; --particle-size: 2px; --particle-color: rgba(241, 221, 255, .82); --particle-glow: rgba(241, 221, 255, .34); --particle-duration: 10.5s; --particle-delay: -7.5s; }
+.hero-atmosphere .hero-particles span:nth-child(14) { --particle-x: 23%; --particle-size: 3px; --particle-color: rgba(255, 255, 255, .84); --particle-glow: rgba(255, 255, 255, .38); --particle-duration: 8.5s; --particle-delay: -1s; }
+.hero-atmosphere .hero-particles span:nth-child(15) { --particle-x: 40%; --particle-size: 2px; --particle-color: rgba(255, 231, 182, .82); --particle-glow: rgba(255, 231, 182, .34); --particle-duration: 12.5s; --particle-delay: -9.5s; }
+.hero-atmosphere .hero-particles span:nth-child(16) { --particle-x: 59%; --particle-size: 3px; --particle-color: rgba(255, 244, 210, .86); --particle-glow: rgba(255, 231, 182, .38); --particle-duration: 9.5s; --particle-delay: -3.5s; }
+.hero-atmosphere .hero-particles span:nth-child(17) { --particle-x: 75%; --particle-size: 2px; --particle-color: rgba(255, 255, 255, .82); --particle-glow: rgba(255, 255, 255, .34); --particle-duration: 13s; --particle-delay: -6s; }
+.hero-atmosphere .hero-particles span:nth-child(18) { --particle-x: 91%; --particle-size: 3px; --particle-color: rgba(255, 231, 182, .84); --particle-glow: rgba(255, 231, 182, .38); --particle-duration: 7.8s; --particle-delay: -4.5s; }
+
+@keyframes shared-hero-particle-rise {
+  0% { transform: translate3d(0, 0, 0); opacity: 0; }
+  12% { opacity: .78; }
+  78% { opacity: .62; }
+  100% { transform: translate3d(18px, -105vh, 0); opacity: 0; }
+}
+
+@keyframes shared-hero-mist-drift {
+  from { transform: translate3d(-1%, 1%, 0); }
+  to { transform: translate3d(1%, -1%, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-atmosphere-mist { animation: none; }
+  .hero-atmosphere .hero-particles span { display: none; }
+}
