@@ -583,6 +583,12 @@ PixPayment.getQrCodeUrl(payload);
 - `docs/releases/release_v5.1.md`: notas da versão 5.1, atualmente em
   desenvolvimento, com os efeitos atmosféricos compartilhados nos heros e os
   efeitos decorativos de entrada na Home.
+- `docs/planning/rsvp_special_experience.md`: especificação e planejamento da
+  experiência especial de quebra-cabeça no RSVP para Pais e
+  Padrinhos/Madrinhas (ainda não implementada).
+- `docs/planning/rsvp_experience_general_audience.md`: proposta em discussão
+  para permitir a brincadeira do RSVP a todos os convidados, com conteúdo
+  especial para Pais e Padrinhos/Madrinhas.
 - `docs/releases/release_v5.0.md`: notas da versão 5.0, com o Manual dos
   Convidados, a confirmação administrativa da forma de presentear, a
   classificação financeira dos presentes e o tutorial da Lista de Presentes.
