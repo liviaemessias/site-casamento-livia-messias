@@ -2,7 +2,7 @@
 
 Site de casamento personalizado para centralizar informações do evento, RSVP, lista de presentes e administração dos noivos.
 
-Versão atual: **5.0**.
+Versão atual: **5.1 (em desenvolvimento)**.
 
 ## Desenvolvimento
 
@@ -63,6 +63,10 @@ GitHub: [messiasfl10](https://github.com/messiasfl10/)
   estratégicos, tom roxo principal atualizado, tipografia romântica nos heros,
   atalhos na Home, menu público em painel lateral reutilizável e melhorias
   responsivas nas páginas públicas.
+- Efeitos atmosféricos compartilhados nos heros da Home, Nossa História,
+  Pré-Wedding, RSVP, Manual dos Convidados, Programação, Recados e Fornecedores,
+  com névoa suave e pontos de luz ascendentes. A Home também dispara efeitos
+  decorativos em lilás e roxo quando suas seções entram na tela.
 - Filtros, ordenação, contadores de resultado e limpeza de filtros no admin.
 - Alertas compactos no menu administrativo para recados pendentes, presentes
   ou cotas com pagamento informado, tarefas atrasadas e parcelas financeiras
@@ -130,16 +134,16 @@ GitHub: [messiasfl10](https://github.com/messiasfl10/)
 
 ### Públicas
 
-- `index.html`: página inicial, informações do casamento, contagem regressiva, metadados, identidade visual do casal, atalhos rápidos e seção do Manual dos Convidados.
-- `our-story.html`: linha do tempo da história do casal, notas pessoais e seção da jornada.
-- `guest-guide.html`: Manual dos Convidados público, com orientações de traje e combinados para o casamento.
+- `index.html`: página inicial, informações do casamento, contagem regressiva, metadados, identidade visual do casal, efeitos atmosféricos e efeitos de entrada nas seções, atalhos rápidos e seção do Manual dos Convidados.
+- `our-story.html`: linha do tempo da história do casal, notas pessoais, seção da jornada e efeito atmosférico no hero.
+- `guest-guide.html`: Manual dos Convidados público, com orientações de traje, combinados para o casamento e efeito atmosférico no hero.
 - `login.html`: entrada por código de convite.
-- `rsvp.html`: confirmação de presença.
+- `rsvp.html`: confirmação de presença, com efeito atmosférico no hero.
 - `gifts.html`: lista de presentes, filtros públicos, cards compactos e fluxo de reserva/pagamento.
-- `photos.html`: galeria do Pré-Wedding.
-- `messages.html`: Mural de Recados.
-- `vendors.html`: fornecedores do casamento.
-- `schedule.html`: programação do casamento para convidados logados.
+- `photos.html`: galeria do Pré-Wedding, com efeito atmosférico no hero.
+- `messages.html`: Mural de Recados, com efeito atmosférico no hero.
+- `vendors.html`: fornecedores do casamento, com efeito atmosférico no hero.
+- `schedule.html`: programação do casamento para convidados logados, com efeito atmosférico no hero.
 
 ### Administrativas
 
@@ -195,6 +199,12 @@ alertas compactos do menu e padronização dos cabeçalhos das páginas.
 - `js/home-photos.js`: renderização da prévia do Pré-Wedding na página inicial.
 - `js/home-messages.js`: renderização da prévia do Mural de Recados na página
   inicial.
+- `js/home-scroll-fireworks.js`: efeitos decorativos em lilás e roxo acionados
+  quando as seções da página inicial entram na tela.
+- `js/hero-atmosphere.js`: criação das camadas de névoa e pontos de luz nos
+  heros que usam o efeito compartilhado.
+- `css/hero-atmosphere.css`: estilos e animações compartilhados de névoa e
+  pontos ascendentes, com suporte à preferência por movimento reduzido.
 - `js/photos.js`: renderização da galeria completa e do lightbox da página de Pré-Wedding.
 - `js/story.js`: interações da página Nossa História, incluindo navbar,
   carrosséis, timeline e animações.
@@ -570,6 +580,9 @@ PixPayment.getQrCodeUrl(payload);
 
 ## Documentação Complementar
 
+- `docs/releases/release_v5.1.md`: notas da versão 5.1, atualmente em
+  desenvolvimento, com os efeitos atmosféricos compartilhados nos heros e os
+  efeitos decorativos de entrada na Home.
 - `docs/releases/release_v5.0.md`: notas da versão 5.0, com o Manual dos
   Convidados, a confirmação administrativa da forma de presentear, a
   classificação financeira dos presentes e o tutorial da Lista de Presentes.

@@ -226,7 +226,7 @@ body.public-modal-open {
       rgba(21, 10, 28, 0.42),
       rgba(var(--color-primary-rgb), 0.56)
     ),
-    url("../assets/images/photos/pre-wedding-01.jpg") center / cover;
+    url("../assets/images/photos/photos-hero.jpg") center / cover;
 }
 
 .photos-hero-content {
