@@ -490,6 +490,12 @@ preservando complementos cadastrados como "e Família". Em Presentes, a listagem
 administrativa também indica discretamente o modo de compra cadastrado:
 Dinheiro/PIX/Cartão, Compra Externa ou Híbrida.
 
+No detalhe do convidado, o admin pode abrir uma mensagem personalizada para
+copiar no WhatsApp e escolher entre três versões: detalhada, curta ou
+intermediária. As versões curta e intermediária lembram o envio manual do
+Convite Digital em PDF; a intermediária também inclui data, horários e locais
+da Missa Nupcial e da recepção, que acontece após a missa.
+
 Filtros disponíveis:
 
 - Presentes: busca por presente, categoria ou convidado; status; pagamento; forma de presentear.

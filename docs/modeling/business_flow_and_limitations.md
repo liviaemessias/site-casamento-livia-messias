@@ -478,6 +478,10 @@ Permite:
 - Registrar observação específica do convidado na mesa ao definir ou trocar a
   atribuição.
 - Copiar código de convite.
+- Gerar mensagem personalizada para WhatsApp em versões detalhada, curta ou
+  intermediária. As versões curta e intermediária indicam o Convite Digital em
+  PDF, que deve ser anexado manualmente; a intermediária também resume a data,
+  horários e locais da Missa Nupcial e da recepção após a missa.
 - Preencher RSVP manual.
 - Exportar CSV dos convites filtrados e ordenados, incluindo o status de envio do convite, convidado de e mesa.
 - Filtrar por busca textual, status, resposta (respondido ou sem resposta), presença (comparecerão ou não), envio do convite, tipo de convite, convidado de e mesa, incluindo `Com mesa`, `Sem mesa` e mesa específica.

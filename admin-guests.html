@@ -325,6 +325,18 @@
         </p>
 
         <div class="admin-form-group invitation-message-field">
+          <label for="invitationMessageVersion">Versão da mensagem</label>
+          <select id="invitationMessageVersion">
+            <option value="detailed">Versão detalhada</option>
+            <option value="short">Versão curta + convite em PDF</option>
+            <option value="intermediate">Versão intermediária + convite em PDF</option>
+          </select>
+          <small id="invitationMessageVersionHelp" class="admin-field-help">
+            Nas versões curta e intermediária, lembre-se de anexar o convite digital em PDF no WhatsApp.
+          </small>
+        </div>
+
+        <div class="admin-form-group invitation-message-field">
           <label for="invitationMessageInput">Mensagem</label>
           <textarea
             id="invitationMessageInput"

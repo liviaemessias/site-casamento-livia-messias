@@ -24,9 +24,21 @@ implementadas e será atualizado conforme novas alterações forem concluídas.
   alturas da tela. O efeito não bloqueia cliques nem a rolagem.
 - Para quem prefere movimento reduzido, os estouros aparecem sem animação.
 
+### Mensagens De Convite No Admin
+
+- O modal de mensagem personalizada em Convidados agora oferece as versões
+  detalhada, curta e intermediária, para convites individuais ou de casal.
+- A versão curta apresenta data e horário da Missa Nupcial. A intermediária
+  acrescenta os locais e informa que a recepção acontece após a missa.
+- As versões curta e intermediária mencionam o Convite Digital em PDF e
+  lembram o admin de anexá-lo manualmente no WhatsApp. O sistema não armazena
+  nem envia o PDF.
+- Todas as versões continuam editáveis antes de copiar; a versão detalhada é
+  selecionada por padrão.
+
 ## Banco De Dados E Compatibilidade
 
-- As alterações registradas nesta versão são visuais e executadas no frontend.
+- As alterações registradas nesta versão são executadas no frontend.
 - Não exigem migrations, mudanças de tabelas ou ajustes de configuração do
   Supabase.
 

@@ -66,6 +66,9 @@ const closeInvitationMessageModalButton = document.getElementById(
 const invitationMessageInput = document.getElementById(
   "invitationMessageInput",
 );
+const invitationMessageVersion = document.getElementById(
+  "invitationMessageVersion",
+);
 const invitationMessageCount = document.getElementById(
   "invitationMessageCount",
 );
@@ -1458,7 +1461,7 @@ function getInvitationRecipientName(guest, isCouple) {
     : String(guest.name || "").trim();
 }
 
-function buildInvitationMessage(guest) {
+function buildInvitationMessage(guest, version = "detailed") {
   const settings = {
     ...(window.WeddingEventConfig?.getDefaults() || {}),
     ...(window.publicEventSettings || {}),
@@ -1468,18 +1471,58 @@ function buildInvitationMessage(guest) {
     getInvitationRecipientName(guest, isCouple) || "Convidado";
   const coupleNames = `${settings.bride_name} e ${settings.groom_name}`;
   const siteUrl = getWeddingSiteUrl(settings);
+  if (version === "short" || version === "intermediate") {
+    const eventSummary =
+      version === "intermediate"
+        ? [
+            `💍 *${formatInvitationDate(settings.wedding_date)}* 💍`,
+            `⛪ *Missa Nupcial:* às ${formatInvitationTime(settings.ceremony_time)}, em ${settings.ceremony_name}.`,
+            `🥂 *Recepção:* após a Missa Nupcial, em ${settings.reception_name}.`,
+          ]
+        : [`💍 *${formatInvitationDate(settings.wedding_date)} - ${formatInvitationTime(settings.ceremony_time)}* 💍`];
+    const lines = isCouple
+      ? [
+          `Ooi, *${recipientName}*! Tudo bem?! 💜`,
+          "",
+          `Estamos muito felizes em convidar vocês para o nosso casamento! Será uma alegria celebrar esse dia ao lado de vocês. 💜`,
+          "",
+          ...eventSummary,
+          "",
+          `Todas as informações estão no *Convite Digital em PDF* que acompanha esta mensagem e no nosso site: ${siteUrl}. Por lá, vocês encontram o *RSVP*, a *lista de presentes* e outros detalhes.`,
+          "",
+          `Para confirmar a presença de vocês até ${formatInvitationDate(settings.rsvp_deadline)}, acessem o site e usem o código exclusivo do convite: *${guest.invite_code}*`,
+          "",
+          `Com carinho, *${coupleNames}*!`,
+        ]
+      : [
+          `Ooi, *${recipientName}*! Tudo bem?! 💜`,
+          "",
+          `Estamos muito felizes em convidar você para o nosso casamento! Será uma alegria celebrar esse dia ao seu lado. 💜`,
+          "",
+          ...eventSummary,
+          "",
+          `Todas as informações estão no *Convite Digital em PDF* que acompanha esta mensagem e no nosso site: ${siteUrl}. Por lá, você encontra o *RSVP*, a *lista de presentes* e outros detalhes.`,
+          "",
+          `Para confirmar sua presença até ${formatInvitationDate(settings.rsvp_deadline)}, acesse o site e use o código exclusivo do convite: *${guest.invite_code}*`,
+          "",
+          `Com carinho, *${coupleNames}*!`,
+        ];
+
+    return lines.join("\n");
+  }
+
   const lines = isCouple
     ? [
         `Ooi, *${recipientName}*! Tudo bem?! 💜`,
         "",
         'Depois de muitos momentos especiais vividos, estamos prontos para dizer "Sim" e gostaríamos muito que fizessem parte deste momento tão especial: *o nosso casamento*!',
         "",
-        "*⛪ A Cerimônia (Missa):*",
+        "*⛪ A Missa Nupcial:*",
         `* Data: ${formatInvitationDate(settings.wedding_date)} às ${formatInvitationTime(settings.ceremony_time)}`,
         `* Local: ${settings.ceremony_name}`,
         "",
         "*🥂 A Recepção (Festa):*",
-        `* Horário: A partir das ${formatInvitationTime(settings.reception_time)}`,
+        "* Horário: Após a Missa Nupcial",
         `* Local: ${settings.reception_name}`,
         "",
         `*💻 Acessem o Nosso Site:* ${siteUrl} 💜`,
@@ -1487,7 +1530,7 @@ function buildInvitationMessage(guest) {
         `*🔑 Código de Convite Exclusivo de Vocês: ${guest.invite_code}*`,
         "(Este código é único e vinculado ao convite de vocês)",
         "",
-        `*✅ Para Confirmarem Presença (Até ${formatInvitationDate(settings.rsvp_deadline)}):*`,
+        `*✅ Para Confirmarem Presença:* Até ${formatInvitationDate(settings.rsvp_deadline)}`,
         "Criamos um site com todos os detalhes do grande dia! Para nos ajudarem na organização, por favor, confirmem a presença de vocês seguindo os passos:",
         "",
         '1. Acessem o link do site.',
@@ -1513,12 +1556,12 @@ function buildInvitationMessage(guest) {
         "",
         'Depois de muitos momentos especiais vividos, estamos prontos para dizer "Sim" e gostaríamos muito que fizesse parte deste momento tão especial: *o nosso casamento*!',
         "",
-        "*⛪ A Cerimônia (Missa):*",
+        "*⛪ A Missa Nupcial:*",
         `* Data: ${formatInvitationDate(settings.wedding_date)} às ${formatInvitationTime(settings.ceremony_time)}`,
         `* Local: ${settings.ceremony_name}`,
         "",
         "*🥂 A Recepção (Festa):*",
-        `* Horário: A partir das ${formatInvitationTime(settings.reception_time)}`,
+        "* Horário: Após a Missa Nupcial",
         `* Local: ${settings.reception_name}`,
         "",
         `*💻 Acesse o Nosso Site:* ${siteUrl} 💜`,
@@ -1526,7 +1569,7 @@ function buildInvitationMessage(guest) {
         `*🔑 Seu Código de Convite Exclusivo: ${guest.invite_code}*`,
         "(Este código é único e vinculado ao seu convite)",
         "",
-        `*✅ Para Confirmar Presença (Até ${formatInvitationDate(settings.rsvp_deadline)}):*`,
+        `*✅ Para Confirmar Presença:* Até ${formatInvitationDate(settings.rsvp_deadline)}`,
         "Criamos um site com todos os detalhes do grande dia! Para nos ajudar na organização, por favor, confirme sua presença seguindo os passos:",
         "",
         "1. Acesse o link do site.",
@@ -1563,7 +1606,8 @@ function openInvitationMessageModal(guest) {
   }
 
   invitationMessageGuest = guest;
-  invitationMessageInput.value = buildInvitationMessage(guest);
+  invitationMessageVersion.value = "detailed";
+  invitationMessageInput.value = buildInvitationMessage(guest, "detailed");
   updateInvitationMessageCount();
   closeGuestDetailsModal();
   invitationMessageModal.classList.add("active");
@@ -2472,6 +2516,14 @@ closeInvitationMessageModalButton.addEventListener(
 );
 copyInvitationMessageButton.addEventListener("click", copyInvitationMessage);
 invitationMessageInput.addEventListener("input", updateInvitationMessageCount);
+invitationMessageVersion.addEventListener("change", () => {
+  if (!invitationMessageGuest) return;
+  invitationMessageInput.value = buildInvitationMessage(
+    invitationMessageGuest,
+    invitationMessageVersion.value,
+  );
+  updateInvitationMessageCount();
+});
 closeGuestDetailsModalButton.addEventListener("click", () => {
   closeGuestDetailsModal();
 });
