@@ -18,6 +18,8 @@ guests 1:N notification_events
 notification_events 1:N notification_deliveries
 notification_preferences 1:N notification_events por event_type
 settings 1:N wedding_vendors (conteúdo público gerenciado pelo admin)
+guests 1:0..1 rsvp_games
+rsvp_game_message_templates 1:N rsvp_games por game_type
 ```
 
 ## Tabela `guests`
@@ -102,6 +104,26 @@ Campos principais:
   individual, `guest_data.members[]` para membros de casal e
   `guest_data.companions[]` para acompanhantes.
 - `updated_at`: última alteração.
+
+## Tabelas `rsvp_games` E `rsvp_game_message_templates`
+
+O jogo interativo é administrado separadamente da confirmação de presença. Uma
+linha em `rsvp_games` representa um único jogo ligado a um convite existente,
+individual ou casal. Ela guarda o tipo do jogo, os nomes e a relação exibidos,
+se está ativo, a quantidade de conclusões e a data da última conclusão. O jogo
+é contado por convite, sem identificar os membros que participaram.
+
+`rsvp_game_message_templates` guarda os modelos padrão de mensagem, uma linha
+por tipo de jogo, com variantes singular e plural. Alterar o modelo no Admin
+afeta todos os jogos daquele tipo. As mensagens usam os nomes e a relação
+cadastrados no jogo.
+
+As duas tabelas têm RLS habilitado e não concedem leitura ou escrita direta aos
+clientes. RPCs administrativas verificam `public.is_admin()` e permitem
+cadastrar, ativar/desativar e excluir um jogo; a exclusão remove também o
+histórico guardado nesse registro. RPCs públicas autenticadas consultam/concluem
+somente o jogo vinculado a `public.current_guest_id()`. Os dados do jogo não
+são gravados em `rsvps.guest_data` ou `rsvps.presence`.
 
 ## Tabela `gifts`
 

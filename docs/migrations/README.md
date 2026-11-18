@@ -40,6 +40,14 @@ Exemplos recentes:
 - `financial_base_ordering.sql` + `financial_base_ordering_verify.sql`
 - `wedding_checklist.sql` + `wedding_checklist_verify.sql`
 - `wedding_tables.sql` + `wedding_tables_verify.sql`
+- `rsvp_games.sql` + `rsvp_games_verify.sql`
+
+Observação: `rsvp_games.sql` cria as tabelas iniciais da interação do jogo no
+RSVP e suas RPCs administrativas de cadastro, ativação/desativação e exclusão.
+Depende das funções seguras `public.is_admin()` e
+`public.current_guest_id()` já estarem instaladas. A migration cria um jogo por
+convite e modelos de mensagem por tipo, sem alterar a tabela ou o payload do
+RSVP. Execute `rsvp_games_verify.sql` após aplicá-la.
 
 Observação: `rsvp_food_restriction_per_person.sql` é a evolução do modelo de
 restrição alimentar da v4.1. Ele move a restrição para cada pessoa dentro de

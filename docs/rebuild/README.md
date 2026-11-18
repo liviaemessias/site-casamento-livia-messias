@@ -17,6 +17,8 @@ consolida schema, tabelas auxiliares, RPCs, triggers, grants, RLS, notificaçõe
 preferências, reenvios manuais e a fundação do módulo `Financeiro`. O modelo
 atual de RSVP não usa mais `rsvps.food` nem `rsvps.food_restriction`;
 restrições alimentares ficam por pessoa dentro de `rsvps.guest_data`.
+O setup também cria `rsvp_games` e `rsvp_game_message_templates`, para jogos
+interativos associados aos convites e mensagens padrão por tipo.
 
 O módulo `Financeiro` já é criado com:
 

@@ -4,6 +4,7 @@
     "admin-dashboard.html": "layout-dashboard",
     "admin-gifts.html": "gift",
     "admin-rsvps.html": "clipboard-check",
+    "admin-rsvp-games.html": "puzzle",
     "admin-guests.html": "users",
     "admin-messages.html": "message-square",
     "admin-checklist.html": "list-checks",
@@ -31,6 +32,7 @@
     "admin-schedule.html",
     "admin-tables.html",
     "admin-vendors.html",
+    "admin-rsvp-games.html",
     "admin-financial.html",
     "admin-financial-budget.html",
     "admin-financial-expenses.html",
@@ -56,6 +58,7 @@
     "admin-dashboard.html": "Visão geral dos principais pontos do casamento em um só lugar.",
     "admin-guests.html": "Organize convites, grupos, acompanhantes e dados dos convidados.",
     "admin-rsvps.html": "Acompanhe confirmações de presença, restrições e respostas dos convites.",
+    "admin-rsvp-games.html": "Configure os jogos interativos e as mensagens exibidas no RSVP.",
     "admin-gifts.html": "Gerencie presentes, cotas, reservas e confirmações de pagamento.",
     "admin-indicators.html": "Consulte métricas consolidadas para apoiar as decisões do casamento.",
     "admin-messages.html": "Aprove, responda e acompanhe os recados enviados pelos convidados.",
@@ -431,6 +434,7 @@
       ["admin-schedule.html", "Programação"],
       ["admin-tables.html", "Mesas"],
       ["admin-vendors.html", "Fornecedores"],
+      ["admin-rsvp-games.html", "Jogos do RSVP"],
       ["admin-reports.html", "Relatórios"],
     ].forEach(([page, label]) => {
       if (navigation.querySelector(`[href="./${page}"]`)) {

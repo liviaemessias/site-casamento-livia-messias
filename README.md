@@ -2,7 +2,7 @@
 
 Site de casamento personalizado para centralizar informações do evento, RSVP, lista de presentes e administração dos noivos.
 
-Versão atual: **5.1 (em desenvolvimento)**.
+Versão atual: **5.1**.
 
 ## Desenvolvimento
 
@@ -23,6 +23,8 @@ GitHub: [messiasfl10](https://github.com/messiasfl10/)
 - Reenvio manual e auditável de confirmações e avisos já existentes.
 - RSVP individual e para convites de casal, com restrição alimentar por pessoa
   do convite.
+- Jogos interativos opcionais no RSVP, associados ao convite, com quebra-cabeça
+  de quatro peças, replay e mensagens padrão editáveis por tipo no Admin.
 - Cadastro de acompanhantes e crianças, com restrição alimentar individual para
   convidado principal, membros do casal e acompanhantes.
 - Idade das crianças padronizada até 12 anos, conforme a data do casamento.
@@ -138,7 +140,8 @@ GitHub: [messiasfl10](https://github.com/messiasfl10/)
 - `our-story.html`: linha do tempo da história do casal, notas pessoais, seção da jornada e efeito atmosférico no hero.
 - `guest-guide.html`: Manual dos Convidados público, com orientações de traje, combinados para o casamento e efeito atmosférico no hero.
 - `login.html`: entrada por código de convite.
-- `rsvp.html`: confirmação de presença, com efeito atmosférico no hero.
+- `rsvp.html`: confirmação de presença e jogo interativo opcional por convite,
+  com efeito atmosférico no hero.
 - `gifts.html`: lista de presentes, filtros públicos, cards compactos e fluxo de reserva/pagamento.
 - `photos.html`: galeria do Pré-Wedding, com efeito atmosférico no hero.
 - `messages.html`: Mural de Recados, com efeito atmosférico no hero.
@@ -157,6 +160,8 @@ O antigo painel único foi dividido em páginas dedicadas:
 - `admin-gifts.html`: gestão de presentes.
 - `admin-guests.html`: gestão de convidados e RSVP manual.
 - `admin-rsvps.html`: consulta e remoção de confirmações.
+- `admin-rsvp-games.html`: consulta, cadastro, edição, exclusão e ativação de
+  jogos do RSVP, criação em lote de jogos gerais e edição dos modelos por tipo.
 - `admin-messages.html`: moderação e resposta dos recados.
 - `admin-checklist.html`: organização interna do checklist do casamento.
 - `admin-tables.html`: gestão do mapa de mesas e alocação de convidados.
@@ -184,6 +189,8 @@ alertas compactos do menu e padronização dos cabeçalhos das páginas.
 - `js/guest-auth.js`: sessão, login por convite e logout dos convidados.
 - `js/guest-data.js`: operações de RSVP e presentes em modo legado ou por RPCs.
 - `js/guest-bootstrap.js`: validação do convidado antes de carregar páginas protegidas.
+- `js/rsvp-game.js`: pergunta, quebra-cabeça de quatro peças e mensagem do jogo
+  relacionado ao convite autenticado.
 - `js/login.js`: fluxo do login público por código de convite.
 - `js/admin-login.js`: login administrativo com e-mail e senha.
 - `js/admin-bootstrap.js`: proteção e carregamento das páginas administrativas.
@@ -232,6 +239,8 @@ alertas compactos do menu e padronização dos cabeçalhos das páginas.
 - `js/admin-gifts.js`: CRUD, filtros, ordenação, cotas e administração de presentes.
 - `js/admin-guests.js`: CRUD, filtros, ordenação de convidados e RSVP manual.
 - `js/admin-rsvps.js`: listagem, filtros, ordenação e remoção de RSVPs.
+- `js/admin-rsvp-games.js`: cadastro, edição e criação em lote de jogos do RSVP
+  e edição dos modelos padrão de mensagem.
 - `js/admin-messages.js`: moderação, aprovação, ocultação e respostas do Mural de Recados.
 - `js/admin-notifications.js`: histórico auditável de notificações, filtros,
   métricas e reenvios manuais.
@@ -252,6 +261,7 @@ alertas compactos do menu e padronização dos cabeçalhos das páginas.
 - `css/public-nav.css`: painel lateral reutilizável da navegação pública.
 - `css/login.css`: tela de login.
 - `css/rsvp.css`: página de RSVP.
+- `css/admin-rsvp-games.css`: administração de jogos e modelos de mensagem do RSVP.
 - `css/gifts.css`: lista de presentes e modais de pagamento.
 - `css/story.css`: página Nossa História.
 - `css/photos.css`: página de Pré-Wedding e lightbox da galeria.
@@ -586,15 +596,16 @@ PixPayment.getQrCodeUrl(payload);
 
 ## Documentação Complementar
 
-- `docs/releases/release_v5.1.md`: notas da versão 5.1, atualmente em
-  desenvolvimento, com os efeitos atmosféricos compartilhados nos heros e os
-  efeitos decorativos de entrada na Home.
-- `docs/planning/rsvp_special_experience.md`: especificação e planejamento da
-  experiência especial de quebra-cabeça no RSVP para Pais e
-  Padrinhos/Madrinhas (ainda não implementada).
-- `docs/planning/rsvp_experience_general_audience.md`: proposta em discussão
-  para permitir a brincadeira do RSVP a todos os convidados, com conteúdo
-  especial para Pais e Padrinhos/Madrinhas.
+- `docs/releases/release_v5.1.md`: notas concluídas da versão 5.1, com os efeitos
+  atmosféricos compartilhados nos heros, os efeitos decorativos de entrada na
+  Home, as melhorias nas mensagens de convite do Admin e os jogos interativos
+  no RSVP.
+- `docs/planning/rsvp_game_specification.md`: especificação atual dos jogos do
+  RSVP, configurados por convite, com mensagens editáveis no Admin e progresso
+  contado por convite. As mensagens são modelos padrão editados por tipo de
+  jogo.
+- `assets/images/rsvp-game/examples/`: três artes SVG de exemplo — geral, Pais
+  e Padrinhos/Madrinhas — recortadas pelo jogo em quatro quadrantes no navegador.
 - `docs/releases/release_v5.0.md`: notas da versão 5.0, com o Manual dos
   Convidados, a confirmação administrativa da forma de presentear, a
   classificação financeira dos presentes e o tutorial da Lista de Presentes.

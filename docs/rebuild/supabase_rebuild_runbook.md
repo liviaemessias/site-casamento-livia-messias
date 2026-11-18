@@ -27,6 +27,9 @@ pessoa em `rsvps.guest_data`. O setup também inclui a fundação do módulo
 `Financeiro`, com contextos de `Casamento` e `Lua de Mel`, cenários de
 orçamento, categorias, pagadores, gastos reais, parcelas/pagamentos, RPCs
 administrativas e seeds iniciais.
+O setup também cria as tabelas dos jogos interativos no RSVP e seus modelos de
+mensagem padrão. Em bancos já existentes, use a migration incremental
+`docs/migrations/rsvp_games.sql` e execute sua verificação correspondente.
 
 O arquivo `docs/rebuild/supabase_rebuild_01_base_schema.sql` é apenas um bloco
 interno usado para compor o setup consolidado. Não use esse arquivo sozinho como

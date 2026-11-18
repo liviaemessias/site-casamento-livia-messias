@@ -1,0 +1,309 @@
+.rsvp-game-admin-section {
+  margin-top: 2rem;
+}
+
+.rsvp-game-admin-section .admin-list-toolbar {
+  justify-content: flex-end;
+  margin-top: -1.35rem;
+  margin-bottom: 0.55rem;
+}
+
+.rsvp-game-editor-modal-content {
+  max-width: 640px;
+}
+
+.rsvp-game-bulk-modal-content {
+  max-width: 720px;
+}
+
+.rsvp-game-editor-modal-content .admin-modal-helper,
+.rsvp-game-bulk-modal-content .admin-modal-helper {
+  margin: -0.65rem 0 1.2rem;
+  color: var(--color-text-muted);
+  line-height: 1.55;
+}
+
+.rsvp-game-editor-modal-content .admin-form-group textarea,
+.rsvp-game-template-card textarea {
+  width: 100%;
+  resize: vertical;
+}
+
+.rsvp-game-enabled-control {
+  margin: 0 0 1.25rem;
+}
+
+.rsvp-game-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.1rem;
+}
+
+.rsvp-game-form-actions .admin-save-button {
+  width: auto;
+  min-width: 170px;
+  padding: 0.8rem 1rem;
+}
+
+.rsvp-game-editor-modal-content .rsvp-game-form-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+}
+
+.rsvp-game-editor-modal-content .rsvp-game-form-actions > button {
+  display: inline-flex;
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 0.9rem;
+}
+
+.rsvp-game-bulk-note {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.88rem;
+}
+
+.rsvp-game-template-card label {
+  display: grid;
+  gap: 0.45rem;
+  color: var(--color-text);
+  font-size: 0.88rem;
+  font-weight: 650;
+}
+
+.rsvp-game-template-card textarea {
+  min-height: 44px;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid rgba(var(--color-primary-rgb), 0.18);
+  border-radius: var(--radius-lg);
+  background: #fff;
+  color: var(--color-text);
+  font: inherit;
+}
+
+.rsvp-game-candidate-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+  max-height: 360px;
+  padding: 0.75rem;
+  overflow: auto;
+  border: 1px solid rgba(var(--color-primary-rgb), 0.12);
+  border-radius: var(--radius-xl);
+  background: rgba(var(--color-primary-rgb), 0.025);
+}
+
+.rsvp-game-candidate-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  min-width: 0;
+  padding: 0.7rem;
+  border: 1px solid rgba(var(--color-primary-rgb), 0.1);
+  border-radius: var(--radius-lg);
+  background: #fff;
+  cursor: pointer;
+}
+
+.rsvp-game-candidate-row input {
+  flex: 0 0 auto;
+  margin-top: 0.18rem;
+  accent-color: var(--color-primary);
+}
+
+.rsvp-game-candidate-row span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.rsvp-game-candidate-row small {
+  display: block;
+  margin-top: 0.18rem;
+  color: var(--color-text-muted);
+  font-weight: 450;
+}
+
+.rsvp-game-empty-state {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 1rem;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.rsvp-game-table-wrapper {
+  margin-top: 1.4rem;
+}
+
+.rsvp-game-table-primary {
+  display: block;
+}
+
+.rsvp-game-table-secondary {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.78rem;
+}
+
+.rsvp-game-mobile-card {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0.75rem 0;
+  padding: 1rem;
+  border: 1px solid rgba(var(--color-primary-rgb), 0.12);
+  border-radius: var(--radius-xl);
+  background: #fff;
+  box-shadow: 0 10px 24px rgba(46, 28, 62, 0.06);
+}
+
+.admin-table tbody tr[data-game-row-id],
+.rsvp-game-mobile-card[data-game-card-id] {
+  cursor: pointer;
+}
+
+.admin-table tbody tr[data-game-row-id]:focus-visible {
+  outline: 2px solid rgba(var(--color-primary-rgb), 0.28);
+  outline-offset: -2px;
+}
+
+.rsvp-game-mobile-card[data-game-card-id] {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.rsvp-game-mobile-card[data-game-card-id]:active {
+  transform: scale(0.992);
+}
+
+.rsvp-game-mobile-card[data-game-card-id]:focus-visible {
+  border-color: rgba(var(--color-primary-rgb), 0.28);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
+}
+
+.rsvp-game-mobile-card-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.rsvp-game-status-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 24px;
+}
+
+.rsvp-game-table-wrapper .rsvp-game-status-control {
+  justify-content: center;
+}
+
+.rsvp-game-mobile-card-header .rsvp-game-status-control {
+  margin-left: auto;
+}
+
+.rsvp-game-mobile-meta {
+  margin: 0;
+}
+
+.rsvp-game-table-wrapper .admin-actions.compact-actions {
+  display: grid;
+  grid-template-columns: minmax(112px, 1fr);
+  min-width: 128px;
+  gap: 0.35rem;
+}
+
+.rsvp-game-table-wrapper .admin-actions.compact-actions .admin-action-button {
+  width: 100%;
+}
+
+.rsvp-game-table-wrapper .admin-action-button.icon-action {
+  padding-inline: 0.5rem;
+}
+
+.rsvp-game-template-help {
+  margin-bottom: 1rem;
+  color: var(--color-text-muted);
+  line-height: 1.55;
+}
+
+.rsvp-game-template-help code {
+  padding: 0.12rem 0.3rem;
+  border-radius: 0.35rem;
+  background: rgba(var(--color-primary-rgb), 0.08);
+  color: var(--color-primary);
+}
+
+.rsvp-game-template-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.rsvp-game-template-card {
+  display: grid;
+  gap: 0.85rem;
+  min-width: 0;
+  margin: 0;
+  padding: 1.25rem;
+}
+
+.rsvp-game-template-card legend {
+  padding: 0 0.45rem;
+  color: var(--color-primary);
+  font-size: 1rem;
+  font-weight: 750;
+}
+
+.rsvp-game-template-card textarea {
+  line-height: 1.5;
+}
+
+.rsvp-game-template-card .admin-save-button {
+  justify-self: start;
+}
+
+.rsvp-game-template-card button:disabled,
+.admin-section-actions button:disabled,
+.rsvp-game-form-actions button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+@media (max-width: 900px) {
+  .rsvp-game-template-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .rsvp-game-table-wrapper {
+    display: none;
+  }
+
+  .rsvp-game-mobile-list {
+    display: grid;
+  }
+
+  .rsvp-game-candidate-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .rsvp-game-form-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .rsvp-game-form-actions > button {
+    width: 100%;
+  }
+}

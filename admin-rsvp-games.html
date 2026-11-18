@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jogos do RSVP | Painel Admin | Livia & Messias</title>
+    <link rel="stylesheet" href="./css/style.css" />
+    <link rel="stylesheet" href="./css/admin.css" />
+    <link rel="stylesheet" href="./css/admin-rsvp-games.css" />
+  </head>
+  <body class="admin-auth-pending">
+    <main class="admin-page">
+      <section class="admin-header">
+        <div>
+          <p class="section-subtitle">Painel Administrativo</p>
+          <h1>Jogos do RSVP</h1>
+          <p class="admin-header-description">Configure uma brincadeira por convite e mensagens padrão por tipo de jogo.</p>
+        </div>
+        <button id="logoutButton" class="admin-logout">Sair</button>
+      </section>
+
+      <nav class="admin-nav" aria-label="Navegação administrativa">
+        <a class="admin-nav-link" href="./admin-dashboard.html">Dashboard</a>
+        <a class="admin-nav-link" href="./admin-guests.html">Convidados</a>
+        <a class="admin-nav-link" href="./admin-rsvps.html">RSVP</a>
+        <a class="admin-nav-link active" href="./admin-rsvp-games.html">Jogos do RSVP</a>
+        <a class="admin-nav-link" href="./admin-gifts.html">Presentes</a>
+        <a class="admin-nav-link" href="./admin-settings.html">Configurações</a>
+      </nav>
+
+      <section class="admin-section rsvp-game-admin-section">
+        <div class="admin-section-header admin-list-toolbar">
+          <div class="admin-section-actions">
+            <button type="button" id="refreshRsvpGamesButton" class="admin-action-button icon-action" aria-label="Atualizar Jogos" title="Atualizar">
+              <i data-lucide="refresh-cw" aria-hidden="true"></i>
+              <span>Atualizar</span>
+            </button>
+            <button type="button" id="openBulkRsvpGamesButton" class="admin-action-button icon-action" aria-label="Criar Jogos em Lote" title="Criar em Lote">
+              <i data-lucide="users-round" aria-hidden="true"></i>
+              <span>Criar em Lote</span>
+            </button>
+            <button type="button" id="newRsvpGameButton" class="admin-action-button icon-action success" aria-label="Novo Jogo" title="Novo Jogo">
+              <i data-lucide="plus" aria-hidden="true"></i>
+              <span>Novo</span>
+            </button>
+          </div>
+        </div>
+
+        <details class="admin-filter-panel" id="rsvpGameFiltersPanel">
+          <summary class="admin-filter-panel-toggle">
+            <span>
+              <i data-lucide="sliders-horizontal" aria-hidden="true"></i>
+              Filtros
+            </span>
+            <small id="rsvpGameFilterCount" class="admin-filter-count"></small>
+          </summary>
+          <div class="admin-filters" aria-label="Filtros dos jogos do RSVP">
+            <div class="admin-filter-field">
+              <label for="rsvpGameSearchInput">Buscar</label>
+              <input
+                type="search"
+                id="rsvpGameSearchInput"
+                placeholder="Convite ou nomes envolvidos"
+              />
+            </div>
+            <div class="admin-filter-field">
+              <label for="rsvpGameTypeFilter">Tipo de jogo</label>
+              <select id="rsvpGameTypeFilter">
+                <option value="">Todos</option>
+                <option value="general">Convidados em geral</option>
+                <option value="parents">Pais</option>
+                <option value="godparents_couple">Casal de Padrinhos/Madrinhas</option>
+                <option value="godfather">Somente Padrinho</option>
+                <option value="godmother">Somente Madrinha</option>
+              </select>
+            </div>
+            <div class="admin-filter-field">
+              <label for="rsvpGameStatusFilter">Status</label>
+              <select id="rsvpGameStatusFilter">
+                <option value="">Todos</option>
+                <option value="active">Ativos</option>
+                <option value="inactive">Desativados</option>
+              </select>
+            </div>
+            <div class="admin-filter-field">
+              <label for="rsvpGameParticipationFilter">Participação</label>
+              <select id="rsvpGameParticipationFilter">
+                <option value="">Todos</option>
+                <option value="played">Já jogaram</option>
+                <option value="not_played">Ainda não jogaram</option>
+              </select>
+            </div>
+            <div class="admin-filter-actions">
+              <button type="button" id="clearRsvpGameFiltersButton" class="admin-clear-filters">
+                Limpar Filtros
+              </button>
+            </div>
+          </div>
+        </details>
+
+        <div class="admin-table-wrapper rsvp-game-table-wrapper">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th><button type="button" class="admin-sort-button" data-game-sort="guest">Convite</button></th>
+                <th><button type="button" class="admin-sort-button" data-game-sort="type">Tipo</button></th>
+                <th><button type="button" class="admin-sort-button" data-game-sort="names">Nomes</button></th>
+                <th><button type="button" class="admin-sort-button" data-game-sort="status">Status</button></th>
+                <th><button type="button" class="admin-sort-button" data-game-sort="plays">Partidas</button></th>
+                <th><button type="button" class="admin-sort-button" data-game-sort="completed">Última conclusão</button></th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="rsvpGamesTableBody"></tbody>
+          </table>
+        </div>
+        <div id="rsvpGamesMobileList" class="admin-mobile-card-list rsvp-game-mobile-list"></div>
+      </section>
+
+      <section class="admin-section rsvp-game-admin-section">
+        <div class="admin-section-header">
+          <div>
+            <p class="section-subtitle">Conteúdo</p>
+            <h2>Mensagens padrão por tipo</h2>
+          </div>
+        </div>
+        <p class="rsvp-game-template-help">Use <code>{{names}}</code> e <code>{{relationship}}</code> onde quiser inserir os dados cadastrados no jogo. As alterações valem para todos os convites daquele tipo.</p>
+        <div class="rsvp-game-template-grid" id="rsvpGameTemplatesGrid">
+          <fieldset class="admin-settings-card rsvp-game-template-card" data-template-type="general">
+            <legend>Convidados em geral</legend>
+            <label>Mensagem singular<textarea data-template-variant="singular" rows="4" maxlength="3000" required></textarea></label>
+            <label>Mensagem plural<textarea data-template-variant="plural" rows="4" maxlength="3000" required></textarea></label>
+            <button type="button" class="admin-save-button" data-save-template="general">Salvar Modelo</button>
+          </fieldset>
+          <fieldset class="admin-settings-card rsvp-game-template-card" data-template-type="parents">
+            <legend>Pais</legend>
+            <label>Mensagem singular<textarea data-template-variant="singular" rows="4" maxlength="3000" required></textarea></label>
+            <label>Mensagem plural<textarea data-template-variant="plural" rows="4" maxlength="3000" required></textarea></label>
+            <button type="button" class="admin-save-button" data-save-template="parents">Salvar Modelo</button>
+          </fieldset>
+          <fieldset class="admin-settings-card rsvp-game-template-card" data-template-type="godparents_couple">
+            <legend>Casal de Padrinhos/Madrinhas</legend>
+            <label>Mensagem singular<textarea data-template-variant="singular" rows="4" maxlength="3000" required></textarea></label>
+            <label>Mensagem plural<textarea data-template-variant="plural" rows="4" maxlength="3000" required></textarea></label>
+            <button type="button" class="admin-save-button" data-save-template="godparents_couple">Salvar Modelo</button>
+          </fieldset>
+          <fieldset class="admin-settings-card rsvp-game-template-card" data-template-type="godfather">
+            <legend>Somente Padrinho</legend>
+            <label>Mensagem singular<textarea data-template-variant="singular" rows="4" maxlength="3000" required></textarea></label>
+            <label>Mensagem plural<textarea data-template-variant="plural" rows="4" maxlength="3000" required></textarea></label>
+            <button type="button" class="admin-save-button" data-save-template="godfather">Salvar Modelo</button>
+          </fieldset>
+          <fieldset class="admin-settings-card rsvp-game-template-card" data-template-type="godmother">
+            <legend>Somente Madrinha</legend>
+            <label>Mensagem singular<textarea data-template-variant="singular" rows="4" maxlength="3000" required></textarea></label>
+            <label>Mensagem plural<textarea data-template-variant="plural" rows="4" maxlength="3000" required></textarea></label>
+            <button type="button" class="admin-save-button" data-save-template="godmother">Salvar Modelo</button>
+          </fieldset>
+        </div>
+      </section>
+    </main>
+    <div id="adminToast" class="admin-toast"></div>
+
+    <div class="admin-modal" id="rsvpGameDetailsModal" aria-hidden="true">
+      <div class="admin-modal-content admin-details-modal-content" role="dialog" aria-modal="true" aria-labelledby="rsvpGameDetailsTitle">
+        <button type="button" class="admin-modal-close" data-close-rsvp-game-details aria-label="Fechar Detalhes">×</button>
+        <h2 id="rsvpGameDetailsTitle"></h2>
+        <div id="rsvpGameDetailsContent" class="admin-details-content"></div>
+      </div>
+    </div>
+
+    <div class="admin-modal" id="rsvpGameEditorModal" aria-hidden="true">
+      <div class="admin-modal-content rsvp-game-editor-modal-content" role="dialog" aria-modal="true" aria-labelledby="rsvpGameFormHeading">
+        <button type="button" class="admin-modal-close" data-close-rsvp-game-editor aria-label="Fechar Formulário">×</button>
+        <h2 id="rsvpGameFormHeading">Novo Jogo</h2>
+        <p class="admin-modal-helper">O jogo e seu progresso pertencem ao convite, mesmo quando o convite é de casal.</p>
+        <form id="rsvpGameForm">
+          <input type="hidden" id="rsvpGameIdInput" />
+          <div class="admin-form-group">
+            <label for="rsvpGameGuestInput">Convite</label>
+            <select id="rsvpGameGuestInput" required></select>
+          </div>
+          <div class="admin-form-group">
+            <label for="rsvpGameTypeInput">Tipo de jogo</label>
+            <select id="rsvpGameTypeInput" required>
+              <option value="general">Convidados em geral</option>
+              <option value="parents">Pais</option>
+              <option value="godparents_couple">Casal de Padrinhos/Madrinhas</option>
+              <option value="godfather">Somente Padrinho</option>
+              <option value="godmother">Somente Madrinha</option>
+            </select>
+          </div>
+          <div class="admin-form-group">
+            <label for="rsvpGameNamesInput">Nomes envolvidos</label>
+            <textarea id="rsvpGameNamesInput" rows="3" maxlength="500" required placeholder="Um nome por linha"></textarea>
+            <small class="admin-field-help">Informe até quatro nomes, um em cada linha.</small>
+          </div>
+          <div class="admin-form-group">
+            <label for="rsvpGameRelationshipInput">Relação</label>
+            <input type="text" id="rsvpGameRelationshipInput" maxlength="120" required placeholder="Ex.: nossos pais" />
+          </div>
+          <label class="admin-checkbox rsvp-game-enabled-control">
+            <input type="checkbox" id="rsvpGameEnabledInput" checked />
+            <span>Jogo ativo no RSVP</span>
+          </label>
+          <div class="rsvp-game-form-actions">
+            <button type="submit" class="admin-save-button" id="saveRsvpGameButton">Salvar Jogo</button>
+            <button type="button" class="admin-action-button" data-close-rsvp-game-editor>Cancelar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="admin-modal" id="rsvpGameBulkModal" aria-hidden="true">
+      <div class="admin-modal-content rsvp-game-bulk-modal-content" role="dialog" aria-modal="true" aria-labelledby="rsvpGameBulkTitle">
+        <button type="button" class="admin-modal-close" data-close-rsvp-game-bulk aria-label="Fechar Cadastro em Lote">×</button>
+        <h2 id="rsvpGameBulkTitle">Criar Jogos em Lote</h2>
+        <p class="admin-modal-helper">Selecione convites ainda sem jogo para criar jogos gerais. Os nomes serão sugeridos a partir do cadastro; jogos especiais são configurados individualmente.</p>
+        <p class="rsvp-game-bulk-note">Os jogos gerais criados em lote ficam ativos.</p>
+        <div class="rsvp-game-candidate-list" id="rsvpGameCandidateList" aria-live="polite"></div>
+        <div class="rsvp-game-form-actions">
+          <button type="button" class="admin-save-button" id="createRsvpGamesBulkButton">Criar Jogos Gerais</button>
+          <button type="button" class="admin-action-button" data-close-rsvp-game-bulk>Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="./js/supabase.js"></script>
+    <script src="./js/event-config.js"></script>
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+    <script src="./js/admin-common.js"></script>
+    <script src="./js/admin-bootstrap.js"></script>
+  </body>
+</html>

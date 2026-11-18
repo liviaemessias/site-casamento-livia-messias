@@ -1,9 +1,12 @@
-# Site de Casamento - L & M - v5.1 (em andamento)
+# Site de Casamento - L & M - v5.1
 
-Esta release está em desenvolvimento. Este documento registra as mudanças já
-implementadas e será atualizado conforme novas alterações forem concluídas.
+Esta release reúne efeitos atmosféricos reutilizáveis nos heros públicos,
+efeitos decorativos na página inicial, melhorias nas mensagens de convite do
+Admin e o novo jogo opcional de quebra-cabeça no RSVP, com gerenciamento
+administrativo próprio. O escopo descrito abaixo foi concluído em 17 de novembro
+de 2026.
 
-## Implementado Até Agora
+## Implementado
 
 ### Efeitos Visuais Nos Heros
 
@@ -36,16 +39,50 @@ implementadas e será atualizado conforme novas alterações forem concluídas.
 - Todas as versões continuam editáveis antes de copiar; a versão detalhada é
   selecionada por padrão.
 
+### Jogos Interativos No RSVP
+
+- Criada a configuração de um jogo por convite, com tipos para convidados em
+  geral, Pais, casal de Padrinhos/Madrinhas, Padrinho ou Madrinha.
+- Criada uma página administrativa para configurar jogos especiais
+  individualmente e criar jogos gerais em lote, revisar nomes e relação,
+  visualizar, editar, remover, ativar/desativar jogos e consultar conclusões
+  com modais para detalhes/edição, switch imediato para o status e caixa de
+  confirmação nativa para remoção.
+- A tabela administrativa permite ordenar e filtrar por convite/nomes, tipo de
+  jogo, status e participação. Clicar na linha ou no card mobile abre os
+  detalhes; as ações permanecem separadas dos cliques no switch e nos botões.
+- A interface mobile usa cards; a coluna de ações da tabela mantém Editar e
+  Remover empilhados, e o card abre os detalhes ao ser clicado.
+- Mensagens finais são modelos padrão editáveis por tipo, com variantes
+  singular/plural; cada jogo usa os nomes e a relação configurados para o
+  convite.
+- Adicionado ao RSVP um botão flutuante para abrir a pergunta e o quebra-cabeça
+  de quatro peças. O convite pode pular e voltar depois, rever a mensagem e
+  rejogar; cada conclusão incrementa o contador do convite.
+- Preparadas três artes vetoriais de exemplo — geral, Pais e
+  Padrinhos/Madrinhas — em arquivos `art.svg`. O jogo recorta cada arte em
+  quatro quadrantes no navegador, sem arquivos separados por peça.
+- A migration inicial `rsvp_games.sql` cria as tabelas de jogo e de modelos de
+  mensagem, com RLS e RPCs restritas. O estado do jogo permanece separado da
+  confirmação de presença.
+
 ## Banco De Dados E Compatibilidade
 
-- As alterações registradas nesta versão são executadas no frontend.
-- Não exigem migrations, mudanças de tabelas ou ajustes de configuração do
-  Supabase.
+- As mudanças visuais e as mensagens do convite são executadas no frontend.
+- Os jogos do RSVP requerem a migration inicial `docs/migrations/rsvp_games.sql`
+  em um banco existente, antes de o jogo aparecer no RSVP. Para projetos novos,
+  as tabelas e RPCs também estão incorporadas em
+  `docs/rebuild/supabase_rebuild_full_setup.sql`.
+- A migration não altera `rsvps`, `rsvps.guest_data` nem o fluxo de confirmação
+  de presença.
 
-## Estado Da Release
+## Fechamento Da Release
 
-- A v5.1 permanece aberta para novas mudanças.
-- Atualizar este documento e o README conforme outras alterações da release
-  forem implementadas.
-- Registrar o fechamento e eventuais passos de publicação somente quando o
-  escopo da v5.1 estiver concluído.
+- A release v5.1 está concluída e reúne as funcionalidades e melhorias
+  descritas neste documento.
+- Para ativar os Jogos do RSVP em um banco existente, aplicar e verificar
+  `docs/migrations/rsvp_games.sql`. Em instalações novas, usar a versão
+  consolidada em `docs/rebuild/supabase_rebuild_full_setup.sql`.
+- O fechamento desta release registra a conclusão do escopo no código e na
+  documentação; não confirma por si só a publicação do site nem a aplicação da
+  migration no Supabase.

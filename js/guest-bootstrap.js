@@ -5,6 +5,7 @@
       "js/security-utils.js",
       "js/child-age-options.js",
       "js/rsvp.js",
+      "js/rsvp-game.js",
     ],
   };
 

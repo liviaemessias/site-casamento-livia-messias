@@ -81,6 +81,7 @@
       "js/buffet-metrics.js",
       "js/admin-rsvps.js",
     ],
+    "admin-rsvp-games.html": ["js/security-utils.js", "js/admin-rsvp-games.js"],
     "admin-settings.html": ["js/security-utils.js", "js/admin-settings.js"],
   };
 

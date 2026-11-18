@@ -117,6 +117,28 @@ administrativos.
 4. Se todos responderem `Não`, o RSVP geral fica como `Não`.
 5. O dashboard considera membros confirmados, acompanhantes e total esperado.
 
+## Fluxo Do Jogo Do RSVP
+
+1. O Admin configura no máximo um jogo por convite existente. O tipo pode ser
+   geral, Pais, casal de Padrinhos/Madrinhas, somente Padrinho ou somente
+   Madrinha.
+2. O Admin registra os nomes e a relação exibidos. Os modelos de mensagem final
+   são editados centralmente por tipo, com variantes singular/plural.
+3. Jogos gerais podem ser criados em lote para convites selecionados. Jogos
+   especiais são configurados manualmente para que nomes e relação sejam
+   revisados no cadastro do jogo.
+4. Um convite com jogo ativo acessa a pergunta e o quebra-cabeça de quatro peças
+   pela página de RSVP. Respostas erradas podem ser tentadas novamente. Pular
+   não incrementa a contagem.
+5. Ao completar a montagem, a RPC registra uma conclusão para o convite e a
+   página mostra a mensagem padrão daquele tipo preenchida com os nomes e a
+   relação do jogo.
+6. O convite pode rever a mensagem e rejogar. `play_count` e
+   `last_completed_at` pertencem ao jogo/convite, não a cada membro.
+
+Os dados ficam em `rsvp_games` e `rsvp_game_message_templates`; não são gravados
+em `rsvps` nem interferem na confirmação de presença.
+
 ## Fluxo De Reserva De Presente
 
 1. O convidado acessa `gifts.html`.

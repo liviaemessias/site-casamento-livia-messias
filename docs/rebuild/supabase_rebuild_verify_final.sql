@@ -1553,5 +1553,36 @@ select
     and admin_enabled is true
     and guest_enabled is true
   ) as check_passed
+union all
+select
+  'RSVP game tables and message templates exist' as check_name,
+  to_regclass('public.rsvp_games') is not null
+  and to_regclass('public.rsvp_game_message_templates') is not null as check_passed
+union all
+select
+  'RSVP game tables enable RLS and block direct client reads' as check_name,
+  coalesce((select relrowsecurity from pg_class where oid = to_regclass('public.rsvp_games')), false)
+  and coalesce((select relrowsecurity from pg_class where oid = to_regclass('public.rsvp_game_message_templates')), false)
+  and not has_table_privilege('anon', 'public.rsvp_games', 'select')
+  and not has_table_privilege('authenticated', 'public.rsvp_games', 'select')
+  and not has_table_privilege('anon', 'public.rsvp_game_message_templates', 'select')
+  and not has_table_privilege('authenticated', 'public.rsvp_game_message_templates', 'select') as check_passed
+union all
+select
+  'RSVP game message templates seeded for all types' as check_name,
+  (select count(*) = 5 from public.rsvp_game_message_templates) as check_passed
+union all
+select
+  'RSVP game guest and admin RPCs exist' as check_name,
+  to_regprocedure('public.admin_list_rsvp_games()') is not null
+  and to_regprocedure('public.admin_list_rsvp_game_guests()') is not null
+  and to_regprocedure('public.admin_list_rsvp_game_message_templates()') is not null
+  and to_regprocedure('public.admin_save_rsvp_game(uuid,text,text[],text,boolean)') is not null
+  and to_regprocedure('public.admin_create_rsvp_games_bulk(uuid[])') is not null
+  and to_regprocedure('public.admin_save_rsvp_game_message_template(text,text,text)') is not null
+  and to_regprocedure('public.get_current_rsvp_game()') is not null
+  and to_regprocedure('public.complete_current_rsvp_game(uuid)') is not null
+  and to_regprocedure('public.admin_set_rsvp_game_active(uuid,boolean)') is not null
+  and to_regprocedure('public.admin_delete_rsvp_game(uuid)') is not null as check_passed
 ) as rebuild_checks
 order by check_passed asc, check_name asc;

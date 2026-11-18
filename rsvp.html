@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@300;400;500;600&family=Parisienne&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Inter:wght@300;400;500;600&family=Parisienne&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./css/rsvp.css" />
@@ -264,6 +264,65 @@
       </div>
     </div>
 
+    <button
+      type="button"
+      id="rsvpGameFloatingButton"
+      class="rsvp-game-floating-button is-hidden"
+      aria-label="Abrir o jogo surpresa do convite"
+      hidden
+    >
+      <span class="rsvp-game-floating-icon" aria-hidden="true">✦</span>
+      <span>Uma surpresa para vocês</span>
+    </button>
+
+    <div class="rsvp-game-modal" id="rsvpGameModal" hidden>
+      <section class="rsvp-game-dialog" role="dialog" aria-modal="true" aria-labelledby="rsvpGameDialogTitle">
+        <button type="button" id="rsvpGameCloseButton" class="rsvp-game-close" aria-label="Fechar jogo">×</button>
+        <p class="rsvp-game-eyebrow">Uma surpresa</p>
+        <h2 id="rsvpGameDialogTitle">Uma brincadeira para vocês</h2>
+        <p class="rsvp-game-step-label" id="rsvpGameStepLabel"></p>
+
+        <div class="rsvp-game-panel" id="rsvpGameWelcomePanel">
+          <p class="rsvp-game-recipient" id="rsvpGameRecipient"></p>
+          <p class="rsvp-game-intro-copy">Temos uma pequena surpresa. Respondam uma pergunta e montem a imagem para revelar a mensagem.</p>
+          <div class="rsvp-game-dialog-actions">
+            <button type="button" class="rsvp-game-primary" id="rsvpGameStartButton">Começar</button>
+            <button type="button" class="rsvp-game-secondary" id="rsvpGameReviewButton" hidden>Rever mensagem</button>
+            <button type="button" class="rsvp-game-text-button" data-rsvp-game-skip>Pular por enquanto</button>
+          </div>
+        </div>
+
+        <div class="rsvp-game-panel" id="rsvpGameQuizPanel" hidden>
+          <h3 id="rsvpGameQuestion"></h3>
+          <div class="rsvp-game-answer-list" id="rsvpGameAnswers"></div>
+          <p class="rsvp-game-feedback" id="rsvpGameQuizFeedback" role="status" aria-live="polite"></p>
+          <button type="button" class="rsvp-game-text-button" data-rsvp-game-skip>Pular por enquanto</button>
+        </div>
+
+        <div class="rsvp-game-panel" id="rsvpGamePuzzlePanel" hidden>
+          <p class="rsvp-game-puzzle-instructions" id="rsvpGamePuzzleInstructions">Arraste cada peça até o lugar correspondente. No celular, toque numa peça e depois no espaço onde ela deve ficar.</p>
+          <div class="rsvp-game-puzzle-board" id="rsvpGamePuzzleBoard" aria-label="Espaços do quebra-cabeça"></div>
+          <h3 class="rsvp-game-pieces-heading">Peças</h3>
+          <div class="rsvp-game-piece-tray" id="rsvpGamePieceTray" aria-label="Peças disponíveis"></div>
+          <p class="rsvp-game-feedback" id="rsvpGamePuzzleFeedback" role="status" aria-live="polite"></p>
+          <div class="rsvp-game-dialog-actions">
+            <button type="button" class="rsvp-game-primary" id="rsvpGameRevealButton" hidden>Revelar mensagem</button>
+            <button type="button" class="rsvp-game-text-button" data-rsvp-game-skip>Pular por enquanto</button>
+          </div>
+        </div>
+
+        <div class="rsvp-game-panel" id="rsvpGameFinalPanel" hidden>
+          <div class="rsvp-game-confetti" aria-hidden="true">✦　✧　✦</div>
+          <p class="rsvp-game-final-relationship" id="rsvpGameFinalRelationship"></p>
+          <p class="rsvp-game-final-message" id="rsvpGameFinalMessage"></p>
+          <p class="rsvp-game-play-count" id="rsvpGamePlayCount"></p>
+          <div class="rsvp-game-dialog-actions">
+            <button type="button" class="rsvp-game-primary" id="rsvpGameReplayButton">Jogar novamente</button>
+            <button type="button" class="rsvp-game-secondary" id="rsvpGameDoneButton">Fechar</button>
+          </div>
+        </div>
+      </section>
+    </div>
     <button
       type="button"
       id="rsvpHelpFloatingButton"
