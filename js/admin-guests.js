@@ -1484,7 +1484,7 @@ function buildInvitationMessage(guest, version = "detailed") {
       ? [
           `Ooi, *${recipientName}*! Tudo bem?! 💜`,
           "",
-          `Estamos muito felizes em convidar vocês para o nosso casamento! Será uma alegria celebrar esse dia ao lado de vocês. 💜`,
+          `Estamos muito felizes em convidar vocês para o nosso casamento! Será uma alegria celebrar esse dia ao lado de vocês. 💜❤️`,
           "",
           ...eventSummary,
           "",
@@ -1497,7 +1497,7 @@ function buildInvitationMessage(guest, version = "detailed") {
       : [
           `Ooi, *${recipientName}*! Tudo bem?! 💜`,
           "",
-          `Estamos muito felizes em convidar você para o nosso casamento! Será uma alegria celebrar esse dia ao seu lado. 💜`,
+          `Estamos muito felizes em convidar você para o nosso casamento! Será uma alegria celebrar esse dia ao seu lado. 💜❤️`,
           "",
           ...eventSummary,
           "",
