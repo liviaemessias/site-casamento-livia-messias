@@ -658,6 +658,11 @@ body {
   color: var(--text-light);
 }
 
+.home-info-cta .welcome-text strong {
+  color: var(--color-primary);
+  font-weight: 750;
+}
+
 .welcome-verse {
   max-width: 650px;
   margin: 1.8rem auto 0;

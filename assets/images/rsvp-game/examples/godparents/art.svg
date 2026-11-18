@@ -2,18 +2,18 @@
   <title id="title">Laços que iluminam</title>
   <desc id="desc">Arte de exemplo para Padrinhos e Madrinhas, com alianças entrelaçadas, flores e pequenas estrelas.</desc>
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f1e9fa"/><stop offset="1" stop-color="#f8edf5"/></linearGradient>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f5eff8"/><stop offset="1" stop-color="#faf7fb"/></linearGradient>
     <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f5df9f"/><stop offset="1" stop-color="#bd8c36"/></linearGradient>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="7" stdDeviation="8" flood-color="#674c72" flood-opacity=".16"/></filter>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="7" stdDeviation="8" flood-color="#5b1166" flood-opacity=".16"/></filter>
   </defs>
   <rect width="600" height="420" rx="32" fill="url(#bg)"/>
   <circle cx="83" cy="326" r="42" fill="#fff" opacity=".45"/><circle cx="517" cy="86" r="38" fill="#fff" opacity=".48"/>
   <g fill="url(#gold)"><path d="M157 112l6 14 14 6-14 6-6 14-6-14-14-6 14-6z"/><path d="M442 293l5 12 12 5-12 5-5 12-5-12-12-5 12-5z"/><circle cx="444" cy="124" r="5"/><circle cx="161" cy="284" r="4"/></g>
-  <g filter="url(#shadow)"><rect x="120" y="58" width="360" height="304" rx="30" fill="#fffdfc" stroke="#e7d8ef" stroke-width="3"/></g>
-  <circle cx="273" cy="194" r="67" fill="none" stroke="#b392cc" stroke-width="16"/>
+  <g filter="url(#shadow)"><rect x="120" y="58" width="360" height="304" rx="30" fill="#fffdfc" stroke="#5b1166" stroke-opacity=".16" stroke-width="3"/></g>
+  <circle cx="273" cy="194" r="67" fill="none" stroke="#93409f" stroke-width="16"/>
   <circle cx="327" cy="194" r="67" fill="none" stroke="url(#gold)" stroke-width="16"/>
-  <path d="M300 264c-21-14-38-27-38-44 0-11 8-19 19-19 8 0 15 5 19 13 4-8 11-13 19-13 11 0 19 8 19 19 0 17-17 30-38 44z" fill="#bd9bd2" stroke="#fffdfc" stroke-width="4"/>
-  <g fill="#c99cc9" stroke="#fffdfc" stroke-width="4"><circle cx="200" cy="140" r="12"/><circle cx="400" cy="250" r="12"/><circle cx="205" cy="253" r="9"/><circle cx="394" cy="135" r="9"/></g>
+  <path d="M300 264c-21-14-38-27-38-44 0-11 8-19 19-19 8 0 15 5 19 13 4-8 11-13 19-13 11 0 19 8 19 19 0 17-17 30-38 44z" fill="#5b1166" stroke="#fffdfc" stroke-width="4"/>
+  <g fill="#9333ea" stroke="#fffdfc" stroke-width="4"><circle cx="200" cy="140" r="12"/><circle cx="400" cy="250" r="12"/><circle cx="205" cy="253" r="9"/><circle cx="394" cy="135" r="9"/></g>
   <path d="M191 318h218" stroke="url(#gold)" stroke-width="3" stroke-linecap="round"/>
-  <text x="300" y="345" text-anchor="middle" fill="#674e78" font-family="Georgia,serif" font-size="21">Laços que iluminam</text>
+  <text x="300" y="345" text-anchor="middle" fill="#5b1166" font-family="Georgia,serif" font-size="21">Laços que iluminam</text>
 </svg>
