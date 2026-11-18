@@ -604,8 +604,8 @@ PixPayment.getQrCodeUrl(payload);
   RSVP, configurados por convite, com mensagens editáveis no Admin e progresso
   contado por convite. As mensagens são modelos padrão editados por tipo de
   jogo.
-- `assets/images/rsvp-game/examples/`: três artes SVG de exemplo — geral, Pais
-  e Padrinhos/Madrinhas — recortadas pelo jogo em quatro quadrantes no navegador.
+- `assets/images/rsvp-game/artwork/`: três artes SVG finais — geral, Pais e
+  Padrinhos/Madrinhas — recortadas pelo jogo em quatro quadrantes no navegador.
 - `docs/releases/release_v5.0.md`: notas da versão 5.0, com o Manual dos
   Convidados, a confirmação administrativa da forma de presentear, a
   classificação financeira dos presentes e o tutorial da Lista de Presentes.

@@ -12,9 +12,9 @@ para cada tipo de jogo e é usada por todos os jogos daquele tipo. O jogo é uma
 unidade: termina quando o convite conclui a experiência, sem identificar qual
 membro arrastou as peças. O convite pode jogar novamente.
 
-O quebra-cabeça tem quatro peças em uma ordem fixa. Há três artes: convidados em
-geral, Pais e Padrinhos/Madrinhas. Foram preparados SVGs de exemplo que podem
-ser substituídos pelas artes finais sem mudar a estrutura das quatro peças.
+O quebra-cabeça tem quatro peças em uma ordem fixa. Há três artes finais:
+convidados em geral, Pais e Padrinhos/Madrinhas. Cada uma é um SVG completo,
+recortado pelo jogo em quatro quadrantes.
 
 ## Tipos De Jogo
 
@@ -176,11 +176,12 @@ retenção definidas para o sistema.
 - RLS/RPCs devem impedir que o navegador escolha ou atualize o jogo de outro
   convite.
 
-## SVGs De Exemplo
+## Artes SVG Do Jogo
 
-Os exemplos ficam em `assets/images/rsvp-game/examples/`, agrupados em três
+As artes finais ficam em `assets/images/rsvp-game/artwork/`, agrupadas em três
 diretórios: `general`, `parents` e `godparents`. Cada diretório contém a arte
-completa `art.svg`, que o jogo recorta no navegador em quatro quadrantes.
+completa `art.svg`, que o jogo recorta no navegador em quatro quadrantes. A
+pasta `artwork` contém apenas as artes usadas pelo jogo.
 
 Ordem fixa ao montar:
 
@@ -190,9 +191,10 @@ Ordem fixa ao montar:
 ```
 
 O jogo carrega `art.svg` e recorta no navegador quatro quadrantes de igual
-tamanho. Para substituir o exemplo pela arte final, manter o canvas `600 × 420`
-e substituir `art.svg`; o recorte continua funcionando sem arquivos extras.
-Se a proporção mudar, ajustar também a proporção do tabuleiro em `css/rsvp.css`.
+tamanho. Para atualizar uma arte, manter o canvas `600 × 420` e substituir o
+arquivo `art.svg` do diretório correspondente; o recorte continua funcionando
+sem arquivos separados por peça. Se a proporção mudar, ajustar também a
+proporção do tabuleiro em `css/rsvp.css`.
 
 ## Itens Fora Do Escopo Inicial
 

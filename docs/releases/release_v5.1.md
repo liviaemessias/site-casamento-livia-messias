@@ -59,7 +59,7 @@ de 2026.
 - Adicionado ao RSVP um botão flutuante para abrir a pergunta e o quebra-cabeça
   de quatro peças. O convite pode pular e voltar depois, rever a mensagem e
   rejogar; cada conclusão incrementa o contador do convite.
-- Preparadas três artes vetoriais de exemplo — geral, Pais e
+- Incluídas as três artes vetoriais finais — geral, Pais e
   Padrinhos/Madrinhas — em arquivos `art.svg`. O jogo recorta cada arte em
   quatro quadrantes no navegador, sem arquivos separados por peça.
 - A migration inicial `rsvp_games.sql` cria as tabelas de jogo e de modelos de

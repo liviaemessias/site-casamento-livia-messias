@@ -186,7 +186,7 @@
     button.dataset.piece = String(pieceNumber);
     button.setAttribute("aria-label", `Peça ${pieceNumber + 1}`);
     image.className = `rsvp-game-piece-image ${cropClasses[pieceNumber]}`;
-    image.src = `./assets/images/rsvp-game/examples/${ART_FOLDERS[game.game_type]}/art.svg`;
+    image.src = `./assets/images/rsvp-game/artwork/${ART_FOLDERS[game.game_type]}/art.svg`;
     image.alt = "";
     image.draggable = false;
     button.appendChild(image);

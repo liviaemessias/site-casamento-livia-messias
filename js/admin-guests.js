@@ -1461,7 +1461,7 @@ function getInvitationRecipientName(guest, isCouple) {
     : String(guest.name || "").trim();
 }
 
-function buildInvitationMessage(guest, version = "detailed") {
+function buildInvitationMessage(guest, version = "short") {
   const settings = {
     ...(window.WeddingEventConfig?.getDefaults() || {}),
     ...(window.publicEventSettings || {}),
@@ -1490,7 +1490,7 @@ function buildInvitationMessage(guest, version = "detailed") {
           "",
           `Todas as informações estão no *Convite Digital em PDF* que acompanha esta mensagem e no nosso site: ${siteUrl}. Por lá, vocês encontram o *RSVP*, a *lista de presentes* e outros detalhes, incluindo informações sobre o *Bingo dos Noivos*, os prêmios e os valores das cartelas.`,
           "",
-          `Para confirmar a presença de vocês até ${formatInvitationDate(settings.rsvp_deadline)}, acessem o site e usem o código exclusivo do convite: *${guest.invite_code}*. Ele também é usado para acessar as outras áreas privadas do site.`,
+          `Para confirmar a presença de vocês até ${formatInvitationDate(settings.rsvp_deadline)}, acessem o site e usem o Código de Convite exclusivo de vocês: *${guest.invite_code}*. Ele também é usado para acessar as outras áreas privadas do site.`,
           "",
           `Com carinho, *${coupleNames}*!`,
         ]
@@ -1503,7 +1503,7 @@ function buildInvitationMessage(guest, version = "detailed") {
           "",
           `Todas as informações estão no *Convite Digital em PDF* que acompanha esta mensagem e no nosso site: ${siteUrl}. Por lá, você encontra o *RSVP*, a *lista de presentes* e outros detalhes, incluindo informações sobre o *Bingo dos Noivos*, os prêmios e os valores das cartelas.`,
           "",
-          `Para confirmar sua presença até ${formatInvitationDate(settings.rsvp_deadline)}, acesse o site e use o código exclusivo do convite: *${guest.invite_code}*. Ele também é usado para acessar as outras áreas privadas do site.`,
+          `Para confirmar sua presença até ${formatInvitationDate(settings.rsvp_deadline)}, acesse o site e use o seu Código de Convite exclusivo: *${guest.invite_code}*. Ele também é usado para acessar as outras áreas privadas do site.`,
           "",
           `Com carinho, *${coupleNames}*!`,
         ];
@@ -1608,8 +1608,8 @@ function openInvitationMessageModal(guest) {
   }
 
   invitationMessageGuest = guest;
-  invitationMessageVersion.value = "detailed";
-  invitationMessageInput.value = buildInvitationMessage(guest, "detailed");
+  invitationMessageVersion.value = "short";
+  invitationMessageInput.value = buildInvitationMessage(guest, "short");
   updateInvitationMessageCount();
   closeGuestDetailsModal();
   invitationMessageModal.classList.add("active");
