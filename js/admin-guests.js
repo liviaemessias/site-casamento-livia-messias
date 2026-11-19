@@ -1480,6 +1480,10 @@ function buildInvitationMessage(guest, version = "short") {
             `🥂 *Recepção:* após a Missa Nupcial, em ${settings.reception_name}.`,
           ]
         : [`💍 *${formatInvitationDate(settings.wedding_date)} - ${formatInvitationTime(settings.ceremony_time)}* 💍`];
+    const shortSiteOverview =
+      "Além do *RSVP* e da *lista de presentes*, o site tem um pouquinho da nossa história, o Mural de Recados, a programação do casamento e outros detalhes, incluindo o *Bingo dos Noivos*, seus prêmios e os valores das cartelas. Fizemos tudo com muito carinho: o site foi desenvolvido pelo noivo, com a ajuda da noiva 😉💻💜.";
+    const intermediateSiteOverview =
+      "Além do *RSVP* e da *lista de presentes*, o site também reúne nossa história, o Mural de Recados, a programação do casamento e outros detalhes. Por lá estão as informações do *Bingo dos Noivos*, com os prêmios e os valores das cartelas. Fizemos tudo com muito carinho: o site foi desenvolvido pelo noivo, com a ajuda da noiva 😉💻💜.";
     const lines = isCouple
       ? [
           `Ooi, *${recipientName}*! Tudo bem?! 💜`,
@@ -1488,9 +1492,11 @@ function buildInvitationMessage(guest, version = "short") {
           "",
           ...eventSummary,
           "",
-          `Todas as informações estão no *Convite Digital em PDF* que acompanha esta mensagem e no nosso site: ${siteUrl}. Por lá, vocês encontram o *RSVP*, a *lista de presentes* e outros detalhes, incluindo informações sobre o *Bingo dos Noivos*, os prêmios e os valores das cartelas.`,
+          version === "short"
+            ? `Todas as informações estão no *Convite Digital em PDF* que acompanha esta mensagem e no nosso site: ${siteUrl}. ${shortSiteOverview}`
+            : `Todas as informações estão no *Convite Digital em PDF* que acompanha esta mensagem e no nosso site: ${siteUrl}. ${intermediateSiteOverview}`,
           "",
-          `Para confirmar a presença de vocês até ${formatInvitationDate(settings.rsvp_deadline)}, acessem o site e usem o Código de Convite exclusivo de vocês: *${guest.invite_code}*. Ele também é usado para acessar as outras áreas privadas do site.`,
+          `Confirmem presença até ${formatInvitationDate(settings.rsvp_deadline)} pelo site, usando o Código de Convite de vocês: *${guest.invite_code}*.`,
           "",
           `Com carinho, *${coupleNames}*!`,
         ]
@@ -1501,9 +1507,11 @@ function buildInvitationMessage(guest, version = "short") {
           "",
           ...eventSummary,
           "",
-          `Todas as informações estão no *Convite Digital em PDF* que acompanha esta mensagem e no nosso site: ${siteUrl}. Por lá, você encontra o *RSVP*, a *lista de presentes* e outros detalhes, incluindo informações sobre o *Bingo dos Noivos*, os prêmios e os valores das cartelas.`,
+          version === "short"
+            ? `Todas as informações estão no *Convite Digital em PDF* que acompanha esta mensagem e no nosso site: ${siteUrl}. ${shortSiteOverview}`
+            : `Todas as informações estão no *Convite Digital em PDF* que acompanha esta mensagem e no nosso site: ${siteUrl}. ${intermediateSiteOverview}`,
           "",
-          `Para confirmar sua presença até ${formatInvitationDate(settings.rsvp_deadline)}, acesse o site e use o seu Código de Convite exclusivo: *${guest.invite_code}*. Ele também é usado para acessar as outras áreas privadas do site.`,
+          `Confirme presença até ${formatInvitationDate(settings.rsvp_deadline)} pelo site, usando seu Código de Convite: *${guest.invite_code}*.`,
           "",
           `Com carinho, *${coupleNames}*!`,
         ];
@@ -1511,6 +1519,8 @@ function buildInvitationMessage(guest, version = "short") {
     return lines.join("\n");
   }
 
+  const detailedSiteOverview =
+    "Além do *RSVP* e da *lista de presentes*, o site reúne nossa história, o Mural de Recados, a programação do casamento e outros detalhes. Também estão disponíveis as informações do *Bingo dos Noivos*, incluindo os prêmios e os valores das cartelas. Fizemos tudo com muito carinho: o site foi desenvolvido pelo noivo, com a ajuda da noiva 😉💻💜.";
   const lines = isCouple
     ? [
         `Ooi, *${recipientName}*! Tudo bem?! 💜`,
@@ -1526,7 +1536,7 @@ function buildInvitationMessage(guest, version = "short") {
         `* Local: ${settings.reception_name}`,
         "",
         `*💻 Acessem o Nosso Site:* ${siteUrl} 💜`,
-        "Por lá, vocês também encontram informações sobre o *Bingo dos Noivos*, os prêmios e os valores das cartelas.",
+        detailedSiteOverview,
         "",
         `*🔑 Código de Convite Exclusivo de Vocês: ${guest.invite_code}*`,
         "(Este código é único, vinculado ao convite de vocês e também é usado para acessar outras áreas privadas do site.)",
@@ -1566,7 +1576,7 @@ function buildInvitationMessage(guest, version = "short") {
         `* Local: ${settings.reception_name}`,
         "",
         `*💻 Acesse o Nosso Site:* ${siteUrl} 💜`,
-        "Por lá, você também encontra informações sobre o *Bingo dos Noivos*, os prêmios e os valores das cartelas.",
+        detailedSiteOverview,
         "",
         `*🔑 Seu Código de Convite Exclusivo: ${guest.invite_code}*`,
         "(Este código é único, vinculado ao seu convite e também é usado para acessar outras áreas privadas do site.)",
